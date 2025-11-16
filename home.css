@@ -1,14 +1,22 @@
 #content {
-	position: absolute;
-	top: 10%;
+	position: fixed;
+	top: 6vh;
 	left: 50%;
-	transform: translateX(-50%);
+	transform: translate(-50%, -20%);
 	width: 80%;
-	height: 70%;
+	max-width: 1100px;
+	/* reserve vertical space so content never overlaps the pyramid/home area */
+	max-height: calc(100vh - 220px);
 	overflow-y: auto;
 	display: none;
 	color: white;
-	padding: 1.5rem;
+	padding: 1.25rem 1.5rem;
+	background: rgba(0, 0, 0, 0.55);
+	border-radius: 12px;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+	z-index: 9999;
+	font-size: 18px; /* increase base font size for readability */
+	line-height: 1.6;
 }
 
 #content.show {
@@ -45,6 +53,46 @@
 	margin-bottom: 1rem;
 	word-wrap: break-word;
 	line-height: 1.4;
+}
+
+/* Content floor separator placed below the content pane */
+#content-floor {
+	position: fixed;
+	left: 50%;
+	transform: translateX(-50%);
+	display: none;
+	z-index: 9998;
+	pointer-events: none;
+}
+
+#content-floor.show {
+	display: block;
+}
+
+#content-floor .bar {
+	height: 2px; /* thin line */
+	width: 60%;
+	max-width: 900px;
+	background: linear-gradient(
+		90deg,
+		rgba(255, 255, 255, 0.12),
+		rgba(0, 255, 255, 0.14)
+	);
+	border-radius: 2px;
+	margin: 5px 0; /* 5px padding above and below as requested */
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) inset;
+}
+
+/* Utility: keep bio content slightly larger */
+.bio-content {
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid #00ffff;
+	border-radius: 12px;
+	padding: 1.25rem;
+	max-width: 680px;
+	margin: 0 auto;
+	font-size: 18px;
+	line-height: 1.6;
 }
 
 .portfolio-item img {
