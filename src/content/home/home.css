@@ -20,20 +20,40 @@
     line-height: 1.6;
 }
 
-html, body {
+/* Ensure the main browser window never shows scrollbars; content panes handle scrolling.
+   This hides page-level scrollbars while allowing `#content` to scroll internally. */
+html,
+body {
     overflow: hidden;
     height: 100%;
 }
 
-#content.show { display:block }
+#content.show {
+    display: block;
+}
 
+/* Per-page styles (portfolio, blog, bio) are colocated under `src/content/<page>/<page>.css` */
+
+/* Content floor separator placed below the content pane */
 #content-floor {
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(4px);
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     z-index: 2;
 }
 
-.content-header h1 { margin:0; font-size:1.25rem; font-weight:700; color:#fff }
-.content-body { padding-top: 2rem; padding-bottom: 140px }
+.content-header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+/* Body area below the sticky header */
+.content-body {
+    padding-top: 2rem;
+    /* Ensure last item isn't obscured by the content-floor or floating Home label */
+    padding-bottom: 140px;
+}
