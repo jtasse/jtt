@@ -17,9 +17,19 @@ export let homeLabel = null
 export const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x000000)
 
+// In test environments (Node/jsdom) `window` may be undefined. Use a
+// guarded WIN helper to provide reasonable fallbacks so the module can
+// be imported safely during unit tests.
+const WIN = typeof window !== "undefined" ? window : null
+const DEFAULT_WIDTH = 1024
+const DEFAULT_HEIGHT = 768
+const VIEWPORT_WIDTH = WIN ? WIN.innerWidth : DEFAULT_WIDTH
+const VIEWPORT_HEIGHT = WIN ? WIN.innerHeight : DEFAULT_HEIGHT
+const VIEWPORT_PIXEL_RATIO = WIN ? WIN.devicePixelRatio || 1 : 1
+
 export const camera = new THREE.PerspectiveCamera(
 	50,
-	window.innerWidth / window.innerHeight,
+	VIEWPORT_WIDTH / VIEWPORT_HEIGHT,
 	0.1,
 	2000
 )
@@ -27,8 +37,8 @@ camera.position.set(0, 0, 6)
 camera.lookAt(0, 0, 0)
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(window.devicePixelRatio)
+renderer.setSize(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
+renderer.setPixelRatio(VIEWPORT_PIXEL_RATIO)
 
 export const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = false
@@ -106,7 +116,9 @@ faces.forEach((f) => {
 	f.mesh = mesh
 })
 
-pyramidGroup.position.y = 0.35
+// Lift the whole pyramid a little so labels (like Blog) don't get clipped
+// against the bottom of the viewport.
+pyramidGroup.position.y = 0.5
 
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
@@ -150,14 +162,14 @@ export const labelConfigs = {
 		position: { x: -1.05, y: 0.04, z: 0.5 },
 		rotation: { x: 0, y: 0.438, z: 1 },
 		pyramidCenteredSize: [5, 0.675],
-		pyramidUncenteredSize: [5, 0.675],
+		pyramidUncenteredSize: [8, 0.675],
 	},
 	Portfolio: {
 		text: "Portfolio",
 		position: { x: 1.07, y: 0, z: 0.5 },
 		rotation: { x: 0, y: -0.502, z: -0.9 },
 		pyramidCenteredSize: [5, 0.675],
-		pyramidUncenteredSize: [5, 0.675],
+		pyramidUncenteredSize: [8, 0.675],
 	},
 	Blog: {
 		text: "Blog",
@@ -173,7 +185,7 @@ export const labelConfigs = {
 		position: { x: 0, y: apex.y + 0.2, z: 0 },
 		rotation: { x: 0, y: 0, z: 0 },
 		pyramidCenteredSize: [7, 0.6],
-		pyramidUncenteredSize: [7, 0.6],
+		pyramidUncenteredSize: [8, 0.6],
 	},
 }
 
@@ -224,25 +236,39 @@ export function initLabels(makeLabelPlane) {
 	// Create Home label (initially hidden). It will be positioned above the pyramid
 	// and will always face the camera. Use same factory so styling matches.
 	try {
+		// Use Home config from `labelConfigs.Home`. Create the Home mesh
+		// using the configured `pyramidUncenteredSize` as the native mesh
+		// size so we have a single source of truth for the visual size
+		// (avoids creating at centered size and then scaling it up).
 		const hc = labelConfigs.Home || {
 			position: { x: 0, y: apex.y + 0.4, z: 0 },
 			pyramidCenteredSize: [3, 0.6],
 			pyramidUncenteredSize: [3, 0.6],
 		}
-		const homeMesh = makeLabelPlane(
-			hc.text || "Home",
-			...(hc.pyramidCenteredSize || [3, 0.6])
-		)
+		// Create the Home mesh using the configured `pyramidCenteredSize` so
+		// it matches how the other labels are created. The animation code
+		// will scale it to `pyramidUncenteredSize` when the pyramid moves
+		// down. This keeps a single source of truth in `labelConfigs` and
+		// avoids special-case upscaling logic.
+		const nativeSize =
+			hc.pyramidCenteredSize && hc.pyramidCenteredSize[0]
+				? hc.pyramidCenteredSize
+				: hc.pyramidUncenteredSize || [3, 0.6]
+		const homeMesh = makeLabelPlane(hc.text || "Home", ...nativeSize)
 		homeMesh.position.set(hc.position.x, hc.position.y, hc.position.z)
 		// store original transforms so code that expects these fields won't break
 		homeMesh.userData.origPosition = homeMesh.position.clone()
 		homeMesh.userData.origRotation = homeMesh.rotation.clone()
+		// Store centered and uncentered sizes explicitly on the mesh so
+		// animation code can reference them. `pyramidCenteredSize` may be
+		// used for computing animation ratios; `pyramidUncenteredSize` is
+		// the actual native size we used to construct the mesh above.
+		homeMesh.userData.pyramidCenteredSize = hc.pyramidCenteredSize || nativeSize
+		homeMesh.userData.pyramidUncenteredSize =
+			hc.pyramidUncenteredSize || nativeSize
+		// No manual scaling: mesh geometry is created at the uncentered size
+		// (nativeSize). Record the original scale for safety.
 		homeMesh.userData.originalScale = homeMesh.scale.clone()
-		// Store centered and uncentered sizes
-		homeMesh.userData.pyramidCenteredSize = hc.pyramidCenteredSize || [3, 0.6]
-		homeMesh.userData.pyramidUncenteredSize = hc.pyramidUncenteredSize || [
-			3, 0.6,
-		]
 		// Keep it above pyramid group so it moves with the pyramid
 		pyramidGroup.add(homeMesh)
 		homeMesh.name = "HomeLabel"
@@ -258,14 +284,18 @@ export function initLabels(makeLabelPlane) {
 			homeMesh.renderOrder = 999
 		}
 
-		// Create hover target for Home so cursor shows pointer when hovering it
+		// Create hover target for Home so cursor shows pointer when hovering it.
+		// Use the centered size (same base as other labels) so the hover
+		// geometry scales consistently when the label animates.
 		const hoverWidth =
-			(hc.pyramidCenteredSize && hc.pyramidCenteredSize[0]
-				? hc.pyramidCenteredSize[0]
+			(homeMesh.userData.pyramidCenteredSize &&
+			homeMesh.userData.pyramidCenteredSize[0]
+				? homeMesh.userData.pyramidCenteredSize[0]
 				: 3) * 1.6
 		const hoverHeight =
-			(hc.pyramidCenteredSize && hc.pyramidCenteredSize[1]
-				? hc.pyramidCenteredSize[1]
+			(homeMesh.userData.pyramidCenteredSize &&
+			homeMesh.userData.pyramidCenteredSize[1]
+				? homeMesh.userData.pyramidCenteredSize[1]
 				: 0.6) * 2.0
 		const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 		const hoverMat = new THREE.MeshBasicMaterial({
@@ -286,6 +316,21 @@ export function initLabels(makeLabelPlane) {
 	}
 }
 
+// Helper: ensure a per-page stylesheet is loaded for the content pane.
+function ensurePageStyle(pageName) {
+	if (!WIN) return
+	const existing = document.getElementById("page-style")
+	if (existing) existing.remove()
+	const link = document.createElement("link")
+	link.id = "page-style"
+	link.rel = "stylesheet"
+	// Vite serves files under /src during dev; using a relative path keeps
+	// this simple for development. Adjust if you build to a different output.
+	// Per-page styles are named `<page>.css` inside each content folder.
+	link.href = `/src/content/${pageName}/${pageName}.css`
+	document.head.appendChild(link)
+}
+
 // === Pyramid State ===
 let isAtBottom = false
 
@@ -296,7 +341,8 @@ let pyramidAnimToken = 0
 
 // Store initial pyramid state so we can always reset to it exactly
 const initialPyramidState = {
-	positionY: 0.35,
+	// match the visible pyramid start position above
+	positionY: 0.5,
 	rotationY: 0,
 	scale: 1,
 }
@@ -306,6 +352,12 @@ export function getInitialPyramidState() {
 }
 
 export function animatePyramid(down = true, section = null) {
+	// If we're animating back up, immediately hide any visible content so
+	// the scene is cleared before the upward animation begins.
+	if (!down) {
+		hideAllPlanes()
+	}
+
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = ++pyramidAnimToken
@@ -314,10 +366,11 @@ export function animatePyramid(down = true, section = null) {
 	// Always rotate full 360 degrees (2π) in the same direction
 	const endRot = startRot + Math.PI * 2
 	const startPosY = pyramidGroup.position.y
-	const endPosY = down ? -1.75 : 0.35 // adjusted
+	// When moving up, return to the initial stored position so we stay consistent
+	const endPosY = down ? -1.75 : initialPyramidState.positionY
 
 	const startScale = pyramidGroup.scale.x
-	const endScale = down ? 0.5 : 1
+	const endScale = down ? 0.5 : initialPyramidState.scale
 
 	const startTime = performance.now()
 	function step(time) {
@@ -329,9 +382,8 @@ export function animatePyramid(down = true, section = null) {
 		const s = startScale + (endScale - startScale) * t
 		pyramidGroup.scale.set(s, s, s)
 
-		// Animate label scales based on centered/uncentered sizes (skip Home label)
+		// Animate label scales based on centered/uncentered sizes
 		for (const key in labels) {
-			if (key === "Home") continue // Home label stays fixed above pyramid
 			const labelMesh = labels[key]
 			if (!labelMesh) continue
 			const centeredSize = labelMesh.userData.pyramidCenteredSize
@@ -344,6 +396,9 @@ export function animatePyramid(down = true, section = null) {
 				const labelScale =
 					startScaleRatio + (endScaleRatio - startScaleRatio) * t
 				labelMesh.scale.set(labelScale, labelScale, labelScale)
+				// Keep hover target scale synchronized as well
+				const hover = hoverTargets[key]
+				if (hover) hover.scale.set(labelScale, labelScale, labelScale)
 			}
 		}
 
@@ -353,9 +408,8 @@ export function animatePyramid(down = true, section = null) {
 			// abort executing completion side-effects.
 			if (myToken !== pyramidAnimToken) return
 			isAtBottom = down
-			// Snap labels to final scale (skip Home label)
+			// Snap labels to final scale
 			for (const key in labels) {
-				if (key === "Home") continue // Home label stays fixed above pyramid
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 				const centeredSize = labelMesh.userData.pyramidCenteredSize
@@ -368,6 +422,11 @@ export function animatePyramid(down = true, section = null) {
 			}
 			// If pyramid ended at bottom, ensure Home label is visible
 			if (isAtBottom) showHomeLabel()
+			else {
+				// If we moved back up, hide any visible content so the scene
+				// returns to the navigation/pyramid-only view.
+				hideAllPlanes()
+			}
 			// Show section content only if requested and this animation is still valid
 			if (section === "bio") showBioPlane()
 			else if (section === "portfolio") showPortfolioPlane()
@@ -419,9 +478,8 @@ export function resetPyramidToHome() {
 		if (t < 1) requestAnimationFrame(step)
 		else {
 			isAtBottom = false
-			// Snap labels to centered scale (skip Home label)
+			// Snap labels to centered scale
 			for (const key in labels) {
-				if (key === "Home") continue // Home label stays fixed above pyramid
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 				labelMesh.scale.set(1, 1, 1)
@@ -453,12 +511,14 @@ export function showBioPlane() {
 		const myToken = pyramidAnimToken
 		// Load HTML content and parse bio structure (heading + paragraphs)
 		loadContentHTML("bio").then((html) => {
+			// Load page-specific stylesheet
+			ensurePageStyle("bio")
 			// If a newer pyramid animation/reset occurred, abort adding content
 			if (myToken !== pyramidAnimToken) return
 			// 1) Populate DOM content pane so layout is HTML-driven
 			const contentEl = document.getElementById("content")
 			if (contentEl) {
-				contentEl.innerHTML = html
+				contentEl.innerHTML = `<header class="content-header"><h1>Bio</h1></header><div class="content-body"><div class="bio-content">${html}</div></div>`
 				contentEl.style.display = "block"
 			}
 			// 2) We now rely on DOM content for layout. Skip creating the 3D canvas plane
@@ -471,6 +531,8 @@ export function showBioPlane() {
 				const r = contentEl.getBoundingClientRect()
 				navBar.classList.add("show")
 				navBar.style.position = "fixed"
+				// Clear CSS transform so left/top coordinates are absolute
+				navBar.style.transform = "none"
 				navBar.style.left = `${Math.round(r.left)}px`
 				navBar.style.width = `${Math.round(r.width)}px`
 				navBar.style.top = `${Math.round(r.bottom + 5)}px`
@@ -495,11 +557,22 @@ export function showPortfolioPlane() {
 		const myToken = pyramidAnimToken
 		// Load portfolio HTML and extract items (title, description, link)
 		loadContentHTML("portfolio").then((html) => {
+			// Load page-specific stylesheet
+			ensurePageStyle("portfolio")
 			if (myToken !== pyramidAnimToken) return
 			// Populate DOM content pane
 			const contentEl = document.getElementById("content")
 			if (contentEl) {
-				contentEl.innerHTML = html
+				// Normalize upstream portfolio HTML: wrap each top-level child as
+				// a `.portfolio-item` so the `.portfolio-grid` layout consistently
+				// shows two items per row.
+				const tmp = document.createElement("div")
+				tmp.innerHTML = html
+				let gridInner = ""
+				Array.from(tmp.children).forEach((child) => {
+					gridInner += `<div class="portfolio-item">${child.outerHTML}</div>`
+				})
+				contentEl.innerHTML = `<header class="content-header"><h1>Portfolio</h1></header><div class="content-body"><div class="portfolio-grid">${gridInner}</div></div>`
 				contentEl.style.display = "block"
 			}
 			// We now populate DOM content only; skip creating the 3D portfolio plane
@@ -512,6 +585,7 @@ export function showPortfolioPlane() {
 				const r = contentEl.getBoundingClientRect()
 				navBar.classList.add("show")
 				navBar.style.position = "fixed"
+				navBar.style.transform = "none"
 				navBar.style.left = `${Math.round(r.left)}px`
 				navBar.style.width = `${Math.round(r.width)}px`
 				navBar.style.top = `${Math.round(r.bottom + 5)}px`
@@ -537,11 +611,48 @@ export function showBlogPlane() {
 		// load HTML content and parse blog posts
 		loadContentHTML("blog").then((html) => {
 			if (myToken !== pyramidAnimToken) return
+			// Load page-specific stylesheet
+			ensurePageStyle("blog")
 			// Populate DOM content
 			const contentEl = document.getElementById("content")
 			if (contentEl) {
-				contentEl.innerHTML = html
+				const posts = parseBlogPosts(html)
+				let bodyHtml = ""
+				if (posts && posts.length > 0) {
+					let out = '<div class="blog-list">'
+					posts.forEach((p) => {
+						out += `<article class="blog-post">`
+						if (p.image) {
+							out += `<img class="blog-thumb" src="${p.image}" alt="${
+								p.title || ""
+							}">`
+						}
+						out += `<h2>${p.title}</h2>`
+						out += `<p class="meta">${p.date || ""} | ${p.author || ""}</p>`
+						out += `<p class="summary">${p.summary || ""}</p>`
+						out += `</article>`
+					})
+					out += "</div>"
+					bodyHtml = out
+				} else {
+					bodyHtml = html
+				}
+				contentEl.innerHTML = `<header class="content-header"><h1>Blog</h1></header><div class="content-body">${bodyHtml}</div>`
 				contentEl.style.display = "block"
+				// Start at the top of the blog list, then nudge any first thumbnail
+				// into view below the sticky header if present.
+				contentEl.scrollTop = 0
+				requestAnimationFrame(() => {
+					const header = contentEl.querySelector(".content-header")
+					const headerHeight = header
+						? Math.round(header.getBoundingClientRect().height)
+						: 0
+					const firstThumb = contentEl.querySelector(".blog-thumb")
+					if (firstThumb) {
+						const desired = Math.max(0, firstThumb.offsetTop - headerHeight - 8)
+						contentEl.scrollTop = desired
+					}
+				})
 			}
 			// We now populate DOM content only; skip creating the 3D blog plane
 			// to avoid duplicate/smaller-rendered content in the scene.
@@ -552,6 +663,7 @@ export function showBlogPlane() {
 				const r = contentEl.getBoundingClientRect()
 				navBar.classList.add("show")
 				navBar.style.position = "fixed"
+				navBar.style.transform = "none"
 				navBar.style.left = `${Math.round(r.left)}px`
 				navBar.style.width = `${Math.round(r.width)}px`
 				navBar.style.top = `${Math.round(r.bottom + 5)}px`
@@ -688,19 +800,32 @@ export function animate() {
 			offset.applyQuaternion(label.quaternion)
 			hover.position.copy(label.position).add(offset)
 			hover.rotation.copy(label.rotation)
+			// Keep hover target scale in sync with the label so hit area
+			// matches visual size when labels animate between centered/uncentered.
+			hover.scale.copy(label.scale)
 		}
 	}
 	renderer.render(scene, camera)
 }
 
-// === Resize ===
-window.addEventListener("resize", () => {
-	camera.aspect = window.innerWidth / window.innerHeight
-	camera.updateProjectionMatrix()
-	renderer.setSize(window.innerWidth, window.innerHeight)
+// Expose some APIs to the global `window` for legacy callers and tests that
+// invoke functions directly without importing. Guarded so it only runs when
+// a `window` object is present (e.g. in the browser or jsdom test env).
+if (WIN) {
+	WIN.animatePyramid = animatePyramid
+	WIN.resetPyramidToHome = resetPyramidToHome
+}
 
-	const bioPlane = scene.getObjectByName("bioPlane")
-	if (bioPlane) scene.remove(bioPlane)
-	const portfolioPlane = scene.getObjectByName("portfolioPlane")
-	if (portfolioPlane) scene.remove(portfolioPlane)
-})
+// === Resize ===
+if (WIN) {
+	WIN.addEventListener("resize", () => {
+		camera.aspect = WIN.innerWidth / WIN.innerHeight
+		camera.updateProjectionMatrix()
+		renderer.setSize(WIN.innerWidth, WIN.innerHeight)
+
+		const bioPlane = scene.getObjectByName("bioPlane")
+		if (bioPlane) scene.remove(bioPlane)
+		const portfolioPlane = scene.getObjectByName("portfolioPlane")
+		if (portfolioPlane) scene.remove(portfolioPlane)
+	})
+}

@@ -6,6 +6,7 @@ import {
 	hoverTargets,
 	initLabels,
 	animatePyramid,
+	resetPyramidToHome,
 	showBioPlane,
 	showPortfolioPlane,
 	animateLabelToCenter,
@@ -74,18 +75,25 @@ function onClick(event) {
 	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 	raycaster.setFromCamera(pointer, camera)
 
-	// Check labels first
+	// Check labels first (direct meshes)
 	const labelIntersects = raycaster.intersectObjects(Object.values(labels))
 	if (labelIntersects.length > 0) {
 		const obj = labelIntersects[0].object
-
-		if (obj.userData.name === "Bio") {
-			animatePyramid(true, "bio")
-			animateLabelToCenter(obj)
-		} else if (obj.userData.name === "Portfolio") {
-			animatePyramid(true, "portfolio")
-		}
+		handleLabelClick(obj)
 		return
+	}
+
+	// If no direct label hit, check hover targets (they sit in front of labels)
+	const hoverIntersects = raycaster.intersectObjects(
+		Object.values(hoverTargets)
+	)
+	if (hoverIntersects.length > 0) {
+		const hit = hoverIntersects[0].object
+		const key = hit.userData && hit.userData.labelKey
+		if (key && labels[key]) {
+			handleLabelClick(labels[key])
+			return
+		}
 	}
 
 	// Click on pyramid toggles back up
@@ -99,3 +107,22 @@ function onClick(event) {
 }
 
 window.addEventListener("click", onClick)
+
+// Extracted handler so both label meshes and hover targets can reuse logic
+function handleLabelClick(obj) {
+	if (obj.userData.name === "Bio") {
+		// First bring the label to front/center, then animate pyramid down
+		animateLabelToCenter(obj)
+		animatePyramid(true, "bio")
+	} else if (obj.userData.name === "Portfolio") {
+		animateLabelToCenter(obj)
+		animatePyramid(true, "portfolio")
+	} else if (obj.userData.name === "Blog") {
+		animateLabelToCenter(obj)
+		animatePyramid(true, "blog")
+	} else if (obj.userData.name === "Home") {
+		// Clicking Home should behave like clicking the pyramid: animate up
+		// and hide any visible content.
+		animatePyramid(false, null)
+	}
+}

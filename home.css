@@ -1,8 +1,8 @@
 #content {
 	position: fixed;
-	top: 6vh;
+	top: 12vh;
 	left: 50%;
-	transform: translate(-50%, -20%);
+	transform: translate(-50%, -30%);
 	width: 80%;
 	max-width: 1100px;
 	/* reserve vertical space so content never overlaps the pyramid/home area */
@@ -19,94 +19,45 @@
 	line-height: 1.6;
 }
 
+/* Ensure the main browser window never shows scrollbars; content panes handle scrolling.
+   This hides page-level scrollbars while allowing `#content` to scroll internally. */
+html,
+body {
+	overflow: hidden;
+	height: 100%;
+}
+
 #content.show {
 	display: block;
 }
 
-.portfolio-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 2rem;
-}
-
-.portfolio-item {
-	background: rgba(0, 0, 0, 0.6);
-	border: 1px solid #00ffff;
-	border-radius: 12px;
-	padding: 1rem;
-	overflow: hidden;
-	text-align: center;
-	transition: transform 0.3s ease;
-}
-
-.portfolio-item:hover {
-	transform: scale(1.03);
-}
-
-.portfolio-item h3 {
-	font-size: 1.3rem;
-	margin-bottom: 0.5rem;
-}
-
-.portfolio-item p {
-	font-size: 0.95rem;
-	margin-bottom: 1rem;
-	word-wrap: break-word;
-	line-height: 1.4;
-}
+/* Per-page styles (portfolio, blog, bio) were moved into their respective
+   folders under `src/content/*/
+style.css`. This keeps page-specific CSS
+   colocated with content and reduces surface area of the global stylesheet. */
 
 /* Content floor separator placed below the content pane */
 #content-floor {
-	position: fixed;
-	left: 50%;
-	transform: translateX(-50%);
-	display: none;
-	z-index: 9998;
-	pointer-events: none;
+	/* Blog-specific styles moved to `src/content/blog/style.css`. */
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	z-index: 2;
+}
+.content-header h1 {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: #fff;
+	letter-spacing: 0.5px;
 }
 
-#content-floor.show {
-	display: block;
+/* Body area below the sticky header */
+.content-body {
+	padding-top: 2rem;
+	/* Ensure last item isn't obscured by the content-floor or floating Home label */
+	padding-bottom: 140px;
 }
 
-#content-floor .bar {
-	height: 2px; /* thin line */
-	width: 60%;
-	max-width: 900px;
-	background: linear-gradient(
-		90deg,
-		rgba(255, 255, 255, 0.12),
-		rgba(0, 255, 255, 0.14)
-	);
-	border-radius: 2px;
-	margin: 5px 0; /* 5px padding above and below as requested */
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) inset;
-}
-
-/* Utility: keep bio content slightly larger */
-.bio-content {
-	background: rgba(0, 0, 0, 0.6);
-	border: 1px solid #00ffff;
-	border-radius: 12px;
-	padding: 1.25rem;
-	max-width: 680px;
-	margin: 0 auto;
-	font-size: 18px;
-	line-height: 1.6;
-}
-
-.portfolio-item img {
-	width: 100%;
-	height: auto;
-	border-radius: 8px;
-	border: 1px solid #00ffff;
-}
-
-.bio-content {
-	background: rgba(0, 0, 0, 0.6);
-	border: 1px solid #00ffff;
-	border-radius: 12px;
-	padding: 1rem;
-	max-width: 600px;
-	margin: 0 auto;
-}
+/* Per-page styles have been moved into `src/content/<page>/style.css` */
