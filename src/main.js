@@ -331,8 +331,16 @@ window.addEventListener(
 
 // Hover detection
 function onMouseMove(event) {
-	pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+	// Compute normalized device coordinates (NDC) relative to renderer canvas
+	try {
+		const rect = renderer.domElement.getBoundingClientRect()
+		pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+		pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+	} catch (e) {
+		// Fallback to window-based coords
+		pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+		pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+	}
 	raycaster.setFromCamera(pointer, camera)
 
 	// Check hover targets FIRST (generous area outside pyramid)
@@ -542,8 +550,8 @@ function onSceneMouseDown(event) {
 	function extractYouTubeID(url) {
 		try {
 			const u = new URL(url)
-			if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
-			if (u.hostname === 'youtu.be') return u.pathname.slice(1)
+			if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
+			if (u.hostname === "youtu.be") return u.pathname.slice(1)
 		} catch (e) {
 			return null
 		}
@@ -554,36 +562,112 @@ function onSceneMouseDown(event) {
 	function handleContentLink(link) {
 		if (!link) return false
 		const ytId = extractYouTubeID(link)
-		const content = document.getElementById('content')
-		if (window.hideAllPlanes) window.hideAllPlanes()
+		const content = document.getElementById("content")
+		// Use the exported function from pyramid module (imported above)
+		try {
+			hideAllPlanes()
+		} catch (e) {
+			// fallback to any global if available
+			if (window.hideAllPlanes) window.hideAllPlanes()
+		}
 		if (content) {
-			content.style.bottom = ''
-			content.style.maxHeight = ''
+			content.style.bottom = ""
+			content.style.maxHeight = ""
 		}
 		if (ytId) {
 			if (content) {
-				content.innerHTML = ''
-				const iframe = document.createElement('iframe')
-				iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-				iframe.width = '100%'
-				iframe.height = '480'
-				iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-				iframe.allowFullscreen = true
-				const wrapper = document.createElement('div')
-				wrapper.className = 'video-wrapper'
-				wrapper.style.width = '100%'
-				wrapper.style.maxHeight = '80vh'
-				wrapper.style.overflow = 'hidden'
-				wrapper.appendChild(iframe)
-				content.appendChild(wrapper)
-				content.style.display = 'block'
-				if (window.updateContentFloorPosition) window.updateContentFloorPosition()
-				if (window.updateContentMaxHeightToSeparator) window.updateContentMaxHeightToSeparator()
-				currentContentVisible = 'portfolio'
+				content.innerHTML = ""
+				try {
+					const iframe = document.createElement("iframe")
+					iframe.setAttribute(
+						"src",
+						`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`
+					)
+					iframe.setAttribute("width", "100%")
+					iframe.setAttribute("height", "480")
+					iframe.setAttribute(
+						"allow",
+						"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+					)
+					iframe.setAttribute("frameborder", "0")
+					iframe.setAttribute("allowfullscreen", "")
+					const wrapper = document.createElement("div")
+					wrapper.className = "video-wrapper"
+					wrapper.id = "embedded-video-wrapper"
+					wrapper.style.width = "100%"
+					wrapper.style.maxHeight = "80vh"
+					wrapper.style.overflow = "hidden"
+					wrapper.appendChild(iframe)
+					content.appendChild(wrapper)
+
+					// Center the content above the pyramid/Home label in screen space.
+					// Use requestAnimationFrame to ensure the element is in the DOM
+					// and its size can be measured.
+					requestAnimationFrame(() => {
+						try {
+							let anchorWorld = null
+							if (labels && labels.Home) {
+								anchorWorld = new THREE.Vector3()
+								labels.Home.getWorldPosition(anchorWorld)
+							} else if (pyramidGroup && pyramidGroup.position) {
+								anchorWorld = pyramidGroup.position.clone()
+							}
+							if (anchorWorld) {
+								const screen = projectWorldToScreen(anchorWorld, camera)
+								const rect = content.getBoundingClientRect()
+								// Place content so its bottom is a few px above the anchor
+								const gapPx = 12
+								const leftPx = Math.round(screen.x - rect.width / 2)
+								const topPx = Math.round(screen.y - rect.height - gapPx)
+								content.style.left = leftPx + "px"
+								content.style.top = topPx + "px"
+								// Ensure no translateX is interfering
+								content.style.transform = ""
+								// expose convenience helper to re-center later
+								window.centerEmbeddedPlayerOverPyramid = function () {
+									const s = projectWorldToScreen(anchorWorld, camera)
+									const r = content.getBoundingClientRect()
+									content.style.left = Math.round(s.x - r.width / 2) + "px"
+									content.style.top = Math.round(s.y - r.height - gapPx) + "px"
+								}
+								// Expose transform helper to rotate/translate the wrapper
+								window.setEmbeddedPlayerTransform = function ({
+									translateX = 0,
+									translateY = 0,
+									rotateDeg = 0,
+								} = {}) {
+									const el = document.getElementById("embedded-video-wrapper")
+									if (!el) return
+									el.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${rotateDeg}deg)`
+								}
+							}
+						} catch (e) {
+							console.error("Error centering embedded player:", e)
+						}
+					})
+				} catch (e) {
+					// If creating the iframe failed for some reason, open the link instead
+					console.error("Failed to create YouTube iframe:", e)
+					window.open(link, "_blank")
+				}
+				// Ensure content is on top of canvas + any DOM overlays
+				content.style.display = "block"
+				try {
+					content.style.zIndex = String(2147483646)
+					content.style.position = content.style.position || "absolute"
+				} catch (e) {
+					// ignore
+				}
+				console.debug("handleContentLink: embedded YouTube id=", ytId)
+				if (window.updateContentFloorPosition)
+					window.updateContentFloorPosition()
+				if (window.updateContentMaxHeightToSeparator)
+					window.updateContentMaxHeightToSeparator()
+				currentContentVisible = "portfolio"
 				return true
 			}
 		} else {
-			window.open(link, '_blank')
+			window.open(link, "_blank")
 			return true
 		}
 		return false
@@ -591,6 +675,37 @@ function onSceneMouseDown(event) {
 
 	// Track which label is centered
 	let centeredLabelName = window.centeredLabelName || null
+	// If a content plane is visible, prefer handling clickable overlays on it first
+	try {
+		const portfolioPlaneEarly = scene.getObjectByName("portfolioPlane")
+		if (portfolioPlaneEarly) {
+			const clickablesEarly = portfolioPlaneEarly.children.filter(
+				(c) => c && c.userData && c.userData.link
+			)
+			if (clickablesEarly.length > 0) {
+				const hitsEarly = raycaster.intersectObjects(clickablesEarly, true)
+				if (hitsEarly.length > 0) {
+					let node = hitsEarly[0].object
+					while (node) {
+						if (node.userData && node.userData.link) {
+							console.debug(
+								"[onSceneMouseDown] EARLY clicked portfolio link:",
+								node.userData.link
+							)
+							try {
+								if (handleContentLink(node.userData.link)) return
+							} catch (e) {
+								console.error("Error handling content link (early)", e)
+							}
+						}
+						node = node.parent
+					}
+				}
+			}
+		}
+	} catch (e) {
+		// ignore early plane detection errors
+	}
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
 	const hoverTargets = requireHoverTargets()
 	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
@@ -756,22 +871,52 @@ function onSceneMouseDown(event) {
 	// Click on pyramid toggles back up
 
 	// If the click intersected a clickable overlay on a content plane (portfolio items), handle it.
-	const portfolioPlane = scene.getObjectByName('portfolioPlane')
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) {
-		const pHits = raycaster.intersectObjects([portfolioPlane], true)
-		if (pHits.length > 0) {
-			let hit = pHits[0].object
-			// climb up to find any userData.link on the clicked object or its parents
-			let node = hit
-			while (node) {
-				if (node.userData && node.userData.link) {
-					try {
-						if (handleContentLink(node.userData.link)) return
-					} catch (e) {
-						console.error('Error handling content link', e)
+		// Prefer to raycast against the explicit clickable overlays added as children
+		const clickables = portfolioPlane.children.filter(
+			(c) => c && c.userData && c.userData.link
+		)
+		if (clickables.length > 0) {
+			const hits = raycaster.intersectObjects(clickables, true)
+			if (hits.length > 0) {
+				let node = hits[0].object
+				// climb up to find any userData.link on the clicked object or its parents
+				while (node) {
+					if (node.userData && node.userData.link) {
+						console.debug(
+							"[onSceneMouseDown] clicked portfolio link:",
+							node.userData.link
+						)
+						try {
+							if (handleContentLink(node.userData.link)) return
+						} catch (e) {
+							console.error("Error handling content link", e)
+						}
 					}
+					node = node.parent
 				}
-				node = node.parent
+			}
+		} else {
+			// Fallback: raycast the whole plane if no explicit clickables found
+			const pHits = raycaster.intersectObjects([portfolioPlane], true)
+			if (pHits.length > 0) {
+				let hit = pHits[0].object
+				let node = hit
+				while (node) {
+					if (node.userData && node.userData.link) {
+						console.debug(
+							"[onSceneMouseDown] clicked portfolio link (fallback):",
+							node.userData.link
+						)
+						try {
+							if (handleContentLink(node.userData.link)) return
+						} catch (e) {
+							console.error("Error handling content link", e)
+						}
+					}
+					node = node.parent
+				}
 			}
 		}
 	}

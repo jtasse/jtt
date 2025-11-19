@@ -236,7 +236,16 @@ export function makePortfolioPlane(items) {
 		})
 		const clickable = new THREE.Mesh(clickableGeo, clickableMat)
 		clickable.position.set(worldX, worldY + 0.05, -0.01)
+		// Attach link and log for debugging so we can verify links on the 3D plane
 		clickable.userData.link = rect.item.link
+		if (clickable.userData.link) {
+			console.debug(
+				`makePortfolioPlane: clickable[${idx}] link=`,
+				clickable.userData.link
+			)
+		} else {
+			console.debug(`makePortfolioPlane: clickable[${idx}] has no link`)
+		}
 		clickable.name = `portfolioItem${idx}`
 		mesh.add(clickable)
 	})
