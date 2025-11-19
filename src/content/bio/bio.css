@@ -1,16 +1,1 @@
-/* Styles specific to the Bio content page (merged) */
-.bio-content {
-	background: rgba(0, 0, 0, 0.6);
-	border: 1px solid #00ffff;
-	border-radius: 12px;
-	padding: 1.25rem;
-	max-width: 680px;
-	margin: 0 auto;
-	font-size: 18px;
-	line-height: 1.6;
-}
-
-.bio-content h1 {
-	text-align: center;
-	color: blue; /* retained from earlier merged file */
-}
+/* Duplicate: bio styles moved to `/src/bio/bio.css` (canonical). */

@@ -1,1 +1,115 @@
-<!-- Duplicate content removed. Use the canonical file at `../portfolio.html`. -->
+<div class="content-page portfolio-page">
+	<h1>Portfolio</h1>
+
+	<div class="portfolio-grid">
+		<div class="portfolio-item" data-link="https://jamestasse.tech/resume/">
+			<img
+				class="portfolio-thumb"
+				src="/images/portfolio/resume.svg"
+				alt="Resume"
+			/>
+			<h2>My Resume</h2>
+			<p>This is a read-only link to my primary resume.</p>
+			<a href="https://jamestasse.tech/resume/" target="_blank">View Resume</a>
+		</div>
+
+		<div
+			class="portfolio-item"
+			data-link="https://jamestasse.tech/visual-resume/"
+		>
+			<img
+				class="portfolio-thumb"
+				src="/images/portfolio/visual-resume.svg"
+				alt="Visual Resume"
+			/>
+			<h2>My Visual Resume</h2>
+			<p>
+				This infographic shows my 7 years of experience in technical writing and
+				14 years experience in technical roles (including 8 years in software
+				development).
+			</p>
+			<a href="https://jamestasse.tech/visual-resume/" target="_blank"
+				>View Visual Resume</a
+			>
+		</div>
+
+		<div
+			class="portfolio-item"
+			data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+		>
+			<img
+				class="portfolio-thumb"
+				src="/images/portfolio/ronin.svg"
+				alt="Ronin"
+			/>
+			<h2>Ronin: A Docs as Tests Story</h2>
+			<p>
+				Explains how Docs as Tests can be used to keep docs in sync with the
+				product.
+			</p>
+			<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank"
+				>View video</a
+			>
+		</div>
+	</div>
+
+	<script>
+		;(function () {
+			function extractYouTubeID(url) {
+				try {
+					const u = new URL(url)
+					if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
+					if (u.hostname === "youtu.be") return u.pathname.slice(1)
+				} catch (e) {
+					return null
+				}
+				return null
+			}
+
+			document.querySelectorAll(".portfolio-item").forEach((item) => {
+				item.style.cursor = "pointer"
+				item.addEventListener("click", (ev) => {
+					ev.preventDefault()
+					ev.stopPropagation()
+					const link = item.dataset.link || (item.querySelector("a") || {}).href
+					if (!link) return
+					const ytId = extractYouTubeID(link)
+					const content = document.getElementById("content")
+					if (window.hideAllPlanes) window.hideAllPlanes()
+					if (content) {
+						content.style.bottom = ""
+						content.style.maxHeight = ""
+					}
+					if (ytId) {
+						if (content) {
+							content.innerHTML = ""
+							const iframe = document.createElement("iframe")
+							iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+							iframe.width = "100%"
+							iframe.height = "480"
+							iframe.allow =
+								"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							iframe.allowFullscreen = true
+							const wrapper = document.createElement("div")
+							wrapper.className = "video-wrapper"
+							wrapper.style.width = "100%"
+							wrapper.style.maxHeight = "80vh"
+							wrapper.style.overflow = "hidden"
+							wrapper.appendChild(iframe)
+							content.appendChild(wrapper)
+							content.style.display = "block"
+							if (window.updateContentFloorPosition)
+								window.updateContentFloorPosition()
+							if (window.updateContentMaxHeightToSeparator)
+								window.updateContentMaxHeightToSeparator()
+						} else {
+							window.open(link, "_blank")
+						}
+					} else {
+						window.open(link, "_blank")
+					}
+				})
+			})
+		})()
+	</script>
+</div>

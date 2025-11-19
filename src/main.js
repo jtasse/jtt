@@ -480,22 +480,51 @@ setInterval(() => {
 }, 100)
 
 // Listen for route changes and show correct content
+// Helper to center a label and animate pyramid down to show a section
+function centerAndOpenLabel(labelName) {
+	if (!labels || !labels[labelName]) return
+	const labelMesh = labels[labelName]
+	// animate pyramid down and request the section be shown when animation completes
+	animatePyramid(true, labelName.toLowerCase())
+	// animate label to center/front
+	let endPos = new THREE.Vector3(0, 0, 0.5)
+	if (labelName === "Portfolio") {
+		// nudge Portfolio slightly down in screen space for visual alignment
+		const px = 10
+		const viewportH = window.innerHeight || 1
+		const fov = camera.fov * (Math.PI / 180)
+		const targetZ = 1.0
+		const distance = camera.position.distanceTo(
+			new THREE.Vector3(endPos.x, endPos.y, targetZ)
+		)
+		const worldOffset = 2 * distance * Math.tan(fov / 2) * (px / viewportH)
+		endPos = new THREE.Vector3(endPos.x, endPos.y - worldOffset, endPos.z)
+	}
+	const endRot = new THREE.Euler(0, 0, 0)
+	animateLabelToCenter(labelMesh, endPos, endRot)
+	window.centeredLabelName = labelName
+}
+
 router.onRouteChange((route) => {
 	if (route === "/bio") {
-		showBioPlane()
+		centerAndOpenLabel("Bio")
 		currentContentVisible = "bio"
 	} else if (route === "/portfolio") {
-		showPortfolioPlane()
+		centerAndOpenLabel("Portfolio")
 		currentContentVisible = "portfolio"
 	} else if (route === "/blog") {
-		showBlogPlane()
+		centerAndOpenLabel("Blog")
 		currentContentVisible = "blog"
 	} else {
-		// For non-content routes (home), hide all content planes
+		// For non-content routes (home), reset pyramid and hide all content planes
+		resetPyramidToHome()
 		hideAllPlanes()
 		currentContentVisible = null
 	}
 })
+
+// Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
+router.notify()
 
 function onSceneMouseDown(event) {
 	// Only handle mousedown if it's a true click (not part of a drag)
