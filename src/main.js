@@ -538,6 +538,57 @@ function onSceneMouseDown(event) {
 	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 	raycaster.setFromCamera(pointer, camera)
 
+	// Helper: extract YouTube video id from a URL
+	function extractYouTubeID(url) {
+		try {
+			const u = new URL(url)
+			if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
+			if (u.hostname === 'youtu.be') return u.pathname.slice(1)
+		} catch (e) {
+			return null
+		}
+		return null
+	}
+
+	// Helper: handle a content link (embed YouTube if applicable, otherwise open)
+	function handleContentLink(link) {
+		if (!link) return false
+		const ytId = extractYouTubeID(link)
+		const content = document.getElementById('content')
+		if (window.hideAllPlanes) window.hideAllPlanes()
+		if (content) {
+			content.style.bottom = ''
+			content.style.maxHeight = ''
+		}
+		if (ytId) {
+			if (content) {
+				content.innerHTML = ''
+				const iframe = document.createElement('iframe')
+				iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+				iframe.width = '100%'
+				iframe.height = '480'
+				iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+				iframe.allowFullscreen = true
+				const wrapper = document.createElement('div')
+				wrapper.className = 'video-wrapper'
+				wrapper.style.width = '100%'
+				wrapper.style.maxHeight = '80vh'
+				wrapper.style.overflow = 'hidden'
+				wrapper.appendChild(iframe)
+				content.appendChild(wrapper)
+				content.style.display = 'block'
+				if (window.updateContentFloorPosition) window.updateContentFloorPosition()
+				if (window.updateContentMaxHeightToSeparator) window.updateContentMaxHeightToSeparator()
+				currentContentVisible = 'portfolio'
+				return true
+			}
+		} else {
+			window.open(link, '_blank')
+			return true
+		}
+		return false
+	}
+
 	// Track which label is centered
 	let centeredLabelName = window.centeredLabelName || null
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
@@ -703,6 +754,27 @@ function onSceneMouseDown(event) {
 	}
 
 	// Click on pyramid toggles back up
+
+	// If the click intersected a clickable overlay on a content plane (portfolio items), handle it.
+	const portfolioPlane = scene.getObjectByName('portfolioPlane')
+	if (portfolioPlane) {
+		const pHits = raycaster.intersectObjects([portfolioPlane], true)
+		if (pHits.length > 0) {
+			let hit = pHits[0].object
+			// climb up to find any userData.link on the clicked object or its parents
+			let node = hit
+			while (node) {
+				if (node.userData && node.userData.link) {
+					try {
+						if (handleContentLink(node.userData.link)) return
+					} catch (e) {
+						console.error('Error handling content link', e)
+					}
+				}
+				node = node.parent
+			}
+		}
+	}
 
 	// If any content plane is currently visible and the click was not on a label,
 	// treat this click as a request to return "home" (dismiss content and animate pyramid up).
