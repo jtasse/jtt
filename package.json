@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "vitest --environment jsdom",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
     "build": "vite build"
   },
@@ -18,13 +18,6 @@
     "three.regular.helvetiker": "^1.0.0"
   },
   "devDependencies": {
-    "jsdom": "^26.1.0",
-    "vite": "^6.4.1",
-    "vitest": "^4.0.9"
-  },
-  "vitest": {
-    "test": {
-      "environment": "jsdom"
-    }
+    "vite": "^6.4.1"
   }
 }

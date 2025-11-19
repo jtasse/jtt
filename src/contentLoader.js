@@ -1,9 +1,7 @@
 // Load HTML content from separate files
 export async function loadContentHTML(page) {
 	try {
-		// Load the page from its foldered location (e.g. /src/content/blog/blog.html)
-		// Per-page files are named `<page>.html` inside each content folder.
-		const response = await fetch(`/src/content/${page}/${page}.html`)
+		const response = await fetch(`/src/content/${page}.html`)
 		if (!response.ok) {
 			throw new Error(`Failed to load ${page}.html`)
 		}

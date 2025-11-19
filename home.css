@@ -1,63 +1,191 @@
 #content {
-	position: fixed;
-	top: 12vh;
+	position: absolute;
+	top: 10%;
 	left: 50%;
-	transform: translate(-50%, -30%);
+	transform: translateX(-50%);
 	width: 80%;
-	max-width: 1100px;
-	/* reserve vertical space so content never overlaps the pyramid/home area */
-	max-height: calc(100vh - 220px);
+	/* constrain content height so it ends higher on page (leave breathing room)
+		    prefer max-height so content scrolls if needed */
+	/* Increased subtraction so content bottom sits higher on screen */
+	max-height: calc(100vh - 480px);
 	overflow-y: auto;
 	display: none;
 	color: white;
-	padding: 1.25rem 1.5rem;
-	background: rgba(0, 0, 0, 0.55);
-	border-radius: 12px;
-	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-	z-index: 9999;
-	font-size: 18px; /* increase base font size for readability */
-	line-height: 1.6;
+	padding: 1.5rem;
+	box-sizing: border-box;
+	/* ensure content renders above the content-floor separator */
+	/* vertical layout controls order; no z-index needed */
+	/* z-index removed as it is no longer necessary */
+	/* Ensure content is visually above the 3D canvas */
+	position: absolute;
+	z-index: 3;
+	/* Add scrollbar styling */
+	scrollbar-width: thin;
+	scrollbar-color: #00ffff rgba(0, 255, 255, 0.1);
 }
 
-/* Ensure the main browser window never shows scrollbars; content panes handle scrolling.
-   This hides page-level scrollbars while allowing `#content` to scroll internally. */
-html,
-body {
-	overflow: hidden;
-	height: 100%;
+/* Chrome/Edge scrollbar styling */
+#content::-webkit-scrollbar {
+	width: 8px;
 }
 
-#content.show {
-	display: block;
+#content::-webkit-scrollbar-track {
+	background: rgba(0, 255, 255, 0.1);
+	border-radius: 4px;
 }
 
-/* Per-page styles (portfolio, blog, bio) were moved into their respective
-   folders under `src/content/*/
-style.css`. This keeps page-specific CSS
-   colocated with content and reduces surface area of the global stylesheet. */
+#content::-webkit-scrollbar-thumb {
+	background: #00ffff;
+	border-radius: 4px;
+}
 
-/* Content floor separator placed below the content pane */
+#content::-webkit-scrollbar-thumb:hover {
+	background: #00cccc;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+	#content {
+		width: 90%;
+		/* mobile: provide more reserved space so separator and home label have room */
+		max-height: calc(100vh - 360px);
+		padding: 1rem;
+		top: 15%;
+		font-size: 14px;
+	}
+}
+
+/* Navigation bar above content - a short centered glowing separator above Home */
 #content-floor {
-	/* Blog-specific styles moved to `src/content/blog/style.css`. */
-	background: rgba(0, 0, 0, 0.65);
-	backdrop-filter: blur(4px);
-	padding: 0.75rem 1rem;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-	z-index: 2;
-}
-.content-header h1 {
+	/* DOM fallback separator hidden — prefer 3D triangle separator */
+	display: none !important;
+	position: fixed; /* fixed so it's always in viewport coordinates */
+	left: 50%;
+	transform: translateX(-50%);
+	width: 220px; /* short, centered bar */
+	height: 6px;
+	background: linear-gradient(
+		90deg,
+		rgba(0, 255, 255, 0.95),
+		rgba(255, 255, 255, 0.95),
+		rgba(0, 255, 255, 0.95)
+	);
+	border-radius: 999px;
+	box-shadow: 0 0 18px rgba(0, 255, 255, 0.85);
+	opacity: 0;
+	transition: opacity 0.18s ease, transform 0.18s ease, left 0.18s ease,
+		width 0.18s ease;
+	z-index: 9999; /* ensure visibility above canvas */
+	pointer-events: none;
 	margin: 0;
-	font-size: 1.25rem;
-	font-weight: 700;
-	color: #fff;
-	letter-spacing: 0.5px;
 }
 
-/* Body area below the sticky header */
-.content-body {
-	padding-top: 2rem;
-	/* Ensure last item isn't obscured by the content-floor or floating Home label */
-	padding-bottom: 140px;
+#content-floor.show {
+	/* keep compatibility with JS, but element is hidden */
+	display: block;
+	opacity: 1;
+	transform: translateY(0) translateX(-50%);
 }
 
-/* Per-page styles have been moved into `src/content/<page>/style.css` */
+.portfolio-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 2rem;
+}
+
+/* Mobile: Stack items vertically */
+@media (max-width: 768px) {
+	.portfolio-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+}
+
+.portfolio-item {
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid #00ffff;
+	border-radius: 12px;
+	padding: 1rem;
+	overflow: hidden;
+	text-align: center;
+	transition: transform 0.3s ease;
+}
+
+.portfolio-item:hover {
+	transform: scale(1.03);
+}
+
+.portfolio-item h2,
+.portfolio-item h3 {
+	font-size: 1.3rem;
+	margin-bottom: 0.5rem;
+}
+
+.portfolio-item p {
+	font-size: 0.95rem;
+	margin-bottom: 1rem;
+	word-wrap: break-word;
+	line-height: 1.4;
+}
+
+.portfolio-item a {
+	display: inline-block;
+	padding: 0.5rem 1rem;
+	background: #00ffff;
+	color: #000;
+	border-radius: 4px;
+	text-decoration: none;
+	font-weight: bold;
+	transition: background 0.3s ease;
+}
+
+.portfolio-item a:hover {
+	background: #00cccc;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+	.portfolio-item {
+		padding: 0.75rem;
+	}
+
+	.portfolio-item h2,
+	.portfolio-item h3 {
+		font-size: 1.1rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.portfolio-item p {
+		font-size: 0.85rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.portfolio-item a {
+		padding: 0.4rem 0.8rem;
+		font-size: 0.9rem;
+	}
+}
+
+.portfolio-item img {
+	width: 100%;
+	height: auto;
+	border-radius: 8px;
+	border: 1px solid #00ffff;
+}
+
+.bio-content {
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid #00ffff;
+	border-radius: 12px;
+	padding: 1rem;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+/* Ensure the WebGL canvas sits behind the DOM content */
+#scene-container {
+	position: fixed;
+	inset: 0;
+	pointer-events: auto;
+	z-index: 0;
+}

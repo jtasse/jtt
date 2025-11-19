@@ -2,31 +2,13 @@ import * as THREE from "three"
 
 // === Label Helper ===
 export function makeLabelPlane(text, width = 1.6, height = 0.45) {
-	// Create a canvas sized to match the requested plane aspect ratio so
-	// the label texture does not appear vertically squashed when mapped
-	// onto planes with different width/height.
 	const canvas = document.createElement("canvas")
-	// Base pixel scale for width. We'll scale up both dimensions together
-	// if the computed height would be too small so aspect ratio is preserved.
-	const BASE_WIDTH = 1024
-	// Compute canvas height based on plane aspect ratio (height / width)
-	let canvasHeight = Math.round((height / width) * BASE_WIDTH)
-	let canvasWidth = BASE_WIDTH
-	// Ensure a minimum dimension but preserve aspect by scaling both
-	const MIN_DIM = 128
-	if (canvasHeight < MIN_DIM) {
-		const factor = Math.ceil(MIN_DIM / Math.max(1, canvasHeight))
-		canvasWidth = canvasWidth * factor
-		canvasHeight = canvasHeight * factor
-	}
-	canvas.width = canvasWidth
-	canvas.height = canvasHeight
+	canvas.width = 1024
+	canvas.height = 256
 	const ctx = canvas.getContext("2d")
 	ctx.clearRect(0, 0, canvas.width, canvas.height)
 	ctx.fillStyle = "white"
-	// Choose font size proportional to canvas height so text scales nicely
-	const fontSize = Math.max(24, Math.round(canvas.height * 0.45))
-	ctx.font = `bold ${fontSize}px sans-serif`
+	ctx.font = "bold 120px sans-serif"
 	ctx.textAlign = "center"
 	ctx.textBaseline = "middle"
 	ctx.fillText(text, canvas.width / 2, canvas.height / 2)

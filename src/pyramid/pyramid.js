@@ -17,19 +17,9 @@ export let homeLabel = null
 export const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x000000)
 
-// In test environments (Node/jsdom) `window` may be undefined. Use a
-// guarded WIN helper to provide reasonable fallbacks so the module can
-// be imported safely during unit tests.
-const WIN = typeof window !== "undefined" ? window : null
-const DEFAULT_WIDTH = 1024
-const DEFAULT_HEIGHT = 768
-const VIEWPORT_WIDTH = WIN ? WIN.innerWidth : DEFAULT_WIDTH
-const VIEWPORT_HEIGHT = WIN ? WIN.innerHeight : DEFAULT_HEIGHT
-const VIEWPORT_PIXEL_RATIO = WIN ? WIN.devicePixelRatio || 1 : 1
-
 export const camera = new THREE.PerspectiveCamera(
 	50,
-	VIEWPORT_WIDTH / VIEWPORT_HEIGHT,
+	window.innerWidth / window.innerHeight,
 	0.1,
 	2000
 )
@@ -37,8 +27,8 @@ camera.position.set(0, 0, 6)
 camera.lookAt(0, 0, 0)
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setSize(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
-renderer.setPixelRatio(VIEWPORT_PIXEL_RATIO)
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.setPixelRatio(window.devicePixelRatio)
 
 export const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = false
@@ -116,9 +106,7 @@ faces.forEach((f) => {
 	f.mesh = mesh
 })
 
-// Lift the whole pyramid a little so labels (like Blog) don't get clipped
-// against the bottom of the viewport.
-pyramidGroup.position.y = 0.5
+pyramidGroup.position.y = 0.35
 
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
@@ -162,14 +150,14 @@ export const labelConfigs = {
 		position: { x: -1.05, y: 0.04, z: 0.5 },
 		rotation: { x: 0, y: 0.438, z: 1 },
 		pyramidCenteredSize: [5, 0.675],
-		pyramidUncenteredSize: [8, 0.675],
+		pyramidUncenteredSize: [5, 0.675],
 	},
 	Portfolio: {
 		text: "Portfolio",
 		position: { x: 1.07, y: 0, z: 0.5 },
 		rotation: { x: 0, y: -0.502, z: -0.9 },
 		pyramidCenteredSize: [5, 0.675],
-		pyramidUncenteredSize: [8, 0.675],
+		pyramidUncenteredSize: [4, 0.675],
 	},
 	Blog: {
 		text: "Blog",
@@ -185,7 +173,7 @@ export const labelConfigs = {
 		position: { x: 0, y: apex.y + 0.2, z: 0 },
 		rotation: { x: 0, y: 0, z: 0 },
 		pyramidCenteredSize: [7, 0.6],
-		pyramidUncenteredSize: [8, 0.6],
+		pyramidUncenteredSize: [7, 0.6],
 	},
 }
 
@@ -209,13 +197,6 @@ export function initLabels(makeLabelPlane) {
 		mesh.userData.name = key
 		mesh.cursor = "pointer"
 
-		// Ensure label renders on top of pyramid geometry to avoid being
-		// visually occluded. Prevent depth testing and give a higher renderOrder.
-		if (mesh.material) {
-			mesh.material.depthTest = false
-			mesh.renderOrder = 500
-		}
-
 		// Create a larger invisible hover target placed slightly in front of the label
 		const hoverWidth = cfg.pyramidCenteredSize[0] * 1.6
 		const hoverHeight = cfg.pyramidCenteredSize[1] * 2.0
@@ -236,39 +217,25 @@ export function initLabels(makeLabelPlane) {
 	// Create Home label (initially hidden). It will be positioned above the pyramid
 	// and will always face the camera. Use same factory so styling matches.
 	try {
-		// Use Home config from `labelConfigs.Home`. Create the Home mesh
-		// using the configured `pyramidUncenteredSize` as the native mesh
-		// size so we have a single source of truth for the visual size
-		// (avoids creating at centered size and then scaling it up).
 		const hc = labelConfigs.Home || {
 			position: { x: 0, y: apex.y + 0.4, z: 0 },
 			pyramidCenteredSize: [3, 0.6],
 			pyramidUncenteredSize: [3, 0.6],
 		}
-		// Create the Home mesh using the configured `pyramidCenteredSize` so
-		// it matches how the other labels are created. The animation code
-		// will scale it to `pyramidUncenteredSize` when the pyramid moves
-		// down. This keeps a single source of truth in `labelConfigs` and
-		// avoids special-case upscaling logic.
-		const nativeSize =
-			hc.pyramidCenteredSize && hc.pyramidCenteredSize[0]
-				? hc.pyramidCenteredSize
-				: hc.pyramidUncenteredSize || [3, 0.6]
-		const homeMesh = makeLabelPlane(hc.text || "Home", ...nativeSize)
+		const homeMesh = makeLabelPlane(
+			hc.text || "Home",
+			...(hc.pyramidCenteredSize || [3, 0.6])
+		)
 		homeMesh.position.set(hc.position.x, hc.position.y, hc.position.z)
 		// store original transforms so code that expects these fields won't break
 		homeMesh.userData.origPosition = homeMesh.position.clone()
 		homeMesh.userData.origRotation = homeMesh.rotation.clone()
-		// Store centered and uncentered sizes explicitly on the mesh so
-		// animation code can reference them. `pyramidCenteredSize` may be
-		// used for computing animation ratios; `pyramidUncenteredSize` is
-		// the actual native size we used to construct the mesh above.
-		homeMesh.userData.pyramidCenteredSize = hc.pyramidCenteredSize || nativeSize
-		homeMesh.userData.pyramidUncenteredSize =
-			hc.pyramidUncenteredSize || nativeSize
-		// No manual scaling: mesh geometry is created at the uncentered size
-		// (nativeSize). Record the original scale for safety.
 		homeMesh.userData.originalScale = homeMesh.scale.clone()
+		// Store centered and uncentered sizes
+		homeMesh.userData.pyramidCenteredSize = hc.pyramidCenteredSize || [3, 0.6]
+		homeMesh.userData.pyramidUncenteredSize = hc.pyramidUncenteredSize || [
+			3, 0.6,
+		]
 		// Keep it above pyramid group so it moves with the pyramid
 		pyramidGroup.add(homeMesh)
 		homeMesh.name = "HomeLabel"
@@ -284,18 +251,14 @@ export function initLabels(makeLabelPlane) {
 			homeMesh.renderOrder = 999
 		}
 
-		// Create hover target for Home so cursor shows pointer when hovering it.
-		// Use the centered size (same base as other labels) so the hover
-		// geometry scales consistently when the label animates.
+		// Create hover target for Home so cursor shows pointer when hovering it
 		const hoverWidth =
-			(homeMesh.userData.pyramidCenteredSize &&
-			homeMesh.userData.pyramidCenteredSize[0]
-				? homeMesh.userData.pyramidCenteredSize[0]
+			(hc.pyramidCenteredSize && hc.pyramidCenteredSize[0]
+				? hc.pyramidCenteredSize[0]
 				: 3) * 1.6
 		const hoverHeight =
-			(homeMesh.userData.pyramidCenteredSize &&
-			homeMesh.userData.pyramidCenteredSize[1]
-				? homeMesh.userData.pyramidCenteredSize[1]
+			(hc.pyramidCenteredSize && hc.pyramidCenteredSize[1]
+				? hc.pyramidCenteredSize[1]
 				: 0.6) * 2.0
 		const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 		const hoverMat = new THREE.MeshBasicMaterial({
@@ -314,21 +277,45 @@ export function initLabels(makeLabelPlane) {
 	} catch (e) {
 		console.warn("Could not create Home label:", e)
 	}
-}
 
-// Helper: ensure a per-page stylesheet is loaded for the content pane.
-function ensurePageStyle(pageName) {
-	if (!WIN) return
-	const existing = document.getElementById("page-style")
-	if (existing) existing.remove()
-	const link = document.createElement("link")
-	link.id = "page-style"
-	link.rel = "stylesheet"
-	// Vite serves files under /src during dev; using a relative path keeps
-	// this simple for development. Adjust if you build to a different output.
-	// Per-page styles are named `<page>.css` inside each content folder.
-	link.href = `/src/content/${pageName}/${pageName}.css`
-	document.head.appendChild(link)
+	// --- 3D separator (small white triangle) placed just above Home label.
+	// The triangle is created once and scaled each frame so its screen height
+	// measures approximately 5px; it faces the camera.
+	try {
+		// base triangle geometry in XY plane, width=1, height=1; we'll scale later
+		const triGeom = new THREE.BufferGeometry()
+		const verts = new Float32Array([
+			-0.5,
+			-0.5,
+			0.0, // bottom-left
+			0.5,
+			-0.5,
+			0.0, // bottom-right
+			0.0,
+			0.5,
+			0.0, // top-center
+		])
+		triGeom.setAttribute("position", new THREE.BufferAttribute(verts, 3))
+		triGeom.computeVertexNormals()
+
+		const triMat = new THREE.MeshBasicMaterial({
+			color: 0xffffff,
+			side: THREE.DoubleSide,
+			depthTest: false,
+			transparent: true,
+		})
+
+		const triMesh = new THREE.Mesh(triGeom, triMat)
+		triMesh.name = "separator3D"
+		triMesh.visible = false
+		// keep it slightly in front so it's always readable
+		triMesh.renderOrder = 1000
+		scene.add(triMesh)
+
+		pyramidGroup.userData._separator3D = triMesh
+	} catch (e) {
+		console.warn("Could not create 3D triangle separator:", e)
+	}
 }
 
 // === Pyramid State ===
@@ -341,8 +328,7 @@ let pyramidAnimToken = 0
 
 // Store initial pyramid state so we can always reset to it exactly
 const initialPyramidState = {
-	// match the visible pyramid start position above
-	positionY: 0.5,
+	positionY: 0.35,
 	rotationY: 0,
 	scale: 1,
 }
@@ -352,12 +338,6 @@ export function getInitialPyramidState() {
 }
 
 export function animatePyramid(down = true, section = null) {
-	// If we're animating back up, immediately hide any visible content so
-	// the scene is cleared before the upward animation begins.
-	if (!down) {
-		hideAllPlanes()
-	}
-
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = ++pyramidAnimToken
@@ -366,11 +346,10 @@ export function animatePyramid(down = true, section = null) {
 	// Always rotate full 360 degrees (2π) in the same direction
 	const endRot = startRot + Math.PI * 2
 	const startPosY = pyramidGroup.position.y
-	// When moving up, return to the initial stored position so we stay consistent
-	const endPosY = down ? -1.75 : initialPyramidState.positionY
+	const endPosY = down ? -1.75 : 0.35 // adjusted
 
 	const startScale = pyramidGroup.scale.x
-	const endScale = down ? 0.5 : initialPyramidState.scale
+	const endScale = down ? 0.5 : 1
 
 	const startTime = performance.now()
 	function step(time) {
@@ -382,8 +361,9 @@ export function animatePyramid(down = true, section = null) {
 		const s = startScale + (endScale - startScale) * t
 		pyramidGroup.scale.set(s, s, s)
 
-		// Animate label scales based on centered/uncentered sizes
+		// Animate label scales based on centered/uncentered sizes (skip Home label)
 		for (const key in labels) {
+			if (key === "Home") continue // Home label stays fixed above pyramid
 			const labelMesh = labels[key]
 			if (!labelMesh) continue
 			const centeredSize = labelMesh.userData.pyramidCenteredSize
@@ -396,9 +376,6 @@ export function animatePyramid(down = true, section = null) {
 				const labelScale =
 					startScaleRatio + (endScaleRatio - startScaleRatio) * t
 				labelMesh.scale.set(labelScale, labelScale, labelScale)
-				// Keep hover target scale synchronized as well
-				const hover = hoverTargets[key]
-				if (hover) hover.scale.set(labelScale, labelScale, labelScale)
 			}
 		}
 
@@ -408,8 +385,9 @@ export function animatePyramid(down = true, section = null) {
 			// abort executing completion side-effects.
 			if (myToken !== pyramidAnimToken) return
 			isAtBottom = down
-			// Snap labels to final scale
+			// Snap labels to final scale (skip Home label)
 			for (const key in labels) {
+				if (key === "Home") continue // Home label stays fixed above pyramid
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 				const centeredSize = labelMesh.userData.pyramidCenteredSize
@@ -422,11 +400,6 @@ export function animatePyramid(down = true, section = null) {
 			}
 			// If pyramid ended at bottom, ensure Home label is visible
 			if (isAtBottom) showHomeLabel()
-			else {
-				// If we moved back up, hide any visible content so the scene
-				// returns to the navigation/pyramid-only view.
-				hideAllPlanes()
-			}
 			// Show section content only if requested and this animation is still valid
 			if (section === "bio") showBioPlane()
 			else if (section === "portfolio") showPortfolioPlane()
@@ -478,8 +451,9 @@ export function resetPyramidToHome() {
 		if (t < 1) requestAnimationFrame(step)
 		else {
 			isAtBottom = false
-			// Snap labels to centered scale
+			// Snap labels to centered scale (skip Home label)
 			for (const key in labels) {
+				if (key === "Home") continue // Home label stays fixed above pyramid
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 				labelMesh.scale.set(1, 1, 1)
@@ -498,47 +472,42 @@ export function resetPyramidToHome() {
 export function showBioPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
-	// Show navigation bar positioned between content and home label
-	const navBar = document.getElementById("content-floor")
-	if (navBar) {
-		navBar.classList.add("show")
-		// Separator display is handled by the UI layer; dispatch event to notify.
-		document.dispatchEvent(new CustomEvent("content:changed"))
+
+	// Ensure the DOM content pane is hidden when using a 3D bio plane so
+	// we don't show duplicate/overlapping DOM text over the pyramid.
+	const contentEl = document.getElementById("content")
+	if (contentEl) {
+		contentEl.style.display = "none"
 	}
+	// Show navigation bar positioned between content and home label
+	// ensure DOM separator is not shown here; we use the 3D separator instead
+	const navBar = document.getElementById("content-floor")
+	if (navBar) navBar.classList.remove("show")
 	let bioPlane = scene.getObjectByName("bioPlane")
 	if (!bioPlane) {
 		// Capture current animation token so we can abort if a reset occurs
 		const myToken = pyramidAnimToken
 		// Load HTML content and parse bio structure (heading + paragraphs)
 		loadContentHTML("bio").then((html) => {
-			// Load page-specific stylesheet
-			ensurePageStyle("bio")
 			// If a newer pyramid animation/reset occurred, abort adding content
 			if (myToken !== pyramidAnimToken) return
-			// 1) Populate DOM content pane so layout is HTML-driven
+			// 1) We no longer inject flat DOM content for bio to avoid duplicate
+			//     flat text when a 3D bio plane is rendered. The 3D plane will
+			//     present the content and the short centered separator is used.
 			const contentEl = document.getElementById("content")
-			if (contentEl) {
-				contentEl.innerHTML = `<header class="content-header"><h1>Bio</h1></header><div class="content-body"><div class="bio-content">${html}</div></div>`
-				contentEl.style.display = "block"
-			}
-			// 2) We now rely on DOM content for layout. Skip creating the 3D canvas plane
-			// (this prevents duplicate smaller text appearing in the 3D scene).
+			// 2) Also create the 3D plane (existing behavior)
+			const bioContent = parseBioContent(html)
+			const plane = makeBioPlane(bioContent)
+			// raise bio plane slightly so Home label has room above the pyramid
+			plane.position.y = 0.9
+			scene.add(plane)
 			// reveal Home label when content is shown
 			showHomeLabel()
-			// 3) Position separator immediately under the DOM content pane
+			// 3) Use the 3D separator (hide DOM separator)
 			const navBar = document.getElementById("content-floor")
-			if (navBar && contentEl) {
-				const r = contentEl.getBoundingClientRect()
-				navBar.classList.add("show")
-				navBar.style.position = "fixed"
-				// Clear CSS transform so left/top coordinates are absolute
-				navBar.style.transform = "none"
-				navBar.style.left = `${Math.round(r.left)}px`
-				navBar.style.width = `${Math.round(r.width)}px`
-				navBar.style.top = `${Math.round(r.bottom + 5)}px`
-			} else if (window.updateContentFloorPosition) {
-				window.updateContentFloorPosition()
-			}
+			if (navBar) navBar.classList.remove("show")
+			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
+			if (sep) sep.visible = true
 		})
 	} else bioPlane.visible = true
 }
@@ -546,52 +515,50 @@ export function showBioPlane() {
 export function showPortfolioPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
-	// Show navigation bar positioned between content and home label
-	const navBar = document.getElementById("content-floor")
-	if (navBar) {
-		navBar.classList.add("show")
-		document.dispatchEvent(new CustomEvent("content:changed"))
+
+	// Ensure DOM content is hidden when presenting the 3D portfolio plane.
+	const contentEl = document.getElementById("content")
+	if (contentEl) {
+		contentEl.style.display = "none"
 	}
+	// Show navigation bar positioned between content and home label
+	// ensure DOM separator is not shown here; we use the 3D separator instead
+	const navBar = document.getElementById("content-floor")
+	if (navBar) navBar.classList.remove("show")
 	let portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (!portfolioPlane) {
 		const myToken = pyramidAnimToken
 		// Load portfolio HTML and extract items (title, description, link)
 		loadContentHTML("portfolio").then((html) => {
-			// Load page-specific stylesheet
-			ensurePageStyle("portfolio")
 			if (myToken !== pyramidAnimToken) return
-			// Populate DOM content pane
+			// Do not populate the DOM content pane for portfolio to avoid
+			// duplicating the portfolio items. The 3D plane will be used.
 			const contentEl = document.getElementById("content")
-			if (contentEl) {
-				// Normalize upstream portfolio HTML: wrap each top-level child as
-				// a `.portfolio-item` so the `.portfolio-grid` layout consistently
-				// shows two items per row.
-				const tmp = document.createElement("div")
-				tmp.innerHTML = html
-				let gridInner = ""
-				Array.from(tmp.children).forEach((child) => {
-					gridInner += `<div class="portfolio-item">${child.outerHTML}</div>`
+			const parser = new DOMParser()
+			const doc = parser.parseFromString(html, "text/html")
+			const items = []
+			doc.querySelectorAll(".portfolio-item").forEach((el) => {
+				const titleEl = el.querySelector("h2")
+				const pEl = el.querySelector("p")
+				const aEl = el.querySelector("a")
+				items.push({
+					title: titleEl ? titleEl.textContent.trim() : "Untitled",
+					description: pEl ? pEl.textContent.trim() : "",
+					image: null,
+					link: aEl ? aEl.href : null,
 				})
-				contentEl.innerHTML = `<header class="content-header"><h1>Portfolio</h1></header><div class="content-body"><div class="portfolio-grid">${gridInner}</div></div>`
-				contentEl.style.display = "block"
-			}
-			// We now populate DOM content only; skip creating the 3D portfolio plane
-			// to avoid duplicate/smaller-rendered content in the scene.
+			})
+			const plane = makePortfolioPlane(items)
+			// keep portfolio slightly lower than bio but raised to avoid overlap with Home label
+			plane.position.y = 0.8
+			scene.add(plane)
 			// reveal Home label when content is shown
 			showHomeLabel()
-			// Position separator under DOM content
+			// Use 3D separator (hide DOM separator)
 			const navBar = document.getElementById("content-floor")
-			if (navBar && contentEl) {
-				const r = contentEl.getBoundingClientRect()
-				navBar.classList.add("show")
-				navBar.style.position = "fixed"
-				navBar.style.transform = "none"
-				navBar.style.left = `${Math.round(r.left)}px`
-				navBar.style.width = `${Math.round(r.width)}px`
-				navBar.style.top = `${Math.round(r.bottom + 5)}px`
-			} else if (window.updateContentFloorPosition) {
-				window.updateContentFloorPosition()
-			}
+			if (navBar) navBar.classList.remove("show")
+			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
+			if (sep) sep.visible = true
 		})
 	} else portfolioPlane.visible = true
 }
@@ -600,76 +567,34 @@ export function showBlogPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
 	// Show navigation bar positioned between content and home label
+	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
-	if (navBar) {
-		navBar.classList.add("show")
-		document.dispatchEvent(new CustomEvent("content:changed"))
-	}
+	if (navBar) navBar.classList.remove("show")
 	let blogPlane = scene.getObjectByName("blogPlane")
 	if (!blogPlane) {
 		const myToken = pyramidAnimToken
 		// load HTML content and parse blog posts
 		loadContentHTML("blog").then((html) => {
 			if (myToken !== pyramidAnimToken) return
-			// Load page-specific stylesheet
-			ensurePageStyle("blog")
 			// Populate DOM content
 			const contentEl = document.getElementById("content")
 			if (contentEl) {
-				const posts = parseBlogPosts(html)
-				let bodyHtml = ""
-				if (posts && posts.length > 0) {
-					let out = '<div class="blog-list">'
-					posts.forEach((p) => {
-						out += `<article class="blog-post">`
-						if (p.image) {
-							out += `<img class="blog-thumb" src="${p.image}" alt="${
-								p.title || ""
-							}">`
-						}
-						out += `<h2>${p.title}</h2>`
-						out += `<p class="meta">${p.date || ""} | ${p.author || ""}</p>`
-						out += `<p class="summary">${p.summary || ""}</p>`
-						out += `</article>`
-					})
-					out += "</div>"
-					bodyHtml = out
-				} else {
-					bodyHtml = html
-				}
-				contentEl.innerHTML = `<header class="content-header"><h1>Blog</h1></header><div class="content-body">${bodyHtml}</div>`
+				contentEl.innerHTML = html
 				contentEl.style.display = "block"
-				// Start at the top of the blog list, then nudge any first thumbnail
-				// into view below the sticky header if present.
-				contentEl.scrollTop = 0
-				requestAnimationFrame(() => {
-					const header = contentEl.querySelector(".content-header")
-					const headerHeight = header
-						? Math.round(header.getBoundingClientRect().height)
-						: 0
-					const firstThumb = contentEl.querySelector(".blog-thumb")
-					if (firstThumb) {
-						const desired = Math.max(0, firstThumb.offsetTop - headerHeight - 8)
-						contentEl.scrollTop = desired
-					}
-				})
 			}
-			// We now populate DOM content only; skip creating the 3D blog plane
-			// to avoid duplicate/smaller-rendered content in the scene.
+			const posts = parseBlogPosts(html)
+			const plane = makeBlogPlane(posts)
+			// raise blog plane slightly to leave space above pyramid for Home label
+			plane.position.y = 0.8
+			scene.add(plane)
 			// reveal Home label when content is shown
 			showHomeLabel()
 			const navBar = document.getElementById("content-floor")
-			if (navBar && contentEl) {
-				const r = contentEl.getBoundingClientRect()
-				navBar.classList.add("show")
-				navBar.style.position = "fixed"
-				navBar.style.transform = "none"
-				navBar.style.left = `${Math.round(r.left)}px`
-				navBar.style.width = `${Math.round(r.width)}px`
-				navBar.style.top = `${Math.round(r.bottom + 5)}px`
-			} else if (window.updateContentFloorPosition) {
+			if (navBar && contentEl) navBar.classList.remove("show")
+			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
+			if (sep) sep.visible = true
+			else if (window.updateContentFloorPosition)
 				window.updateContentFloorPosition()
-			}
 		})
 	} else blogPlane.visible = true
 }
@@ -694,19 +619,79 @@ export function hideAllPlanes() {
 	hideBio()
 	hidePortfolio()
 	hideBlog()
-	// Hide navigation bar
+	// Hide 3D separator first so the DOM updater does not early-return
+	const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
+	if (sep) sep.visible = false
+	// Hide navigation bar DOM element as a fallback
 	const contentFloor = document.getElementById("content-floor")
 	if (contentFloor) contentFloor.classList.remove("show")
-	// Hide DOM content pane (if any) and notify UI layer
+
+	// Also hide the DOM content pane to avoid lingering DOM content
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
 		contentEl.style.display = "none"
-		// Optionally clear contentEl.innerHTML if desired
 	}
-	document.dispatchEvent(new CustomEvent("content:hidden"))
+	if (window.updateContentFloorPosition) window.updateContentFloorPosition()
 
 	// Do not hide the Home label here — Home remains visible until the user
 	// explicitly returns to the original state by clicking the Home label.
+}
+
+// Update 3D separator position to sit between Home label and visible content plane.
+function update3DSeparator() {
+	const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
+	if (!sep) return
+
+	// Find a visible content plane (bio, portfolio, blog)
+	const bioPlane = scene.getObjectByName("bioPlane")
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
+	const blogPlane = scene.getObjectByName("blogPlane")
+	const contentPlane = bioPlane || portfolioPlane || blogPlane
+
+	// If no content plane visible, hide separator
+	if (!contentPlane) {
+		sep.visible = false
+		return
+	}
+
+	// Get world positions
+	const homeWorld = new THREE.Vector3()
+	if (labels.Home) labels.Home.getWorldPosition(homeWorld)
+	const contentWorld = new THREE.Vector3()
+	contentPlane.getWorldPosition(contentWorld)
+
+	// Determine world-space size so the triangle's projected height ~5px
+	const sepMesh = sep
+	const desiredPxHeight = 5
+	const viewportH = window.innerHeight || 1
+	const fov = camera.fov * (Math.PI / 180)
+	// distance from camera to target position (we'll estimate using Home label)
+	const targetPos = new THREE.Vector3()
+	targetPos.copy(homeWorld)
+	const distance = camera.position.distanceTo(targetPos)
+	// world height that projects to desiredPxHeight
+	const worldHeight =
+		2 * distance * Math.tan(fov / 2) * (desiredPxHeight / viewportH)
+	// choose a projected width in pixels (visual width), e.g. 160px
+	const desiredPxWidth = 160
+	const worldWidth =
+		2 * distance * Math.tan(fov / 2) * (desiredPxWidth / viewportH)
+
+	// Place separator just above top of Home label: compute small world offset
+	// Add an explicit 10px upward offset (converted to world units) for extra breathing room
+	const offsetPx = 20
+	const worldOffset = 2 * distance * Math.tan(fov / 2) * (offsetPx / viewportH)
+	const y = homeWorld.y + worldHeight * 0.5 + 0.01 + worldOffset
+	const centerX = pyramidGroup.position ? pyramidGroup.position.x : homeWorld.x
+	const zOffset = (homeWorld.z || 0) + 0.02
+	sepMesh.position.set(centerX, y, zOffset)
+
+	// Face the camera so it appears flat to the viewer
+	sepMesh.lookAt(camera.position)
+
+	// Apply computed scale (our geometry is 1 unit high by 1 unit wide baseline)
+	sepMesh.scale.set(worldWidth, worldHeight, 1)
+	sepMesh.visible = true
 }
 
 // Show/hide helpers for Home label
@@ -723,30 +708,35 @@ export function hideHomeLabel() {
 // === Animate Label to Front/Center ===
 // Animate label to center position (floating above pyramid with increased z)
 export function animateLabelToCenter(labelMesh, endPos, endRot) {
-	// Defensive defaults: if callers omit endPos/endRot, fall back to
-	// the label's original stored transform (if available) or a safe center.
 	const startPos = labelMesh.position.clone()
 	const startRot = labelMesh.rotation.clone()
-
-	if (!endPos) {
-		if (labelMesh.userData && labelMesh.userData.origPosition) {
-			const p = labelMesh.userData.origPosition
-			endPos = { x: p.x, y: p.y, z: p.z }
-		} else {
-			endPos = { x: 0, y: 0, z: 0 }
-		}
-	}
-	if (!endRot) {
-		if (labelMesh.userData && labelMesh.userData.origRotation) {
-			const r = labelMesh.userData.origRotation
-			endRot = { x: r.x, y: r.y, z: r.z }
-		} else {
-			endRot = { x: 0, y: 0, z: 0 }
-		}
-	}
-
 	// Increase z when centering to float above the pyramid
+	// Compute the final end position at z=1.0 and apply a small world-space
+	// downward offset for the Portfolio label so it sits slightly lower when
+	// centered. Convert 10px -> world units at the target depth to keep the
+	// visual offset consistent across screen sizes.
 	const finalEndPos = new THREE.Vector3(endPos.x, endPos.y, 1.0)
+	try {
+		if (
+			labelMesh &&
+			labelMesh.userData &&
+			labelMesh.userData.name === "Portfolio"
+		) {
+			const px = 15 // pixels to move down
+			const viewportH = window.innerHeight || 1
+			const fov = camera.fov * (Math.PI / 180)
+			const targetPos = new THREE.Vector3(
+				finalEndPos.x,
+				finalEndPos.y,
+				finalEndPos.z
+			)
+			const distance = camera.position.distanceTo(targetPos)
+			const worldOffset = 2 * distance * Math.tan(fov / 2) * (px / viewportH)
+			finalEndPos.y -= worldOffset
+		}
+	} catch (e) {
+		// swallow - optional visual tweak shouldn't break centering
+	}
 	const duration = 500
 	const startTime = performance.now()
 	function step(time) {
@@ -800,32 +790,25 @@ export function animate() {
 			offset.applyQuaternion(label.quaternion)
 			hover.position.copy(label.position).add(offset)
 			hover.rotation.copy(label.rotation)
-			// Keep hover target scale in sync with the label so hit area
-			// matches visual size when labels animate between centered/uncentered.
-			hover.scale.copy(label.scale)
 		}
+	}
+	// Update 3D separator position every frame if present
+	try {
+		update3DSeparator()
+	} catch (e) {
+		// swallow - optional visual
 	}
 	renderer.render(scene, camera)
 }
 
-// Expose some APIs to the global `window` for legacy callers and tests that
-// invoke functions directly without importing. Guarded so it only runs when
-// a `window` object is present (e.g. in the browser or jsdom test env).
-if (WIN) {
-	WIN.animatePyramid = animatePyramid
-	WIN.resetPyramidToHome = resetPyramidToHome
-}
-
 // === Resize ===
-if (WIN) {
-	WIN.addEventListener("resize", () => {
-		camera.aspect = WIN.innerWidth / WIN.innerHeight
-		camera.updateProjectionMatrix()
-		renderer.setSize(WIN.innerWidth, WIN.innerHeight)
+window.addEventListener("resize", () => {
+	camera.aspect = window.innerWidth / window.innerHeight
+	camera.updateProjectionMatrix()
+	renderer.setSize(window.innerWidth, window.innerHeight)
 
-		const bioPlane = scene.getObjectByName("bioPlane")
-		if (bioPlane) scene.remove(bioPlane)
-		const portfolioPlane = scene.getObjectByName("portfolioPlane")
-		if (portfolioPlane) scene.remove(portfolioPlane)
-	})
-}
+	const bioPlane = scene.getObjectByName("bioPlane")
+	if (bioPlane) scene.remove(bioPlane)
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
+	if (portfolioPlane) scene.remove(portfolioPlane)
+})
