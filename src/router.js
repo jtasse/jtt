@@ -17,11 +17,11 @@ class Router {
 	}
 
 	navigate(path) {
-		if (this.currentRoute !== path) {
-			window.history.pushState({}, "", path)
-			this.currentRoute = path
-			this.notify()
-		}
+		// Always update history and notify, even if the route hasn't changed
+		// This ensures that label clicks always trigger the animation
+		window.history.pushState({}, "", path)
+		this.currentRoute = path
+		this.notify()
 	}
 
 	onRouteChange(callback) {

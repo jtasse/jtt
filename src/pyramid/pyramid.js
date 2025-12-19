@@ -31,7 +31,13 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
 
 export const controls = new OrbitControls(camera, renderer.domElement)
+// Completely disable OrbitControls - all rotation is handled programmatically
+controls.enabled = false
 controls.enableDamping = false
+controls.enableRotate = false
+controls.enableZoom = false
+controls.enablePan = false
+controls.autoRotate = false
 controls.minDistance = 2.5
 controls.maxDistance = 12
 controls.minPolarAngle = 0
@@ -351,6 +357,8 @@ export function animatePyramid(down = true, section = null) {
 	const startScale = pyramidGroup.scale.x
 	const endScale = down ? 0.5 : 1
 
+	// Don't enable controls - pyramid rotation is animated programmatically
+
 	const startTime = performance.now()
 	function step(time) {
 		// If this animation has been invalidated (a newer token exists), stop updating
@@ -385,6 +393,7 @@ export function animatePyramid(down = true, section = null) {
 			// abort executing completion side-effects.
 			if (myToken !== pyramidAnimToken) return
 			isAtBottom = down
+
 			// Snap labels to final scale (skip Home label)
 			for (const key in labels) {
 				if (key === "Home") continue // Home label stays fixed above pyramid
@@ -425,6 +434,8 @@ export function resetPyramidToHome() {
 	const startScale = pyramidGroup.scale.x
 	const endScale = initialPyramidState.scale // Use stored initial scale
 
+	// Don't enable controls - pyramid rotation is animated programmatically
+
 	const startTime = performance.now()
 	function step(time) {
 		const t = Math.min((time - startTime) / duration, 1)
@@ -451,6 +462,7 @@ export function resetPyramidToHome() {
 		if (t < 1) requestAnimationFrame(step)
 		else {
 			isAtBottom = false
+
 			// Snap labels to centered scale (skip Home label)
 			for (const key in labels) {
 				if (key === "Home") continue // Home label stays fixed above pyramid
@@ -478,6 +490,8 @@ export function showBioPlane() {
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
 		contentEl.style.display = "none"
+		// Ensure DOM does not block pointer events when hidden
+		contentEl.style.pointerEvents = "none"
 	}
 	// Show navigation bar positioned between content and home label
 	// ensure DOM separator is not shown here; we use the 3D separator instead
@@ -520,6 +534,8 @@ export function showPortfolioPlane() {
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
 		contentEl.style.display = "none"
+		// Ensure DOM does not block pointer events when hidden
+		contentEl.style.pointerEvents = "none"
 	}
 	// Show navigation bar positioned between content and home label
 	// ensure DOM separator is not shown here; we use the 3D separator instead
@@ -541,10 +557,22 @@ export function showPortfolioPlane() {
 				const titleEl = el.querySelector("h2")
 				const pEl = el.querySelector("p")
 				const aEl = el.querySelector("a")
+				const imgEl = el.querySelector("img")
+				let imageSrc = null
+				if (imgEl && imgEl.src) imageSrc = imgEl.src
+				// If no explicit img, attempt to infer an image from the link (favicon)
+				if (!imageSrc && aEl && aEl.href) {
+					try {
+						const url = new URL(aEl.href)
+						imageSrc = `${url.origin}/favicon.ico`
+					} catch (e) {
+						imageSrc = null
+					}
+				}
 				items.push({
 					title: titleEl ? titleEl.textContent.trim() : "Untitled",
 					description: pEl ? pEl.textContent.trim() : "",
-					image: null,
+					image: imageSrc,
 					link: aEl ? aEl.href : null,
 				})
 			})
@@ -581,6 +609,8 @@ export function showBlogPlane() {
 			if (contentEl) {
 				contentEl.innerHTML = html
 				contentEl.style.display = "block"
+				// Ensure content accepts pointer events when visible
+				contentEl.style.pointerEvents = "auto"
 			}
 			const posts = parseBlogPosts(html)
 			const plane = makeBlogPlane(posts)
@@ -771,7 +801,10 @@ export function animateLabelToOriginal(labelMesh, origPos, origRot) {
 export function animate() {
 	requestAnimationFrame(animate)
 	stars.rotation.y += 0.0008
-	controls.update()
+	// Only update controls when they are explicitly enabled (during label animations)
+	if (controls.enabled) {
+		controls.update()
+	}
 	// Orient home label to face camera each frame (if present)
 	if (homeLabel && homeLabel.visible) {
 		// Compute world position to face camera while keeping label upright

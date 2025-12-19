@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="100%" height="100%" fill="#0a0a0a"/>
+  <rect x="30" y="30" width="740" height="60" fill="#00bcd4" rx="8"/>
+  <text x="60" y="72" fill="#000" font-family="sans-serif" font-size="34">Resume</text>
+  <g transform="translate(40,120)" fill="#fff" font-family="sans-serif" font-size="18">
+    <text x="0" y="0">• Full-stack developer</text>
+    <text x="0" y="28">• Technical writer</text>
+    <text x="0" y="56">• 7 years experience</text>
+  </g>
+</svg>
