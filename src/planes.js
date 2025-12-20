@@ -135,7 +135,7 @@ export function makePortfolioPlane(items) {
 	const canvas = document.createElement("canvas")
 	const ctx = canvas.getContext("2d")
 	const margin = 40
-	const columns = 3
+	const columns = 2
 	const cardWidth = (canvasWidth - margin * (columns + 1)) / columns
 	const cardHeight = 280
 	const rowGap = 80

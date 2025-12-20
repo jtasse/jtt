@@ -557,13 +557,15 @@ export function showPortfolioPlane() {
 				const titleEl = el.querySelector("h2")
 				const pEl = el.querySelector("p")
 				const aEl = el.querySelector("a")
+				// Get link from data-link attribute first, then fallback to anchor tag
+				const link = el.dataset.link || (aEl ? aEl.href : null)
 				const imgEl = el.querySelector("img")
 				let imageSrc = null
 				if (imgEl && imgEl.src) imageSrc = imgEl.src
 				// If no explicit img, attempt to infer an image from the link (favicon)
-				if (!imageSrc && aEl && aEl.href) {
+				if (!imageSrc && link) {
 					try {
-						const url = new URL(aEl.href)
+						const url = new URL(link)
 						imageSrc = `${url.origin}/favicon.ico`
 					} catch (e) {
 						imageSrc = null
@@ -573,7 +575,7 @@ export function showPortfolioPlane() {
 					title: titleEl ? titleEl.textContent.trim() : "Untitled",
 					description: pEl ? pEl.textContent.trim() : "",
 					image: imageSrc,
-					link: aEl ? aEl.href : null,
+					link: link,
 				})
 			})
 			const plane = makePortfolioPlane(items)

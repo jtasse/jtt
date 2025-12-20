@@ -1,115 +1,140 @@
 <div class="content-page portfolio-page">
 	<h1>Portfolio</h1>
 
-	<div class="portfolio-item">
-		<div class="content-page portfolio-page">
-			<h1>Portfolio</h1>
+	<div class="portfolio-grid">
+		<div class="portfolio-item" data-link="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing">
+			<img class="portfolio-thumb" src="/images/portfolio/resume.svg" alt="Resume" />
+			<h2>My Resume</h2>
+			<p>This is a read-only link to my primary resume.</p>
+		</div>
 
-			<div class="portfolio-item" data-link="https://jamestasse.tech/resume/">
-				<img class="portfolio-thumb" src="/images/portfolio/resume.svg" alt="Resume" />
-				<h2>My Resume</h2>
-				<p>This is a read-only link to my primary resume.</p>
-				<a href="https://jamestasse.tech/resume/" target="_blank">View Resume</a>
-			</div>
+		<div class="portfolio-item" data-link="https://jamestasse.tech/visual-resume/">
+			<img class="portfolio-thumb" src="/images/portfolio/visual-resume.svg" alt="Visual Resume" />
+			<h2>My Visual Resume</h2>
+			<p>
+				This infographic shows my 7 years of experience in technical writing and
+				14 years experience in technical roles (including 8 years in software
+				development).
+			</p>
+		</div>
 
-			<div class="portfolio-item" data-link="https://jamestasse.tech/visual-resume/">
-				<img class="portfolio-thumb" src="/images/portfolio/visual-resume.svg" alt="Visual Resume" />
-				<h2>My Visual Resume</h2>
-				<div class="content-page portfolio-page">
-				  <h1>Portfolio</h1>
+		<div class="portfolio-item" data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI">
+			<img class="portfolio-thumb" src="/images/portfolio/ronin.svg" alt="Ronin" />
+			<h2>Ronin: A Docs as Tests Story</h2>
+			<p>
+				Explains how Docs as Tests can be used to keep docs in sync with the
+				product.
+			</p>
+		</div>
+	</div>
+</div>
 
-				  <div class="portfolio-item" data-link="https://jamestasse.tech/resume/">
-				    <img class="portfolio-thumb" src="/images/portfolio/resume.svg" alt="Resume" />
-				    <h2>My Resume</h2>
-				    <p>This is a read-only link to my primary resume.</p>
-				    <a href="https://jamestasse.tech/resume/" target="_blank">View Resume</a>
-				  </div>
+<script>
+	/* Portfolio item interaction: treat each .portfolio-item as a link.
+	   On click:
+	   - if link is YouTube, embed player into #content
+	   - if link is Google Docs, embed document viewer
+	   - otherwise open link in new tab
+	*/
+	;(function () {
+		function extractYouTubeID(url) {
+			try {
+				const u = new URL(url)
+				if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
+				if (u.hostname === 'youtu.be') return u.pathname.slice(1)
+			} catch (e) {
+				return null
+			}
+			return null
+		}
 
-				  <div class="portfolio-item" data-link="https://jamestasse.tech/visual-resume/">
-				    <img class="portfolio-thumb" src="/images/portfolio/visual-resume.svg" alt="Visual Resume" />
-				    <h2>My Visual Resume</h2>
-				    <p>
-				      This infographic shows my 7 years of experience in technical writing and
-				      14 years experience in technical roles (including 8 years in software
-				      development).
-				    </p>
-				    <a href="https://jamestasse.tech/visual-resume/" target="_blank">View Visual Resume</a>
-				  </div>
+		function extractGoogleDocsID(url) {
+			try {
+				const u = new URL(url)
+				if (u.hostname.includes('docs.google.com')) {
+					const match = u.pathname.match(/\/document\/d\/([^\/]+)/)
+					return match ? match[1] : null
+				}
+			} catch (e) {
+				return null
+			}
+			return null
+		}
 
-				  <div class="portfolio-item" data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI">
-				    <img class="portfolio-thumb" src="/images/portfolio/ronin.svg" alt="Ronin" />
-				    <h2>Ronin: A Docs as Tests Story</h2>
-				    <p>
-				      Explains how Docs as Tests can be used to keep docs in sync with the
-				      product.
-				    </p>
-				    <a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank">View video</a>
-				  </div>
-				</div>
+		function createEmbedViewer(embedUrl, title) {
+			const content = document.getElementById('content')
+			if (!content) return null
 
-				<script>
-				  /* Portfolio item interaction: treat each .portfolio-item as a link.
-				     On click:
-				     - if link is YouTube, embed player into #content and hide other content
-				     - otherwise open link in new tab
-				  */
-				  ;(function () {
-				    function extractYouTubeID(url) {
-				      try {
-				        const u = new URL(url)
-				        if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
-				        if (u.hostname === 'youtu.be') return u.pathname.slice(1)
-				      } catch (e) {
-				        return null
-				      }
-				      return null
-				    }
+			content.innerHTML = ''
+			const iframe = document.createElement('iframe')
+			iframe.src = embedUrl
+			iframe.width = '100%'
+			iframe.height = '600'
+			iframe.style.border = '1px solid #00ffff'
+			iframe.style.borderRadius = '8px'
+			iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+			iframe.allowFullscreen = true
 
-				    document.querySelectorAll('.portfolio-item').forEach((item) => {
-				      item.style.cursor = 'pointer'
-				      item.addEventListener('click', (ev) => {
-				        ev.preventDefault()
-				        ev.stopPropagation()
-				        const link = item.dataset.link || (item.querySelector('a') || {}).href
-				        if (!link) return
-				        const ytId = extractYouTubeID(link)
-				        const content = document.getElementById('content')
-				        if (window.hideAllPlanes) window.hideAllPlanes()
-				        // clear any pinned bottom/maxHeight so embedded player can be visible
-				        if (content) {
-				          content.style.bottom = ''
-				          content.style.maxHeight = ''
-				        }
-						if (ytId) {
-							if (content) {
-								console.debug('[portfolio DOM click] embedding YouTube id=', ytId, 'link=', link)
-								content.innerHTML = ''
-								const iframe = document.createElement('iframe')
-								iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-								iframe.width = '100%'
-								iframe.height = '480'
-								iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-								iframe.allowFullscreen = true
-								const wrapper = document.createElement('div')
-								wrapper.className = 'video-wrapper'
-								wrapper.style.width = '100%'
-								wrapper.style.maxHeight = '80vh'
-								wrapper.style.overflow = 'hidden'
-								wrapper.appendChild(iframe)
-								content.appendChild(wrapper)
-								content.style.display = 'block'
-								// ensure layout updaters run so #content is sized/positioned correctly
-								if (window.updateContentFloorPosition) window.updateContentFloorPosition()
-								if (window.updateContentMaxHeightToSeparator) window.updateContentMaxHeightToSeparator()
-							} else {
-								console.debug('[portfolio DOM click] opening external link', link)
-								window.open(link, '_blank')
-							}
-				        } else {
-				          window.open(link, '_blank')
-				        }
-				      })
-				    })
-				  })()
-				</script>
-			</script>
+			const wrapper = document.createElement('div')
+			wrapper.className = 'embed-wrapper'
+			wrapper.style.width = '100%'
+			wrapper.style.maxHeight = '80vh'
+			wrapper.style.overflow = 'auto'
+			wrapper.appendChild(iframe)
+
+			content.appendChild(wrapper)
+			content.style.display = 'block'
+			content.style.pointerEvents = 'auto'
+
+			return wrapper
+		}
+
+		document.querySelectorAll('.portfolio-item').forEach((item) => {
+			item.style.cursor = 'pointer'
+			item.addEventListener('click', (ev) => {
+				ev.preventDefault()
+				ev.stopPropagation()
+				const link = item.dataset.link
+				if (!link) return
+
+				// Hide 3D planes
+				if (window.hideAllPlanes) window.hideAllPlanes()
+
+				const content = document.getElementById('content')
+				// Clear any pinned bottom/maxHeight so embedded content can be visible
+				if (content) {
+					content.style.bottom = ''
+					content.style.maxHeight = ''
+				}
+
+				// Check for YouTube
+				const ytId = extractYouTubeID(link)
+				if (ytId) {
+					console.debug('[portfolio] embedding YouTube:', ytId)
+					const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+					createEmbedViewer(embedUrl, 'YouTube Video')
+					// Ensure layout updaters run
+					if (window.updateContentFloorPosition) window.updateContentFloorPosition()
+					if (window.updateContentMaxHeightToSeparator) window.updateContentMaxHeightToSeparator()
+					return
+				}
+
+				// Check for Google Docs
+				const docId = extractGoogleDocsID(link)
+				if (docId) {
+					console.debug('[portfolio] embedding Google Doc:', docId)
+					const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
+					createEmbedViewer(embedUrl, 'Google Document')
+					// Ensure layout updaters run
+					if (window.updateContentFloorPosition) window.updateContentFloorPosition()
+					if (window.updateContentMaxHeightToSeparator) window.updateContentMaxHeightToSeparator()
+					return
+				}
+
+				// For other links, open in new tab
+				console.debug('[portfolio] opening external link:', link)
+				window.open(link, '_blank')
+			})
+		})
+	})()
+</script>

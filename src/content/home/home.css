@@ -11,7 +11,7 @@
 	/* reserve vertical space so content never overlaps the pyramid/home area */
 	/* increase reserved space so content ends higher (more breathing room) */
 	/* Increased subtraction so content bottom sits higher on screen */
-	max-height: calc(100vh - 480px);
+	max-height: calc(100vh - 180px);
 	overflow-y: auto;
 	display: none;
 	color: white;

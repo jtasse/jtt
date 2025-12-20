@@ -7,7 +7,7 @@
 	/* constrain content height so it ends higher on page (leave breathing room)
 		    prefer max-height so content scrolls if needed */
 	/* Increased subtraction so content bottom sits higher on screen */
-	max-height: calc(100vh - 480px);
+	max-height: calc(100vh - 180px);
 	overflow-y: auto;
 	display: none;
 	color: white;
