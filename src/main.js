@@ -607,6 +607,17 @@ function onSceneMouseDown(event) {
 		return null
 	}
 
+	// Helper: check if URL points to an image
+	function isImageUrl(url) {
+		try {
+			const u = new URL(url)
+			const path = u.pathname.toLowerCase()
+			return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/.test(path)
+		} catch (e) {
+			return false
+		}
+	}
+
 	// Helper: handle a content link (embed YouTube if applicable, otherwise open)
 	function handleContentLink(link) {
 		if (!link) return false
@@ -831,6 +842,109 @@ function onSceneMouseDown(event) {
 				currentContentVisible = "portfolio"
 				return true
 			}
+
+			// Check for image URL
+			if (isImageUrl(link)) {
+				content.innerHTML = ""
+
+				// Hide the pyramid when showing full-page content
+				if (pyramidGroup) pyramidGroup.visible = false
+
+				// Full page layout with margins
+				const sideMargin = 40
+				const topMargin = 60
+				const bottomMargin = 20
+				const availableHeight = window.innerHeight - topMargin - bottomMargin
+
+				// Override CSS and set full-page positioning
+				content.style.maxHeight = "none"
+				content.style.height = availableHeight + "px"
+				content.style.top = topMargin + "px"
+				content.style.left = sideMargin + "px"
+				content.style.right = sideMargin + "px"
+				content.style.width = "auto"
+				content.style.transform = "none"
+
+				// Create close button
+				const closeBtn = document.createElement("button")
+				closeBtn.innerHTML = "&times;"
+				closeBtn.style.cssText = `
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					width: 36px;
+					height: 36px;
+					border: 2px solid #00ffff;
+					border-radius: 50%;
+					background: rgba(0, 0, 0, 0.8);
+					color: #00ffff;
+					font-size: 24px;
+					line-height: 1;
+					cursor: pointer;
+					z-index: 10;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				`
+				closeBtn.onmouseover = () => { closeBtn.style.background = "rgba(0, 255, 255, 0.3)" }
+				closeBtn.onmouseout = () => { closeBtn.style.background = "rgba(0, 0, 0, 0.8)" }
+				closeBtn.onclick = (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					// Restore pyramid at bottom position
+					if (pyramidGroup) {
+						pyramidGroup.visible = true
+						animatePyramid(true, "portfolio")
+					}
+					// Clear content and hide
+					content.innerHTML = ""
+					content.style.display = "none"
+					// Reset content styles
+					content.style.height = ""
+					content.style.top = ""
+					content.style.left = ""
+					content.style.right = ""
+					content.style.width = ""
+					content.style.transform = ""
+					content.style.maxHeight = ""
+					content.style.overflow = ""
+					content.style.padding = ""
+					// Show portfolio plane again
+					showPortfolioPlane()
+					currentContentVisible = "portfolio"
+				}
+
+				const img = document.createElement("img")
+				img.src = link
+				img.alt = "Visual Resume"
+				img.style.maxWidth = "100%"
+				img.style.maxHeight = "100%"
+				img.style.objectFit = "contain"
+				img.style.display = "block"
+				img.style.margin = "0 auto"
+
+				const wrapper = document.createElement("div")
+				wrapper.className = "image-wrapper"
+				wrapper.style.width = "100%"
+				wrapper.style.height = "100%"
+				wrapper.style.overflow = "auto"
+				wrapper.style.position = "relative"
+				wrapper.style.display = "flex"
+				wrapper.style.alignItems = "center"
+				wrapper.style.justifyContent = "center"
+				wrapper.appendChild(img)
+				wrapper.appendChild(closeBtn)
+				content.appendChild(wrapper)
+				content.style.display = "block"
+				content.style.overflow = "hidden"
+				content.style.padding = "0"
+				content.style.zIndex = String(2147483646)
+				content.style.position = "fixed"
+				content.style.pointerEvents = "auto"
+				currentContentVisible = "portfolio"
+				return true
+			}
+
 			// Fallback: open in new tab
 			window.open(link, "_blank")
 			return true
