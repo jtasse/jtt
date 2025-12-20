@@ -339,6 +339,20 @@ const initialPyramidState = {
 	scale: 1,
 }
 
+// Flattened menu state - pyramid at top with horizontal labels
+const flattenedMenuState = {
+	positionY: 2.4,
+	scale: 0.25,
+}
+
+// Flattened label positions for horizontal menu at top
+// These are world positions (not relative to pyramid group)
+const flattenedLabelPositions = {
+	Bio: { x: -2.2, y: 2.3, z: 0.5 },
+	Portfolio: { x: 0, y: 2.3, z: 0.5 },
+	Blog: { x: 2.2, y: 2.3, z: 0.5 },
+}
+
 export function getInitialPyramidState() {
 	return { ...initialPyramidState }
 }
@@ -352,12 +366,41 @@ export function animatePyramid(down = true, section = null) {
 	// Always rotate full 360 degrees (2π) in the same direction
 	const endRot = startRot + Math.PI * 2
 	const startPosY = pyramidGroup.position.y
-	const endPosY = down ? -1.75 : 0.35 // adjusted
+	// Animate to TOP of screen instead of bottom
+	const endPosY = down ? flattenedMenuState.positionY : initialPyramidState.positionY
 
 	const startScale = pyramidGroup.scale.x
-	const endScale = down ? 0.5 : 1
+	// Scale down smaller for the flattened menu state
+	const endScale = down ? flattenedMenuState.scale : initialPyramidState.scale
 
-	// Don't enable controls - pyramid rotation is animated programmatically
+	// Store starting label positions and rotations for animation
+	// Also pre-compute target positions based on FINAL pyramid state
+	const labelStartStates = {}
+	const labelTargetStates = {}
+	for (const key in labels) {
+		if (key === "Home") continue
+		const labelMesh = labels[key]
+		if (!labelMesh) continue
+		labelStartStates[key] = {
+			position: labelMesh.position.clone(),
+			rotation: labelMesh.rotation.clone(),
+			scale: labelMesh.scale.clone(),
+		}
+		// Pre-compute target positions based on final pyramid state
+		if (down && flattenedLabelPositions[key]) {
+			const flatPos = flattenedLabelPositions[key]
+			// Convert world position to local position relative to FINAL pyramid state
+			const targetLocalX = (flatPos.x - 0) / endScale  // pyramid x stays at 0
+			const targetLocalY = (flatPos.y - endPosY) / endScale
+			const targetLocalZ = flatPos.z / endScale
+			const targetScale = 1 + (1 / endScale - 1) * 0.3
+			labelTargetStates[key] = {
+				position: new THREE.Vector3(targetLocalX, targetLocalY, targetLocalZ),
+				rotation: new THREE.Euler(0, 0, 0),
+				scale: new THREE.Vector3(targetScale, targetScale, targetScale),
+			}
+		}
+	}
 
 	const startTime = performance.now()
 	function step(time) {
@@ -369,21 +412,45 @@ export function animatePyramid(down = true, section = null) {
 		const s = startScale + (endScale - startScale) * t
 		pyramidGroup.scale.set(s, s, s)
 
-		// Animate label scales based on centered/uncentered sizes (skip Home label)
+		// Animate labels to/from flattened horizontal positions
 		for (const key in labels) {
-			if (key === "Home") continue // Home label stays fixed above pyramid
+			if (key === "Home") continue
 			const labelMesh = labels[key]
 			if (!labelMesh) continue
-			const centeredSize = labelMesh.userData.pyramidCenteredSize
-			const uncenteredSize = labelMesh.userData.pyramidUncenteredSize
-			if (centeredSize && uncenteredSize) {
-				const startSize = down ? centeredSize : uncenteredSize
-				const endSize = down ? uncenteredSize : centeredSize
-				const startScaleRatio = startSize[0] / centeredSize[0]
-				const endScaleRatio = endSize[0] / centeredSize[0]
-				const labelScale =
-					startScaleRatio + (endScaleRatio - startScaleRatio) * t
-				labelMesh.scale.set(labelScale, labelScale, labelScale)
+			const startState = labelStartStates[key]
+			if (!startState) continue
+
+			if (down && labelTargetStates[key]) {
+				// Animate to pre-computed target position
+				const targetState = labelTargetStates[key]
+				labelMesh.position.lerpVectors(startState.position, targetState.position, t)
+				labelMesh.rotation.x = startState.rotation.x + (targetState.rotation.x - startState.rotation.x) * t
+				labelMesh.rotation.y = startState.rotation.y + (targetState.rotation.y - startState.rotation.y) * t
+				labelMesh.rotation.z = startState.rotation.z + (targetState.rotation.z - startState.rotation.z) * t
+				// Scale labels
+				const sx = startState.scale.x + (targetState.scale.x - startState.scale.x) * t
+				const sy = startState.scale.y + (targetState.scale.y - startState.scale.y) * t
+				const sz = startState.scale.z + (targetState.scale.z - startState.scale.z) * t
+				labelMesh.scale.set(sx, sy, sz)
+			} else if (!down) {
+				// Animate back to original positions
+				const origPos = labelMesh.userData.origPosition
+				const origRot = labelMesh.userData.origRotation
+				const origScale = labelMesh.userData.originalScale
+				if (origPos) {
+					labelMesh.position.lerpVectors(startState.position, origPos, t)
+				}
+				if (origRot) {
+					labelMesh.rotation.x = startState.rotation.x + (origRot.x - startState.rotation.x) * t
+					labelMesh.rotation.y = startState.rotation.y + (origRot.y - startState.rotation.y) * t
+					labelMesh.rotation.z = startState.rotation.z + (origRot.z - startState.rotation.z) * t
+				}
+				if (origScale) {
+					const sx = startState.scale.x + (origScale.x - startState.scale.x) * t
+					const sy = startState.scale.y + (origScale.y - startState.scale.y) * t
+					const sz = startState.scale.z + (origScale.z - startState.scale.z) * t
+					labelMesh.scale.set(sx, sy, sz)
+				}
 			}
 		}
 
@@ -394,21 +461,32 @@ export function animatePyramid(down = true, section = null) {
 			if (myToken !== pyramidAnimToken) return
 			isAtBottom = down
 
-			// Snap labels to final scale (skip Home label)
+			// Snap labels to final positions
 			for (const key in labels) {
-				if (key === "Home") continue // Home label stays fixed above pyramid
+				if (key === "Home") continue
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
-				const centeredSize = labelMesh.userData.pyramidCenteredSize
-				const uncenteredSize = labelMesh.userData.pyramidUncenteredSize
-				if (centeredSize && uncenteredSize) {
-					const finalSize = down ? uncenteredSize : centeredSize
-					const finalScaleRatio = finalSize[0] / centeredSize[0]
-					labelMesh.scale.set(finalScaleRatio, finalScaleRatio, finalScaleRatio)
+
+				if (down && labelTargetStates[key]) {
+					// Snap to pre-computed target position
+					const targetState = labelTargetStates[key]
+					labelMesh.position.copy(targetState.position)
+					labelMesh.rotation.copy(targetState.rotation)
+					labelMesh.scale.copy(targetState.scale)
+				} else if (!down) {
+					// Snap to original
+					const origPos = labelMesh.userData.origPosition
+					const origRot = labelMesh.userData.origRotation
+					const origScale = labelMesh.userData.originalScale
+					if (origPos) labelMesh.position.copy(origPos)
+					if (origRot) labelMesh.rotation.copy(origRot)
+					if (origScale) labelMesh.scale.copy(origScale)
 				}
 			}
-			// If pyramid ended at bottom, ensure Home label is visible
-			if (isAtBottom) showHomeLabel()
+
+			// Hide Home label when in flattened state (labels serve as menu)
+			if (isAtBottom) hideHomeLabel()
+
 			// Show section content only if requested and this animation is still valid
 			if (section === "bio") showBioPlane()
 			else if (section === "portfolio") showPortfolioPlane()
@@ -423,7 +501,7 @@ export function resetPyramidToHome() {
 	// Invalidate any in-progress pyramid animations so their completion
 	// handlers won't show content after we start resetting.
 	++pyramidAnimToken
-	// Immediately hide any content so nothing appears while we animate up
+	// Immediately hide any content so nothing appears while we animate
 	hideAllPlanes()
 	const duration = 1000
 	const startRot = pyramidGroup.rotation.y
@@ -434,7 +512,18 @@ export function resetPyramidToHome() {
 	const startScale = pyramidGroup.scale.x
 	const endScale = initialPyramidState.scale // Use stored initial scale
 
-	// Don't enable controls - pyramid rotation is animated programmatically
+	// Store starting label positions and rotations for animation back to original
+	const labelStartStates = {}
+	for (const key in labels) {
+		if (key === "Home") continue
+		const labelMesh = labels[key]
+		if (!labelMesh) continue
+		labelStartStates[key] = {
+			position: labelMesh.position.clone(),
+			rotation: labelMesh.rotation.clone(),
+			scale: labelMesh.scale.clone(),
+		}
+	}
 
 	const startTime = performance.now()
 	function step(time) {
@@ -442,20 +531,33 @@ export function resetPyramidToHome() {
 		pyramidGroup.rotation.y = startRot + rotDiff * t
 		pyramidGroup.position.y = startPosY + (endPosY - startPosY) * t
 		const s = startScale + (endScale - startScale) * t
-		pyramidGroup.scale.set(s, s, s) // Animate label scales back to centered
+		pyramidGroup.scale.set(s, s, s)
+
+		// Animate labels back to their original positions
 		for (const key in labels) {
+			if (key === "Home") continue
 			const labelMesh = labels[key]
 			if (!labelMesh) continue
-			const centeredSize = labelMesh.userData.pyramidCenteredSize
-			const uncenteredSize = labelMesh.userData.pyramidUncenteredSize
-			if (centeredSize && uncenteredSize) {
-				const startSize = uncenteredSize
-				const endSize = centeredSize
-				const startScaleRatio = startSize[0] / centeredSize[0]
-				const endScaleRatio = endSize[0] / centeredSize[0]
-				const labelScale =
-					startScaleRatio + (endScaleRatio - startScaleRatio) * t
-				labelMesh.scale.set(labelScale, labelScale, labelScale)
+			const startState = labelStartStates[key]
+			if (!startState) continue
+
+			const origPos = labelMesh.userData.origPosition
+			const origRot = labelMesh.userData.origRotation
+			const origScale = labelMesh.userData.originalScale
+
+			if (origPos) {
+				labelMesh.position.lerpVectors(startState.position, origPos, t)
+			}
+			if (origRot) {
+				labelMesh.rotation.x = startState.rotation.x + (origRot.x - startState.rotation.x) * t
+				labelMesh.rotation.y = startState.rotation.y + (origRot.y - startState.rotation.y) * t
+				labelMesh.rotation.z = startState.rotation.z + (origRot.z - startState.rotation.z) * t
+			}
+			if (origScale) {
+				const sx = startState.scale.x + (origScale.x - startState.scale.x) * t
+				const sy = startState.scale.y + (origScale.y - startState.scale.y) * t
+				const sz = startState.scale.z + (origScale.z - startState.scale.z) * t
+				labelMesh.scale.set(sx, sy, sz)
 			}
 		}
 
@@ -463,12 +565,17 @@ export function resetPyramidToHome() {
 		else {
 			isAtBottom = false
 
-			// Snap labels to centered scale (skip Home label)
+			// Snap labels to original positions and scales
 			for (const key in labels) {
-				if (key === "Home") continue // Home label stays fixed above pyramid
+				if (key === "Home") continue
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
-				labelMesh.scale.set(1, 1, 1)
+				const origPos = labelMesh.userData.origPosition
+				const origRot = labelMesh.userData.origRotation
+				const origScale = labelMesh.userData.originalScale
+				if (origPos) labelMesh.position.copy(origPos)
+				if (origRot) labelMesh.rotation.copy(origRot)
+				if (origScale) labelMesh.scale.copy(origScale)
 			}
 			// Ensure exact values after animation
 			pyramidGroup.rotation.y = initialPyramidState.rotationY
@@ -512,16 +619,14 @@ export function showBioPlane() {
 			// 2) Also create the 3D plane (existing behavior)
 			const bioContent = parseBioContent(html)
 			const plane = makeBioPlane(bioContent)
-			// raise bio plane slightly so Home label has room above the pyramid
-			plane.position.y = 0.9
+			// Position content plane below the top menu
+			plane.position.y = 0.0
 			scene.add(plane)
-			// reveal Home label when content is shown
-			showHomeLabel()
-			// 3) Use the 3D separator (hide DOM separator)
+			// Hide separators since flattened menu serves as navigation
 			const navBar = document.getElementById("content-floor")
 			if (navBar) navBar.classList.remove("show")
 			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
-			if (sep) sep.visible = true
+			if (sep) sep.visible = false
 		})
 	} else bioPlane.visible = true
 }
@@ -579,16 +684,14 @@ export function showPortfolioPlane() {
 				})
 			})
 			const plane = makePortfolioPlane(items)
-			// keep portfolio slightly lower than bio but raised to avoid overlap with Home label
-			plane.position.y = 0.8
+			// Position content plane below the top menu
+			plane.position.y = 0.0
 			scene.add(plane)
-			// reveal Home label when content is shown
-			showHomeLabel()
-			// Use 3D separator (hide DOM separator)
+			// Hide separators since flattened menu serves as navigation
 			const navBar = document.getElementById("content-floor")
 			if (navBar) navBar.classList.remove("show")
 			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
-			if (sep) sep.visible = true
+			if (sep) sep.visible = false
 		})
 	} else portfolioPlane.visible = true
 }
@@ -616,17 +719,14 @@ export function showBlogPlane() {
 			}
 			const posts = parseBlogPosts(html)
 			const plane = makeBlogPlane(posts)
-			// raise blog plane slightly to leave space above pyramid for Home label
-			plane.position.y = 0.8
+			// Position content plane below the top menu
+			plane.position.y = 0.0
 			scene.add(plane)
-			// reveal Home label when content is shown
-			showHomeLabel()
+			// Hide separators since flattened menu serves as navigation
 			const navBar = document.getElementById("content-floor")
-			if (navBar && contentEl) navBar.classList.remove("show")
+			if (navBar) navBar.classList.remove("show")
 			const sep = pyramidGroup.userData && pyramidGroup.userData._separator3D
-			if (sep) sep.visible = true
-			else if (window.updateContentFloorPosition)
-				window.updateContentFloorPosition()
+			if (sep) sep.visible = false
 		})
 	} else blogPlane.visible = true
 }
@@ -820,11 +920,20 @@ export function animate() {
 		const label = labels[key]
 		const hover = hoverTargets[key]
 		if (label && hover) {
-			// Position hover target in front of label (0.08 units on label's Z-axis)
+			// Get label's world position (since labels are children of pyramidGroup)
+			const labelWorldPos = new THREE.Vector3()
+			label.getWorldPosition(labelWorldPos)
+			// Position hover target in front of label (0.08 units on label's Z-axis in world space)
+			const worldQuaternion = new THREE.Quaternion()
+			label.getWorldQuaternion(worldQuaternion)
 			const offset = new THREE.Vector3(0, 0, 0.08)
-			offset.applyQuaternion(label.quaternion)
-			hover.position.copy(label.position).add(offset)
-			hover.rotation.copy(label.rotation)
+			offset.applyQuaternion(worldQuaternion)
+			hover.position.copy(labelWorldPos).add(offset)
+			// Match label's world rotation
+			hover.quaternion.copy(worldQuaternion)
+			// Scale hover target based on pyramid scale to maintain appropriate hit area
+			const scale = pyramidGroup.scale.x
+			hover.scale.set(scale, scale, scale)
 		}
 	}
 	// Update 3D separator position every frame if present

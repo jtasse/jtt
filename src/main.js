@@ -9,15 +9,11 @@ import {
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
-	animateLabelToCenter,
-	animateLabelToOriginal,
 	animate,
 	renderer,
 	camera,
 	scene,
 	controls,
-	hideHomeLabel,
-	showHomeLabel,
 	resetPyramidToHome,
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
@@ -523,28 +519,12 @@ setInterval(() => {
 }, 100)
 
 // Listen for route changes and show correct content
-// Helper to center a label and animate pyramid down to show a section
+// Helper to animate pyramid to top menu and show a section
 function centerAndOpenLabel(labelName) {
 	if (!labels || !labels[labelName]) return
-	const labelMesh = labels[labelName]
-	// animate pyramid down and request the section be shown when animation completes
+	// animate pyramid to top and flatten labels - content will be shown when animation completes
 	animatePyramid(true, labelName.toLowerCase())
-	// animate label to center/front
-	let endPos = new THREE.Vector3(0, 0, 0.5)
-	if (labelName === "Portfolio") {
-		// nudge Portfolio slightly down in screen space for visual alignment
-		const px = 10
-		const viewportH = window.innerHeight || 1
-		const fov = camera.fov * (Math.PI / 180)
-		const targetZ = 1.0
-		const distance = camera.position.distanceTo(
-			new THREE.Vector3(endPos.x, endPos.y, targetZ)
-		)
-		const worldOffset = 2 * distance * Math.tan(fov / 2) * (px / viewportH)
-		endPos = new THREE.Vector3(endPos.x, endPos.y - worldOffset, endPos.z)
-	}
-	const endRot = new THREE.Euler(0, 0, 0)
-	animateLabelToCenter(labelMesh, endPos, endRot)
+	// Track which section is active (for highlighting in menu if desired)
 	window.centeredLabelName = labelName
 }
 
@@ -1007,128 +987,25 @@ function onSceneMouseDown(event) {
 			resetPyramidToHome()
 			// Hide all content planes
 			hideAllPlanes()
-			// Restore any centered label to its original position
-			if (window.centeredLabelName) {
-				const centeredLabel = labels[window.centeredLabelName]
-				animateLabelToOriginal(
-					centeredLabel,
-					centeredLabel.userData.origPosition,
-					centeredLabel.userData.origRotation
-				)
-				window.centeredLabelName = null
-			}
+			window.centeredLabelName = null
 			router.navigate("/")
 			return
 		}
 		console.debug(
 			"[onClick] clicked object labelName=",
 			labelName,
-			"centered=",
+			"active=",
 			window.centeredLabelName
 		)
-		// If the clicked object is the currently centered label, there is a special case:
-		// the user might have clicked near a different label but the centered label is blocking the ray.
-		// Check generous hover targets to see if the click was intended for another label.
-		if (window.centeredLabelName === labelName) {
-			// Try to detect whether the click was intended for another label by checking hover targets
-			const hoverTargets = requireHoverTargets()
-			const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
-			let intendedKey = null
-			if (hoverHits.length > 0)
-				intendedKey = hoverHits[0].object.userData.labelKey
-			// Fallback: use 2D proximity to labels if hover target was occluded
-			if (!intendedKey) {
-				const rect = renderer.domElement.getBoundingClientRect()
-				const clickX = ((pointer.x + 1) / 2) * rect.width
-				const clickY = ((-pointer.y + 1) / 2) * rect.height
-				let best = { key: null, dist: Infinity }
-				for (const k of Object.keys(labels)) {
-					if (k === labelName) continue
-					const labelMesh = labels[k]
-					const wp = new THREE.Vector3()
-					labelMesh.getWorldPosition(wp)
-					wp.project(camera)
-					const sx = ((wp.x + 1) / 2) * rect.width
-					const sy = ((-wp.y + 1) / 2) * rect.height
-					const dx = sx - clickX
-					const dy = sy - clickY
-					const d = Math.sqrt(dx * dx + dy * dy)
-					if (d < best.dist) best = { key: k, dist: d }
-				}
-				if (best.dist < 140) intendedKey = best.key
-			}
-			if (intendedKey && intendedKey !== labelName) {
-				console.debug(
-					"[onClick] hoverHits=",
-					hoverHits.length,
-					"intendedKey=",
-					intendedKey
-				)
-				// user intended to click a different label while one was centered
-				const prevCenteredLabel = labels[window.centeredLabelName]
-				// return previous centered label
-				animateLabelToOriginal(
-					prevCenteredLabel,
-					prevCenteredLabel.userData.origPosition,
-					prevCenteredLabel.userData.origRotation
-				)
-				// now treat the click as targeting the intended label
-				obj = labels[intendedKey]
-				labelName = intendedKey
-				// spin pyramid in place (already at bottom)
-				animatePyramid(true, labelName.toLowerCase())
-			} else {
-				// No other intended label: treat as dismissal of the centered label
-				animateLabelToOriginal(
-					obj,
-					obj.userData.origPosition,
-					obj.userData.origRotation
-				)
-				hideAllPlanes()
-				window.centeredLabelName = null
-				return
-			}
-		}
-		console.debug("[onClick] proceeding to center label=", labelName)
-		// now handle clicking a (possibly new) label
+
+		// With flattened menu, all labels are visible at the top
+		// Clicking a label navigates to that section
 		if (window.centeredLabelName !== labelName) {
-			// If a different label is already centered, return it to original position
-			if (window.centeredLabelName) {
-				const prevCenteredLabel = labels[window.centeredLabelName]
-				animateLabelToOriginal(
-					prevCenteredLabel,
-					prevCenteredLabel.userData.origPosition,
-					prevCenteredLabel.userData.origRotation
-				)
-				// Only spin pyramid if already at bottom, don't move it
-				animatePyramid(true, labelName.toLowerCase())
-			} else {
-				// Animate pyramid down and label to center (first time)
-				animatePyramid(true, labelName.toLowerCase())
-			}
-
-			// Animate label to center/front (floating)
-			let endPos = new THREE.Vector3(0, 0, 0.5) // tweak as needed
-			// If Portfolio is being centered, nudge it down by 10px in screen space.
-			if (labelName === "Portfolio") {
-				const px = 10 // pixels to move down
-				const viewportH = window.innerHeight || 1
-				const fov = camera.fov * (Math.PI / 180)
-				// animateLabelToCenter will set final z to 1.0; compute distance to that plane
-				const targetZ = 1.0
-				const distance = camera.position.distanceTo(
-					new THREE.Vector3(endPos.x, endPos.y, targetZ)
-				)
-				const worldOffset = 2 * distance * Math.tan(fov / 2) * (px / viewportH)
-				endPos = new THREE.Vector3(endPos.x, endPos.y - worldOffset, endPos.z)
-			}
-			const endRot = new THREE.Euler(0, 0, 0)
-			animateLabelToCenter(obj, endPos, endRot)
-			window.centeredLabelName = labelName
-
-			// If pyramid is already at bottom, show the content immediately and only spin
-			const isAtBottom = pyramidGroup.position.y <= -1.5
-			if (isAtBottom) {
+			// If already showing content, just switch sections (pyramid stays at top)
+			const isAtTop = pyramidGroup.position.y >= 2.0
+			if (isAtTop) {
+				// Already in flattened state, just switch content
+				hideAllPlanes()
 				if (labelName === "Bio") {
 					showBioPlane()
 					currentContentVisible = "bio"
@@ -1139,6 +1016,11 @@ function onSceneMouseDown(event) {
 					showBlogPlane()
 					currentContentVisible = "blog"
 				}
+				window.centeredLabelName = labelName
+			} else {
+				// Animate pyramid to top and show content
+				animatePyramid(true, labelName.toLowerCase())
+				window.centeredLabelName = labelName
 			}
 
 			// Update route
@@ -1210,19 +1092,11 @@ function onSceneMouseDown(event) {
 	)
 	if (currentContentVisible && !obj) {
 		// If any content plane is currently visible and the click was not on a label,
-		// dismiss content but do NOT animate the pyramid. Pyramid movement should only
-		// happen when the user clicks directly on the pyramid or on a label.
+		// reset pyramid to home state and navigate home
+		resetPyramidToHome()
 		hideAllPlanes()
 		currentContentVisible = null
-		if (window.centeredLabelName) {
-			const centeredLabel = labels[window.centeredLabelName]
-			animateLabelToOriginal(
-				centeredLabel,
-				centeredLabel.userData.origPosition,
-				centeredLabel.userData.origRotation
-			)
-			window.centeredLabelName = null
-		}
+		window.centeredLabelName = null
 		router.navigate("/")
 		return
 	}
@@ -1244,15 +1118,8 @@ function onSceneMouseDown(event) {
 		// Clicking the pyramid acts like clicking Home: reset everything to initial state
 		resetPyramidToHome()
 		hideAllPlanes()
-		if (window.centeredLabelName) {
-			const centeredLabel = labels[window.centeredLabelName]
-			animateLabelToOriginal(
-				centeredLabel,
-				centeredLabel.userData.origPosition,
-				centeredLabel.userData.origRotation
-			)
-			window.centeredLabelName = null
-		}
+		window.centeredLabelName = null
+		currentContentVisible = null
 		router.navigate("/")
 	}
 }
