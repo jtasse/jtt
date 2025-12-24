@@ -1,7 +1,7 @@
 // Load HTML content from separate files
 export async function loadContentHTML(page) {
 	try {
-		const response = await fetch(`/src/content/${page}.html`)
+		const response = await fetch(`/src/content/${page}/${page}.html`)
 		if (!response.ok) {
 			throw new Error(`Failed to load ${page}.html`)
 		}

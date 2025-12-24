@@ -1,8 +1,15 @@
-/* Styles specific to the Portfolio content page */
 .portfolio-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	gap: 2rem;
+}
+
+/* Mobile: Stack items vertically */
+@media (max-width: 768px) {
+	.portfolio-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
 }
 
 .portfolio-item {
@@ -13,15 +20,14 @@
 	overflow: hidden;
 	text-align: center;
 	transition: transform 0.3s ease;
-	cursor: pointer;
 }
 
 .portfolio-item:hover {
 	transform: scale(1.03);
 }
 
-.portfolio-item h3,
-.portfolio-item h2 {
+.portfolio-item h2,
+.portfolio-item h3 {
 	font-size: 1.3rem;
 	margin-bottom: 0.5rem;
 }
@@ -31,6 +37,44 @@
 	margin-bottom: 1rem;
 	word-wrap: break-word;
 	line-height: 1.4;
+}
+
+.portfolio-item a {
+	display: inline-block;
+	padding: 0.5rem 1rem;
+	background: #00ffff;
+	color: #000;
+	border-radius: 4px;
+	text-decoration: none;
+	font-weight: bold;
+	transition: background 0.3s ease;
+}
+
+.portfolio-item a:hover {
+	background: #00cccc;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+	.portfolio-item {
+		padding: 0.75rem;
+	}
+
+	.portfolio-item h2,
+	.portfolio-item h3 {
+		font-size: 1.1rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.portfolio-item p {
+		font-size: 0.85rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.portfolio-item a {
+		padding: 0.4rem 0.8rem;
+		font-size: 0.9rem;
+	}
 }
 
 .portfolio-item img {

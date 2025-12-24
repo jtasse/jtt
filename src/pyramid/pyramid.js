@@ -7,6 +7,9 @@ import {
 	parseBioContent,
 	parseBlogPosts,
 } from "../contentLoader.js"
+import "../content/bio/bio.css"
+import "../content/blog/blog.css"
+import "../content/portfolio/portfolio.css"
 
 export const pyramidGroup = new THREE.Group()
 pyramidGroup.rotation.order = "YXZ"
