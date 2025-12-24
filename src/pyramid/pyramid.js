@@ -174,14 +174,14 @@ export const labelConfigs = {
 	},
 	Portfolio: {
 		text: "Portfolio",
-		position: { x: 1.07, y: 0, z: 0.5 },
-		rotation: { x: 0, y: -0.502, z: -0.9 },
+		position: { x: 1.08, y: 0, z: 0.3 },
+		rotation: { x: 0.2, y: -0.6, z: -0.92 },
 		pyramidCenteredSize: [4, 0.6],
 		pyramidUncenteredSize: [4, 0.6],
 	},
 	Blog: {
 		text: "Blog",
-		position: { x: 0, y: -1.5, z: 1.2 },
+		position: { x: 0, y: -1.65, z: 1.2 },
 		rotation: { x: 0, y: 0, z: 0 },
 		pyramidCenteredSize: [4, 0.6],
 		pyramidUncenteredSize: [4, 0.6],
@@ -259,9 +259,10 @@ const initialPyramidState = {
 const flattenedMenuState = {
 	// Position pyramid BELOW the labels so its base acts as an underline.
 	// The pyramid is squished vertically to be flat and unobtrusive.
-	positionY: 1.4, // Below labels (which are at y=2.0) so base underlines them
+	positionY: 1.7, // Below labels (which are at y=2.0) so base underlines them
 	scale: 0.4,
 	scaleY: 0.08, // Very flat - squished vertically for subtle underline effect
+	scaleZ: 0.1, // Short height - squished Z for flatter triangle shape on screen
 	rotationX: -1.4, // Tilt forward to show inverted triangle, hide bottom completely
 }
 
@@ -334,7 +335,9 @@ export function animatePyramid(down = true, section = null) {
 	const endScaleY = down
 		? flattenedMenuState.scaleY || flattenedMenuState.scale
 		: initialPyramidState.scale
-	const endScaleZ = down ? flattenedMenuState.scale : initialPyramidState.scale
+	const endScaleZ = down
+		? flattenedMenuState.scaleZ || flattenedMenuState.scale
+		: initialPyramidState.scale
 
 	// Store starting label positions and rotations for animation
 	// Also pre-compute target positions based on FINAL pyramid state
@@ -595,7 +598,9 @@ export function resetPyramidToHome() {
 	const startPosY = pyramidGroup.position.y
 	const endPosY = initialPyramidState.positionY // Use stored initial position
 	// Uniform scaling
-	const startScale = pyramidGroup.scale.x
+	const startScaleX = pyramidGroup.scale.x
+	const startScaleY = pyramidGroup.scale.y
+	const startScaleZ = pyramidGroup.scale.z
 	const endScale = initialPyramidState.scale
 
 	// Camera reset - store starting camera position for animation
@@ -640,8 +645,10 @@ export function resetPyramidToHome() {
 		pyramidGroup.position.x = startPosX + (endPosX - startPosX) * eased
 		pyramidGroup.position.y = startPosY + (endPosY - startPosY) * eased
 		// Uniform scaling
-		const s = startScale + (endScale - startScale) * eased
-		pyramidGroup.scale.set(s, s, s)
+		const sx = startScaleX + (endScale - startScaleX) * eased
+		const sy = startScaleY + (endScale - startScaleY) * eased
+		const sz = startScaleZ + (endScale - startScaleZ) * eased
+		pyramidGroup.scale.set(sx, sy, sz)
 
 		// Animate camera back to initial position
 		camera.position.lerpVectors(startCamPos, endCamPos, eased)
@@ -669,11 +676,11 @@ export function resetPyramidToHome() {
 			)
 			const currentPyramidRotY = startRotY + rotDiffY * eased
 			const currentPyramidRotX = startRotX + (targetRotX - startRotX) * eased
-			const currentScale = s
+			const currentScaleVec = new THREE.Vector3(sx, sx, sx)
 
 			// Calculate target world position for this label at original local pos
 			const targetWorldPos = origPos.clone()
-			targetWorldPos.multiplyScalar(currentScale)
+			targetWorldPos.multiply(currentScaleVec)
 			targetWorldPos.applyAxisAngle(
 				new THREE.Vector3(1, 0, 0),
 				currentPyramidRotX
@@ -695,7 +702,7 @@ export function resetPyramidToHome() {
 			const localPos = currentWorldPos.clone().sub(currentPyramidPos)
 			localPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), -currentPyramidRotY)
 			localPos.applyAxisAngle(new THREE.Vector3(1, 0, 0), -currentPyramidRotX)
-			localPos.divideScalar(currentScale)
+			localPos.divide(currentScaleVec)
 
 			labelMesh.position.copy(localPos)
 
@@ -703,7 +710,7 @@ export function resetPyramidToHome() {
 			const targetScaleVal = origScale.clone()
 			const startScaleVec = startState.worldScale
 				.clone()
-				.divideScalar(currentScale)
+				.divide(currentScaleVec)
 			labelMesh.scale.lerpVectors(startScaleVec, targetScaleVal, eased)
 
 			// Interpolate rotation back to original
