@@ -50,6 +50,7 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.style.backdropFilter = "blur(4px)"
 	// Hidden initially until the user interacts (drag or label click)
 	btn.style.display = "none"
+	btn.addEventListener("mousedown", (e) => e.stopPropagation())
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
 		try {
@@ -342,6 +343,11 @@ const DRAG_THRESHOLD = 5 // pixels
 
 // Track mousedown to detect if click is a drag, and process scene interaction
 function onMouseDown(event) {
+	// Ignore mousedown on DOM elements (buttons, scrollbars, content pane)
+	// Only track clicks that originate on the canvas
+	if (event.target.tagName !== "CANVAS") {
+		return
+	}
 	isPointerDown = true
 	isDragging = false
 	pointerDownPos.x = event.clientX

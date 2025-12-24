@@ -173,22 +173,22 @@ export const labelConfigs = {
 		text: "Bio",
 		position: { x: -1.05, y: 0.04, z: 0.5 },
 		rotation: { x: 0, y: 0.438, z: 1 },
-		pyramidCenteredSize: [4, 0.6],
-		pyramidUncenteredSize: [4, 0.6],
+		pyramidCenteredSize: [2.4, 0.6],
+		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Portfolio: {
 		text: "Portfolio",
 		position: { x: 1.08, y: 0, z: 0.3 },
 		rotation: { x: 0.2, y: -0.6, z: -0.92 },
-		pyramidCenteredSize: [4, 0.6],
-		pyramidUncenteredSize: [4, 0.6],
+		pyramidCenteredSize: [2.4, 0.6],
+		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Blog: {
 		text: "Blog",
 		position: { x: 0, y: -1.65, z: 1.2 },
 		rotation: { x: 0, y: 0, z: 0 },
-		pyramidCenteredSize: [4, 0.6],
-		pyramidUncenteredSize: [4, 0.6],
+		pyramidCenteredSize: [2.4, 0.6],
+		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	// Home config can be customized externally before calling initLabels
 	Home: {
@@ -196,8 +196,8 @@ export const labelConfigs = {
 		// position is relative to pyramidGroup; default sits above apex
 		position: { x: 0, y: apex.y + 0.2, z: 0 },
 		rotation: { x: 0, y: 0, z: 0 },
-		pyramidCenteredSize: [4, 0.6],
-		pyramidUncenteredSize: [4, 0.6],
+		pyramidCenteredSize: [2.4, 0.6],
+		pyramidUncenteredSize: [2.4, 0.6],
 	},
 }
 
@@ -222,15 +222,16 @@ export function initLabels(makeLabelPlane) {
 		mesh.cursor = "pointer"
 
 		// Create a larger invisible hover target placed slightly in front of the label
-		const hoverWidth = cfg.pyramidCenteredSize[0] * 1.6
-		const hoverHeight = cfg.pyramidCenteredSize[1] * 2.0
+		const hoverWidth = cfg.pyramidCenteredSize[0] * 0.8
+		const hoverHeight = cfg.pyramidCenteredSize[1] * 1.0
 		const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 		const hoverMat = new THREE.MeshBasicMaterial({
 			transparent: true,
 			opacity: 0,
 		})
 		const hover = new THREE.Mesh(hoverGeo, hoverMat)
-		hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0, 0.08))
+		// Offset slightly up (0.05) to expose the pyramid underline for clicking
+		hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0.05, 0.08))
 		hover.rotation.copy(mesh.rotation)
 		hover.userData.labelKey = key
 		hover.name = `${key}_hover`
@@ -353,48 +354,49 @@ export function animatePyramid(down = true, section = null) {
 	for (const key in labels) {
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
-		labelStartStates[key] = {
-			position: labelMesh.position.clone(),
-			rotation: labelMesh.rotation.clone(),
-			scale: labelMesh.scale.clone(),
-			visible: labelMesh.visible,
-		}
-		// Pre-compute target positions based on final pyramid state
-		// If the label is already fixed in the flattened nav, do not compute
-		// a target state for it — it should never move again.
+
+		// If going down (to menu) and label is not already fixed:
+		// Detach from pyramid and move in World Space for a clear path.
 		if (
 			down &&
 			flattenedLabelPositions[key] &&
 			!(labelMesh.userData && labelMesh.userData.fixedNav)
 		) {
+			// Update world matrix to ensure accurate world transforms
+			labelMesh.updateMatrixWorld()
+			const worldPos = new THREE.Vector3()
+			labelMesh.getWorldPosition(worldPos)
+			const worldQuat = new THREE.Quaternion()
+			labelMesh.getWorldQuaternion(worldQuat)
+			const worldScale = new THREE.Vector3()
+			labelMesh.getWorldScale(worldScale)
+
+			// Reparent to scene to animate freely in world space
+			scene.add(labelMesh)
+			labelMesh.position.copy(worldPos)
+			labelMesh.quaternion.copy(worldQuat)
+			labelMesh.scale.copy(worldScale)
+
+			labelStartStates[key] = {
+				position: worldPos.clone(),
+				quaternion: worldQuat.clone(),
+				scale: worldScale.clone(),
+			}
+
 			const flatPos = flattenedLabelPositions[key]
-			// Convert world position to local position relative to FINAL pyramid state
-			const worldOffset = new THREE.Vector3(
-				flatPos.x - endPosX,
-				flatPos.y - endPosY,
-				flatPos.z
-			)
-			// Apply inverse of pyramid's final rotations
-			worldOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -endRotY)
-			worldOffset.applyAxisAngle(new THREE.Vector3(1, 0, 0), -endRotX)
-			// Account for non-uniform scaling
-			const targetLocalX = worldOffset.x / endScaleX
-			const targetLocalY = worldOffset.y / endScaleY
-			const targetLocalZ = worldOffset.z / endScaleZ
-			// Scale labels to remain readable (use X scale as reference)
-			const targetScale = (1 / endScaleX) * 0.4
-			// Do NOT compute a local counter-rotation here. Interpolating
-			// a local counter-rotation and then copying it as a WORLD rotation
-			// when reparenting produced incorrectly tilted labels. Instead,
-			// keep the current rotation during the animation and, when the
-			// label is snapped into the flattened world-space, explicitly
-			// set its world rotation to match the camera (face-on).
+			// Target: Flat position, Face camera (identity rotation), Scale 0.4
 			labelTargetStates[key] = {
-				position: new THREE.Vector3(targetLocalX, targetLocalY, targetLocalZ),
-				// Preserve current rotation during the motion; final world
-				// rotation is set after reparenting below.
+				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
+				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
+				scale: new THREE.Vector3(1, 1, 1),
+			}
+		} else {
+			// Existing logic for !down or fixed labels (local space)
+			labelStartStates[key] = {
+				position: labelMesh.position.clone(),
 				rotation: labelMesh.rotation.clone(),
-				scale: new THREE.Vector3(targetScale, targetScale, targetScale),
+				scale: labelMesh.scale.clone(),
+				visible: labelMesh.visible,
 			}
 		}
 	}
@@ -426,30 +428,21 @@ export function animatePyramid(down = true, section = null) {
 			if (!startState) continue
 
 			if (down && labelTargetStates[key]) {
-				// Animate to pre-computed target position
+				// Animate in World Space
 				const targetState = labelTargetStates[key]
 				labelMesh.position.lerpVectors(
 					startState.position,
 					targetState.position,
 					t
 				)
-				labelMesh.rotation.x =
-					startState.rotation.x +
-					(targetState.rotation.x - startState.rotation.x) * t
-				labelMesh.rotation.y =
-					startState.rotation.y +
-					(targetState.rotation.y - startState.rotation.y) * t
-				labelMesh.rotation.z =
-					startState.rotation.z +
-					(targetState.rotation.z - startState.rotation.z) * t
-				// Scale labels
-				const sx =
-					startState.scale.x + (targetState.scale.x - startState.scale.x) * t
-				const sy =
-					startState.scale.y + (targetState.scale.y - startState.scale.y) * t
-				const sz =
-					startState.scale.z + (targetState.scale.z - startState.scale.z) * t
-				labelMesh.scale.set(sx, sy, sz)
+				if (startState.quaternion && targetState.quaternion) {
+					labelMesh.quaternion.slerpQuaternions(
+						startState.quaternion,
+						targetState.quaternion,
+						t
+					)
+				}
+				labelMesh.scale.lerpVectors(startState.scale, targetState.scale, t)
 			} else if (!down) {
 				// Animate back to original positions
 				const origPos = labelMesh.userData.origPosition
@@ -488,29 +481,13 @@ export function animatePyramid(down = true, section = null) {
 				if (!labelMesh) continue
 
 				if (down && labelTargetStates[key]) {
-					// Place label at flattened WORLD position and reparent to scene
+					// Already in scene and animated to target.
+					// Just ensure exact final values.
 					const flatPos = flattenedLabelPositions[key]
-					const targetState = labelTargetStates[key]
 					if (flatPos) {
-						// Reparent to scene and set world position/scale. Set the
-						// world rotation explicitly to match the camera so labels
-						// are perfectly face-on in the flattened nav.
-						scene.add(labelMesh)
 						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
-						if (targetState && targetState.scale)
-							labelMesh.scale.copy(targetState.scale)
-						// Use camera rotation to make the label face the camera
-						// in world-space (flat, upright). Mark the label as fixed
-						// so it will not be updated by subsequent spin animations.
-						try {
-							if (camera && camera.rotation) {
-								labelMesh.rotation.copy(camera.rotation)
-							} else {
-								labelMesh.rotation.set(0, 0, 0)
-							}
-						} catch (e) {
-							labelMesh.rotation.set(0, 0, 0)
-						}
+						labelMesh.rotation.set(0, 0, 0)
+						labelMesh.scale.set(1, 1, 1)
 						// Mark as fixed nav so it never moves again
 						labelMesh.userData.fixedNav = true
 					}
@@ -1087,8 +1064,9 @@ export function animate() {
 			// Match label's world rotation
 			hover.quaternion.copy(worldQuaternion)
 			// Scale hover target based on pyramid scale to maintain appropriate hit area
-			const scale = pyramidGroup.scale.x
-			hover.scale.set(scale, scale, scale)
+			const s = new THREE.Vector3()
+			label.getWorldScale(s)
+			hover.scale.copy(s)
 		}
 	}
 	// continuously update scroll bounds to handle async text loading/layout
