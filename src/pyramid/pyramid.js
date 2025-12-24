@@ -260,7 +260,7 @@ const initialPyramidState = {
 const flattenedMenuState = {
 	// Position pyramid BELOW the labels so its base acts as an underline.
 	// The pyramid is squished vertically to be flat and unobtrusive.
-	positionY: 1.7, // Below labels (which are at y=2.0) so base underlines them
+	positionY: 2.2, // Below labels (which are at y=2.5) so base underlines them
 	scale: 0.4,
 	scaleY: 0.08, // Very flat - squished vertically for subtle underline effect
 	scaleZ: 0.1, // Short height - squished Z for flatter triangle shape on screen
@@ -271,9 +271,9 @@ const flattenedMenuState = {
 // These are WORLD positions (x/y/z) - fixed values that stay within camera view.
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
-	Bio: { x: -2.0, y: 2.0, z: 0 },
-	Portfolio: { x: 0, y: 2.0, z: 0 },
-	Blog: { x: 2.0, y: 2.0, z: 0 },
+	Bio: { x: -2.0, y: 2.5, z: 0 },
+	Portfolio: { x: 0, y: 2.5, z: 0 },
+	Blog: { x: 2.0, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
@@ -295,7 +295,7 @@ const faceRotations = {
 let currentSection = null
 
 // Clipping plane to prevent content from overlapping the top nav
-const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.6)
+const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.1)
 
 export function getInitialPyramidState() {
 	return { ...initialPyramidState }
@@ -804,7 +804,7 @@ export function showBioPlane() {
 				}
 			})
 			// Position content plane below the top menu
-			plane.position.y = -0.5
+			plane.position.y = 0.0
 			scene.add(plane)
 			setupContentScrolling(plane)
 			// Hide separators since flattened menu serves as navigation
@@ -882,7 +882,7 @@ export function showPortfolioPlane() {
 				}
 			})
 			// Position content plane below the top menu
-			plane.position.y = -0.5
+			plane.position.y = 0.0
 			scene.add(plane)
 			setupContentScrolling(plane)
 			// Hide separators since flattened menu serves as navigation
@@ -1110,8 +1110,8 @@ let scrollOverlay = null
 let scrollTrack = null
 let scrollThumb = null
 let activeScrollPlane = null
-let scrollMinY = -0.5
-let scrollMaxY = -0.5
+let scrollMinY = 0.0
+let scrollMaxY = 0.0
 
 function setupContentScrolling(plane) {
 	activeScrollPlane = plane
@@ -1233,8 +1233,8 @@ function updateScrollBounds() {
 	// is at bottom of screen (y=-2.8).
 	// Target Y = h - 1.5. (Increased buffer to ensure bottom is fully visible)
 	const targetY = h - 1.5
-	scrollMinY = -0.5
-	scrollMaxY = Math.max(-0.5, targetY)
+	scrollMinY = 0.0
+	scrollMaxY = Math.max(0.0, targetY)
 
 	// If not dragging, ensure we stay in bounds (e.g. if content shrinks)
 	if (activeScrollPlane.position.y > scrollMaxY)
