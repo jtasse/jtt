@@ -13,25 +13,29 @@ export function makeLabelPlane(text, width = 1.6, height = 0.45) {
 	ctx.textBaseline = "middle"
 	ctx.fillText(text, canvas.width / 2, canvas.height / 2)
 	const tex = new THREE.CanvasTexture(canvas)
-	return new THREE.Mesh(
-		new THREE.PlaneGeometry(width, height),
-		new THREE.MeshBasicMaterial({
-			map: tex,
-			transparent: true,
-			side: THREE.DoubleSide,
-			// prevent transparent label textures from writing to the depth buffer
-			// which can cause dark occlusion artifacts when other geometry overlaps
-			depthWrite: false,
-		})
-	)
+	const mat = new THREE.MeshBasicMaterial({
+		map: tex,
+		transparent: true,
+		side: THREE.DoubleSide,
+		// prevent transparent label textures from writing to the depth buffer
+		// which can cause dark occlusion artifacts when other geometry overlaps
+		depthWrite: false,
+		// Render labels on top of the scene so the pyramid never occludes them
+		depthTest: false,
+	})
+	const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat)
+	mesh.renderOrder = 999
+	return mesh
 }
 
 // === Bio Plane ===
 export function makeBioPlane(bioContent) {
 	// Accept either a string (legacy) or the structured object { heading, paragraphs: [] }
-	const margin = 20
-	const canvasWidth = window.innerWidth * 0.9
-	const lineHeight = 28
+	const margin = 30
+	const canvasWidth = window.innerWidth * 0.95
+	// Use more vertical space - leave room for nav at top
+	const maxContentHeight = window.innerHeight * 0.75
+	const lineHeight = 30
 	const paragraphSpacing = 1.5
 
 	const canvas = document.createElement("canvas")
@@ -77,7 +81,8 @@ export function makeBioPlane(bioContent) {
 		lines.push("")
 	})
 
-	const canvasHeight = Math.max(lines.length * lineHeight + 50, 120)
+	const rawHeight = lines.length * lineHeight + 50
+	const canvasHeight = Math.max(Math.min(rawHeight, maxContentHeight), 120)
 	canvas.height = canvasHeight
 
 	ctx.font = `${lineHeight}px sans-serif`
@@ -93,7 +98,7 @@ export function makeBioPlane(bioContent) {
 	})
 
 	const texture = new THREE.CanvasTexture(canvas)
-	const planeWidth = 6
+	const planeWidth = 8
 	const planeHeight = (canvasHeight / canvasWidth) * planeWidth
 
 	const mesh = new THREE.Mesh(
@@ -106,7 +111,8 @@ export function makeBioPlane(bioContent) {
 			depthWrite: false,
 		})
 	)
-	mesh.position.set(0, 0, -1)
+	// Position content below nav area - center vertically in remaining space
+	mesh.position.set(0, -0.3, -1)
 	mesh.name = "bioPlane"
 	mesh.userData._canvasTexture = texture
 	return mesh
@@ -131,18 +137,21 @@ export function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 }
 
 export function makePortfolioPlane(items) {
-	const canvasWidth = window.innerWidth * 0.9
+	const canvasWidth = window.innerWidth * 0.95
+	// Use more vertical space - leave room for nav at top
+	const maxContentHeight = window.innerHeight * 0.75
 	const canvas = document.createElement("canvas")
 	const ctx = canvas.getContext("2d")
-	const margin = 40
+	const margin = 50
 	const columns = 2
 	const cardWidth = (canvasWidth - margin * (columns + 1)) / columns
-	const cardHeight = 280
-	const rowGap = 80
+	const cardHeight = 320
+	const rowGap = 60
 	const colGap = margin
 
 	const rows = Math.ceil(items.length / columns)
-	const canvasHeight = rows * (cardHeight + rowGap) + margin
+	const rawHeight = rows * (cardHeight + rowGap) + margin
+	const canvasHeight = Math.min(rawHeight, maxContentHeight)
 	canvas.width = canvasWidth
 	canvas.height = canvasHeight
 
@@ -203,7 +212,7 @@ export function makePortfolioPlane(items) {
 
 	const texture = new THREE.CanvasTexture(canvas)
 	texture.minFilter = THREE.LinearFilter
-	const planeWidth = 6
+	const planeWidth = 8
 	const planeHeight = (canvasHeight / canvasWidth) * planeWidth
 	const planeGeo = new THREE.PlaneGeometry(planeWidth, planeHeight)
 	const planeMat = new THREE.MeshBasicMaterial({
@@ -214,7 +223,8 @@ export function makePortfolioPlane(items) {
 		depthWrite: false,
 	})
 	const mesh = new THREE.Mesh(planeGeo, planeMat)
-	mesh.position.set(0, 1, -1)
+	// Position content below nav area - center vertically in remaining space
+	mesh.position.set(0, -0.3, -1)
 	mesh.name = "portfolioPlane"
 
 	cardRects.forEach((rect, idx) => {
@@ -247,11 +257,13 @@ export function makePortfolioPlane(items) {
 // === Blog Plane ===
 export function makeBlogPlane(posts) {
 	// posts: array of { title, date, author, image, summary }
-	const margin = 20
-	const canvasWidth = window.innerWidth * 0.9
-	const lineHeight = 24
-	const postSpacing = 40
-	const imageH = 120
+	const margin = 30
+	const canvasWidth = window.innerWidth * 0.95
+	// Use more vertical space - leave room for nav at top
+	const maxContentHeight = window.innerHeight * 0.75
+	const lineHeight = 26
+	const postSpacing = 50
+	const imageH = 140
 
 	const arr = Array.isArray(posts) ? posts : []
 
@@ -278,7 +290,7 @@ export function makeBlogPlane(posts) {
 	})
 
 	const contentH = total
-	const h = Math.min(contentH, window.innerHeight * 0.7)
+	const h = Math.min(contentH, maxContentHeight)
 	const canvas = document.createElement("canvas")
 	canvas.width = canvasWidth
 	canvas.height = h
@@ -343,7 +355,7 @@ export function makeBlogPlane(posts) {
 	})
 
 	const tex = new THREE.CanvasTexture(canvas)
-	const pw = 6
+	const pw = 8
 	const ph = (canvas.height / canvas.width) * pw
 	const mesh = new THREE.Mesh(
 		new THREE.PlaneGeometry(pw, ph),
@@ -355,7 +367,8 @@ export function makeBlogPlane(posts) {
 			depthWrite: false,
 		})
 	)
-	mesh.position.set(0, 0, -1)
+	// Position content below nav area - center vertically in remaining space
+	mesh.position.set(0, -0.3, -1)
 	mesh.name = "blogPlane"
 	return mesh
 }

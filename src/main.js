@@ -5,10 +5,12 @@ import {
 	labels,
 	initLabels,
 	animatePyramid,
+	spinPyramidToSection,
 	showBioPlane,
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
+	showHomeLabel,
 	animate,
 	renderer,
 	camera,
@@ -24,6 +26,43 @@ let lastCameraPhiAngle = controls.getSphericalDelta ? 0 : null
 
 // Attach renderer DOM element
 document.getElementById("scene-container").appendChild(renderer.domElement)
+
+// Create a DOM Home button top-left that overlays the scene. This button is
+// always visible and acts independently of the 3D scene so it behaves like a
+// sticky HUD element while using similar styling as the 3D labels.
+;(function createHomeButton() {
+	const existing = document.getElementById("home-button")
+	if (existing) return
+	const btn = document.createElement("button")
+	btn.id = "home-button"
+	btn.textContent = "Home"
+	btn.style.position = "fixed"
+	btn.style.left = "16px"
+	btn.style.top = "12px"
+	btn.style.zIndex = 10000
+	btn.style.padding = "8px 14px"
+	btn.style.background = "rgba(0,0,0,0.6)"
+	btn.style.color = "white"
+	btn.style.border = "1px solid rgba(255,255,255,0.08)"
+	btn.style.borderRadius = "4px"
+	btn.style.font = "600 14px sans-serif"
+	btn.style.cursor = "pointer"
+	btn.style.backdropFilter = "blur(4px)"
+	// Hidden initially until the user interacts (drag or label click)
+	btn.style.display = "none"
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation()
+		try {
+			resetPyramidToHome()
+			hideAllPlanes()
+			window.centeredLabelName = null
+			router.navigate("/")
+		} catch (err) {
+			console.error("Home button handler error", err)
+		}
+	})
+	document.body.appendChild(btn)
+})()
 
 // Initialize Labels
 initLabels(makeLabelPlane)
@@ -46,10 +85,7 @@ function projectWorldToScreen(worldPos, camera) {
 let lastFloorUpdate = 0
 function updateContentFloorPosition() {
 	const floor = document.getElementById("content-floor")
-	if (!floor || !labels || !labels.Home) {
-		if (floor) floor.classList.remove("show")
-		return
-	}
+	if (!floor) return
 
 	// If a 3D separator exists and is visible, do not show the DOM separator.
 	if (
@@ -66,10 +102,23 @@ function updateContentFloorPosition() {
 	// (no debug logging) - keep this function quiet in production
 
 	const content = document.getElementById("content")
-	// get Home label world->screen position
-	const homeMesh = labels.Home
-	const homeWorld = new THREE.Vector3()
-	homeMesh.getWorldPosition(homeWorld)
+	// Determine an anchor world position for the nav/separator. Prefer a
+	// 3D Home label if present; otherwise compute a point a short distance
+	// in front of the camera so the DOM separator can be positioned.
+	let homeWorld = new THREE.Vector3()
+	if (labels && labels.Home) {
+		try {
+			labels.Home.getWorldPosition(homeWorld)
+		} catch (e) {
+			homeWorld = camera.position
+				.clone()
+				.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+		}
+	} else {
+		homeWorld = camera.position
+			.clone()
+			.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+	}
 	const homeScreen = projectWorldToScreen(homeWorld, camera)
 
 	// determine horizontal alignment: prefer content pane, fallback to scene container
@@ -179,10 +228,18 @@ function updateContentMaxHeightToSeparator() {
 		// overlaps the pyramid. This ensures the content is clamped above the
 		// scene even during startup or when the separator is still initializing.
 		try {
+			let hs = null
 			if (labels && labels.Home) {
 				const homeWorld = new THREE.Vector3()
 				labels.Home.getWorldPosition(homeWorld)
-				const hs = projectWorldToScreen(homeWorld, camera)
+				hs = projectWorldToScreen(homeWorld, camera)
+			} else {
+				const homeWorld = camera.position
+					.clone()
+					.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
+				hs = projectWorldToScreen(homeWorld, camera)
+			}
+			if (hs) {
 				// place the virtual separator some px above Home label
 				const fallbackOffset = 20 // px above Home label
 				sepScreenY = hs.y - fallbackOffset
@@ -491,39 +548,40 @@ function requireHoverTargets() {
 
 window.addEventListener("mousemove", onMouseMove)
 
-// Monitor camera changes to show Home label when rotating at center
-let lastCameraAzimuth = controls.getAzimuthalAngle
-	? controls.getAzimuthalAngle()
-	: null
-setInterval(() => {
-	// Check if pyramid is at center (not at bottom)
-	const isPyramidAtCenter = pyramidGroup.position.y > -1
-	if (isPyramidAtCenter && controls.getAzimuthalAngle) {
-		const currentAzimuth = controls.getAzimuthalAngle()
-		// If camera angle changed, show Home label (indicates user is interacting with view)
-		if (
-			lastCameraAzimuth !== null &&
-			Math.abs(currentAzimuth - lastCameraAzimuth) > 0.01
-		) {
-			// Only show if not already showing a centered label
-			if (!window.centeredLabelName && pyramidGroup.position.y > 0) {
-				showHomeLabel()
-			}
-		}
-		lastCameraAzimuth = currentAzimuth
-	} else if (!isPyramidAtCenter) {
-		lastCameraAzimuth = controls.getAzimuthalAngle
-			? controls.getAzimuthalAngle()
-			: lastCameraAzimuth
+// Show corner Home when the user starts an OrbitControls interaction (drag)
+// This replaces the previous interval-based camera polling.
+try {
+	if (controls && controls.addEventListener) {
+		controls.addEventListener("start", () => {
+			showHomeLabel()
+		})
 	}
-}, 100)
+} catch (e) {}
 
 // Listen for route changes and show correct content
 // Helper to animate pyramid to top menu and show a section
 function centerAndOpenLabel(labelName) {
 	if (!labels || !labels[labelName]) return
-	// animate pyramid to top and flatten labels - content will be shown when animation completes
-	animatePyramid(true, labelName.toLowerCase())
+	// Clicking a label should reveal the corner Home control
+	try {
+		showHomeLabel()
+	} catch (e) {}
+	const isAtTop = pyramidGroup.position.y >= 1.5
+
+	if (isAtTop) {
+		// Already at top, just spin to new section
+		hideAllPlanes()
+		const sectionName = labelName.toLowerCase()
+		console.log("pyramidGroup at top nav state:", pyramidGroup)
+		spinPyramidToSection(sectionName, () => {
+			if (labelName === "Bio") showBioPlane()
+			else if (labelName === "Portfolio") showPortfolioPlane()
+			else if (labelName === "Blog") showBlogPlane()
+		})
+	} else if (!isAtTop) {
+		// animate pyramid to top and flatten labels - content will be shown when animation completes
+		animatePyramid(true, labelName.toLowerCase())
+	}
 	// Track which section is active (for highlighting in menu if desired)
 	window.centeredLabelName = labelName
 }
@@ -657,8 +715,12 @@ function onSceneMouseDown(event) {
 						align-items: center;
 						justify-content: center;
 					`
-					closeBtn.onmouseover = () => { closeBtn.style.background = "rgba(0, 255, 255, 0.3)" }
-					closeBtn.onmouseout = () => { closeBtn.style.background = "rgba(0, 0, 0, 0.8)" }
+					closeBtn.onmouseover = () => {
+						closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+					}
+					closeBtn.onmouseout = () => {
+						closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+					}
 					closeBtn.onclick = (e) => {
 						e.preventDefault()
 						e.stopPropagation()
@@ -769,8 +831,12 @@ function onSceneMouseDown(event) {
 					align-items: center;
 					justify-content: center;
 				`
-				closeBtn.onmouseover = () => { closeBtn.style.background = "rgba(0, 255, 255, 0.3)" }
-				closeBtn.onmouseout = () => { closeBtn.style.background = "rgba(0, 0, 0, 0.8)" }
+				closeBtn.onmouseover = () => {
+					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+				}
+				closeBtn.onmouseout = () => {
+					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+				}
 				closeBtn.onclick = (e) => {
 					e.preventDefault()
 					e.stopPropagation()
@@ -866,8 +932,12 @@ function onSceneMouseDown(event) {
 					align-items: center;
 					justify-content: center;
 				`
-				closeBtn.onmouseover = () => { closeBtn.style.background = "rgba(0, 255, 255, 0.3)" }
-				closeBtn.onmouseout = () => { closeBtn.style.background = "rgba(0, 0, 0, 0.8)" }
+				closeBtn.onmouseover = () => {
+					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+				}
+				closeBtn.onmouseout = () => {
+					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+				}
 				closeBtn.onclick = (e) => {
 					e.preventDefault()
 					e.stopPropagation()
@@ -1001,21 +1071,26 @@ function onSceneMouseDown(event) {
 		// With flattened menu, all labels are visible at the top
 		// Clicking a label navigates to that section
 		if (window.centeredLabelName !== labelName) {
-			// If already showing content, just switch sections (pyramid stays at top)
-			const isAtTop = pyramidGroup.position.y >= 2.0
+			// If already showing content, spin pyramid and switch sections
+			const isAtTop = pyramidGroup.position.y >= 0.75
 			if (isAtTop) {
-				// Already in flattened state, just switch content
+				// Already in flattened state, spin pyramid to new face and switch content
 				hideAllPlanes()
-				if (labelName === "Bio") {
-					showBioPlane()
-					currentContentVisible = "bio"
-				} else if (labelName === "Portfolio") {
-					showPortfolioPlane()
-					currentContentVisible = "portfolio"
-				} else if (labelName === "Blog") {
-					showBlogPlane()
-					currentContentVisible = "blog"
-				}
+				const sectionName = labelName.toLowerCase()
+				console.log("pyramidGroup at top nav state:", pyramidGroup)
+				spinPyramidToSection(sectionName, () => {
+					// Show content after spin completes
+					if (labelName === "Bio") {
+						showBioPlane()
+						currentContentVisible = "bio"
+					} else if (labelName === "Portfolio") {
+						showPortfolioPlane()
+						currentContentVisible = "portfolio"
+					} else if (labelName === "Blog") {
+						showBlogPlane()
+						currentContentVisible = "blog"
+					}
+				})
 				window.centeredLabelName = labelName
 			} else {
 				// Animate pyramid to top and show content
