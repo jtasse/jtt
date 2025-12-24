@@ -3,6 +3,7 @@ import { makeLabelPlane } from "./planes.js"
 import {
 	pyramidGroup,
 	labels,
+	hoverTargets,
 	initLabels,
 	animatePyramid,
 	spinPyramidToSection,
@@ -19,10 +20,6 @@ import {
 	resetPyramidToHome,
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
-import { scrollbarState } from "./scrollbarState.js"
-
-// Track camera rotation to show Home label when rotating at center
-let lastCameraPhiAngle = controls.getSphericalDelta ? 0 : null
 
 // Attach renderer DOM element
 document.getElementById("scene-container").appendChild(renderer.domElement)
@@ -71,265 +68,7 @@ initLabels(makeLabelPlane)
 // Start animation loop
 animate()
 
-// -----------------------------
-// Content-floor positioning
-// -----------------------------
-// Project a world-space position to screen coordinates
-function projectWorldToScreen(worldPos, camera) {
-	const v = worldPos.clone().project(camera)
-	return {
-		x: ((v.x + 1) / 2) * window.innerWidth,
-		y: ((1 - v.y) / 2) * window.innerHeight,
-	}
-}
-
-let lastFloorUpdate = 0
-function updateContentFloorPosition() {
-	const floor = document.getElementById("content-floor")
-	if (!floor) return
-
-	// If a 3D separator exists and is visible, do not show the DOM separator.
-	if (
-		pyramidGroup &&
-		pyramidGroup.userData &&
-		pyramidGroup.userData._separator3D &&
-		pyramidGroup.userData._separator3D.visible
-	) {
-		floor.classList.remove("show")
-		return
-	}
-
-	// Debug log to help identify why the separator may not be visible
-	// (no debug logging) - keep this function quiet in production
-
-	const content = document.getElementById("content")
-	// Determine an anchor world position for the nav/separator. Prefer a
-	// 3D Home label if present; otherwise compute a point a short distance
-	// in front of the camera so the DOM separator can be positioned.
-	let homeWorld = new THREE.Vector3()
-	if (labels && labels.Home) {
-		try {
-			labels.Home.getWorldPosition(homeWorld)
-		} catch (e) {
-			homeWorld = camera.position
-				.clone()
-				.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
-		}
-	} else {
-		homeWorld = camera.position
-			.clone()
-			.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
-	}
-	const homeScreen = projectWorldToScreen(homeWorld, camera)
-
-	// determine horizontal alignment: prefer content pane, fallback to scene container
-	const sceneContainer = document.getElementById("scene-container")
-	const rect = content
-		? content.getBoundingClientRect()
-		: sceneContainer
-		? sceneContainer.getBoundingClientRect()
-		: { left: 0, width: window.innerWidth, bottom: window.innerHeight * 0.6 }
-
-	const contentBottom = content ? rect.bottom : null
-
-	// Decide when the floor should be visible:
-	// - if the pyramid is at bottom (uncentered)
-	// - OR if the content pane exists and is visible (user clicked a label)
-	const pyramidAtBottom =
-		pyramidGroup && pyramidGroup.position
-			? pyramidGroup.position.y <= -1.5
-			: false
-	const contentVisible = !!(
-		content && window.getComputedStyle(content).display !== "none"
-	)
-
-	if (!pyramidAtBottom && !contentVisible) {
-		floor.classList.remove("show")
-		// console debug
-		// (no debug logging) - keep this function quiet in production
-		return
-	}
-
-	// place the floor between content bottom and the Home label
-	// Use larger padding so there's more vertical empty space above/below the separator.
-	const pad = 36 // space between content bottom and separator
-	const homeOffset = 72 // distance to keep between Home label/pyramid and separator
-	let targetY
-	if (content && contentBottom !== null) {
-		// Ensure the separator stays at least `pad` below the content, but also
-		// leave `homeOffset` space above the Home label. Choose the closest
-		// position that satisfies both constraints and doesn't overlap.
-		targetY = Math.min(
-			homeScreen.y - pad,
-			Math.max(contentBottom + pad, homeScreen.y - homeOffset)
-		)
-	} else {
-		// No content pane: position a bit above the Home label so the separator
-		// separates content area and Home; use the larger homeOffset to create breathing room.
-		targetY = homeScreen.y - homeOffset
-	}
-
-	// Center the separator above the Home label with a fixed, short width
-	const desiredWidth = 220
-	floor.classList.add("show")
-	floor.style.position = "fixed"
-	const leftPos = Math.round(homeScreen.x - desiredWidth / 2)
-	floor.style.left = leftPos + "px"
-	floor.style.width = desiredWidth + "px"
-	floor.style.top = Math.round(targetY) + "px"
-
-	// Do not reposition the DOM `#content` from JS; keep vertical layout controlled by HTML/CSS.
-}
-
-// Adjust the DOM content max-height so the content always ends above the separator.
-// Prefers the 3D separator position when available, otherwise falls back to the DOM `#content-floor`.
-function updateContentMaxHeightToSeparator() {
-	const content = document.getElementById("content")
-	if (!content) return
-
-	// If content is not visible, clear any inline maxHeight so CSS controls it when shown
-	if (window.getComputedStyle(content).display === "none") {
-		content.style.maxHeight = ""
-		content.style.bottom = ""
-		content.style.bottom = ""
-		return
-	}
-
-	// determine separator screen Y
-	let sepScreenY = null
-	// Prefer 3D separator if present and visible
-	try {
-		const sep3D =
-			pyramidGroup &&
-			pyramidGroup.userData &&
-			pyramidGroup.userData._separator3D
-		if (sep3D && sep3D.visible) {
-			const sepWorld = new THREE.Vector3()
-			sep3D.getWorldPosition(sepWorld)
-			const s = projectWorldToScreen(sepWorld, camera)
-			sepScreenY = s.y
-		}
-	} catch (e) {
-		// ignore - fallback to DOM bar
-	}
-
-	// If no 3D separator, check DOM content-floor if shown
-	if (sepScreenY === null) {
-		const floor = document.getElementById("content-floor")
-		if (floor && floor.classList.contains("show")) {
-			const r = floor.getBoundingClientRect()
-			sepScreenY = r.top
-		}
-	}
-
-	// If still no separator position, fall back to CSS rule (clear inline style)
-	if (sepScreenY === null) {
-		// If we don't have a visible 3D separator or DOM bar yet, use the Home
-		// label screen position as a conservative fallback so content never
-		// overlaps the pyramid. This ensures the content is clamped above the
-		// scene even during startup or when the separator is still initializing.
-		try {
-			let hs = null
-			if (labels && labels.Home) {
-				const homeWorld = new THREE.Vector3()
-				labels.Home.getWorldPosition(homeWorld)
-				hs = projectWorldToScreen(homeWorld, camera)
-			} else {
-				const homeWorld = camera.position
-					.clone()
-					.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))
-				hs = projectWorldToScreen(homeWorld, camera)
-			}
-			if (hs) {
-				// place the virtual separator some px above Home label
-				const fallbackOffset = 20 // px above Home label
-				sepScreenY = hs.y - fallbackOffset
-			}
-		} catch (e) {
-			// if fallback also fails, clear inline style and exit
-			if (sepScreenY === null) {
-				content.style.maxHeight = ""
-				content.style.bottom = ""
-				content.style.bottom = ""
-				return
-			}
-		}
-	}
-
-	// Compute available bottom distance for content so it ends above the separator by gapPx
-	const gapPx = 20 // pixels between content bottom and separator; tweakable
-	const topRect = content.getBoundingClientRect()
-	const topPx = topRect.top
-	// Determine bottom in px from viewport bottom: we want the content's bottom to be
-	// window.innerHeight - (sepScreenY - gapPx).
-	let bottomPx = Math.round(window.innerHeight - (sepScreenY - gapPx))
-	// Ensure there's at least a minimum height available for content
-	const minHeight = 120
-	const availableHeight = bottomPx - topPx
-	if (availableHeight < minHeight) {
-		// If not enough room, push the bottom further down to guarantee min height
-		bottomPx = Math.round(topPx + minHeight)
-	}
-	// Apply bottom as inline style so the fixed-positioned `#content` will size responsively
-	content.style.bottom = bottomPx + "px"
-	// Clear maxHeight so CSS doesn't conflict with bottom-based sizing
-	content.style.maxHeight = ""
-	// ensure any previous bottom override is preserved by this updater; if you
-	// want to clear bottom elsewhere, do so explicitly
-}
-
-function contentFloorAnimationLoop(time) {
-	if (time - lastFloorUpdate > 33) {
-		updateContentFloorPosition()
-		updateContentMaxHeightToSeparator()
-		lastFloorUpdate = time
-	}
-	requestAnimationFrame(contentFloorAnimationLoop)
-}
-requestAnimationFrame(contentFloorAnimationLoop)
-
-window.addEventListener("resize", () => {
-	updateContentFloorPosition()
-	updateContentMaxHeightToSeparator()
-})
-
-// Expose updater so other modules (pyramid) can request immediate positioning
-window.updateContentFloorPosition = updateContentFloorPosition
-
-// Debug helper: if URL contains ?debugFloor, force-show the separator at 80px
-if (
-	typeof window !== "undefined" &&
-	window.location &&
-	window.location.search.includes("debugFloor")
-) {
-	const dbgFloor = document.getElementById("content-floor")
-	if (dbgFloor) {
-		dbgFloor.classList.add("show")
-		dbgFloor.style.top = "80px"
-	}
-}
-
-// Force visible debug bar when visiting with ?forceFloor
-if (
-	typeof window !== "undefined" &&
-	window.location &&
-	window.location.search.includes("forceFloor")
-) {
-	const existing = document.getElementById("content-floor-debug")
-	if (!existing) {
-		const el = document.createElement("div")
-		el.id = "content-floor-debug"
-		el.style.position = "fixed"
-		el.style.top = "80px"
-		el.style.left = "0"
-		el.style.right = "0"
-		el.style.height = "8px"
-		el.style.background = "red"
-		el.style.zIndex = "2147483647"
-		el.style.pointerEvents = "none"
-		document.body.appendChild(el)
-	}
-}
+window.addEventListener("resize", () => {})
 
 // === Click Handling ===
 const raycaster = new THREE.Raycaster()
@@ -433,7 +172,6 @@ function onMouseMove(event) {
 	const hasContentPlane = portfolioPlane || bioPlane || blogPlane
 
 	if (!hasContentPlane) {
-		const { hoverTargets } = awaitImportHover()
 		const hoverTargetIntersects = raycaster.intersectObjects(
 			Object.values(hoverTargets)
 		)
@@ -485,71 +223,6 @@ function onMouseMove(event) {
 		}
 		renderer.domElement.style.cursor = "default"
 	}
-
-	// Also detect if pointer is over a content plane (bio/portfolio/blog) to enable scrolling
-	const contentPlanes = []
-	if (bioPlane) contentPlanes.push(bioPlane)
-	if (portfolioPlane) contentPlanes.push(portfolioPlane)
-	if (blogPlane) contentPlanes.push(blogPlane)
-	if (contentPlanes.length > 0) {
-		const intersects = raycaster.intersectObjects(contentPlanes, true)
-		if (intersects.length > 0) {
-			const hit = intersects[0].object
-			// determine plane name
-			let planeName = null
-			if (hit.name === "bioPlane") planeName = "bio"
-			else if (hit.name === "portfolioPlane") planeName = "portfolio"
-			else if (hit.name === "blogPlane") planeName = "blog"
-			// If the intersected object is a child (e.g., clickable), climb up to parent to get plane
-			if (!planeName) {
-				let parent = hit.parent
-				while (parent) {
-					if (parent.name === "bioPlane") {
-						planeName = "bio"
-						break
-					}
-					if (parent.name === "portfolioPlane") {
-						planeName = "portfolio"
-						break
-					}
-					if (parent.name === "blogPlane") {
-						planeName = "blog"
-						break
-					}
-					parent = parent.parent
-				}
-			}
-			if (planeName) {
-				// mark this plane as active for scrolling
-				scrollbarState.setActiveScrollable(planeName)
-				return
-			}
-		}
-	}
-	// not over any content plane
-	scrollbarState.setActiveScrollable(null)
-}
-
-// helper to access hoverTargets without circular import issues
-function awaitImportHover() {
-	// hoverTargets is exported from pyramid module; it's available via labels object scope
-	// but to be safe just reference the export directly
-	return { hoverTargets: requireHoverTargets() }
-}
-
-function requireHoverTargets() {
-	// the hoverTargets object was attached to the labels file as export; import dynamically
-	// since we're in the same bundle, it's available on the pyramid module; simply access global
-	// We already imported pyramid module above; it didn't export hoverTargets in main.js imports, so access via labels object
-	// Build hoverTargets by finding objects named *_hover in scene (not pyramidGroup - they're at root)
-	const targets = {}
-	scene.children.forEach((child) => {
-		if (child.name && child.name.endsWith("_hover")) {
-			const key = child.userData.labelKey
-			targets[key] = child
-		}
-	})
-	return targets
 }
 
 window.addEventListener("mousemove", onMouseMove)
@@ -1042,7 +715,6 @@ function onSceneMouseDown(event) {
 		// ignore early plane detection errors
 	}
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
-	const hoverTargets = requireHoverTargets()
 	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
 	let obj = null
 	if (hoverHits.length > 0) {
@@ -1204,7 +876,3 @@ function onSceneMouseDown(event) {
 		router.navigate("/")
 	}
 }
-
-// update the content-floor position so it sits between the content area and the Home label.
-// keeps the floor aligned to the content pane width and horizontally centered with it.
-// (Content-floor updater duplicated earlier in file; duplicate removed.)

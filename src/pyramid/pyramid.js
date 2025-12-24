@@ -15,7 +15,6 @@ export const pyramidGroup = new THREE.Group()
 pyramidGroup.rotation.order = "YXZ"
 export const labels = {}
 export const hoverTargets = {}
-export let homeLabel = null
 
 // === Scene / Camera / Renderer ===
 export const scene = new THREE.Scene()
@@ -238,10 +237,6 @@ export function initLabels(makeLabelPlane) {
 		scene.add(hover)
 		hoverTargets[key] = hover
 	}
-
-	// Do not create a 3D Home label. The corner DOM `home-button` provides
-	// the Home interaction. Keep `homeLabel` null to avoid accidental shows.
-	homeLabel = null
 }
 
 // === Pyramid State ===
@@ -285,14 +280,6 @@ const pyramidXPositions = {
 	bio: -2.0,
 	portfolio: 0,
 	blog: 2.0,
-}
-
-// Rotation angles to position each face behind its label
-// Blog is front face (0), Portfolio is right (-2π/3), Bio is left (+2π/3)
-const faceRotations = {
-	blog: 0,
-	portfolio: -((2 * Math.PI) / 3),
-	bio: (2 * Math.PI) / 3,
 }
 
 // Track current active section for rotation calculations
@@ -401,10 +388,6 @@ export function animatePyramid(down = true, section = null) {
 		}
 	}
 
-	// Do not auto-show the 3D Home label when flattening; the corner DOM
-	// `home-button` is the visible Home control. Keep the 3D Home mesh
-	// for layout math only and hidden by default.
-
 	const startTime = performance.now()
 	function step(time) {
 		// If this animation has been invalidated (a newer token exists), stop updating
@@ -501,8 +484,6 @@ export function animatePyramid(down = true, section = null) {
 					if (origPos) labelMesh.position.copy(origPos)
 					if (origRot) labelMesh.rotation.copy(origRot)
 					if (origScale) labelMesh.scale.copy(origScale)
-					// Hide Home label when returning to center
-					if (key === "Home") labelMesh.visible = false
 				}
 			}
 
@@ -946,7 +927,6 @@ export function hideAllPlanes() {
 	}
 	hideContentScrolling()
 	controls.enableZoom = true
-	if (window.updateContentFloorPosition) window.updateContentFloorPosition()
 
 	// Do not hide the Home label here — Home remains visible until the user
 	// explicitly returns to the original state by clicking the Home label.
@@ -969,68 +949,6 @@ export function hideHomeLabel() {
 	} catch (e) {}
 }
 
-// === Animate Label to Front/Center ===
-// Animate label to center position (floating above pyramid with increased z)
-export function animateLabelToCenter(labelMesh, endPos, endRot) {
-	const startPos = labelMesh.position.clone()
-	const startRot = labelMesh.rotation.clone()
-	// Increase z when centering to float above the pyramid
-	// Compute the final end position at z=1.0 and apply a small world-space
-	// downward offset for the Portfolio label so it sits slightly lower when
-	// centered. Convert 10px -> world units at the target depth to keep the
-	// visual offset consistent across screen sizes.
-	const finalEndPos = new THREE.Vector3(endPos.x, endPos.y, 1.0)
-	try {
-		if (
-			labelMesh &&
-			labelMesh.userData &&
-			labelMesh.userData.name === "Portfolio"
-		) {
-			const px = 15 // pixels to move down
-			const viewportH = window.innerHeight || 1
-			const fov = camera.fov * (Math.PI / 180)
-			const targetPos = new THREE.Vector3(
-				finalEndPos.x,
-				finalEndPos.y,
-				finalEndPos.z
-			)
-			const distance = camera.position.distanceTo(targetPos)
-			const worldOffset = 2 * distance * Math.tan(fov / 2) * (px / viewportH)
-			finalEndPos.y -= worldOffset
-		}
-	} catch (e) {
-		// swallow - optional visual tweak shouldn't break centering
-	}
-	const duration = 500
-	const startTime = performance.now()
-	function step(time) {
-		const t = Math.min((time - startTime) / duration, 1)
-		labelMesh.position.lerpVectors(startPos, finalEndPos, t)
-		labelMesh.rotation.x = startRot.x + (endRot.x - startRot.x) * t
-		labelMesh.rotation.y = startRot.y + (endRot.y - startRot.y) * t
-		labelMesh.rotation.z = startRot.z + (endRot.z - startRot.z) * t
-		if (t < 1) requestAnimationFrame(step)
-	}
-	requestAnimationFrame(step)
-}
-
-// Animate label back to its original position/rotation
-export function animateLabelToOriginal(labelMesh, origPos, origRot) {
-	const startPos = labelMesh.position.clone()
-	const startRot = labelMesh.rotation.clone()
-	const duration = 500
-	const startTime = performance.now()
-	function step(time) {
-		const t = Math.min((time - startTime) / duration, 1)
-		labelMesh.position.lerpVectors(startPos, origPos, t)
-		labelMesh.rotation.x = startRot.x + (origRot.x - startRot.x) * t
-		labelMesh.rotation.y = startRot.y + (origRot.y - startRot.y) * t
-		labelMesh.rotation.z = startRot.z + (origRot.z - startRot.z) * t
-		if (t < 1) requestAnimationFrame(step)
-	}
-	requestAnimationFrame(step)
-}
-
 // === Animate Loop ===
 export function animate() {
 	requestAnimationFrame(animate)
@@ -1038,14 +956,6 @@ export function animate() {
 	// Only update controls when they are explicitly enabled (during label animations)
 	if (controls.enabled) {
 		controls.update()
-	}
-	// Orient home label to face camera each frame (if present)
-	if (homeLabel && homeLabel.visible) {
-		// Compute world position to face camera while keeping label upright
-		const worldPos = new THREE.Vector3()
-		homeLabel.getWorldPosition(worldPos)
-		homeLabel.lookAt(camera.position)
-		// Keep label's rotation around X/Z but avoid flipping scale
 	}
 	// Keep hover targets synchronized with labels (they're in scene, not pyramidGroup children)
 	for (const key in labels) {

@@ -52,10 +52,3 @@ export function parseBlogPosts(htmlContent) {
 		return []
 	}
 }
-
-// Convert HTML content to canvas texture for Three.js display
-export function createTextureFromHTML(htmlContent) {
-	// For now, return null - we'll keep using the dynamic canvas approach
-	// This is a placeholder for future enhancement
-	return null
-}
