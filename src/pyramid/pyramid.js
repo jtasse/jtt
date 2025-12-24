@@ -36,6 +36,7 @@ const initialCameraState = {
 export const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
+renderer.localClippingEnabled = true
 
 export const controls = new OrbitControls(camera, renderer.domElement)
 // Enable OrbitControls so user can click+drag to inspect the scene.
@@ -292,6 +293,9 @@ const faceRotations = {
 
 // Track current active section for rotation calculations
 let currentSection = null
+
+// Clipping plane to prevent content from overlapping the top nav
+const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.6)
 
 export function getInitialPyramidState() {
 	return { ...initialPyramidState }
@@ -762,6 +766,7 @@ export function resetPyramidToHome() {
 export function showBioPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
+	controls.enableZoom = false
 
 	// Ensure the DOM content pane is hidden when using a 3D bio plane so
 	// we don't show duplicate/overlapping DOM text over the pyramid.
@@ -783,26 +788,36 @@ export function showBioPlane() {
 		loadContentHTML("bio").then((html) => {
 			// If a newer pyramid animation/reset occurred, abort adding content
 			if (myToken !== pyramidAnimToken) return
-			// 1) We no longer inject flat DOM content for bio to avoid duplicate
-			//     flat text when a 3D bio plane is rendered. The 3D plane will
-			//     present the content and the short centered separator is used.
-			const contentEl = document.getElementById("content")
-			// 2) Also create the 3D plane (existing behavior)
 			const bioContent = parseBioContent(html)
 			const plane = makeBioPlane(bioContent)
+			plane.name = "bioPlane"
+			plane.frustumCulled = false // Prevent culling when scrolling out of initial bounds
+			plane.traverse((child) => {
+				if (child.material) {
+					const mats = Array.isArray(child.material)
+						? child.material
+						: [child.material]
+					mats.forEach((m) => {
+						m.clippingPlanes = [contentClippingPlane]
+						m.needsUpdate = true
+					})
+				}
+			})
 			// Position content plane below the top menu
-			plane.position.y = 0.0
+			plane.position.y = -0.5
 			scene.add(plane)
+			setupContentScrolling(plane)
 			// Hide separators since flattened menu serves as navigation
 			const navBar = document.getElementById("content-floor")
 			if (navBar) navBar.classList.remove("show")
 		})
-	} else bioPlane.visible = true
+	}
 }
 
 export function showPortfolioPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
+	controls.enableZoom = false
 
 	// Ensure DOM content is hidden when presenting the 3D portfolio plane.
 	const contentEl = document.getElementById("content")
@@ -853,19 +868,34 @@ export function showPortfolioPlane() {
 				})
 			})
 			const plane = makePortfolioPlane(items)
+			plane.name = "portfolioPlane"
+			plane.frustumCulled = false
+			plane.traverse((child) => {
+				if (child.material) {
+					const mats = Array.isArray(child.material)
+						? child.material
+						: [child.material]
+					mats.forEach((m) => {
+						m.clippingPlanes = [contentClippingPlane]
+						m.needsUpdate = true
+					})
+				}
+			})
 			// Position content plane below the top menu
-			plane.position.y = 0.0
+			plane.position.y = -0.5
 			scene.add(plane)
+			setupContentScrolling(plane)
 			// Hide separators since flattened menu serves as navigation
 			const navBar = document.getElementById("content-floor")
 			if (navBar) navBar.classList.remove("show")
 		})
-	} else portfolioPlane.visible = true
+	}
 }
 
 export function showBlogPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
+	controls.enableZoom = false
 	// Show navigation bar positioned between content and home label
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
@@ -883,17 +913,26 @@ export function showBlogPlane() {
 				contentEl.style.display = "block"
 				// Ensure content accepts pointer events when visible
 				contentEl.style.pointerEvents = "auto"
+				// Push content down to clear nav and add scrollbar
+				contentEl.style.top = "25%"
+				contentEl.style.bottom = "5%"
+				contentEl.style.height = "auto"
+				contentEl.style.overflowY = "auto"
 			}
 			const posts = parseBlogPosts(html)
 			const plane = makeBlogPlane(posts)
 			// Position content plane below the top menu
-			plane.position.y = 0.0
+			plane.position.y = -0.5
 			scene.add(plane)
 			// Hide separators since flattened menu serves as navigation
+			setupContentScrolling(plane)
 			const navBar = document.getElementById("content-floor")
 			if (navBar) navBar.classList.remove("show")
 		})
-	} else blogPlane.visible = true
+	} else {
+		blogPlane.visible = true
+		setupContentScrolling(blogPlane)
+	}
 }
 
 function hideBio() {
@@ -925,6 +964,8 @@ export function hideAllPlanes() {
 	if (contentEl) {
 		contentEl.style.display = "none"
 	}
+	hideContentScrolling()
+	controls.enableZoom = true
 	if (window.updateContentFloorPosition) window.updateContentFloorPosition()
 
 	// Do not hide the Home label here — Home remains visible until the user
@@ -1047,6 +1088,8 @@ export function animate() {
 			hover.scale.set(scale, scale, scale)
 		}
 	}
+	// continuously update scroll bounds to handle async text loading/layout
+	if (activeScrollPlane) updateScrollBounds()
 	renderer.render(scene, camera)
 }
 
@@ -1061,3 +1104,186 @@ window.addEventListener("resize", () => {
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) scene.remove(portfolioPlane)
 })
+
+// === Custom Scrollbar & Overlay ===
+let scrollOverlay = null
+let scrollTrack = null
+let scrollThumb = null
+let activeScrollPlane = null
+let scrollMinY = -0.5
+let scrollMaxY = -0.5
+
+function setupContentScrolling(plane) {
+	activeScrollPlane = plane
+	// Initial bounds check
+	updateScrollBounds()
+
+	// Create overlay if it doesn't exist
+	if (!scrollOverlay) scrollOverlay = document.getElementById("content-overlay")
+	if (!scrollOverlay) {
+		scrollOverlay = document.createElement("div")
+		scrollOverlay.id = "content-overlay"
+		Object.assign(scrollOverlay.style, {
+			position: "absolute",
+			top: "25%",
+			bottom: "0",
+			left: "0",
+			right: "0",
+			zIndex: "10",
+			display: "none",
+		})
+		// Stop propagation of clicks to prevent "go home" reset
+		scrollOverlay.addEventListener("pointerdown", (e) => e.stopPropagation())
+		scrollOverlay.addEventListener("click", (e) => e.stopPropagation())
+		scrollOverlay.addEventListener("mousedown", (e) => e.stopPropagation())
+		scrollOverlay.addEventListener("touchstart", (e) => e.stopPropagation())
+		scrollOverlay.addEventListener("wheel", handleScrollWheel, {
+			passive: false,
+		})
+
+		// Scrollbar Track
+		scrollTrack = document.createElement("div")
+		Object.assign(scrollTrack.style, {
+			position: "absolute",
+			top: "10px",
+			bottom: "10px",
+			right: "10px",
+			width: "8px",
+			background: "rgba(255, 255, 255, 0.1)",
+			borderRadius: "4px",
+			cursor: "pointer",
+		})
+
+		// Scrollbar Thumb
+		scrollThumb = document.createElement("div")
+		Object.assign(scrollThumb.style, {
+			position: "absolute",
+			top: "0",
+			left: "0",
+			width: "100%",
+			height: "20%",
+			background: "rgba(255, 255, 255, 0.5)",
+			borderRadius: "4px",
+			cursor: "grab",
+		})
+
+		// Drag logic for thumb
+		let isDragging = false
+		let startY = 0
+		let startTop = 0
+
+		scrollThumb.addEventListener("pointerdown", (e) => {
+			e.stopPropagation()
+			e.target.setPointerCapture(e.pointerId)
+			isDragging = true
+			startY = e.clientY
+			startTop = scrollThumb.offsetTop
+			scrollThumb.style.cursor = "grabbing"
+		})
+
+		scrollThumb.addEventListener("pointermove", (e) => {
+			if (!isDragging) return
+			e.stopPropagation()
+			const deltaY = e.clientY - startY
+			const trackHeight = scrollTrack.clientHeight
+			const thumbHeight = scrollThumb.clientHeight
+			const maxTop = trackHeight - thumbHeight
+
+			let newTop = startTop + deltaY
+			newTop = Math.max(0, Math.min(newTop, maxTop))
+
+			// Update 3D plane
+			const ratio = maxTop > 0 ? newTop / maxTop : 0
+			if (activeScrollPlane && scrollMaxY > scrollMinY) {
+				activeScrollPlane.position.y =
+					scrollMinY + ratio * (scrollMaxY - scrollMinY)
+			}
+			updateScrollThumb()
+		})
+
+		scrollThumb.addEventListener("pointerup", (e) => {
+			isDragging = false
+			scrollThumb.style.cursor = "grab"
+			e.target.releasePointerCapture(e.pointerId)
+		})
+
+		scrollTrack.appendChild(scrollThumb)
+		scrollOverlay.appendChild(scrollTrack)
+		document.body.appendChild(scrollOverlay)
+	}
+
+	scrollOverlay.style.display = "block"
+	updateScrollThumb()
+}
+
+function hideContentScrolling() {
+	if (scrollOverlay) scrollOverlay.style.display = "none"
+	activeScrollPlane = null
+}
+
+function updateScrollBounds() {
+	if (!activeScrollPlane) return
+	// Re-calculate bounds every frame to handle async text loading
+	const box = new THREE.Box3().setFromObject(activeScrollPlane)
+	const h = box.max.y - box.min.y
+	if (h === -Infinity || isNaN(h)) return
+
+	// Visible area is roughly from y=-2.8 to y=+2.8 (height ~5.6)
+	// Plane starts at -0.5. We want to scroll UP until bottom of content (y=-h)
+	// is at bottom of screen (y=-2.8).
+	// Target Y = h - 1.5. (Increased buffer to ensure bottom is fully visible)
+	const targetY = h - 1.5
+	scrollMinY = -0.5
+	scrollMaxY = Math.max(-0.5, targetY)
+
+	// If not dragging, ensure we stay in bounds (e.g. if content shrinks)
+	if (activeScrollPlane.position.y > scrollMaxY)
+		activeScrollPlane.position.y = scrollMaxY
+
+	updateScrollThumb()
+}
+
+function handleScrollWheel(e) {
+	if (!activeScrollPlane) return
+	e.preventDefault()
+	e.stopPropagation()
+	activeScrollPlane.position.y += e.deltaY * 0.005
+	// Clamp
+	if (activeScrollPlane.position.y < scrollMinY)
+		activeScrollPlane.position.y = scrollMinY
+	if (activeScrollPlane.position.y > scrollMaxY)
+		activeScrollPlane.position.y = scrollMaxY
+	updateScrollThumb()
+}
+
+function updateScrollThumb() {
+	if (!activeScrollPlane || !scrollThumb || !scrollTrack) return
+	const range = scrollMaxY - scrollMinY
+	if (range <= 0.001) {
+		scrollThumb.style.height = "100%"
+		scrollThumb.style.top = "0"
+		return
+	}
+	const progress = (activeScrollPlane.position.y - scrollMinY) / range
+	const trackHeight = scrollTrack.clientHeight
+	// Dynamic thumb height based on content ratio
+	const visibleH = 5.6
+	const contentH = range + visibleH
+	let thumbHeight = (visibleH / contentH) * trackHeight
+	thumbHeight = Math.max(30, Math.min(thumbHeight, trackHeight))
+
+	scrollThumb.style.height = `${thumbHeight}px`
+	const maxTop = trackHeight - thumbHeight
+	scrollThumb.style.top = `${progress * maxTop}px`
+}
+
+// Global wheel listener for when mouse is over canvas but content is active
+window.addEventListener(
+	"wheel",
+	(e) => {
+		if (currentSection && activeScrollPlane) {
+			handleScrollWheel(e)
+		}
+	},
+	{ passive: false }
+)

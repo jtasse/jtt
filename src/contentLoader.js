@@ -20,6 +20,7 @@ export function parseBioContent(htmlContent) {
 		const heading = doc.querySelector("h1")
 		const paragraphs = doc.querySelectorAll("p")
 
+		console.log("Paragraphs: ", paragraphs)
 		const content = {
 			heading: heading ? heading.textContent.trim() : "",
 			paragraphs: [],
