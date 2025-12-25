@@ -51,9 +51,6 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
 		try {
-			resetPyramidToHome()
-			hideAllPlanes()
-			window.centeredLabelName = null
 			router.navigate("/")
 		} catch (err) {
 			console.error("Home button handler error", err)
@@ -112,6 +109,7 @@ window.addEventListener("mouseup", (event) => {
 	isPointerDown = false
 	// Only trigger scene interaction if this wasn't a drag
 	if (!isDragging) {
+		if (event.target.tagName !== "CANVAS") return
 		onSceneMouseDown(event)
 	}
 	isDragging = false
@@ -123,8 +121,12 @@ window.addEventListener(
 	"click",
 	(event) => {
 		const content = document.getElementById("content")
-		if (content && content.contains(event.target)) {
-			// Allow clicks inside content area to pass through
+		const homeBtn = document.getElementById("home-button")
+		if (
+			(content && content.contains(event.target)) ||
+			(homeBtn && homeBtn.contains(event.target))
+		) {
+			// Allow clicks inside content area or home button to pass through
 			return
 		}
 		event.preventDefault()
@@ -165,58 +167,39 @@ function onMouseMove(event) {
 		}
 	}
 
-	// Check hover targets for pyramid labels (only if no content plane is visible)
-	// When portfolio/bio/blog is showing, skip pyramid label hover to avoid conflicts
-	const bioPlane = scene.getObjectByName("bioPlane")
-	const blogPlane = scene.getObjectByName("blogPlane")
-	const hasContentPlane = portfolioPlane || bioPlane || blogPlane
+	// Check hover targets for pyramid labels
+	const hoverTargetIntersects = raycaster.intersectObjects(
+		Object.values(hoverTargets)
+	)
 
-	if (!hasContentPlane) {
-		const hoverTargetIntersects = raycaster.intersectObjects(
-			Object.values(hoverTargets)
+	// Clear previous hover if not still over its hover target
+	if (hoveredLabel) {
+		const stillOver = hoverTargetIntersects.some(
+			(h) => h.object.userData.labelKey === hoveredLabel.userData.name
 		)
-
-		// Clear previous hover if not still over its hover target
-		if (hoveredLabel) {
-			const stillOver = hoverTargetIntersects.some(
-				(h) => h.object.userData.labelKey === hoveredLabel.userData.name
-			)
-			if (!stillOver) {
-				hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
-				hoveredLabel = null
-				renderer.domElement.style.cursor = "default"
-			}
-		}
-
-		if (hoverTargetIntersects.length > 0) {
-			const hoverObj = hoverTargetIntersects[0].object
-			const labelKey = hoverObj.userData.labelKey
-			// Do not hover labels that are currently centered (but allow Home label even when visible)
-			if (labelKey !== "Home" && window.centeredLabelName === labelKey) {
-				renderer.domElement.style.cursor = "default"
-				return
-			}
-			const labelMesh = labels[labelKey]
-			if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
-				// Only scale if the label is visible and not Home (Home doesn't scale on hover)
-				if (labelKey !== "Home" && labelMesh.userData.originalScale) {
-					hoveredLabel = labelMesh
-					hoveredLabel.scale
-						.copy(hoveredLabel.userData.originalScale)
-						.multiplyScalar(1.12)
-				}
-			}
-			renderer.domElement.style.cursor = "pointer"
-		} else {
-			// No hover targets: ensure cursor is default and reset hoveredLabel
-			if (hoveredLabel) {
-				hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
-				hoveredLabel = null
-			}
+		if (!stillOver) {
+			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			hoveredLabel = null
 			renderer.domElement.style.cursor = "default"
 		}
+	}
+
+	if (hoverTargetIntersects.length > 0) {
+		const hoverObj = hoverTargetIntersects[0].object
+		const labelKey = hoverObj.userData.labelKey
+		const labelMesh = labels[labelKey]
+		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
+			// Only scale if the label is visible and not Home (Home doesn't scale on hover)
+			if (labelKey !== "Home" && labelMesh.userData.originalScale) {
+				hoveredLabel = labelMesh
+				hoveredLabel.scale
+					.copy(hoveredLabel.userData.originalScale)
+					.multiplyScalar(1.12)
+			}
+		}
+		renderer.domElement.style.cursor = "pointer"
 	} else {
-		// Content plane is visible, clear any label hover state
+		// No hover targets: ensure cursor is default and reset hoveredLabel
 		if (hoveredLabel) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
 			hoveredLabel = null
@@ -280,6 +263,7 @@ router.onRouteChange((route) => {
 		resetPyramidToHome()
 		hideAllPlanes()
 		currentContentVisible = null
+		window.centeredLabelName = null
 	}
 })
 
@@ -355,12 +339,9 @@ function onSceneMouseDown(event) {
 			if (content) {
 				content.innerHTML = ""
 				try {
-					// Hide the pyramid when showing full-page content
-					if (pyramidGroup) pyramidGroup.visible = false
-
 					// Full page layout with margins
 					const sideMargin = 40
-					const topMargin = 60
+					const topMargin = 85
 					const bottomMargin = 20
 					const availableHeight = window.innerHeight - topMargin - bottomMargin
 
@@ -471,12 +452,9 @@ function onSceneMouseDown(event) {
 			if (docId && content) {
 				content.innerHTML = ""
 
-				// Hide the pyramid when showing full-page content
-				if (pyramidGroup) pyramidGroup.visible = false
-
 				// Full page layout with margins
 				const sideMargin = 40
-				const topMargin = 60
+				const topMargin = 85
 				const bottomMargin = 20
 				const availableHeight = window.innerHeight - topMargin - bottomMargin
 
@@ -572,12 +550,9 @@ function onSceneMouseDown(event) {
 			if (isImageUrl(link)) {
 				content.innerHTML = ""
 
-				// Hide the pyramid when showing full-page content
-				if (pyramidGroup) pyramidGroup.visible = false
-
 				// Full page layout with margins
 				const sideMargin = 40
-				const topMargin = 60
+				const topMargin = 85
 				const bottomMargin = 20
 				const availableHeight = window.innerHeight - topMargin - bottomMargin
 
@@ -646,9 +621,8 @@ function onSceneMouseDown(event) {
 				const img = document.createElement("img")
 				img.src = link
 				img.alt = "Visual Resume"
-				img.style.maxWidth = "100%"
-				img.style.maxHeight = "100%"
-				img.style.objectFit = "contain"
+				img.style.width = "100%"
+				img.style.height = "auto"
 				img.style.display = "block"
 				img.style.margin = "0 auto"
 
@@ -658,12 +632,83 @@ function onSceneMouseDown(event) {
 				wrapper.style.height = "100%"
 				wrapper.style.overflow = "auto"
 				wrapper.style.position = "relative"
-				wrapper.style.display = "flex"
-				wrapper.style.alignItems = "center"
-				wrapper.style.justifyContent = "center"
 				wrapper.appendChild(img)
-				wrapper.appendChild(closeBtn)
+
+				// Zoom Controls
+				let zoom = 1.0
+				const updateZoom = (newZoom) => {
+					zoom = Math.max(0.25, newZoom)
+					img.style.width = `${zoom * 100}%`
+					img.style.maxWidth = "none"
+				}
+
+				const zoomContainer = document.createElement("div")
+				zoomContainer.style.cssText = `
+					position: absolute;
+					bottom: 20px;
+					right: 20px;
+					display: flex;
+					gap: 10px;
+					z-index: 11;
+				`
+				const btnStyle = `
+					width: 40px;
+					height: 40px;
+					border: 2px solid #00ffff;
+					border-radius: 50%;
+					background: rgba(0, 0, 0, 0.8);
+					color: #00ffff;
+					font-size: 24px;
+					line-height: 1;
+					cursor: pointer;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					user-select: none;
+				`
+				const zoomIn = document.createElement("div")
+				zoomIn.innerHTML = "+"
+				zoomIn.style.cssText = btnStyle
+				zoomIn.onclick = (e) => {
+					e.stopPropagation()
+					updateZoom(zoom + 0.25)
+				}
+
+				const zoomOut = document.createElement("div")
+				zoomOut.innerHTML = "&minus;"
+				zoomOut.style.cssText = btnStyle
+				zoomOut.onclick = (e) => {
+					e.stopPropagation()
+					updateZoom(zoom - 0.25)
+				}
+
+				const addHover = (btn) => {
+					btn.onmouseover = () =>
+						(btn.style.background = "rgba(0, 255, 255, 0.3)")
+					btn.onmouseout = () => (btn.style.background = "rgba(0, 0, 0, 0.8)")
+				}
+				addHover(zoomIn)
+				addHover(zoomOut)
+
+				zoomContainer.appendChild(zoomOut)
+				zoomContainer.appendChild(zoomIn)
+
+				// Scrollwheel zoom support
+				wrapper.addEventListener(
+					"wheel",
+					(e) => {
+						e.preventDefault()
+						e.stopPropagation()
+						const direction = e.deltaY > 0 ? -1 : 1
+						updateZoom(zoom + direction * 0.1)
+					},
+					{ passive: false }
+				)
+
 				content.appendChild(wrapper)
+				content.appendChild(closeBtn)
+				content.appendChild(zoomContainer)
+
 				content.style.display = "block"
 				content.style.overflow = "hidden"
 				content.style.padding = "0"
@@ -731,11 +776,6 @@ function onSceneMouseDown(event) {
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
 		// restore all labels to original positions, hide all content, and navigate home.
 		if (labelName === "Home") {
-			// ALWAYS reset pyramid to center with home rotation, position, and scale
-			resetPyramidToHome()
-			// Hide all content planes
-			hideAllPlanes()
-			window.centeredLabelName = null
 			router.navigate("/")
 			return
 		}
@@ -835,25 +875,6 @@ function onSceneMouseDown(event) {
 		}
 	}
 
-	// If any content plane is currently visible and the click was not on a label,
-	// treat this click as a request to return "home" (dismiss content and animate pyramid up).
-	console.debug(
-		"[onClick] currentContentVisible:",
-		currentContentVisible,
-		"obj:",
-		obj
-	)
-	if (currentContentVisible && !obj) {
-		// If any content plane is currently visible and the click was not on a label,
-		// reset pyramid to home state and navigate home
-		resetPyramidToHome()
-		hideAllPlanes()
-		currentContentVisible = null
-		window.centeredLabelName = null
-		router.navigate("/")
-		return
-	}
-
 	const pyramidIntersects = raycaster.intersectObjects(
 		pyramidGroup.children,
 		true
@@ -869,10 +890,6 @@ function onSceneMouseDown(event) {
 			return
 		}
 		// Clicking the pyramid acts like clicking Home: reset everything to initial state
-		resetPyramidToHome()
-		hideAllPlanes()
-		window.centeredLabelName = null
-		currentContentVisible = null
 		router.navigate("/")
 	}
 }

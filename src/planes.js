@@ -188,7 +188,7 @@ export function makePortfolioPlane(items) {
 		ctx.font = "18px sans-serif"
 		ctx.fillText("[loading image]", imgX + 10, imgY + imgH / 2 - 8)
 
-		cardRects.push({ x: imgX, y: imgY, w: imgW, h: imgH, item })
+		cardRects.push({ x: x, y: y, w: cardWidth, h: cardHeight, item })
 
 		const img = new Image()
 		img.crossOrigin = "anonymous"
@@ -245,7 +245,7 @@ export function makePortfolioPlane(items) {
 			depthWrite: false,
 		})
 		const clickable = new THREE.Mesh(clickableGeo, clickableMat)
-		clickable.position.set(worldX, worldY + 0.05, -0.01)
+		clickable.position.set(worldX, worldY, -0.01)
 		clickable.userData.link = rect.item.link
 		clickable.name = `portfolioItem${idx}`
 		mesh.add(clickable)

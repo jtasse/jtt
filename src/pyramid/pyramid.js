@@ -296,6 +296,7 @@ export function animatePyramid(down = true, section = null) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = ++pyramidAnimToken
+	pyramidGroup.visible = true
 	const duration = 1000
 	const startRotY = pyramidGroup.rotation.y
 	const startRotX = pyramidGroup.rotation.x
@@ -502,6 +503,7 @@ export function spinPyramidToSection(section, onComplete = null) {
 	if (!section || pyramidXPositions[section] === undefined) return
 
 	const myToken = ++pyramidAnimToken
+	pyramidGroup.visible = true
 
 	const duration = 600
 
@@ -539,11 +541,12 @@ export function spinPyramidToSection(section, onComplete = null) {
 export function resetPyramidToHome() {
 	// Invalidate any in-progress pyramid animations so their completion
 	// handlers won't show content after we start resetting.
-	++pyramidAnimToken
+	const myToken = ++pyramidAnimToken
 	// Clear current section
 	currentSection = null
 	// Immediately hide any content so nothing appears while we animate
 	hideAllPlanes()
+	pyramidGroup.visible = true
 	const duration = 1000
 	const startRotY = pyramidGroup.rotation.y
 	const startRotX = pyramidGroup.rotation.x
@@ -578,22 +581,16 @@ export function resetPyramidToHome() {
 		if (key === "Home") continue
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
-		// Get current world position/rotation/scale
-		const worldPos = new THREE.Vector3()
-		labelMesh.getWorldPosition(worldPos)
-		const worldQuat = new THREE.Quaternion()
-		labelMesh.getWorldQuaternion(worldQuat)
-		const worldScale = new THREE.Vector3()
-		labelMesh.getWorldScale(worldScale)
-		labelStartStates[key] = {
-			worldPosition: worldPos,
-			worldQuaternion: worldQuat,
-			worldScale: worldScale,
-			wasInScene: labelMesh.parent === scene,
-		}
-		// Reparent to pyramidGroup if currently in scene
+
+		// Ensure attached to pyramidGroup to animate in local space
 		if (labelMesh.parent === scene) {
-			pyramidGroup.add(labelMesh)
+			pyramidGroup.attach(labelMesh)
+		}
+
+		labelStartStates[key] = {
+			position: labelMesh.position.clone(),
+			quaternion: labelMesh.quaternion.clone(),
+			scale: labelMesh.scale.clone(),
 		}
 		// Clear fixedNav flag so labels can be animated again
 		labelMesh.userData.fixedNav = false
@@ -601,6 +598,7 @@ export function resetPyramidToHome() {
 
 	const startTime = performance.now()
 	function step(time) {
+		if (myToken !== pyramidAnimToken) return
 		const t = Math.min((time - startTime) / duration, 1)
 		// Use easeInOut for smoother animation
 		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
@@ -621,7 +619,7 @@ export function resetPyramidToHome() {
 		controls.target.copy(initialCameraState.target)
 		controls.update()
 
-		// Animate labels back to their original positions around the pyramid
+		// Animate labels back to their original positions (local space)
 		for (const key in labels) {
 			if (key === "Home") continue
 			const labelMesh = labels[key]
@@ -630,61 +628,19 @@ export function resetPyramidToHome() {
 			const origPos = labelMesh.userData.origPosition
 			const origRot = labelMesh.userData.origRotation
 			const origScale = labelMesh.userData.originalScale
-			if (!startState || !origPos || !origRot || !origScale) continue
 
-			// Calculate current world position of where the label would be at its original local position
-			// given the current pyramid state
-			const currentPyramidPos = new THREE.Vector3(
-				startPosX + (endPosX - startPosX) * eased,
-				startPosY + (endPosY - startPosY) * eased,
-				0
-			)
-			const currentPyramidRotY = startRotY + rotDiffY * eased
-			const currentPyramidRotX = startRotX + (targetRotX - startRotX) * eased
-			const currentScaleVec = new THREE.Vector3(sx, sx, sx)
+			if (startState && origPos && origRot && origScale) {
+				labelMesh.position.lerpVectors(startState.position, origPos, eased)
 
-			// Calculate target world position for this label at original local pos
-			const targetWorldPos = origPos.clone()
-			targetWorldPos.multiply(currentScaleVec)
-			targetWorldPos.applyAxisAngle(
-				new THREE.Vector3(1, 0, 0),
-				currentPyramidRotX
-			)
-			targetWorldPos.applyAxisAngle(
-				new THREE.Vector3(0, 1, 0),
-				currentPyramidRotY
-			)
-			targetWorldPos.add(currentPyramidPos)
+				const targetQuat = new THREE.Quaternion().setFromEuler(origRot)
+				labelMesh.quaternion.slerpQuaternions(
+					startState.quaternion,
+					targetQuat,
+					eased
+				)
 
-			// Interpolate from start world position to target world position
-			const currentWorldPos = new THREE.Vector3().lerpVectors(
-				startState.worldPosition,
-				targetWorldPos,
-				eased
-			)
-
-			// Convert world position back to local position relative to current pyramid state
-			const localPos = currentWorldPos.clone().sub(currentPyramidPos)
-			localPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), -currentPyramidRotY)
-			localPos.applyAxisAngle(new THREE.Vector3(1, 0, 0), -currentPyramidRotX)
-			localPos.divide(currentScaleVec)
-
-			labelMesh.position.copy(localPos)
-
-			// Interpolate scale
-			const targetScaleVal = origScale.clone()
-			const startScaleVec = startState.worldScale
-				.clone()
-				.divide(currentScaleVec)
-			labelMesh.scale.lerpVectors(startScaleVec, targetScaleVal, eased)
-
-			// Interpolate rotation back to original
-			const startEuler = new THREE.Euler().setFromQuaternion(
-				startState.worldQuaternion
-			)
-			labelMesh.rotation.x = startEuler.x + (origRot.x - startEuler.x) * eased
-			labelMesh.rotation.y = startEuler.y + (origRot.y - startEuler.y) * eased
-			labelMesh.rotation.z = startEuler.z + (origRot.z - startEuler.z) * eased
+				labelMesh.scale.lerpVectors(startState.scale, origScale, eased)
+			}
 		}
 
 		if (t < 1) requestAnimationFrame(step)
@@ -1022,6 +978,7 @@ function setupContentScrolling(plane) {
 			right: "0",
 			zIndex: "10",
 			display: "none",
+			pointerEvents: "none", // Allow clicks to pass through to 3D scene
 		})
 		// Stop propagation of clicks to prevent "go home" reset
 		scrollOverlay.addEventListener("pointerdown", (e) => e.stopPropagation())
@@ -1043,6 +1000,7 @@ function setupContentScrolling(plane) {
 			background: "rgba(255, 255, 255, 0.1)",
 			borderRadius: "4px",
 			cursor: "pointer",
+			pointerEvents: "auto", // Re-enable events for the scrollbar itself
 		})
 
 		// Scrollbar Thumb
