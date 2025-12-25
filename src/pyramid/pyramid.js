@@ -166,6 +166,7 @@ let orcDemoRenderer = null
 let orcDemoScene = null
 let orcDemoCamera = null
 let orcDemoRequestId = null
+let orcDemoControls = null
 let orcAnimationRunning = true // State for play/pause button
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
@@ -1085,6 +1086,11 @@ export function morphToOrcScene() {
 	const myToken = ++pyramidAnimToken
 	hideAllPlanes()
 
+	// Create the demo scene first (it starts invisible) so we have its camera/controls
+	// available for the transition animation.
+	createOrcDemo()
+	showOrcPlayPauseButton()
+
 	// Labels will be faded out during the animation
 
 	// Show home button
@@ -1097,7 +1103,7 @@ export function morphToOrcScene() {
 	const startPyramidOpacity = 1
 	const startSphereOpacity = 0
 	const startCamPos = camera.position.clone() // Current camera position
-	const endCamPos = initialCameraState.position.clone() // Camera stays put
+	const endCamPos = orcDemoCamera.position.clone() // Target ORC demo camera position
 
 	morphSphere.visible = true // Make morph sphere visible and position it
 	morphSphere.position.copy(pyramidGroup.position)
@@ -1136,9 +1142,9 @@ export function morphToOrcScene() {
 
 		// Animate camera to isometric position
 		camera.position.lerpVectors(startCamPos, endCamPos, eased)
-		// Keep looking at the center
-		camera.lookAt(initialCameraState.target)
-		controls.target.copy(initialCameraState.target)
+		camera.lookAt(orcDemoControls.target) // Look at ORC demo controls target
+		controls.target.lerpVectors(controls.target, orcDemoControls.target, eased) // Animate main controls target
+		controls.update()
 
 		if (t < 1) {
 			requestAnimationFrame(step)
@@ -1149,12 +1155,20 @@ export function morphToOrcScene() {
 			pyramidGroup.visible = false
 			morphSphere.visible = false
 
-			createOrcDemo()
 			orcSceneActive = true
 
 			// Ensure camera is at final position
 			camera.position.copy(endCamPos)
-			camera.lookAt(initialCameraState.target)
+			camera.lookAt(orcDemoControls.target)
+			controls.target.copy(orcDemoControls.target)
+			controls.enabled = false // Disable main controls
+
+			// Fade in the ORC demo container now that the transition is complete
+			if (orcDemoContainer) {
+				requestAnimationFrame(() => {
+					orcDemoContainer.style.opacity = "1"
+				})
+			}
 
 			// Show the info pane on the right
 			showOrcInfoPane()
@@ -1167,17 +1181,22 @@ export function morphToOrcScene() {
 // Return from ORC scene back to pyramid
 export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
-	destroyOrcDemo()
+
+	// Capture camera/controls state BEFORE destroying the demo
+	const startCamPos = orcDemoCamera.position.clone()
+	const startControlsTarget = orcDemoControls.target.clone()
+
+	destroyOrcDemo() // Destroy ORC demo before morphing back
+	hideOrcPlayPauseButton() // Hide play/pause button
 
 	const duration = 1200
 
 	// Starting states
-	const startCamPos = camera.position.clone()
 	const endCamPos = initialCameraState.position.clone()
-	// Sphere will animate from center
-	morphSphere.position.copy(pyramidGroup.position)
 	morphSphere.visible = true
-	morphSphere.scale.set(0.1, 0.1, 0.1)
+	morphSphere.position.copy(startControlsTarget) // Start morph sphere at ORC demo controls target
+	morphSphere.scale.set(1, 1, 1) // Start at full size
+	morphSphereMaterial.opacity = 0.8 // Start at full opacity
 	hideOrcInfoPane()
 
 	// Prepare pyramid - set to initial state but scaled down for animation
@@ -1215,8 +1234,8 @@ export function morphFromOrcScene() {
 		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
 		// Animate sphere scale down and fade out
-		const sphereScale = 1 - eased * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
+		const sphereScale = 0.1 + (1 - eased) * 0.9
+		morphSphere.scale.set(sphereScale, sphereScale, sphereScale) // This might need adjustment
 		morphSphereMaterial.opacity = 0.8 * (1 - eased)
 
 		// Animate pyramid scale up and fade in
@@ -1244,7 +1263,12 @@ export function morphFromOrcScene() {
 		// Animate camera back
 		camera.position.lerpVectors(startCamPos, endCamPos, eased)
 		camera.lookAt(initialCameraState.target)
-		controls.target.copy(initialCameraState.target)
+		controls.target.lerpVectors(
+			startControlsTarget,
+			initialCameraState.target,
+			eased
+		)
+		controls.update()
 
 		if (t < 1) {
 			requestAnimationFrame(step)
@@ -1313,6 +1337,7 @@ export function morphFromOrcScene() {
 			camera.position.copy(endCamPos)
 			camera.lookAt(initialCameraState.target)
 			controls.target.copy(initialCameraState.target)
+			controls.enabled = true // Re-enable main controls
 			controls.update()
 
 			hideHomeLabel()
@@ -1327,7 +1352,6 @@ export function isOrcSceneActive() {
 	return orcSceneActive
 }
 
-let orcDemoControls = null
 // Create the ORC demo in its own container
 function createOrcDemo() {
 	if (orcDemoContainer) return // Already created
@@ -1335,7 +1359,16 @@ function createOrcDemo() {
 	// 1. Create container
 	orcDemoContainer = document.createElement("div")
 	orcDemoContainer.id = "orc-demo-container"
-	// Styles are now in orc-demo.css
+	Object.assign(orcDemoContainer.style, {
+		position: "fixed",
+		top: "0",
+		left: "0",
+		width: "66.67vw", // Occupy left 2/3 of the screen
+		height: "100vh",
+		zIndex: "40", // Below info pane (which is 50)
+		opacity: "0",
+		transition: "opacity 0.5s ease-in",
+	})
 	document.body.appendChild(orcDemoContainer)
 
 	// 2. Create renderer
@@ -1354,9 +1387,8 @@ function createOrcDemo() {
 		0.1,
 		100
 	)
-	// You can tweak this camera position to adjust the zoom and angle.
-	// A higher 'y' value gives a more top-down view. A higher 'z' value zooms out.
-	orcDemoCamera.position.set(0, 4.0, 4.0)
+	// Position camera for a top-down isometric view so satellites are not occluded
+	orcDemoCamera.position.set(0, 5.0, 0.5)
 	orcDemoCamera.lookAt(0, 0, 0)
 
 	// New: Add OrbitControls for the ORC demo camera
@@ -1376,11 +1408,6 @@ function createOrcDemo() {
 	// This creates the orcGroup and satellites at the module level in orcScene.js
 	const orcGroupForDemo = createOrcScene()
 	orcDemoScene.add(orcGroupForDemo)
-
-	// Fade in
-	requestAnimationFrame(() => {
-		orcDemoContainer.style.opacity = "1"
-	})
 
 	// 5. Start animation loop
 	function animateOrcDemo() {
@@ -1489,7 +1516,7 @@ export function animate() {
 	stars.rotation.y += 0.0008
 
 	// Animate ORC scene if active
-	if (orcSceneActive) {
+	if (orcSceneActive && orcAnimationRunning) {
 		animateOrcScene()
 	}
 

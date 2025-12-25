@@ -13,10 +13,6 @@ export let planet = null
 export let satellites = []
 export let orbitalRings = []
 
-// Animation state
-let animationRunning = false
-let animationId = null
-
 // Constants
 const PLANET_RADIUS = 0.5 // Planet's size
 const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
@@ -44,8 +40,8 @@ export function createOrcScene() {
 	)
 	const geoSatellite = createSatellite(0x00aaff) // Blue
 	geoSatellite.userData = {
-		orbitRadiusX: GEO_ORBIT_RADIUS_X, // Correctly use X and Z radii
-		orbitRadiusZ: GEO_ORBIT_RADIUS_Z, // Correctly use X and Z radii
+		orbitRadiusX: GEO_ORBIT_RADIUS_X,
+		orbitRadiusZ: GEO_ORBIT_RADIUS_Z,
 		orbitSpeed: GEO_ORBIT_SPEED,
 		angle: 0,
 	}
@@ -276,8 +272,6 @@ export function animateOrcScene() {
 
 // Dispose of ORC scene resources
 export function disposeOrcScene() {
-	stopOrcAnimation()
-
 	if (orcGroup) {
 		orcGroup.traverse((child) => {
 			if (child.geometry) child.geometry.dispose()
@@ -364,6 +358,7 @@ export function createOrcPreview(width = 300, height = 200) {
 	const satGeo = new THREE.SphereGeometry(0.04, 8, 8)
 	const sat1Mat = new THREE.MeshBasicMaterial({
 		color: 0x00aaff,
+		emissive: 0x00aaff,
 	})
 	const sat1 = new THREE.Mesh(satGeo, sat1Mat)
 
