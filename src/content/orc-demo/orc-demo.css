@@ -1,4 +1,4 @@
-/* ORC Demo Page Styles */
+/* Styles for the main content loaded from orc-demo.html */
 .orc-demo-page {
 	color: #e0f0ff;
 	max-width: 800px;
@@ -19,8 +19,8 @@
 
 .orc-info {
 	background: rgba(0, 30, 60, 0.6);
-	border: 1px solid #00aaff;
-	border-radius: 8px;
+	border: 0;
+	border-left: 2px solid #00aaff;
 	padding: 1.5rem;
 	margin-bottom: 1.5rem;
 }
@@ -41,8 +41,8 @@
 
 .orc-api-preview {
 	background: rgba(0, 40, 80, 0.5);
-	border: 1px solid #00ffaa;
-	border-radius: 8px;
+	border: 0;
+	border-left: 2px solid #00ffaa;
 	padding: 1.5rem;
 }
 
@@ -63,18 +63,103 @@
 	text-decoration: underline;
 }
 
-/* Mobile adjustments */
 @media (max-width: 768px) {
 	.orc-demo-page {
 		padding: 0 1rem;
 	}
-
 	.orc-subtitle {
 		font-size: 1rem;
 	}
-
 	.orc-info,
 	.orc-api-preview {
 		padding: 1rem;
 	}
+}
+
+/* Styles for the ORC Info Pane (right side) */
+#orc-info-pane {
+	position: fixed;
+	top: 0;
+	right: 0;
+	width: 33.33%;
+	height: 100vh;
+	background: linear-gradient(
+		180deg,
+		rgba(0, 20, 40, 0.95) 0%,
+		rgba(0, 30, 50, 0.9) 100%
+	);
+	border: 0;
+	border-left: 2px solid #00aaff;
+	padding: 24px;
+	padding-top: 100px;
+	box-shadow: -10px 0 40px rgba(0, 170, 255, 0.2);
+	z-index: 50;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.orc-pane-title {
+	color: #00ffff;
+	margin: 0 0 16px 0;
+	font-size: 1.5rem;
+	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.orc-pane-content {
+	color: #aaddff;
+	font-size: 0.95rem;
+	line-height: 1.6;
+}
+
+.orc-pane-content p {
+	margin-bottom: 16px;
+}
+
+.orc-pane-section {
+	border-top: 1px solid rgba(0, 170, 255, 0.3);
+	padding-top: 16px;
+	margin-top: 16px;
+}
+
+.orc-pane-section h3 {
+	color: #00aaff;
+	font-size: 1.1rem;
+	margin-bottom: 12px;
+}
+
+.status-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.status-indicator {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+}
+
+.status-indicator.blue {
+	background: #00aaff;
+	box-shadow: 0 0 8px #00aaff;
+}
+
+.status-indicator.cyan {
+	background: #00ffaa;
+	box-shadow: 0 0 8px #00ffaa;
+}
+
+.api-docs-link {
+	color: #00ffff;
+	text-decoration: none;
+	display: inline-block;
+	padding: 8px 16px;
+	border: 1px solid #00ffff;
+	border-radius: 8px;
+	transition: all 0.3s ease;
+}
+
+.api-docs-link:hover {
+	background: rgba(0, 255, 255, 0.1);
 }

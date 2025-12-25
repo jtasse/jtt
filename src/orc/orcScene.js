@@ -1,6 +1,6 @@
 import * as THREE from "three"
 
-// ORC Demo Scene - Orbital Resource Controller visualization
+// ORC Demo Scene - Orbital Refuse Collector visualization
 // Features:
 // - Monochromatic planet Earth sphere
 // - Two satellites: geosynchronous and non-geosynchronous orbits
@@ -105,7 +105,9 @@ function createPlanet() {
 		const x = Math.random() * canvas.width
 		const y = Math.random() * canvas.height
 		const brightness = Math.random() * 20 + 40
-		ctx.fillStyle = `rgba(${brightness}, ${brightness + 20}, ${brightness + 30}, 0.3)`
+		ctx.fillStyle = `rgba(${brightness}, ${brightness + 20}, ${
+			brightness + 30
+		}, 0.3)`
 		ctx.fillRect(x, y, 2, 2)
 	}
 
@@ -134,7 +136,11 @@ function createPlanet() {
 	sphere.name = "planet"
 
 	// Add atmosphere glow
-	const atmosphereGeometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.05, 32, 32)
+	const atmosphereGeometry = new THREE.SphereGeometry(
+		PLANET_RADIUS * 1.05,
+		32,
+		32
+	)
 	const atmosphereMaterial = new THREE.MeshBasicMaterial({
 		color: 0x4488aa,
 		transparent: true,
@@ -152,7 +158,14 @@ function drawContinent(ctx, x, y, w, h) {
 	ctx.beginPath()
 	// Draw organic-looking shape
 	ctx.moveTo(x + w * 0.5, y)
-	ctx.bezierCurveTo(x + w, y + h * 0.2, x + w * 0.8, y + h * 0.8, x + w * 0.5, y + h)
+	ctx.bezierCurveTo(
+		x + w,
+		y + h * 0.2,
+		x + w * 0.8,
+		y + h * 0.8,
+		x + w * 0.5,
+		y + h
+	)
 	ctx.bezierCurveTo(x, y + h * 0.7, x + w * 0.2, y + h * 0.3, x + w * 0.5, y)
 	ctx.fill()
 }
@@ -212,7 +225,12 @@ function createSatellite(color) {
 	group.add(rightPanel)
 
 	// Antenna
-	const antennaGeometry = new THREE.CylinderGeometry(0.005, 0.005, SATELLITE_SIZE * 0.5, 8)
+	const antennaGeometry = new THREE.CylinderGeometry(
+		0.005,
+		0.005,
+		SATELLITE_SIZE * 0.5,
+		8
+	)
 	const antennaMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
 	const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial)
 	antenna.position.set(0, SATELLITE_SIZE * 0.4, 0)
@@ -235,7 +253,8 @@ export function animateOrcScene() {
 		const z = Math.sin(data.angle) * data.orbitRadius
 
 		// Apply orbit tilt
-		const y = Math.sin(data.angle) * Math.sin(data.orbitTiltX) * data.orbitRadius
+		const y =
+			Math.sin(data.angle) * Math.sin(data.orbitTiltX) * data.orbitRadius
 
 		sat.position.set(x, y, z)
 
@@ -352,24 +371,38 @@ export function createOrcPreview(width = 300, height = 200) {
 
 	// Mini orbital rings
 	const ring1Geo = new THREE.TorusGeometry(0.8, 0.008, 8, 64)
-	const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.5 })
+	const ring1Mat = new THREE.MeshBasicMaterial({
+		color: 0x00aaff,
+		transparent: true,
+		opacity: 0.5,
+	})
 	const ring1 = new THREE.Mesh(ring1Geo, ring1Mat)
 	ring1.rotation.x = Math.PI / 2
 	miniGroup.add(ring1)
 
 	const ring2Geo = new THREE.TorusGeometry(0.6, 0.008, 8, 64)
-	const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x00ffaa, transparent: true, opacity: 0.5 })
+	const ring2Mat = new THREE.MeshBasicMaterial({
+		color: 0x00ffaa,
+		transparent: true,
+		opacity: 0.5,
+	})
 	const ring2 = new THREE.Mesh(ring2Geo, ring2Mat)
 	ring2.rotation.x = Math.PI / 2 + 0.15
 	miniGroup.add(ring2)
 
 	// Mini satellites
 	const satGeo = new THREE.SphereGeometry(0.04, 8, 8)
-	const sat1Mat = new THREE.MeshBasicMaterial({ color: 0x00aaff, emissive: 0x00aaff })
+	const sat1Mat = new THREE.MeshBasicMaterial({
+		color: 0x00aaff,
+		emissive: 0x00aaff,
+	})
 	const sat1 = new THREE.Mesh(satGeo, sat1Mat)
 	miniGroup.add(sat1)
 
-	const sat2Mat = new THREE.MeshBasicMaterial({ color: 0x00ffaa, emissive: 0x00ffaa })
+	const sat2Mat = new THREE.MeshBasicMaterial({
+		color: 0x00ffaa,
+		emissive: 0x00ffaa,
+	})
 	const sat2 = new THREE.Mesh(satGeo.clone(), sat2Mat)
 	miniGroup.add(sat2)
 
@@ -404,11 +437,7 @@ export function createOrcPreview(width = 300, height = 200) {
 		sat1Angle += 0.008
 		sat2Angle += 0.012
 
-		sat1.position.set(
-			Math.cos(sat1Angle) * 0.8,
-			0,
-			Math.sin(sat1Angle) * 0.8
-		)
+		sat1.position.set(Math.cos(sat1Angle) * 0.8, 0, Math.sin(sat1Angle) * 0.8)
 
 		sat2.position.set(
 			Math.cos(sat2Angle) * 0.6,
@@ -436,7 +465,7 @@ export function createOrcPreview(width = 300, height = 200) {
 			if (child.geometry) child.geometry.dispose()
 			if (child.material) {
 				if (Array.isArray(child.material)) {
-					child.material.forEach(m => m.dispose())
+					child.material.forEach((m) => m.dispose())
 				} else {
 					child.material.dispose()
 				}

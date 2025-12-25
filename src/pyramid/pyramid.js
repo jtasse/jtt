@@ -151,7 +151,10 @@ const morphSphereMaterial = new THREE.MeshStandardMaterial({
 	transparent: true,
 	opacity: 0,
 })
-export const morphSphere = new THREE.Mesh(morphSphereGeometry, morphSphereMaterial)
+export const morphSphere = new THREE.Mesh(
+	morphSphereGeometry,
+	morphSphereMaterial
+)
 morphSphere.visible = false
 morphSphere.name = "morphSphere"
 scene.add(morphSphere)
@@ -159,6 +162,11 @@ scene.add(morphSphere)
 // ORC scene state
 let orcSceneActive = false
 let activeOrcGroup = null
+let orcDemoContainer = null
+let orcDemoRenderer = null
+let orcDemoScene = null
+let orcDemoCamera = null
+let orcDemoRequestId = null
 
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
@@ -920,7 +928,8 @@ function showOrcPreviewOverlay() {
 			display: "flex",
 			alignItems: "center",
 			gap: "20px",
-			background: "linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(0, 40, 60, 0.95))",
+			background:
+				"linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(0, 40, 60, 0.95))",
 			border: "2px solid #00aaff",
 			borderRadius: "16px",
 			padding: "16px 20px",
@@ -934,6 +943,7 @@ function showOrcPreviewOverlay() {
 		// Create the live 3D preview (smaller to fit container)
 		orcPreviewElement = createOrcPreview(140, 90)
 		orcPreviewElement.style.borderRadius = "8px"
+		orcPreviewElement.style.pointerEvents = "none"
 		orcPreviewOverlay.appendChild(orcPreviewElement)
 
 		// Create text container
@@ -943,9 +953,10 @@ function showOrcPreviewOverlay() {
 				Click here to view ORC demo with inline docs!
 			</h2>
 			<p style="color: #aaddff; margin: 0; font-size: 0.95rem; line-height: 1.4;">
-				Orbital Resource Controller - Interactive API documentation demo featuring satellite orbit visualization.
+				Orbital Refuse Collector - Interactive API documentation demo featuring satellite orbit visualization.
 			</p>
 		`
+		textContainer.style.pointerEvents = "none"
 		orcPreviewOverlay.appendChild(textContainer)
 
 		// Add hover effect
@@ -963,9 +974,8 @@ function showOrcPreviewOverlay() {
 		// Click handler to navigate to ORC demo
 		orcPreviewOverlay.addEventListener("click", (e) => {
 			e.stopPropagation()
-			// Use History API directly to avoid circular dependency with router
-			window.history.pushState({}, "", "/orc-demo")
-			window.dispatchEvent(new PopStateEvent("popstate"))
+			// Use the globally exposed router navigation
+			window.routerNavigate("/orc-demo")
 		})
 
 		document.body.appendChild(orcPreviewOverlay)
@@ -998,53 +1008,35 @@ function showOrcInfoPane() {
 	if (!orcInfoPane) {
 		orcInfoPane = document.createElement("div")
 		orcInfoPane.id = "orc-info-pane"
-		Object.assign(orcInfoPane.style, {
-			position: "fixed",
-			top: "80px",
-			right: "0",
-			width: "33.33%",
-			height: "calc(100vh - 100px)",
-			background: "linear-gradient(180deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 30, 50, 0.9) 100%)",
-			borderLeft: "2px solid #00aaff",
-			borderTop: "2px solid #00aaff",
-			borderBottom: "2px solid #00aaff",
-			borderTopLeftRadius: "16px",
-			borderBottomLeftRadius: "16px",
-			padding: "24px",
-			boxShadow: "-10px 0 40px rgba(0, 170, 255, 0.2)",
-			zIndex: "50",
-			overflowY: "auto",
-			display: "none",
-		})
+		// Styles are now in orc-demo.css. Set initial display state.
+		orcInfoPane.style.display = "none"
 
 		// Add content
 		orcInfoPane.innerHTML = `
-			<h2 style="color: #00ffff; margin: 0 0 16px 0; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,255,255,0.3);">
-				Orbital Resource Controller
+			<h2 class="orc-pane-title">
+				Orbital Refuse Collector
 			</h2>
-			<div style="color: #aaddff; font-size: 0.95rem; line-height: 1.6;">
-				<p style="margin-bottom: 16px;">
+			<div class="orc-pane-content">
+				<p>
 					Interactive API documentation demo featuring real-time satellite orbit visualization.
 				</p>
-				<div style="border-top: 1px solid rgba(0,170,255,0.3); padding-top: 16px; margin-top: 16px;">
-					<h3 style="color: #00aaff; font-size: 1.1rem; margin-bottom: 12px;">Satellite Status</h3>
-					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-						<div style="width: 12px; height: 12px; background: #00aaff; border-radius: 50%; box-shadow: 0 0 8px #00aaff;"></div>
+				<div class="orc-pane-section">
+					<h3>Satellite Status</h3>
+					<div class="status-item">
+						<div class="status-indicator blue"></div>
 						<span>GEO Satellite - Geosynchronous Orbit</span>
 					</div>
-					<div style="display: flex; align-items: center; gap: 10px;">
-						<div style="width: 12px; height: 12px; background: #00ffaa; border-radius: 50%; box-shadow: 0 0 8px #00ffaa;"></div>
+					<div class="status-item">
+						<div class="status-indicator cyan"></div>
 						<span>LEO Satellite - Low Earth Orbit</span>
 					</div>
 				</div>
-				<div style="border-top: 1px solid rgba(0,170,255,0.3); padding-top: 16px; margin-top: 16px;">
-					<h3 style="color: #00aaff; font-size: 1.1rem; margin-bottom: 12px;">API Documentation</h3>
-					<p style="margin-bottom: 12px;">
+				<div class="orc-pane-section">
+					<h3>API Documentation</h3>
+					<p>
 						Full documentation available at:
 					</p>
-					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank"
-					   style="color: #00ffff; text-decoration: none; display: inline-block; padding: 8px 16px;
-					          border: 1px solid #00ffff; border-radius: 8px; transition: all 0.3s ease;">
+					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
 						View API Docs
 					</a>
 				</div>
@@ -1089,28 +1081,12 @@ export function hideAllPlanes() {
 
 // === ORC Scene / Morph Functions ===
 
-// Store initial camera state for ORC transitions
-// Position camera to view planet/satellites in left 2/3 of screen (offset to the left)
-const orcCameraState = {
-	position: new THREE.Vector3(0.5, 3.5, 4),
-	target: new THREE.Vector3(-1, 0, 0), // Look slightly left of center
-}
-
-// ORC scene position offset (to appear in left 2/3 of screen)
-const orcSceneOffset = new THREE.Vector3(-1.2, 0.35, 0)
-
 // Morph pyramid into sphere and show ORC scene
 export function morphToOrcScene() {
 	const myToken = ++pyramidAnimToken
 	hideAllPlanes()
 
-	// Hide all labels
-	for (const key in labels) {
-		if (labels[key]) labels[key].visible = false
-	}
-	for (const key in hoverTargets) {
-		if (hoverTargets[key]) hoverTargets[key].visible = false
-	}
+	// Labels will be faded out during the animation
 
 	// Show home button
 	showHomeLabel()
@@ -1122,22 +1098,13 @@ export function morphToOrcScene() {
 	const startPyramidOpacity = 1
 	const startSphereOpacity = 0
 	const startCamPos = camera.position.clone()
-	const endCamPos = orcCameraState.position.clone()
+	const endCamPos = initialCameraState.position.clone() // Camera stays put
 
 	// Make morph sphere visible and position it
 	morphSphere.visible = true
 	morphSphere.position.copy(pyramidGroup.position)
 	morphSphere.scale.set(0.1, 0.1, 0.1)
 	morphSphereMaterial.opacity = 0
-
-	// Create ORC scene
-	if (!activeOrcGroup) {
-		activeOrcGroup = createOrcScene()
-		activeOrcGroup.visible = false
-		// Position ORC scene in left 2/3 of screen
-		activeOrcGroup.position.copy(orcSceneOffset)
-		scene.add(activeOrcGroup)
-	}
 
 	const startTime = performance.now()
 
@@ -1159,6 +1126,13 @@ export function morphToOrcScene() {
 			}
 		})
 
+		// Fade out labels
+		Object.values(labels).forEach((label) => {
+			if (label.material) {
+				label.material.opacity = 1 - eased
+			}
+		})
+
 		// Animate sphere scale up and fade in
 		const sphereScale = 0.1 + eased * 0.9
 		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
@@ -1166,9 +1140,9 @@ export function morphToOrcScene() {
 
 		// Animate camera to isometric position
 		camera.position.lerpVectors(startCamPos, endCamPos, eased)
-		camera.lookAt(orcCameraState.target)
-		controls.target.copy(orcCameraState.target)
-		controls.update()
+		// Keep looking at the center
+		camera.lookAt(initialCameraState.target)
+		controls.target.copy(initialCameraState.target)
 
 		if (t < 1) {
 			requestAnimationFrame(step)
@@ -1179,17 +1153,12 @@ export function morphToOrcScene() {
 			pyramidGroup.visible = false
 			morphSphere.visible = false
 
-			if (activeOrcGroup) {
-				activeOrcGroup.visible = true
-			}
-
+			createOrcDemo()
 			orcSceneActive = true
 
 			// Ensure camera is at final position
 			camera.position.copy(endCamPos)
-			camera.lookAt(orcCameraState.target)
-			controls.target.copy(orcCameraState.target)
-			controls.update()
+			camera.lookAt(initialCameraState.target)
 
 			// Show the info pane on the right
 			showOrcInfoPane()
@@ -1203,6 +1172,8 @@ export function morphToOrcScene() {
 export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
 
+	destroyOrcDemo()
+
 	const duration = 1200
 
 	// Starting states
@@ -1210,15 +1181,10 @@ export function morphFromOrcScene() {
 	const endCamPos = initialCameraState.position.clone()
 
 	// Show morph sphere at ORC position
+	// Sphere will animate from center
+	morphSphere.position.copy(pyramidGroup.position)
 	morphSphere.visible = true
-	morphSphere.position.copy(orcSceneOffset)
-	morphSphere.scale.set(1, 1, 1)
-	morphSphereMaterial.opacity = 0.8
-
-	// Hide ORC scene and info pane
-	if (activeOrcGroup) {
-		activeOrcGroup.visible = false
-	}
+	morphSphere.scale.set(0.1, 0.1, 0.1)
 	hideOrcInfoPane()
 
 	// Prepare pyramid - set to initial state but scaled down for animation
@@ -1230,35 +1196,6 @@ export function morphFromOrcScene() {
 	pyramidGroup.rotation.z = 0
 	pyramidGroup.scale.set(0.1, 0.1, 0.1)
 
-	// Ensure all labels are properly attached to pyramidGroup and restore transforms
-	for (const key in labels) {
-		if (key === "Home") continue
-		const labelMesh = labels[key]
-		if (!labelMesh) continue
-
-		// Force reattach to pyramidGroup if not already a child
-		if (labelMesh.parent !== pyramidGroup) {
-			// Get world position before reparenting
-			const worldPos = new THREE.Vector3()
-			labelMesh.getWorldPosition(worldPos)
-			pyramidGroup.add(labelMesh)
-		}
-
-		// Clear any fixedNav flag
-		labelMesh.userData.fixedNav = false
-
-		// Restore original local transforms
-		const origPos = labelMesh.userData.origPosition
-		const origRot = labelMesh.userData.origRotation
-		const origScale = labelMesh.userData.originalScale
-		if (origPos) labelMesh.position.copy(origPos)
-		if (origRot) labelMesh.rotation.copy(origRot)
-		if (origScale) labelMesh.scale.copy(origScale)
-
-		// Make label visible
-		labelMesh.visible = true
-	}
-
 	// Show hover targets
 	for (const key in hoverTargets) {
 		if (hoverTargets[key]) hoverTargets[key].visible = true
@@ -1266,7 +1203,11 @@ export function morphFromOrcScene() {
 
 	// Set pyramid face materials to transparent for fade in
 	pyramidGroup.children.forEach((child) => {
-		if (child.isMesh && child.material && !Object.values(labels).includes(child)) {
+		if (
+			child.isMesh &&
+			child.material &&
+			!Object.values(labels).includes(child)
+		) {
 			child.material.opacity = 0
 			child.material.transparent = true
 		}
@@ -1281,8 +1222,8 @@ export function morphFromOrcScene() {
 		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
 		// Animate sphere scale down and fade out
-		const sphereScale = 1 - eased * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
+		const sphereScale = 0.1 + (1 - eased) * 0.9
+		morphSphere.scale.set(sphereScale, sphereScale, sphereScale) // This might need adjustment
 		morphSphereMaterial.opacity = 0.8 * (1 - eased)
 
 		// Animate pyramid scale up and fade in
@@ -1291,8 +1232,19 @@ export function morphFromOrcScene() {
 
 		// Fade in pyramid faces (not labels)
 		pyramidGroup.children.forEach((child) => {
-			if (child.isMesh && child.material && !Object.values(labels).includes(child)) {
+			if (
+				child.isMesh &&
+				child.material &&
+				!Object.values(labels).includes(child)
+			) {
 				child.material.opacity = eased
+			}
+		})
+
+		// Fade in labels (which were faded out in morphToOrcScene)
+		Object.values(labels).forEach((label) => {
+			if (label.material) {
+				label.material.opacity = eased
 			}
 		})
 
@@ -1314,7 +1266,11 @@ export function morphFromOrcScene() {
 			currentSection = null
 
 			// Restore pyramid to exact initial state
-			pyramidGroup.scale.set(initialPyramidState.scale, initialPyramidState.scale, initialPyramidState.scale)
+			pyramidGroup.scale.set(
+				initialPyramidState.scale,
+				initialPyramidState.scale,
+				initialPyramidState.scale
+			)
 			pyramidGroup.position.x = initialPyramidState.positionX
 			pyramidGroup.position.y = initialPyramidState.positionY
 			pyramidGroup.rotation.x = 0
@@ -1323,7 +1279,11 @@ export function morphFromOrcScene() {
 
 			// Restore pyramid face materials
 			pyramidGroup.children.forEach((child) => {
-				if (child.isMesh && child.material && !Object.values(labels).includes(child)) {
+				if (
+					child.isMesh &&
+					child.material &&
+					!Object.values(labels).includes(child)
+				) {
 					child.material.opacity = 1
 					child.material.transparent = false
 				}
@@ -1333,9 +1293,6 @@ export function morphFromOrcScene() {
 			for (const key in labels) {
 				if (key === "Home") continue
 				const labelMesh = labels[key]
-				if (!labelMesh) continue
-
-				labelMesh.visible = true
 				labelMesh.userData.fixedNav = false
 
 				// Ensure attached to pyramidGroup
@@ -1363,13 +1320,6 @@ export function morphFromOrcScene() {
 			controls.target.copy(initialCameraState.target)
 			controls.update()
 
-			// Clean up ORC scene
-			if (activeOrcGroup) {
-				scene.remove(activeOrcGroup)
-				disposeOrcScene()
-				activeOrcGroup = null
-			}
-
 			hideHomeLabel()
 		}
 	}
@@ -1380,6 +1330,94 @@ export function morphFromOrcScene() {
 // Check if ORC scene is currently active
 export function isOrcSceneActive() {
 	return orcSceneActive
+}
+
+// Create the ORC demo in its own container
+function createOrcDemo() {
+	if (orcDemoContainer) return // Already created
+
+	// 1. Create container
+	orcDemoContainer = document.createElement("div")
+	orcDemoContainer.id = "orc-demo-container"
+	Object.assign(orcDemoContainer.style, {
+		position: "fixed",
+		top: "0",
+		left: "0",
+		width: "65vw", // Occupy left 1/3 of the screen
+		height: "100vh",
+		zIndex: "40", // Below info pane (which is 50)
+		opacity: "0",
+		transition: "opacity 0.5s ease-in",
+	})
+	document.body.appendChild(orcDemoContainer)
+
+	// 2. Create renderer
+	const rect = orcDemoContainer.getBoundingClientRect()
+	orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+	orcDemoRenderer.setPixelRatio(window.devicePixelRatio)
+	orcDemoRenderer.setSize(rect.width, rect.height)
+	orcDemoRenderer.outputColorSpace = THREE.SRGBColorSpace
+	orcDemoContainer.appendChild(orcDemoRenderer.domElement)
+
+	// 3. Create scene and camera
+	orcDemoScene = new THREE.Scene()
+	orcDemoCamera = new THREE.PerspectiveCamera(
+		32,
+		rect.width / rect.height,
+		0.1,
+		100
+	)
+	// Position camera to best frame the scene inside the container
+	orcDemoCamera.position.set(0, 2.5, 3.5)
+	orcDemoCamera.lookAt(0, 0, 0)
+
+	// 4. Add content
+	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
+	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
+	keyLight.position.set(3, 3, 3)
+	orcDemoScene.add(keyLight)
+
+	// This creates the orcGroup and satellites at the module level in orcScene.js
+	const orcGroupForDemo = createOrcScene()
+	orcDemoScene.add(orcGroupForDemo)
+
+	// Fade in
+	requestAnimationFrame(() => {
+		orcDemoContainer.style.opacity = "1"
+	})
+
+	// 5. Start animation loop
+	function animateOrcDemo() {
+		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
+		animateOrcScene() // Animates the module-level orcGroup
+		orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
+	}
+	animateOrcDemo()
+}
+
+// Destroy the ORC demo
+function destroyOrcDemo() {
+	if (!orcDemoContainer) return
+
+	if (orcDemoRequestId) {
+		cancelAnimationFrame(orcDemoRequestId)
+		orcDemoRequestId = null
+	}
+
+	disposeOrcScene() // Disposes the module-level orcGroup
+
+	if (orcDemoRenderer) {
+		orcDemoRenderer.dispose()
+		orcDemoRenderer = null
+	}
+
+	if (orcDemoContainer) {
+		document.body.removeChild(orcDemoContainer)
+		orcDemoContainer = null
+	}
+
+	orcDemoScene = null
+	orcDemoCamera = null
 }
 
 // Show/hide helpers for Home label

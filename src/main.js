@@ -24,6 +24,9 @@ import {
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
 
+// Expose router navigate for pyramid.js to use in overlays
+window.routerNavigate = (path) => router.navigate(path)
+
 // Attach renderer DOM element
 document.getElementById("scene-container").appendChild(renderer.domElement)
 
@@ -125,9 +128,11 @@ window.addEventListener(
 	(event) => {
 		const content = document.getElementById("content")
 		const homeBtn = document.getElementById("home-button")
+		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
-			(homeBtn && homeBtn.contains(event.target))
+			(homeBtn && homeBtn.contains(event.target)) ||
+			(orcOverlay && orcOverlay.contains(event.target))
 		) {
 			// Allow clicks inside content area or home button to pass through
 			return
