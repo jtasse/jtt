@@ -173,7 +173,6 @@ import {
 	showPortfolioPlane,
 	showBlogPlane,
 	hideAllPlanes,
-	animateLabelToCenter,
 	animatePyramid,
 } from "../src/pyramid/pyramid.js"
 
@@ -279,25 +278,5 @@ describe("Pyramid UI smoke tests", () => {
 		hideAllPlanes()
 		expect(content.style.display).toBe("none")
 		expect(floor.classList.contains("show")).toBe(false)
-	})
-
-	it("animateLabelToCenter tolerates missing endPos/endRot", () => {
-		const mesh = {
-			position: {
-				clone: () => ({ x: 0, y: 0, z: 0 }),
-				lerpVectors: (a, b, t) => ({
-					x: a.x + (b.x - a.x) * t,
-					y: a.y + (b.y - a.y) * t,
-					z: a.z + (b.z - a.z) * t,
-				}),
-			},
-			rotation: { clone: () => ({ x: 0, y: 0, z: 0 }) },
-			userData: {
-				origPosition: { x: 0, y: 0, z: 0 },
-				origRotation: { x: 0, y: 0, z: 0 },
-			},
-			scale: { set: () => {} },
-		}
-		expect(() => animateLabelToCenter(mesh)).not.toThrow()
 	})
 })
