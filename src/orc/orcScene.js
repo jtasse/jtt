@@ -18,9 +18,10 @@ let animationRunning = false
 let animationId = null
 
 // Constants
-const PLANET_RADIUS = 0.5 // Much smaller planet
-const GEO_ORBIT_RADIUS = 1.4 // Geosynchronous orbit
-const LEO_ORBIT_RADIUS = 1.0 // Low Earth orbit (non-geosynchronous)
+const PLANET_RADIUS = 0.5 // Planet's size
+const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
+const GEO_ORBIT_RADIUS_Z = 1.7 // Elongated outer orbit (front-back)
+const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
 const GEO_ORBIT_SPEED = 0.003 // Slower - geosynchronous
 const LEO_ORBIT_SPEED = 0.0045 // Only slightly faster - non-geosynchronous
 const SATELLITE_SIZE = 0.08
@@ -34,40 +35,42 @@ export function createOrcScene() {
 	planet = createPlanet()
 	orcGroup.add(planet)
 
-	// Create orbital rings
-	const geoRing = createOrbitalRing(GEO_ORBIT_RADIUS, 0x00aaff) // Blue for geo
-	const leoRing = createOrbitalRing(LEO_ORBIT_RADIUS, 0x00ffaa) // Cyan for LEO
-	// Tilt the LEO ring for visual interest
-	leoRing.rotation.x = Math.PI * 0.15
-	orbitalRings.push(geoRing, leoRing)
-	orcGroup.add(geoRing)
-	orcGroup.add(leoRing)
-
-	// Create satellites
+	// Create a group for the GEO satellite and its ring to make it elliptical and tilted
+	const geoOrbitGroup = new THREE.Group()
+	const geoRing = createOrbitalRing(
+		GEO_ORBIT_RADIUS_X,
+		GEO_ORBIT_RADIUS_Z,
+		0x00aaff
+	)
 	const geoSatellite = createSatellite(0x00aaff) // Blue
 	geoSatellite.userData = {
-		orbitRadius: GEO_ORBIT_RADIUS,
+		orbitRadiusX: GEO_ORBIT_RADIUS_X, // Correctly use X and Z radii
+		orbitRadiusZ: GEO_ORBIT_RADIUS_Z, // Correctly use X and Z radii
 		orbitSpeed: GEO_ORBIT_SPEED,
 		angle: 0,
-		orbitTiltX: 0,
 	}
+	geoOrbitGroup.add(geoRing)
+	geoOrbitGroup.add(geoSatellite)
+	geoOrbitGroup.rotation.x = Math.PI / 2 // Rotate group to XZ plane
+	geoOrbitGroup.rotation.z = Math.PI / 6 // Tilt group 30 degrees
+	orcGroup.add(geoOrbitGroup)
+	orbitalRings.push(geoRing)
 	satellites.push(geoSatellite)
-	orcGroup.add(geoSatellite)
+
+	// Create LEO satellite and its ring (flat on XZ plane)
+	const leoRing = createOrbitalRing(LEO_ORBIT_RADIUS, undefined, 0x00ffaa)
+	leoRing.rotation.x = Math.PI / 2 // Place LEO orbit on the XZ plane
+	orcGroup.add(leoRing)
+	orbitalRings.push(leoRing)
 
 	const leoSatellite = createSatellite(0x00ffaa) // Cyan
 	leoSatellite.userData = {
 		orbitRadius: LEO_ORBIT_RADIUS,
 		orbitSpeed: LEO_ORBIT_SPEED,
 		angle: Math.PI, // Start on opposite side
-		orbitTiltX: Math.PI * 0.15, // Match ring tilt
 	}
 	satellites.push(leoSatellite)
 	orcGroup.add(leoSatellite)
-
-	// Position for top-down isometric view where satellites are never occluded
-	// Looking down at about 60 degrees ensures orbits are always visible
-	orcGroup.rotation.x = -0.8
-	orcGroup.rotation.y = 0.2
 
 	return orcGroup
 }
@@ -83,11 +86,12 @@ function createPlanet() {
 	const ctx = canvas.getContext("2d")
 
 	// Base color - dark blue/gray
-	ctx.fillStyle = "#1a2a3a"
+	ctx.fillStyle = "#222222" // Dark gray for deep water
 	ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-	// Draw continents as lighter shapes (simplified monochromatic)
-	ctx.fillStyle = "#3a5a6a"
+	// Draw continents as outlines
+	ctx.strokeStyle = "#555555" // Medium-light gray for outlines
+	ctx.lineWidth = 2
 
 	// North America
 	drawContinent(ctx, 80, 40, 60, 50)
@@ -100,36 +104,16 @@ function createPlanet() {
 	// Australia
 	drawContinent(ctx, 420, 120, 40, 30)
 
-	// Add some noise/texture
-	for (let i = 0; i < 2000; i++) {
-		const x = Math.random() * canvas.width
-		const y = Math.random() * canvas.height
-		const brightness = Math.random() * 20 + 40
-		ctx.fillStyle = `rgba(${brightness}, ${brightness + 20}, ${
-			brightness + 30
-		}, 0.3)`
-		ctx.fillRect(x, y, 2, 2)
-	}
-
-	// Add polar ice caps (lighter regions)
-	ctx.fillStyle = "#5a7a8a"
-	ctx.beginPath()
-	ctx.ellipse(256, 10, 200, 15, 0, 0, Math.PI * 2)
-	ctx.fill()
-	ctx.beginPath()
-	ctx.ellipse(256, 246, 200, 15, 0, 0, Math.PI * 2)
-	ctx.fill()
-
 	const texture = new THREE.CanvasTexture(canvas)
 	texture.wrapS = THREE.RepeatWrapping
 	texture.wrapT = THREE.ClampToEdgeWrapping
 
 	const material = new THREE.MeshStandardMaterial({
 		map: texture,
-		metalness: 0.1,
-		roughness: 0.8,
-		emissive: new THREE.Color(0x0a1520),
-		emissiveIntensity: 0.3,
+		metalness: 0, // Non-metallic
+		roughness: 0.8, // A bit rough
+		color: 0x333333, // Dark base color for the planet
+		emissive: new THREE.Color(0x000000), // No emission
 	})
 
 	const sphere = new THREE.Mesh(geometry, material)
@@ -142,7 +126,7 @@ function createPlanet() {
 		32
 	)
 	const atmosphereMaterial = new THREE.MeshBasicMaterial({
-		color: 0x4488aa,
+		color: 0xaaaaaa,
 		transparent: true,
 		opacity: 0.15,
 		side: THREE.BackSide,
@@ -167,20 +151,44 @@ function drawContinent(ctx, x, y, w, h) {
 		y + h
 	)
 	ctx.bezierCurveTo(x, y + h * 0.7, x + w * 0.2, y + h * 0.3, x + w * 0.5, y)
-	ctx.fill()
+	ctx.stroke()
 }
 
 // Create an orbital ring (path visualization)
-function createOrbitalRing(radius, color) {
-	const geometry = new THREE.TorusGeometry(radius, 0.01, 8, 128)
-	const material = new THREE.MeshBasicMaterial({
-		color: color,
-		transparent: true,
-		opacity: 0.5,
-	})
-	const ring = new THREE.Mesh(geometry, material)
-	ring.rotation.x = Math.PI / 2 // Lay flat
-	ring.name = `orbitalRing_${radius}`
+function createOrbitalRing(xRadius, zRadius, color) {
+	let ring
+	if (zRadius === undefined) {
+		// It's a circle, use TorusGeometry
+		const geometry = new THREE.TorusGeometry(xRadius, 0.01, 8, 128)
+		const material = new THREE.MeshBasicMaterial({
+			color: color,
+			transparent: true,
+			opacity: 0.5,
+		})
+		ring = new THREE.Mesh(geometry, material)
+	} else {
+		// It's an ellipse, use LineLoop with an EllipseCurve for robustness
+		const curve = new THREE.EllipseCurve(
+			0,
+			0, // Center x, y
+			xRadius,
+			zRadius, // xRadius, yRadius
+			0,
+			2 * Math.PI, // Start and end angle
+			false, // Clockwise
+			0 // Rotation
+		)
+		const points = curve.getPoints(128)
+		const geometry = new THREE.BufferGeometry().setFromPoints(points)
+		const material = new THREE.LineBasicMaterial({
+			color: color,
+			transparent: true,
+			opacity: 0.5,
+		})
+		ring = new THREE.LineLoop(geometry, material)
+	}
+
+	ring.name = `orbitalRing_${xRadius}`
 	return ring
 }
 
@@ -248,54 +256,22 @@ export function animateOrcScene() {
 		const data = sat.userData
 		data.angle += data.orbitSpeed
 
-		// Calculate position on orbit
-		const x = Math.cos(data.angle) * data.orbitRadius
-		const z = Math.sin(data.angle) * data.orbitRadius
-
-		// Apply orbit tilt
-		const y =
-			Math.sin(data.angle) * Math.sin(data.orbitTiltX) * data.orbitRadius
-
-		sat.position.set(x, y, z)
-
-		// Make satellite face direction of travel
-		sat.rotation.y = -data.angle + Math.PI / 2
+		if (data.orbitRadiusX) {
+			// GEO satellite, moving on its local elliptical XY plane within a rotated group
+			const x = Math.cos(data.angle) * data.orbitRadiusX
+			const y = Math.sin(data.angle) * data.orbitRadiusZ
+			sat.position.set(x, y, 0)
+			// Rotate satellite to face direction of travel
+			sat.rotation.z = data.angle + Math.PI / 2
+		} else {
+			// LEO satellite, moving on a circular XZ plane
+			const x = Math.cos(data.angle) * data.orbitRadius
+			const z = Math.sin(data.angle) * data.orbitRadius
+			sat.position.set(x, 0, z)
+			// Rotate satellite to face direction of travel
+			sat.rotation.y = -data.angle + Math.PI / 2
+		}
 	})
-
-	// Slowly rotate planet
-	if (planet) {
-		planet.rotation.y += 0.001
-	}
-}
-
-// Start animation loop (for standalone preview)
-export function startOrcAnimation(renderer, scene, camera) {
-	animationRunning = true
-	function loop() {
-		if (!animationRunning) return
-		animateOrcScene()
-		renderer.render(scene, camera)
-		animationId = requestAnimationFrame(loop)
-	}
-	loop()
-}
-
-// Stop animation
-export function stopOrcAnimation() {
-	animationRunning = false
-	if (animationId) {
-		cancelAnimationFrame(animationId)
-		animationId = null
-	}
-}
-
-// Get isometric camera position for this scene
-export function getOrcCameraPosition() {
-	// More top-down view to ensure satellites are never occluded by planet
-	return {
-		position: new THREE.Vector3(2, 4, 3),
-		target: new THREE.Vector3(0, 0, 0),
-	}
 }
 
 // Dispose of ORC scene resources
@@ -370,16 +346,10 @@ export function createOrcPreview(width = 300, height = 200) {
 	miniPlanet.add(new THREE.Mesh(atmosGeo, atmosMat))
 
 	// Mini orbital rings
-	const ring1Geo = new THREE.TorusGeometry(0.8, 0.008, 8, 64)
-	const ring1Mat = new THREE.MeshBasicMaterial({
-		color: 0x00aaff,
-		transparent: true,
-		opacity: 0.5,
-	})
-	const ring1 = new THREE.Mesh(ring1Geo, ring1Mat)
-	ring1.rotation.x = Math.PI / 2
-	miniGroup.add(ring1)
+	// Outer ring (blue, elliptical)
+	const ring1 = createOrbitalRing(0.8, 0.5, 0x00aaff)
 
+	// Inner ring (green, circular)
 	const ring2Geo = new THREE.TorusGeometry(0.6, 0.008, 8, 64)
 	const ring2Mat = new THREE.MeshBasicMaterial({
 		color: 0x00ffaa,
@@ -387,17 +357,15 @@ export function createOrcPreview(width = 300, height = 200) {
 		opacity: 0.5,
 	})
 	const ring2 = new THREE.Mesh(ring2Geo, ring2Mat)
-	ring2.rotation.x = Math.PI / 2 + 0.15
+	ring2.rotation.x = Math.PI / 2 // Lay flat on XZ plane
 	miniGroup.add(ring2)
 
 	// Mini satellites
 	const satGeo = new THREE.SphereGeometry(0.04, 8, 8)
 	const sat1Mat = new THREE.MeshBasicMaterial({
 		color: 0x00aaff,
-		emissive: 0x00aaff,
 	})
 	const sat1 = new THREE.Mesh(satGeo, sat1Mat)
-	miniGroup.add(sat1)
 
 	const sat2Mat = new THREE.MeshBasicMaterial({
 		color: 0x00ffaa,
@@ -406,18 +374,19 @@ export function createOrcPreview(width = 300, height = 200) {
 	const sat2 = new THREE.Mesh(satGeo.clone(), sat2Mat)
 	miniGroup.add(sat2)
 
-	// Animation state for mini satellites
-	let sat1Angle = 0
-	let sat2Angle = Math.PI
-
-	miniGroup.rotation.x = -0.8
-	miniGroup.rotation.y = 0.2
+	// Group for outer satellite and its ring
+	const geoOrbitGroupMini = new THREE.Group()
+	geoOrbitGroupMini.add(ring1)
+	geoOrbitGroupMini.add(sat1)
+	geoOrbitGroupMini.rotation.x = Math.PI / 2
+	geoOrbitGroupMini.rotation.z = Math.PI / 6
+	miniGroup.add(geoOrbitGroupMini)
 	miniScene.add(miniGroup)
 
 	// Mini camera
 	const aspect = width / height
 	const miniCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100)
-	miniCamera.position.set(1.2, 2.4, 1.8)
+	miniCamera.position.set(0, 2.0, 1.5)
 	miniCamera.lookAt(0, 0, 0)
 
 	// Mini renderer
@@ -425,6 +394,10 @@ export function createOrcPreview(width = 300, height = 200) {
 	miniRenderer.setSize(width, height)
 	miniRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 	container.appendChild(miniRenderer.domElement)
+
+	// Animation state for mini satellites
+	let sat1Angle = 0
+	let sat2Angle = Math.PI
 
 	// Animation for preview
 	let previewAnimId = null
@@ -437,13 +410,11 @@ export function createOrcPreview(width = 300, height = 200) {
 		sat1Angle += 0.008
 		sat2Angle += 0.012
 
-		sat1.position.set(Math.cos(sat1Angle) * 0.8, 0, Math.sin(sat1Angle) * 0.8)
+		// Outer satellite (blue) - elliptical on its local XY plane
+		sat1.position.set(Math.cos(sat1Angle) * 0.8, Math.sin(sat1Angle) * 0.5, 0)
 
-		sat2.position.set(
-			Math.cos(sat2Angle) * 0.6,
-			Math.sin(sat2Angle) * 0.1,
-			Math.sin(sat2Angle) * 0.6
-		)
+		// Inner satellite (green) - circular on the main XZ plane
+		sat2.position.set(Math.cos(sat2Angle) * 0.6, 0, Math.sin(sat2Angle) * 0.6)
 
 		// Slowly rotate planet
 		miniPlanet.rotation.y += 0.002

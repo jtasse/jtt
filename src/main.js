@@ -128,10 +128,12 @@ window.addEventListener(
 	(event) => {
 		const content = document.getElementById("content")
 		const homeBtn = document.getElementById("home-button")
+		const orcPlayPauseBtn = document.getElementById("orc-play-pause-button")
 		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
 			(homeBtn && homeBtn.contains(event.target)) ||
+			(orcPlayPauseBtn && orcPlayPauseBtn.contains(event.target)) ||
 			(orcOverlay && orcOverlay.contains(event.target))
 		) {
 			// Allow clicks inside content area or home button to pass through

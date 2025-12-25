@@ -98,6 +98,18 @@
 	box-sizing: border-box;
 }
 
+/* Styles for the ORC 3D Scene Container (left side) */
+#orc-demo-container {
+	position: fixed;
+	top: 0;
+	left: 80px;
+	width: 66.67vw; /* Occupy left 2/3 of the screen */
+	height: 100vh;
+	z-index: 40; /* Below info pane (which is 50) */
+	opacity: 0;
+	transition: opacity 0.5s ease-in;
+}
+
 .orc-pane-title {
 	color: #00ffff;
 	margin: 0 0 16px 0;

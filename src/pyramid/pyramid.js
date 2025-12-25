@@ -10,7 +10,6 @@ import {
 import {
 	createOrcScene,
 	animateOrcScene,
-	getOrcCameraPosition,
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
@@ -167,7 +166,7 @@ let orcDemoRenderer = null
 let orcDemoScene = null
 let orcDemoCamera = null
 let orcDemoRequestId = null
-
+let orcAnimationRunning = true // State for play/pause button
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
 	format: THREE.RGBAFormat,
@@ -1097,20 +1096,17 @@ export function morphToOrcScene() {
 	const startPyramidScale = pyramidGroup.scale.clone()
 	const startPyramidOpacity = 1
 	const startSphereOpacity = 0
-	const startCamPos = camera.position.clone()
+	const startCamPos = camera.position.clone() // Current camera position
 	const endCamPos = initialCameraState.position.clone() // Camera stays put
 
-	// Make morph sphere visible and position it
-	morphSphere.visible = true
+	morphSphere.visible = true // Make morph sphere visible and position it
 	morphSphere.position.copy(pyramidGroup.position)
 	morphSphere.scale.set(0.1, 0.1, 0.1)
 	morphSphereMaterial.opacity = 0
-
 	const startTime = performance.now()
 
 	function step(time) {
 		if (myToken !== pyramidAnimToken) return
-
 		const t = Math.min((time - startTime) / duration, 1)
 		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
@@ -1171,7 +1167,6 @@ export function morphToOrcScene() {
 // Return from ORC scene back to pyramid
 export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
-
 	destroyOrcDemo()
 
 	const duration = 1200
@@ -1179,8 +1174,6 @@ export function morphFromOrcScene() {
 	// Starting states
 	const startCamPos = camera.position.clone()
 	const endCamPos = initialCameraState.position.clone()
-
-	// Show morph sphere at ORC position
 	// Sphere will animate from center
 	morphSphere.position.copy(pyramidGroup.position)
 	morphSphere.visible = true
@@ -1222,8 +1215,8 @@ export function morphFromOrcScene() {
 		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
 		// Animate sphere scale down and fade out
-		const sphereScale = 0.1 + (1 - eased) * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale) // This might need adjustment
+		const sphereScale = 1 - eased * 0.9
+		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
 		morphSphereMaterial.opacity = 0.8 * (1 - eased)
 
 		// Animate pyramid scale up and fade in
@@ -1252,7 +1245,6 @@ export function morphFromOrcScene() {
 		camera.position.lerpVectors(startCamPos, endCamPos, eased)
 		camera.lookAt(initialCameraState.target)
 		controls.target.copy(initialCameraState.target)
-		controls.update()
 
 		if (t < 1) {
 			requestAnimationFrame(step)
@@ -1293,6 +1285,9 @@ export function morphFromOrcScene() {
 			for (const key in labels) {
 				if (key === "Home") continue
 				const labelMesh = labels[key]
+				if (!labelMesh) continue
+				if (labelMesh.material) labelMesh.material.opacity = 1
+
 				labelMesh.userData.fixedNav = false
 
 				// Ensure attached to pyramidGroup
@@ -1332,6 +1327,7 @@ export function isOrcSceneActive() {
 	return orcSceneActive
 }
 
+let orcDemoControls = null
 // Create the ORC demo in its own container
 function createOrcDemo() {
 	if (orcDemoContainer) return // Already created
@@ -1339,16 +1335,7 @@ function createOrcDemo() {
 	// 1. Create container
 	orcDemoContainer = document.createElement("div")
 	orcDemoContainer.id = "orc-demo-container"
-	Object.assign(orcDemoContainer.style, {
-		position: "fixed",
-		top: "0",
-		left: "0",
-		width: "65vw", // Occupy left 1/3 of the screen
-		height: "100vh",
-		zIndex: "40", // Below info pane (which is 50)
-		opacity: "0",
-		transition: "opacity 0.5s ease-in",
-	})
+	// Styles are now in orc-demo.css
 	document.body.appendChild(orcDemoContainer)
 
 	// 2. Create renderer
@@ -1362,15 +1349,24 @@ function createOrcDemo() {
 	// 3. Create scene and camera
 	orcDemoScene = new THREE.Scene()
 	orcDemoCamera = new THREE.PerspectiveCamera(
-		32,
+		50,
 		rect.width / rect.height,
 		0.1,
 		100
 	)
-	// Position camera to best frame the scene inside the container
-	orcDemoCamera.position.set(0, 2.5, 3.5)
+	// You can tweak this camera position to adjust the zoom and angle.
+	// A higher 'y' value gives a more top-down view. A higher 'z' value zooms out.
+	orcDemoCamera.position.set(0, 4.0, 4.0)
 	orcDemoCamera.lookAt(0, 0, 0)
 
+	// New: Add OrbitControls for the ORC demo camera
+	orcDemoControls = new OrbitControls(orcDemoCamera, orcDemoRenderer.domElement)
+	orcDemoControls.enableDamping = true
+	orcDemoControls.dampingFactor = 0.05
+	orcDemoControls.screenSpacePanning = false
+	orcDemoControls.minDistance = 1
+	orcDemoControls.maxDistance = 10
+	orcDemoControls.maxPolarAngle = Math.PI / 2 // Prevent camera from going below the planet
 	// 4. Add content
 	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
 	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
@@ -1389,7 +1385,11 @@ function createOrcDemo() {
 	// 5. Start animation loop
 	function animateOrcDemo() {
 		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
-		animateOrcScene() // Animates the module-level orcGroup
+		if (orcAnimationRunning) {
+			// Only animate if play is active
+			animateOrcScene() // Animates the module-level orcGroup
+		}
+		orcDemoControls.update() // Update ORC demo controls
 		orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
 	}
 	animateOrcDemo()
@@ -1418,6 +1418,52 @@ function destroyOrcDemo() {
 
 	orcDemoScene = null
 	orcDemoCamera = null
+	orcDemoControls = null // Dispose controls
+}
+
+// New: Play/Pause button for ORC demo
+let orcPlayPauseButton = null
+
+function createOrcPlayPauseButton() {
+	if (orcPlayPauseButton) return
+
+	orcPlayPauseButton = document.createElement("button")
+	orcPlayPauseButton.id = "orc-play-pause-button"
+	orcPlayPauseButton.textContent = "Pause" // Initial state
+	Object.assign(orcPlayPauseButton.style, {
+		position: "fixed",
+		left: "100px", // Next to home button
+		top: "12px",
+		zIndex: "10000",
+		padding: "8px 14px",
+		background: "rgba(0,0,0,0.6)",
+		color: "white",
+		border: "1px solid rgba(255,255,255,0.08)",
+		borderRadius: "4px",
+		font: "600 14px sans-serif",
+		cursor: "pointer",
+		backdropFilter: "blur(4px)",
+		display: "none",
+	})
+
+	orcPlayPauseButton.addEventListener("click", toggleOrcAnimation)
+	document.body.appendChild(orcPlayPauseButton)
+}
+
+function toggleOrcAnimation() {
+	orcAnimationRunning = !orcAnimationRunning
+	if (orcPlayPauseButton) {
+		orcPlayPauseButton.textContent = orcAnimationRunning ? "Pause" : "Play"
+	}
+}
+
+function showOrcPlayPauseButton() {
+	if (!orcPlayPauseButton) createOrcPlayPauseButton()
+	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "block"
+}
+
+function hideOrcPlayPauseButton() {
+	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "none"
 }
 
 // Show/hide helpers for Home label
