@@ -175,3 +175,117 @@
 .api-docs-link:hover {
 	background: rgba(0, 255, 255, 0.1);
 }
+
+/* New styles for Available Satellites Pane */
+/* This is now a section within the main info pane */
+#available-satellites-pane {
+	background: rgba(0, 40, 70, 0.4);
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 24px;
+	box-sizing: border-box;
+}
+
+#available-satellites-pane h3 {
+	color: #00ffff;
+	margin-top: 0;
+	margin-bottom: 12px;
+	font-size: 1.2rem;
+	text-align: center;
+}
+
+#available-satellites-pane ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.satellite-list-item {
+	padding: 10px;
+	margin-bottom: 8px;
+	background: rgba(0, 50, 80, 0.5);
+	border: 1px solid transparent;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background 0.3s, border-color 0.3s;
+	text-align: center;
+	font-weight: bold;
+	color: #aaddff;
+}
+
+.satellite-list-item:hover {
+	background: rgba(0, 80, 120, 0.7);
+	border-color: #00aaff;
+}
+
+.satellite-list-item.selected {
+	background: rgba(0, 120, 150, 0.9);
+	border-color: #00ffff;
+	color: #ffffff;
+	box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+.orc-pane-title {
+	color: #00ffff;
+	margin: 0 0 16px 0;
+	font-size: 1.5rem;
+	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.orc-pane-content {
+	color: #aaddff;
+	font-size: 0.95rem;
+	line-height: 1.6;
+}
+
+.orc-pane-content p {
+	margin-bottom: 16px;
+}
+
+.orc-pane-section {
+	border-top: 1px solid rgba(0, 170, 255, 0.3);
+	padding-top: 16px;
+	margin-top: 16px;
+}
+
+.orc-pane-section h3 {
+	color: #00aaff;
+	font-size: 1.1rem;
+	margin-bottom: 12px;
+}
+
+.status-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.status-indicator {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+}
+
+.status-indicator.blue {
+	background: #00aaff;
+	box-shadow: 0 0 8px #00aaff;
+}
+
+.status-indicator.cyan {
+	background: #00ffaa;
+	box-shadow: 0 0 8px #00ffaa;
+}
+
+.api-docs-link {
+	color: #00ffff;
+	text-decoration: none;
+	display: inline-block;
+	padding: 8px 16px;
+	border: 1px solid #00ffff;
+	border-radius: 8px;
+	transition: all 0.3s ease;
+}
+
+.api-docs-link:hover {
+	background: rgba(0, 255, 255, 0.1);
+}

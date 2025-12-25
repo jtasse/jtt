@@ -129,11 +129,16 @@ window.addEventListener(
 		const content = document.getElementById("content")
 		const homeBtn = document.getElementById("home-button")
 		const orcPlayPauseBtn = document.getElementById("orc-play-pause-button")
+		const availableSatellitesPane = document.getElementById(
+			"available-satellites-pane"
+		)
 		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
 			(homeBtn && homeBtn.contains(event.target)) ||
 			(orcPlayPauseBtn && orcPlayPauseBtn.contains(event.target)) ||
+			(availableSatellitesPane &&
+				availableSatellitesPane.contains(event.target)) ||
 			(orcOverlay && orcOverlay.contains(event.target))
 		) {
 			// Allow clicks inside content area or home button to pass through

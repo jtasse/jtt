@@ -10,6 +10,7 @@ import {
 import {
 	createOrcScene,
 	animateOrcScene,
+	satellites,
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
@@ -167,6 +168,9 @@ let orcDemoScene = null
 let orcDemoCamera = null
 let orcDemoRequestId = null
 let orcDemoControls = null
+let selectionIndicator = null
+let selectedSatellite = null
+let availableSatellitesPane = null
 let orcAnimationRunning = true // State for play/pause button
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
@@ -1017,9 +1021,8 @@ function showOrcInfoPane() {
 				Orbital Refuse Collector
 			</h2>
 			<div class="orc-pane-content">
-				<p>
-					Interactive API documentation demo featuring real-time satellite orbit visualization.
-				</p>
+				<p><strong>Selected Satellite:</strong> <span id="selected-satellite-id">None</span></p>
+
 				<div class="orc-pane-section">
 					<h3>Satellite Status</h3>
 					<div class="status-item">
@@ -1052,6 +1055,39 @@ function showOrcInfoPane() {
 function hideOrcInfoPane() {
 	if (orcInfoPane) {
 		orcInfoPane.style.display = "none"
+	}
+}
+
+// Create a 2D sprite to indicate the selected satellite
+function createSelectionIndicator() {
+	const canvas = document.createElement("canvas")
+	canvas.width = 64
+	canvas.height = 64
+	const context = canvas.getContext("2d")
+	context.strokeStyle = "#00ffff"
+	context.lineWidth = 6
+	context.strokeRect(0, 0, 64, 64)
+	const texture = new THREE.CanvasTexture(canvas)
+
+	const material = new THREE.SpriteMaterial({
+		map: texture,
+		blending: THREE.AdditiveBlending,
+		depthTest: false,
+		transparent: true,
+	})
+
+	const sprite = new THREE.Sprite(material)
+	sprite.scale.set(0.3, 0.3, 1)
+	sprite.visible = false
+	sprite.name = "selectionIndicator"
+	return sprite
+}
+
+// Update the info pane with the selected satellite's ID
+function updateSelectedSatelliteInfo(satelliteId) {
+	const el = document.getElementById("selected-satellite-id")
+	if (el) {
+		el.textContent = satelliteId || "None"
 	}
 }
 
@@ -1090,6 +1126,8 @@ export function morphToOrcScene() {
 	// available for the transition animation.
 	createOrcDemo()
 	showOrcPlayPauseButton()
+	// The info pane now includes the available satellites
+	showAvailableSatellitesPane()
 
 	// Labels will be faded out during the animation
 
@@ -1187,6 +1225,7 @@ export function morphFromOrcScene() {
 	const startControlsTarget = orcDemoControls.target.clone()
 
 	destroyOrcDemo() // Destroy ORC demo before morphing back
+	hideOrcInfoPane() // This will now hide both
 	hideOrcPlayPauseButton() // Hide play/pause button
 
 	const duration = 1200
@@ -1371,6 +1410,38 @@ function createOrcDemo() {
 	})
 	document.body.appendChild(orcDemoContainer)
 
+	// Add click listener for satellite selection
+	orcDemoContainer.addEventListener("mousedown", (event) => {
+		const rect = orcDemoContainer.getBoundingClientRect()
+		const mouse = new THREE.Vector2()
+		mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+		mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+		const raycaster = new THREE.Raycaster()
+		raycaster.setFromCamera(mouse, orcDemoCamera)
+
+		const intersects = raycaster.intersectObjects(satellites, true)
+
+		if (intersects.length > 0) {
+			let clickedObject = intersects[0].object
+			// Traverse up to find the satellite group with userData.id
+			while (clickedObject && !clickedObject.userData.id) {
+				clickedObject = clickedObject.parent
+			}
+
+			if (clickedObject) {
+				selectedSatellite = clickedObject
+				selectionIndicator.visible = true
+				updateSelectedSatelliteInfo(clickedObject.userData.id)
+			}
+		} else {
+			// Clicked on empty space, deselect
+			selectedSatellite = null
+			selectionIndicator.visible = false
+			updateSelectedSatelliteInfo(null)
+		}
+	})
+
 	// 2. Create renderer
 	const rect = orcDemoContainer.getBoundingClientRect()
 	orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -1409,12 +1480,23 @@ function createOrcDemo() {
 	const orcGroupForDemo = createOrcScene()
 	orcDemoScene.add(orcGroupForDemo)
 
+	// Create and add selection indicator
+	selectionIndicator = createSelectionIndicator()
+	orcDemoScene.add(selectionIndicator)
+
 	// 5. Start animation loop
 	function animateOrcDemo() {
 		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
 		if (orcAnimationRunning) {
 			// Only animate if play is active
 			animateOrcScene() // Animates the module-level orcGroup
+		}
+
+		// Update indicator position to follow the selected satellite
+		if (selectedSatellite && selectionIndicator) {
+			const worldPos = new THREE.Vector3()
+			selectedSatellite.getWorldPosition(worldPos)
+			selectionIndicator.position.copy(worldPos)
 		}
 		orcDemoControls.update() // Update ORC demo controls
 		orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
@@ -1446,6 +1528,8 @@ function destroyOrcDemo() {
 	orcDemoScene = null
 	orcDemoCamera = null
 	orcDemoControls = null // Dispose controls
+	selectionIndicator = null
+	selectedSatellite = null
 }
 
 // New: Play/Pause button for ORC demo
@@ -1491,6 +1575,106 @@ function showOrcPlayPauseButton() {
 
 function hideOrcPlayPauseButton() {
 	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "none"
+}
+
+// === Available Satellites Pane ===
+function showAvailableSatellitesPane() {
+	if (!orcInfoPane) {
+		orcInfoPane = document.createElement("div")
+		orcInfoPane.id = "orc-info-pane"
+
+		const availableSatellitesContainer = document.createElement("div")
+		availableSatellitesContainer.id = "available-satellites-pane"
+		const title = document.createElement("h3")
+		title.textContent = "Available Satellites"
+		availableSatellitesContainer.appendChild(title)
+
+		const list = document.createElement("ul")
+		satellites.forEach((sat) => {
+			const listItem = document.createElement("li")
+			listItem.textContent = sat.userData.id
+			listItem.dataset.satelliteId = sat.userData.id
+			listItem.className = "satellite-list-item"
+
+			listItem.addEventListener("click", (e) => {
+				e.stopPropagation()
+				const satId = e.target.dataset.satelliteId
+				const targetSat = satellites.find((s) => s.userData.id === satId)
+
+				if (targetSat) {
+					selectedSatellite = targetSat
+					selectionIndicator.visible = true
+					updateSelectedSatelliteInfo(targetSat.userData.id)
+					updateAvailableSatellitesHighlight()
+				}
+			})
+			list.appendChild(listItem)
+		})
+
+		availableSatellitesContainer.appendChild(list)
+
+		// Main Info Pane Content
+		const mainContent = `
+			<h2 class="orc-pane-title">
+				Orbital Refuse Collector
+			</h2>
+			<div class="orc-pane-content">
+				<!-- Available Satellites will be inserted here -->
+
+				<div class="orc-pane-section">
+					<h3>Satellite Status</h3>
+					<div class="status-item">
+						<div class="status-indicator blue"></div>
+						<span>GEO Satellite - Geosynchronous Orbit</span>
+					</div>
+					<div class="status-item">
+						<div class="status-indicator cyan"></div>
+						<span>LEO Satellite - Low Earth Orbit</span>
+					</div>
+				</div>
+				<div class="orc-pane-section">
+					<h3>API Documentation</h3>
+					<p>
+						Full documentation available at:
+					</p>
+					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
+						View API Docs
+					</a>
+				</div>
+			</div>
+		`
+
+		orcInfoPane.innerHTML = mainContent
+		// Insert the satellite list container after the title
+		orcInfoPane
+			.querySelector(".orc-pane-content")
+			.insertBefore(
+				availableSatellitesContainer,
+				orcInfoPane.querySelector(".orc-pane-section")
+			)
+
+		document.body.appendChild(orcInfoPane)
+	}
+
+	orcInfoPane.style.display = "block"
+	requestAnimationFrame(() => {
+		orcInfoPane.style.opacity = "1"
+	})
+}
+
+function updateAvailableSatellitesHighlight() {
+	if (!orcInfoPane) return
+	const items = orcInfoPane.querySelectorAll(".satellite-list-item")
+	items.forEach((item) => {
+		if (
+			selectedSatellite &&
+			item.dataset.satelliteId === selectedSatellite.userData.id
+		) {
+			item.classList.add("selected")
+		} else {
+			item.classList.remove("selected")
+		}
+	})
 }
 
 // Show/hide helpers for Home label

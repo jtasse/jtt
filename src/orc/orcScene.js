@@ -40,6 +40,7 @@ export function createOrcScene() {
 	)
 	const geoSatellite = createSatellite(0x00aaff) // Blue
 	geoSatellite.userData = {
+		id: "geo-001",
 		orbitRadiusX: GEO_ORBIT_RADIUS_X,
 		orbitRadiusZ: GEO_ORBIT_RADIUS_Z,
 		orbitSpeed: GEO_ORBIT_SPEED,
@@ -61,6 +62,7 @@ export function createOrcScene() {
 
 	const leoSatellite = createSatellite(0x00ffaa) // Cyan
 	leoSatellite.userData = {
+		id: "leo-001",
 		orbitRadius: LEO_ORBIT_RADIUS,
 		orbitSpeed: LEO_ORBIT_SPEED,
 		angle: Math.PI, // Start on opposite side
