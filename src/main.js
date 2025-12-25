@@ -18,6 +18,9 @@ import {
 	scene,
 	controls,
 	resetPyramidToHome,
+	morphToOrcScene,
+	morphFromOrcScene,
+	isOrcSceneActive,
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
 
@@ -250,17 +253,51 @@ function centerAndOpenLabel(labelName) {
 
 router.onRouteChange((route) => {
 	if (route === "/bio") {
-		centerAndOpenLabel("Bio")
-		currentContentVisible = "bio"
+		// If coming from ORC scene, morph back first
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("Bio")
+				currentContentVisible = "bio"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("Bio")
+			currentContentVisible = "bio"
+		}
 	} else if (route === "/portfolio") {
-		centerAndOpenLabel("Portfolio")
-		currentContentVisible = "portfolio"
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("Portfolio")
+				currentContentVisible = "portfolio"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("Portfolio")
+			currentContentVisible = "portfolio"
+		}
 	} else if (route === "/blog") {
-		centerAndOpenLabel("Blog")
-		currentContentVisible = "blog"
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("Blog")
+				currentContentVisible = "blog"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("Blog")
+			currentContentVisible = "blog"
+		}
+	} else if (route === "/orc-demo") {
+		// Morph pyramid into ORC demo scene
+		morphToOrcScene()
+		currentContentVisible = "orc-demo"
+		window.centeredLabelName = null
 	} else {
 		// For non-content routes (home), reset pyramid and hide all content planes
-		resetPyramidToHome()
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+		} else {
+			resetPyramidToHome()
+		}
 		hideAllPlanes()
 		currentContentVisible = null
 		window.centeredLabelName = null
@@ -322,6 +359,13 @@ function onSceneMouseDown(event) {
 	// Helper: handle a content link (embed YouTube if applicable, otherwise open)
 	function handleContentLink(link) {
 		if (!link) return false
+
+		// Check for internal routes (like /orc-demo)
+		if (link.startsWith("/")) {
+			router.navigate(link)
+			return true
+		}
+
 		const ytId = extractYouTubeID(link)
 		const content = document.getElementById("content")
 		// Use the exported function from pyramid module (imported above)
