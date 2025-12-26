@@ -14,7 +14,7 @@ import {
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
-} from "../orc/orcScene.js"
+} from "../content/orc-demo/orc-demo.js"
 import "../content/bio/bio.css"
 import "../content/blog/blog.css"
 import "../content/portfolio/portfolio.css"
