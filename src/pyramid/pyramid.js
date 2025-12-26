@@ -1085,9 +1085,25 @@ function createSelectionIndicator() {
 
 // Update the info pane with the selected satellite's ID
 function updateSelectedSatelliteInfo(satelliteId) {
-	const el = document.getElementById("selected-satellite-id")
-	if (el) {
-		el.textContent = satelliteId || "None"
+	const statusEl = document.getElementById("selected-satellite-status")
+	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
+	const infoContainer = document.getElementById("satellite-info-content")
+	const noSelectionMsg = document.getElementById("no-satellite-selected")
+
+	if (statusEl && orbitTypeEl && infoContainer && noSelectionMsg) {
+		if (selectedSatellite) {
+			infoContainer.style.display = "block"
+			noSelectionMsg.style.display = "none"
+
+			statusEl.textContent = "Operational"
+			orbitTypeEl.textContent =
+				selectedSatellite.userData.id === "geo-001"
+					? "Geosynchronous"
+					: "Low Earth Orbit"
+		} else {
+			infoContainer.style.display = "none"
+			noSelectionMsg.style.display = "block"
+		}
 	}
 }
 
@@ -1619,17 +1635,12 @@ function showAvailableSatellitesPane() {
 				Orbital Refuse Collector
 			</h2>
 			<div class="orc-pane-content">
-				<!-- Available Satellites will be inserted here -->
-
 				<div class="orc-pane-section">
-					<h3>Satellite Status</h3>
-					<div class="status-item">
-						<div class="status-indicator blue"></div>
-						<span>GEO Satellite - Geosynchronous Orbit</span>
-					</div>
-					<div class="status-item">
-						<div class="status-indicator cyan"></div>
-						<span>LEO Satellite - Low Earth Orbit</span>
+					<h3>Satellite Info</h3>
+					<p id="no-satellite-selected">No satellite selected</p>
+					<div id="satellite-info-content" style="display: none;">
+						<p><strong>Status:</strong> <span id="selected-satellite-status">N/A</span></p>
+						<p><strong>Orbit Type:</strong> <span id="selected-satellite-orbit-type">N/A</span></p>
 					</div>
 				</div>
 				<div class="orc-pane-section">
@@ -1645,13 +1656,10 @@ function showAvailableSatellitesPane() {
 		`
 
 		orcInfoPane.innerHTML = mainContent
-		// Insert the satellite list container after the title
+		// Insert the satellite list container at the top of the content
 		orcInfoPane
 			.querySelector(".orc-pane-content")
-			.insertBefore(
-				availableSatellitesContainer,
-				orcInfoPane.querySelector(".orc-pane-section")
-			)
+			.prepend(availableSatellitesContainer)
 
 		document.body.appendChild(orcInfoPane)
 	}
