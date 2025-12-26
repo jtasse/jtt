@@ -1411,19 +1411,9 @@ export function isOrcSceneActive() {
 function createOrcDemo() {
 	if (orcDemoContainer) return // Already created
 
-	// 1. Create container
+	// 1. Create container (styles defined in orc-demo.css)
 	orcDemoContainer = document.createElement("div")
 	orcDemoContainer.id = "orc-demo-container"
-	Object.assign(orcDemoContainer.style, {
-		position: "fixed",
-		top: "0",
-		left: "0",
-		width: "66.67vw", // Occupy left 2/3 of the screen
-		height: "100vh",
-		zIndex: "40", // Below info pane (which is 50)
-		opacity: "0",
-		transition: "opacity 0.5s ease-in",
-	})
 	document.body.appendChild(orcDemoContainer)
 
 	// Add click listener for satellite selection
@@ -1474,9 +1464,17 @@ function createOrcDemo() {
 		0.1,
 		100
 	)
+
+	// Read camera position from CSS custom properties (defined in orc-demo.css)
+	const styles = getComputedStyle(document.documentElement)
+	const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
+	const camY = parseFloat(styles.getPropertyValue("--orc-camera-y")) || 7
+	const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
+	const sceneOffsetX = parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
+
 	// Position camera for a top-down isometric view so satellites are not occluded
-	orcDemoCamera.position.set(0, 5.0, 0.5)
-	orcDemoCamera.lookAt(0, 0, 0)
+	orcDemoCamera.position.set(camX, camY, camZ)
+	orcDemoCamera.lookAt(sceneOffsetX, 0, 0)
 
 	// New: Add OrbitControls for the ORC demo camera
 	orcDemoControls = new OrbitControls(orcDemoCamera, orcDemoRenderer.domElement)
@@ -1484,8 +1482,10 @@ function createOrcDemo() {
 	orcDemoControls.dampingFactor = 0.05
 	orcDemoControls.screenSpacePanning = false
 	orcDemoControls.minDistance = 1
-	orcDemoControls.maxDistance = 10
+	orcDemoControls.maxDistance = 15
 	orcDemoControls.maxPolarAngle = Math.PI / 2 // Prevent camera from going below the planet
+	orcDemoControls.target.set(sceneOffsetX, 0, 0) // Center controls on scene offset
+
 	// 4. Add content
 	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
 	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
@@ -1494,6 +1494,7 @@ function createOrcDemo() {
 
 	// This creates the orcGroup and satellites at the module level in orcScene.js
 	const orcGroupForDemo = createOrcScene()
+	orcGroupForDemo.position.x = sceneOffsetX // Apply scene offset from CSS
 	orcDemoScene.add(orcGroupForDemo)
 
 	// Create and add selection indicator
