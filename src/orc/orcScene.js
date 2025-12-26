@@ -18,8 +18,8 @@ const PLANET_RADIUS = 0.5 // Planet's size
 const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
 const GEO_ORBIT_RADIUS_Z = 1.7 // Elongated outer orbit (front-back)
 const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
-const GEO_ORBIT_SPEED = 0.003 // Slower - geosynchronous
-const LEO_ORBIT_SPEED = 0.0045 // Only slightly faster - non-geosynchronous
+const GEO_ORBIT_SPEED = -0.003 // Counter-clockwise
+const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 
 // Create the ORC scene group
@@ -102,7 +102,6 @@ function createPlanet() {
 		map: texture,
 		metalness: 0.1,
 		roughness: 0.9,
-		color: 0xffffff, // White to show texture colors accurately
 		emissive: new THREE.Color(0x111111), // Slight self-illumination
 		emissiveIntensity: 0.3,
 	})
@@ -756,19 +755,19 @@ export function animateOrcScene() {
 		data.angle += data.orbitSpeed
 
 		if (data.orbitRadiusX) {
-			// GEO satellite, moving on its local elliptical XY plane within a rotated group
+			// GEO satellite - counter-clockwise
 			const x = Math.cos(data.angle) * data.orbitRadiusX
 			const y = Math.sin(data.angle) * data.orbitRadiusZ
 			sat.position.set(x, y, 0)
 			// Rotate satellite to face direction of travel
-			sat.rotation.z = data.angle + Math.PI / 2
+			sat.rotation.z = data.angle - Math.PI / 2
 		} else {
-			// LEO satellite, moving on a circular XZ plane
+			// LEO satellite - counter-clockwise
 			const x = Math.cos(data.angle) * data.orbitRadius
 			const z = Math.sin(data.angle) * data.orbitRadius
 			sat.position.set(x, 0, z)
 			// Rotate satellite to face direction of travel
-			sat.rotation.y = -data.angle + Math.PI / 2
+			sat.rotation.y = -data.angle - Math.PI / 2
 		}
 	})
 }
