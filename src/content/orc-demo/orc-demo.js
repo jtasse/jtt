@@ -45,6 +45,7 @@ export function createOrcScene() {
 		orbitRadiusZ: GEO_ORBIT_RADIUS_Z,
 		orbitSpeed: GEO_ORBIT_SPEED,
 		angle: 0,
+		orbitalRing: geoRing,
 	}
 	geoOrbitGroup.add(geoRing)
 	geoOrbitGroup.add(geoSatellite)
@@ -66,6 +67,7 @@ export function createOrcScene() {
 		orbitRadius: LEO_ORBIT_RADIUS,
 		orbitSpeed: LEO_ORBIT_SPEED,
 		angle: Math.PI, // Start on opposite side
+		orbitalRing: leoRing,
 	}
 	satellites.push(leoSatellite)
 	orcGroup.add(leoSatellite)
@@ -771,6 +773,14 @@ export function animateOrcScene(animateNormal = true) {
 			// Speed up as satellite falls inward (conservation of angular momentum effect)
 			const speedMultiplier = 1 + easeProgress * 4
 
+			// Pulse orbital ring color (black to red)
+			if (data.orbitalRing) {
+				const time = Date.now() * 0.003
+				// Oscillate between 0 and 1
+				const intensity = (Math.sin(time) + 1) / 2
+				data.orbitalRing.material.color.setRGB(intensity, 0, 0)
+			}
+
 			// Apply de-orbit animation
 			if (data.originalOrbitRadiusX) {
 				// GEO satellite (elliptical)
@@ -1116,6 +1126,18 @@ function removeSatelliteFromScene(satellite) {
 		satellite.parent.remove(satellite)
 	}
 
+	// Remove orbital ring if it exists
+	if (satellite.userData.orbitalRing) {
+		const ring = satellite.userData.orbitalRing
+		// Remove from orbitalRings array
+		const rIndex = orbitalRings.indexOf(ring)
+		if (rIndex > -1) orbitalRings.splice(rIndex, 1)
+
+		if (ring.parent) ring.parent.remove(ring)
+		if (ring.geometry) ring.geometry.dispose()
+		if (ring.material) ring.material.dispose()
+	}
+
 	// Dispose of geometry and materials
 	satellite.traverse((child) => {
 		if (child.geometry) child.geometry.dispose()
@@ -1136,6 +1158,16 @@ function removeSatelliteFromScene(satellite) {
 		)
 		if (listItem) {
 			listItem.remove()
+		}
+
+		// Check if list is empty
+		const list = orcInfoPane.querySelector("#satellite-list")
+		if (list && list.children.length === 0) {
+			const emptyMsg = document.createElement("li")
+			emptyMsg.textContent = "No satellites available"
+			emptyMsg.style.cssText =
+				"color: #888; font-style: italic; text-align: center; padding: 10px;"
+			list.appendChild(emptyMsg)
 		}
 	}
 
