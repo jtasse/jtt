@@ -19,6 +19,9 @@ const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
 const GEO_ORBIT_RADIUS_Z = 1.7 // Elongated outer orbit (front-back)
 const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
 const GEO_ORBIT_SPEED = -0.003 // Counter-clockwise
+const MEO_ORBIT_RADIUS_X = 3.0 // Major axis (Molniya)
+const MEO_ORBIT_RADIUS_Z = 0.8 // Minor axis
+const MEO_ORBIT_SPEED = -0.0025
 const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 
@@ -40,6 +43,7 @@ export function createOrcScene() {
 	)
 	const geoSatellite = createSatellite(0x00aaff) // Blue
 	geoSatellite.userData = {
+		name: "George",
 		id: "geo-001",
 		orbitRadiusX: GEO_ORBIT_RADIUS_X,
 		orbitRadiusZ: GEO_ORBIT_RADIUS_Z,
@@ -63,6 +67,7 @@ export function createOrcScene() {
 
 	const leoSatellite = createSatellite(0x00ffaa) // Cyan
 	leoSatellite.userData = {
+		name: "Leonard",
 		id: "leo-001",
 		orbitRadius: LEO_ORBIT_RADIUS,
 		orbitSpeed: LEO_ORBIT_SPEED,
@@ -71,6 +76,33 @@ export function createOrcScene() {
 	}
 	satellites.push(leoSatellite)
 	orcGroup.add(leoSatellite)
+
+	// Create MEO satellite (Molniya Orbit) - Purple
+	// Molniya orbits are highly elliptical with high inclination (~63.4 degrees)
+	const meoOrbitGroup = new THREE.Group()
+	const meoRing = createOrbitalRing(
+		MEO_ORBIT_RADIUS_X,
+		MEO_ORBIT_RADIUS_Z,
+		0xff00ff
+	)
+	const meoSatellite = createSatellite(0xff00ff) // Purple
+	meoSatellite.userData = {
+		name: "Moltar",
+		id: "meo-001",
+		orbitRadiusX: MEO_ORBIT_RADIUS_X,
+		orbitRadiusZ: MEO_ORBIT_RADIUS_Z,
+		orbitSpeed: MEO_ORBIT_SPEED,
+		angle: Math.PI / 2,
+		orbitalRing: meoRing,
+	}
+	meoOrbitGroup.add(meoRing)
+	meoOrbitGroup.add(meoSatellite)
+	// Pitch upward (X rotation) and tilt slightly (Z rotation) to avoid occlusion
+	meoOrbitGroup.rotation.x = Math.PI / 2.5 // Steep inclination
+	meoOrbitGroup.rotation.z = -Math.PI / 6
+	orcGroup.add(meoOrbitGroup)
+	orbitalRings.push(meoRing)
+	satellites.push(meoSatellite)
 
 	return orcGroup
 }

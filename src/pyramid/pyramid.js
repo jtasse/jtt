@@ -1088,8 +1088,10 @@ function createSelectionIndicator() {
 // Update the info pane with the selected satellite's ID
 function updateSelectedSatelliteInfo(satelliteId) {
 	const statusEl = document.getElementById("selected-satellite-status")
+	const idEl = document.getElementById("selected-satellite-display-id")
 	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
 	const infoContainer = document.getElementById("satellite-info-content")
+	const topIdEl = document.getElementById("selected-satellite-id")
 	const noSelectionMsg = document.getElementById("no-satellite-selected")
 	const decommissionBtn = document.getElementById("decommission-btn")
 
@@ -1117,10 +1119,22 @@ function updateSelectedSatelliteInfo(satelliteId) {
 				}
 			}
 
-			orbitTypeEl.textContent =
-				selectedSatellite.userData.id === "geo-001"
-					? "Geosynchronous"
-					: "Low Earth Orbit"
+			// Update ID fields
+			if (idEl) idEl.textContent = selectedSatellite.userData.id
+			if (topIdEl) topIdEl.textContent = selectedSatellite.userData.name
+
+			// Lookup orbit type based on ID prefix or specific ID
+			let orbitType = "Unknown Orbit"
+			const satId = selectedSatellite.userData.id
+			if (satId.startsWith("geo")) {
+				orbitType = "Geosynchronous"
+			} else if (satId.startsWith("leo")) {
+				orbitType = "Low Earth"
+			} else if (satId.startsWith("meo")) {
+				orbitType = "Molniya"
+			}
+
+			orbitTypeEl.textContent = orbitType
 		} else {
 			infoContainer.style.display = "none"
 			noSelectionMsg.style.display = "block"
@@ -1697,7 +1711,7 @@ async function showAvailableSatellitesPane() {
 		if (list) {
 			satellites.forEach((sat) => {
 				const listItem = document.createElement("li")
-				listItem.textContent = sat.userData.id
+				listItem.textContent = sat.userData.name
 				listItem.dataset.satelliteId = sat.userData.id
 				listItem.className = "satellite-list-item"
 				// Use inline onclick to call global function

@@ -154,6 +154,7 @@
 
 .orc-pane-content p {
 	margin-bottom: 16px;
+	margin-top: 0;
 }
 
 .orc-pane-section {
@@ -192,6 +193,11 @@
 .status-indicator.cyan {
 	background: #00ffaa;
 	box-shadow: 0 0 8px #00ffaa;
+}
+
+.status-indicator.purple {
+	background: #ff00ff;
+	box-shadow: 0 0 8px #ff00ff;
 }
 
 /* ============================================
