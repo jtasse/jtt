@@ -19,9 +19,6 @@ const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
 const GEO_ORBIT_RADIUS_Z = 1.7 // Elongated outer orbit (front-back)
 const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
 const GEO_ORBIT_SPEED = -0.003 // Counter-clockwise
-const MEO_ORBIT_RADIUS_X = 3.0 // Major axis (Molniya)
-const MEO_ORBIT_RADIUS_Z = 0.8 // Minor axis
-const MEO_ORBIT_SPEED = -0.0025
 const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 
@@ -77,32 +74,41 @@ export function createOrcScene() {
 	satellites.push(leoSatellite)
 	orcGroup.add(leoSatellite)
 
-	// Create MEO satellite (Molniya Orbit) - Purple
+	// Create Molniya satellite (Molniya Orbit) - Orange
 	// Molniya orbits are highly elliptical with high inclination (~63.4 degrees)
-	const meoOrbitGroup = new THREE.Group()
-	const meoRing = createOrbitalRing(
-		MEO_ORBIT_RADIUS_X,
-		MEO_ORBIT_RADIUS_Z,
-		0xff00ff
-	)
-	const meoSatellite = createSatellite(0xff00ff) // Purple
-	meoSatellite.userData = {
+	const molOrbitGroup = new THREE.Group()
+
+	// Keplerian parameters for Molniya orbit
+	const molSemiMajor = 2.3 // a (Elongated)
+	const molEccentricity = 0.75 // e (0 = circle, < 1 = ellipse)
+	const molSemiMinor = molSemiMajor * Math.sqrt(1 - molEccentricity ** 2) // b
+	const molLinearEccentricity = molSemiMajor * molEccentricity // c (distance from center to focus)
+
+	const molRing = createOrbitalRing(molSemiMajor, molSemiMinor, 0xffaa00)
+	// Shift the ring so that the focus (Earth at 0,0) is correct
+	// The ellipse center must be offset by -c
+	molRing.position.x = -molLinearEccentricity
+
+	const molSatellite = createSatellite(0xffaa00) // Orange
+	molSatellite.userData = {
 		name: "Moltar",
-		id: "meo-001",
-		orbitRadiusX: MEO_ORBIT_RADIUS_X,
-		orbitRadiusZ: MEO_ORBIT_RADIUS_Z,
-		orbitSpeed: MEO_ORBIT_SPEED,
-		angle: Math.PI / 2,
-		orbitalRing: meoRing,
+		id: "mol-001",
+		semiMajorAxis: molSemiMajor,
+		eccentricity: molEccentricity,
+		orbitSpeed: 0.006, // Base speed factor (will be modulated by distance)
+		angle: 0, // True anomaly (0 = perigee)
+		orbitalRing: molRing,
 	}
-	meoOrbitGroup.add(meoRing)
-	meoOrbitGroup.add(meoSatellite)
+	molOrbitGroup.add(molRing)
+	molOrbitGroup.add(molSatellite)
 	// Pitch upward (X rotation) and tilt slightly (Z rotation) to avoid occlusion
-	meoOrbitGroup.rotation.x = Math.PI / 2.5 // Steep inclination
-	meoOrbitGroup.rotation.z = -Math.PI / 6
-	orcGroup.add(meoOrbitGroup)
-	orbitalRings.push(meoRing)
-	satellites.push(meoSatellite)
+	// Orient apogee (local -X) to lower-left (World -X, +Z) relative to camera
+	molOrbitGroup.rotation.x = -Math.PI / 2.4 // Inclination
+	molOrbitGroup.rotation.y = Math.PI / 0.084 // Rotate azimuth to point apogee South-West
+	molOrbitGroup.rotation.z = Math.PI / 3.8 // Tilt
+	orcGroup.add(molOrbitGroup)
+	orbitalRings.push(molRing)
+	satellites.push(molSatellite)
 
 	return orcGroup
 }
@@ -791,6 +797,21 @@ export function animateOrcScene(animateNormal = true) {
 	satellites.forEach((sat) => {
 		const data = sat.userData
 
+		// Helper to calculate position for Keplerian orbits (MEO)
+		const updateKeplerianPosition = (angle, semiMajor, eccentricity) => {
+			// Calculate radius r based on true anomaly (angle)
+			// r = a(1-e^2) / (1 + e*cos(theta))
+			const r =
+				(semiMajor * (1 - eccentricity ** 2)) /
+				(1 + eccentricity * Math.cos(angle))
+
+			// Position relative to focus (Earth at 0,0)
+			// Perigee is at angle 0 (positive X axis in local space)
+			const x = Math.cos(angle) * r
+			const y = Math.sin(angle) * r
+			return { x, y, r }
+		}
+
 		// Handle decommissioning satellites (always animate these)
 		if (data.decommissioning) {
 			const elapsed = Date.now() - data.decommissionStartTime
@@ -814,7 +835,30 @@ export function animateOrcScene(animateNormal = true) {
 			}
 
 			// Apply de-orbit animation
-			if (data.originalOrbitRadiusX) {
+			if (data.eccentricity) {
+				// MEO (Keplerian)
+				// For MEO, we simply advance the angle and scale the resulting radius
+				// to simulate spiraling in.
+				// Speed up based on distance (Kepler's 2nd law approximation)
+				// We use the current calculated radius for speed modulation
+				const { r: currentR } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
+				const speed =
+					data.orbitSpeed * (1.5 / (currentR * currentR)) * speedMultiplier
+				data.angle += speed
+
+				const { x, y } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
+				// Apply radius multiplier to spiral in
+				sat.position.set(x * radiusMultiplier, y * radiusMultiplier, 0)
+				sat.rotation.z = data.angle + Math.PI / 2
+			} else if (data.originalOrbitRadiusX) {
 				// GEO satellite (elliptical)
 				data.orbitRadiusX = data.originalOrbitRadiusX * radiusMultiplier
 				data.orbitRadiusZ = data.originalOrbitRadiusZ * radiusMultiplier
@@ -858,10 +902,32 @@ export function animateOrcScene(animateNormal = true) {
 			}
 		} else if (animateNormal) {
 			// Normal orbit animation (only when not paused)
-			data.angle += data.orbitSpeed
+			if (data.eccentricity) {
+				// MEO Satellite (Keplerian Orbit)
+				// 1. Calculate current radius to determine instantaneous speed
+				const { r } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
 
-			if (data.orbitRadiusX) {
+				// 2. Update angle (True Anomaly)
+				// Angular velocity is proportional to 1/r^2 (Conservation of angular momentum)
+				// 1.5 is a tuning factor to match visual speed expectations
+				const instantaneousSpeed = data.orbitSpeed * (1.5 / (r * r))
+				data.angle += instantaneousSpeed
+
+				// 3. Update Position
+				const { x, y } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
+				sat.position.set(x, y, 0)
+				sat.rotation.z = data.angle + Math.PI / 2
+			} else if (data.orbitRadiusX) {
 				// GEO satellite - counter-clockwise
+				data.angle += data.orbitSpeed
 				const x = Math.cos(data.angle) * data.orbitRadiusX
 				const y = Math.sin(data.angle) * data.orbitRadiusZ
 				sat.position.set(x, y, 0)
@@ -869,6 +935,7 @@ export function animateOrcScene(animateNormal = true) {
 				sat.rotation.z = data.angle - Math.PI / 2
 			} else {
 				// LEO satellite - counter-clockwise
+				data.angle += data.orbitSpeed
 				const x = Math.cos(data.angle) * data.orbitRadius
 				const z = Math.sin(data.angle) * data.orbitRadius
 				sat.position.set(x, 0, z)
@@ -1110,7 +1177,11 @@ export function startDecommission(satellite) {
 	data.decommissionDuration = 8000 // 8 seconds for full de-orbit
 
 	// Store original radius values
-	if (data.orbitRadiusX) {
+	if (data.eccentricity) {
+		// MEO
+		// No specific radius to store as it's calculated dynamically,
+		// but we flag it to ensure logic persists.
+	} else if (data.orbitRadiusX) {
 		// GEO satellite (elliptical)
 		data.originalOrbitRadiusX = data.orbitRadiusX
 		data.originalOrbitRadiusZ = data.orbitRadiusZ

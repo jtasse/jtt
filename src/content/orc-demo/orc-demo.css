@@ -195,9 +195,9 @@
 	box-shadow: 0 0 8px #00ffaa;
 }
 
-.status-indicator.purple {
-	background: #ff00ff;
-	box-shadow: 0 0 8px #ff00ff;
+.status-indicator.orange {
+	background: #ffaa00;
+	box-shadow: 0 0 8px #ffaa00;
 }
 
 /* ============================================
@@ -246,13 +246,26 @@
 	padding: 10px;
 	margin-bottom: 8px;
 	background: rgba(0, 50, 80, 0.5);
-	border: 1px solid transparent;
+	border: 1px solid rgba(0, 170, 255, 0.1);
 	border-radius: 6px;
 	cursor: pointer;
 	transition: background 0.3s, border-color 0.3s;
 	text-align: center;
 	font-weight: bold;
 	color: #aaddff;
+}
+
+/* Orbit color indicators */
+.satellite-list-item.sat-geo {
+	border-left: 4px solid #00aaff;
+}
+
+.satellite-list-item.sat-leo {
+	border-left: 4px solid #00ffaa;
+}
+
+.satellite-list-item.sat-mol {
+	border-left: 4px solid #ffaa00;
 }
 
 .satellite-list-item:hover {
@@ -282,6 +295,37 @@
 	50% {
 		box-shadow: 0 0 15px rgba(255, 100, 50, 0.6);
 	}
+}
+
+#satellite-help-text {
+	color: #00aaff;
+	font-style: italic;
+	text-align: left;
+	margin: 0 0 8px 4px;
+	font-size: 0.9rem;
+}
+
+/* Pulsing border animation for when selection is needed */
+@keyframes selection-pulse {
+	0% {
+		border-color: rgba(0, 170, 255, 0.2);
+		box-shadow: 0 0 0 rgba(0, 170, 255, 0);
+	}
+	50% {
+		border-color: rgba(0, 255, 255, 0.8);
+		box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+	}
+	100% {
+		border-color: rgba(0, 170, 255, 0.2);
+		box-shadow: 0 0 0 rgba(0, 170, 255, 0);
+	}
+}
+
+#satellite-list.selection-needed {
+	border: 1px solid rgba(0, 170, 255, 0.3);
+	border-radius: 8px;
+	padding: 4px;
+	animation: selection-pulse 2s infinite;
 }
 
 /* ============================================

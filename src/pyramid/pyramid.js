@@ -1130,7 +1130,7 @@ function updateSelectedSatelliteInfo(satelliteId) {
 				orbitType = "Geosynchronous"
 			} else if (satId.startsWith("leo")) {
 				orbitType = "Low Earth"
-			} else if (satId.startsWith("meo")) {
+			} else if (satId.startsWith("mol")) {
 				orbitType = "Molniya"
 			}
 
@@ -1714,6 +1714,16 @@ async function showAvailableSatellitesPane() {
 				listItem.textContent = sat.userData.name
 				listItem.dataset.satelliteId = sat.userData.id
 				listItem.className = "satellite-list-item"
+
+				// Add color class based on ID prefix
+				if (sat.userData.id.startsWith("geo")) {
+					listItem.classList.add("sat-geo")
+				} else if (sat.userData.id.startsWith("leo")) {
+					listItem.classList.add("sat-leo")
+				} else if (sat.userData.id.startsWith("mol")) {
+					listItem.classList.add("sat-mol")
+				}
+
 				// Use inline onclick to call global function
 				listItem.setAttribute(
 					"onclick",
@@ -1734,6 +1744,8 @@ async function showAvailableSatellitesPane() {
 			//window.orcDecommissionSatellite()
 		}
 
+		updateAvailableSatellitesHighlight()
+
 		document.body.appendChild(orcInfoPane)
 	}
 
@@ -1745,6 +1757,17 @@ async function showAvailableSatellitesPane() {
 
 function updateAvailableSatellitesHighlight() {
 	if (!orcInfoPane) return
+
+	const hasSatellites = satellites.length > 0
+	const showHelp = hasSatellites && !selectedSatellite
+
+	// Toggle selection pulse on the list container
+	const list = orcInfoPane.querySelector("#satellite-list")
+	if (list) {
+		if (showHelp) list.classList.add("selection-needed")
+		else list.classList.remove("selection-needed")
+	}
+
 	const items = orcInfoPane.querySelectorAll(".satellite-list-item")
 	items.forEach((item) => {
 		if (
@@ -1756,6 +1779,12 @@ function updateAvailableSatellitesHighlight() {
 			item.classList.remove("selected")
 		}
 	})
+
+	// Update help text visibility
+	const helpText = document.getElementById("satellite-help-text")
+	if (helpText) {
+		helpText.style.display = showHelp ? "block" : "none"
+	}
 }
 
 // Handle satellite removal after decommission completes
