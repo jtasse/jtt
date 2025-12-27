@@ -6,14 +6,14 @@
 :root {
 	/* Camera positioning - adjust these to change the view */
 	--orc-camera-x: 0;
-	--orc-camera-y: 7; /* Height above scene - higher = more zoomed out */
+	--orc-camera-y: 8; /* Height above scene - higher = more zoomed out */
 	--orc-camera-z: 2; /* Distance forward from center */
 
 	/* Scene offset - shift the entire scene within the container */
-	--orc-scene-offset-x: -0.5; /* Shift scene left to center in left 2/3 pane */
+	--orc-scene-offset-x: -0.3; /* Shift scene left to center in left 2/3 pane */
 
 	/* Container layout */
-	--orc-container-width: calc(66.67vw - 80px); /* Account for left sidebar */
+	--orc-container-width: calc(66.67vw - 30px); /* Account for left sidebar */
 	--orc-container-left: 30px;
 	--orc-info-pane-width: 33.33%;
 }
@@ -259,4 +259,169 @@
 	border-color: #00ffff;
 	color: #ffffff;
 	box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.satellite-list-item.decommissioning {
+	background: rgba(255, 100, 50, 0.4);
+	border-color: #ff6633;
+	color: #ffaa88;
+	animation: decommission-pulse 1s ease-in-out infinite;
+}
+
+@keyframes decommission-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 5px rgba(255, 100, 50, 0.3);
+	}
+	50% {
+		box-shadow: 0 0 15px rgba(255, 100, 50, 0.6);
+	}
+}
+
+/* ============================================
+   Actions Pane
+   ============================================ */
+#actions-pane {
+	background: rgba(40, 20, 20, 0.4);
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 24px;
+	box-sizing: border-box;
+}
+
+#actions-pane h3 {
+	color: #ff6666;
+	margin-top: 0;
+	margin-bottom: 12px;
+	font-size: 1.2rem;
+	text-align: center;
+}
+
+#actions-pane ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.action-list-item {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 10px;
+	margin-bottom: 8px;
+	background: rgba(80, 30, 30, 0.5);
+	border: 1px solid transparent;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	text-align: center;
+	font-weight: bold;
+	color: #ff8888;
+}
+
+.action-list-item:hover:not(.disabled) {
+	background: rgba(150, 40, 40, 0.7);
+	border-color: #ff4444;
+	box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+	color: #ffffff;
+	transform: scale(1.02);
+}
+
+.action-list-item.decommissioning {
+	background: rgba(255, 100, 50, 0.4);
+	border-color: #ff6633;
+	color: #ffaa88;
+	cursor: not-allowed;
+	animation: decommission-pulse 1s ease-in-out infinite;
+}
+
+/* Use attribute selector for disabled state on button */
+.action-list-item.disabled,
+.action-list-item:disabled {
+	background: rgba(60, 60, 60, 0.4);
+	border-color: transparent;
+	color: #666666;
+	cursor: not-allowed;
+}
+
+/* ============================================
+   Decommission Button (legacy - keeping for compatibility)
+   ============================================ */
+.decommission-btn {
+	display: block;
+	width: 100%;
+	padding: 12px 16px;
+	margin-top: 16px;
+	background: linear-gradient(180deg, #cc2020 0%, #991515 100%);
+	border: 2px solid #ff3333;
+	border-radius: 8px;
+	color: #ffffff;
+	font-size: 0.95rem;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+}
+
+.decommission-btn:hover:not(:disabled) {
+	background: linear-gradient(180deg, #ee3030 0%, #bb2020 100%);
+	border-color: #ff5555;
+	box-shadow: 0 0 25px rgba(255, 50, 50, 0.5);
+	color: #ffffff;
+}
+
+.decommission-btn:disabled {
+	background: rgba(80, 80, 80, 0.5);
+	border-color: #666666;
+	color: #888888;
+	cursor: not-allowed;
+}
+
+.decommission-btn.decommissioning {
+	background: linear-gradient(
+		180deg,
+		rgba(255, 120, 50, 0.8) 0%,
+		rgba(200, 80, 30, 0.9) 100%
+	);
+	border-color: #ff8844;
+	animation: decommission-btn-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes decommission-btn-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 10px rgba(255, 136, 68, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 25px rgba(255, 136, 68, 0.7);
+	}
+}
+
+/* Status text colors */
+.status-operational {
+	color: #00ffaa;
+}
+
+.status-decommissioning {
+	color: #ff8844;
+	animation: status-blink 1s ease-in-out infinite;
+}
+
+@keyframes status-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+#dontsuckbtn {
+	top: 0;
+	left: 200;
+	display: block;
+	color: red;
+	background-color: white;
 }

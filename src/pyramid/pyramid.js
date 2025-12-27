@@ -11,6 +11,7 @@ import {
 	createOrcScene,
 	animateOrcScene,
 	satellites,
+	startDecommission,
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
@@ -1054,7 +1055,8 @@ function showOrcInfoPane() {
 
 function hideOrcInfoPane() {
 	if (orcInfoPane) {
-		orcInfoPane.style.display = "none"
+		orcInfoPane.remove()
+		orcInfoPane = null
 	}
 }
 
@@ -1089,13 +1091,32 @@ function updateSelectedSatelliteInfo(satelliteId) {
 	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
 	const infoContainer = document.getElementById("satellite-info-content")
 	const noSelectionMsg = document.getElementById("no-satellite-selected")
+	const decommissionBtn = document.getElementById("decommission-btn")
 
 	if (statusEl && orbitTypeEl && infoContainer && noSelectionMsg) {
 		if (selectedSatellite) {
 			infoContainer.style.display = "block"
 			noSelectionMsg.style.display = "none"
 
-			statusEl.textContent = "Operational"
+			// Check if satellite is decommissioning
+			if (selectedSatellite.userData.decommissioning) {
+				statusEl.textContent = "Decommissioning"
+				statusEl.className = "status-decommissioning"
+				if (decommissionBtn) {
+					decommissionBtn.disabled = true
+					decommissionBtn.classList.add("decommissioning")
+					decommissionBtn.textContent = "Decommissioning..."
+				}
+			} else {
+				statusEl.textContent = "Operational"
+				statusEl.className = "status-operational"
+				if (decommissionBtn) {
+					decommissionBtn.disabled = false
+					decommissionBtn.classList.remove("decommissioning")
+					decommissionBtn.textContent = "Decommission"
+				}
+			}
+
 			orbitTypeEl.textContent =
 				selectedSatellite.userData.id === "geo-001"
 					? "Geosynchronous"
@@ -1142,7 +1163,7 @@ export function morphToOrcScene() {
 	// available for the transition animation.
 	createOrcDemo()
 	showOrcPlayPauseButton()
-	// The info pane now includes the available satellites
+	// The info pane now includes the available satellites (loads HTML from file)
 	showAvailableSatellitesPane()
 
 	// Labels will be faded out during the animation
@@ -1439,12 +1460,16 @@ function createOrcDemo() {
 				selectedSatellite = clickedObject
 				selectionIndicator.visible = true
 				updateSelectedSatelliteInfo(clickedObject.userData.id)
+				updateAvailableSatellitesHighlight()
+				updateDecommissionActionState()
 			}
 		} else {
 			// Clicked on empty space, deselect
 			selectedSatellite = null
 			selectionIndicator.visible = false
 			updateSelectedSatelliteInfo(null)
+			updateAvailableSatellitesHighlight()
+			updateDecommissionActionState()
 		}
 	})
 
@@ -1470,7 +1495,8 @@ function createOrcDemo() {
 	const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
 	const camY = parseFloat(styles.getPropertyValue("--orc-camera-y")) || 7
 	const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
-	const sceneOffsetX = parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
+	const sceneOffsetX =
+		parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
 
 	// Position camera for a top-down isometric view so satellites are not occluded
 	orcDemoCamera.position.set(camX, camY, camZ)
@@ -1504,10 +1530,9 @@ function createOrcDemo() {
 	// 5. Start animation loop
 	function animateOrcDemo() {
 		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
-		if (orcAnimationRunning) {
-			// Only animate if play is active
-			animateOrcScene() // Animates the module-level orcGroup
-		}
+		// Always call animateOrcScene - it handles both normal orbits and decommissioning
+		// Decommissioning satellites should animate even when paused
+		animateOrcScene(orcAnimationRunning)
 
 		// Update indicator position to follow the selected satellite
 		if (selectedSatellite && selectionIndicator) {
@@ -1594,73 +1619,106 @@ function hideOrcPlayPauseButton() {
 	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "none"
 }
 
-// === Available Satellites Pane ===
-function showAvailableSatellitesPane() {
+// === Global functions for HTML onclick handlers ===
+// These are called by inline onclick in orc-demo.html
+window.orcDontSuck = function () {
+	console.log("Gemini doesn't suck")
+}
+
+window.orcSelectSatellite = function (satId) {
+	console.log("[DEBUG] Satellite selected via onclick, satId:", satId)
+	const targetSat = satellites.find((s) => s.userData.id === satId)
+	if (targetSat) {
+		selectedSatellite = targetSat
+		selectionIndicator.visible = true
+		updateSelectedSatelliteInfo(targetSat.userData.id)
+		updateAvailableSatellitesHighlight()
+		updateDecommissionActionState()
+	}
+}
+
+window.orcDecommissionSatellite = function () {
+	console.log(
+		"Decommission list item clicked (window.orcDecommissionSatellite)."
+	)
+	if (selectedSatellite && !selectedSatellite.userData.decommissioning) {
+		startDecommission(selectedSatellite)
+		updateDecommissionActionState()
+		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
+	}
+}
+
+// Update the decommission action list item state based on selection
+function updateDecommissionActionState() {
+	const decommissionAction = document.getElementById("decommission-action")
+	if (!decommissionAction) return
+
+	if (!selectedSatellite) {
+		// No satellite selected - disable
+		decommissionAction.classList.add("disabled")
+		decommissionAction.classList.remove("decommissioning")
+		decommissionAction.textContent = "Decommission"
+		decommissionAction.disabled = true
+	} else if (selectedSatellite.userData.decommissioning) {
+		// Satellite is decommissioning
+		decommissionAction.classList.remove("disabled")
+		decommissionAction.classList.add("decommissioning")
+		decommissionAction.textContent = "Decommissioning..."
+		decommissionAction.disabled = true
+	} else {
+		// Satellite is selected and operational - enable
+		decommissionAction.classList.remove("disabled")
+		decommissionAction.classList.remove("decommissioning")
+		decommissionAction.textContent = "Decommission"
+		decommissionAction.disabled = false
+	}
+}
+
+// === Available Satellites Pane (loads HTML from file) ===
+async function showAvailableSatellitesPane() {
 	if (!orcInfoPane) {
-		orcInfoPane = document.createElement("div")
-		orcInfoPane.id = "orc-info-pane"
+		// Fetch the HTML template
+		const response = await fetch("/src/content/orc-demo/orc-demo.html")
+		const html = await response.text()
 
-		const availableSatellitesContainer = document.createElement("div")
-		availableSatellitesContainer.id = "available-satellites-pane"
-		const title = document.createElement("h3")
-		title.textContent = "Available Satellites"
-		availableSatellitesContainer.appendChild(title)
+		// Create a temporary container to parse the HTML
+		const temp = document.createElement("div")
+		temp.innerHTML = html
 
-		const list = document.createElement("ul")
-		satellites.forEach((sat) => {
-			const listItem = document.createElement("li")
-			listItem.textContent = sat.userData.id
-			listItem.dataset.satelliteId = sat.userData.id
-			listItem.className = "satellite-list-item"
+		// Get the orc-info-pane element from the template
+		orcInfoPane = temp.querySelector("#orc-info-pane")
+		if (!orcInfoPane) {
+			console.error("Could not find #orc-info-pane in orc-demo.html")
+			return
+		}
 
-			listItem.addEventListener("click", (e) => {
-				e.stopPropagation()
-				const satId = e.target.dataset.satelliteId
-				const targetSat = satellites.find((s) => s.userData.id === satId)
-
-				if (targetSat) {
-					selectedSatellite = targetSat
-					selectionIndicator.visible = true
-					updateSelectedSatelliteInfo(targetSat.userData.id)
-					updateAvailableSatellitesHighlight()
-				}
+		// Populate the satellite list
+		const list = orcInfoPane.querySelector("#satellite-list")
+		if (list) {
+			satellites.forEach((sat) => {
+				const listItem = document.createElement("li")
+				listItem.textContent = sat.userData.id
+				listItem.dataset.satelliteId = sat.userData.id
+				listItem.className = "satellite-list-item"
+				// Use inline onclick to call global function
+				listItem.setAttribute(
+					"onclick",
+					`window.orcSelectSatellite('${sat.userData.id}')`
+				)
+				list.appendChild(listItem)
 			})
-			list.appendChild(listItem)
-		})
+		}
 
-		availableSatellitesContainer.appendChild(list)
-
-		// Main Info Pane Content
-		const mainContent = `
-			<h2 class="orc-pane-title">
-				Orbital Refuse Collector
-			</h2>
-			<div class="orc-pane-content">
-				<div class="orc-pane-section">
-					<h3>Satellite Info</h3>
-					<p id="no-satellite-selected">No satellite selected</p>
-					<div id="satellite-info-content" style="display: none;">
-						<p><strong>Status:</strong> <span id="selected-satellite-status">N/A</span></p>
-						<p><strong>Orbit Type:</strong> <span id="selected-satellite-orbit-type">N/A</span></p>
-					</div>
-				</div>
-				<div class="orc-pane-section">
-					<h3>API Documentation</h3>
-					<p>
-						Full documentation available at:
-					</p>
-					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
-						View API Docs
-					</a>
-				</div>
-			</div>
-		`
-
-		orcInfoPane.innerHTML = mainContent
-		// Insert the satellite list container at the top of the content
-		orcInfoPane
-			.querySelector(".orc-pane-content")
-			.prepend(availableSatellitesContainer)
+		// Wire up decommission action click handler
+		const decommissionAction = orcInfoPane.querySelector("#decommission-action")
+		if (decommissionAction) {
+			console.log("Running decommissionAction")
+			decommissionAction.addEventListener(
+				"click",
+				window.orcDecommissionSatellite
+			)
+			//window.orcDecommissionSatellite()
+		}
 
 		document.body.appendChild(orcInfoPane)
 	}
@@ -1685,6 +1743,21 @@ function updateAvailableSatellitesHighlight() {
 		}
 	})
 }
+
+// Handle satellite removal after decommission completes
+window.addEventListener("satelliteRemoved", (event) => {
+	const { satelliteId } = event.detail
+	// If the removed satellite was selected, deselect it
+	if (selectedSatellite && selectedSatellite.userData.id === satelliteId) {
+		selectedSatellite = null
+		if (selectionIndicator) {
+			selectionIndicator.visible = false
+		}
+		updateSelectedSatelliteInfo(null)
+		updateDecommissionActionState()
+	}
+	updateAvailableSatellitesHighlight()
+})
 
 // Show/hide helpers for Home label
 export function showHomeLabel() {

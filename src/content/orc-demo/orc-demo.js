@@ -741,35 +741,111 @@ function createSatellite(color) {
 	return group
 }
 
+// Satellites pending removal after decommission animation completes
+const satellitesToRemove = []
+
 // Animate satellites in their orbits and rotate the planet
-export function animateOrcScene() {
+// @param animateNormal - whether to animate normal (non-decommissioning) satellites
+export function animateOrcScene(animateNormal = true) {
 	if (!orcGroup) return
 
 	// Rotate the planet like Earth (counter-clockwise when viewed from above)
-	if (planet && planet.userData.rotationSpeed) {
+	if (animateNormal && planet && planet.userData.rotationSpeed) {
 		planet.rotation.y += planet.userData.rotationSpeed
 	}
 
 	satellites.forEach((sat) => {
 		const data = sat.userData
-		data.angle += data.orbitSpeed
 
-		if (data.orbitRadiusX) {
-			// GEO satellite - counter-clockwise
-			const x = Math.cos(data.angle) * data.orbitRadiusX
-			const y = Math.sin(data.angle) * data.orbitRadiusZ
-			sat.position.set(x, y, 0)
-			// Rotate satellite to face direction of travel
-			sat.rotation.z = data.angle - Math.PI / 2
-		} else {
-			// LEO satellite - counter-clockwise
-			const x = Math.cos(data.angle) * data.orbitRadius
-			const z = Math.sin(data.angle) * data.orbitRadius
-			sat.position.set(x, 0, z)
-			// Rotate satellite to face direction of travel
-			sat.rotation.y = -data.angle - Math.PI / 2
+		// Handle decommissioning satellites (always animate these)
+		if (data.decommissioning) {
+			const elapsed = Date.now() - data.decommissionStartTime
+			const progress = Math.min(elapsed / data.decommissionDuration, 1)
+
+			// Ease-in curve for acceleration effect
+			const easeProgress = progress * progress
+
+			// Calculate shrinking orbit radius (spiral inward)
+			const radiusMultiplier = 1 - easeProgress * 0.9 // Shrink to 10% of original
+
+			// Speed up as satellite falls inward (conservation of angular momentum effect)
+			const speedMultiplier = 1 + easeProgress * 4
+
+			// Apply de-orbit animation
+			if (data.originalOrbitRadiusX) {
+				// GEO satellite (elliptical)
+				data.orbitRadiusX = data.originalOrbitRadiusX * radiusMultiplier
+				data.orbitRadiusZ = data.originalOrbitRadiusZ * radiusMultiplier
+				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
+
+				data.angle += data.orbitSpeed
+				const x = Math.cos(data.angle) * data.orbitRadiusX
+				const y = Math.sin(data.angle) * data.orbitRadiusZ
+				sat.position.set(x, y, 0)
+				sat.rotation.z = data.angle - Math.PI / 2
+			} else {
+				// LEO satellite (circular)
+				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
+				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
+
+				data.angle += data.orbitSpeed
+				const x = Math.cos(data.angle) * data.orbitRadius
+				const z = Math.sin(data.angle) * data.orbitRadius
+				sat.position.set(x, 0, z)
+				sat.rotation.y = -data.angle - Math.PI / 2
+			}
+
+			// Visual burn-up effect: scale down and change color as it enters atmosphere
+			if (progress > 0.7) {
+				const burnProgress = (progress - 0.7) / 0.3
+				const scale = 1 - burnProgress * 0.8
+				sat.scale.set(scale, scale, scale)
+
+				// Make satellite glow orange/red as it burns
+				sat.traverse((child) => {
+					if (child.material && child.material.emissive) {
+						child.material.emissive.setRGB(1, 0.3 * (1 - burnProgress), 0)
+						child.material.emissiveIntensity = burnProgress * 2
+					}
+				})
+			}
+
+			// Satellite has completed de-orbit - mark for removal
+			if (progress >= 1) {
+				satellitesToRemove.push(sat)
+			}
+		} else if (animateNormal) {
+			// Normal orbit animation (only when not paused)
+			data.angle += data.orbitSpeed
+
+			if (data.orbitRadiusX) {
+				// GEO satellite - counter-clockwise
+				const x = Math.cos(data.angle) * data.orbitRadiusX
+				const y = Math.sin(data.angle) * data.orbitRadiusZ
+				sat.position.set(x, y, 0)
+				// Rotate satellite to face direction of travel
+				sat.rotation.z = data.angle - Math.PI / 2
+			} else {
+				// LEO satellite - counter-clockwise
+				const x = Math.cos(data.angle) * data.orbitRadius
+				const z = Math.sin(data.angle) * data.orbitRadius
+				sat.position.set(x, 0, z)
+				// Rotate satellite to face direction of travel
+				sat.rotation.y = -data.angle - Math.PI / 2
+			}
 		}
 	})
+
+	// Process satellites marked for removal
+	while (satellitesToRemove.length > 0) {
+		const sat = satellitesToRemove.pop()
+		// Dispatch custom event for pyramid.js to handle UI cleanup
+		window.dispatchEvent(
+			new CustomEvent("satelliteDecommissioned", {
+				detail: { satelliteId: sat.userData.id, satellite: sat },
+			})
+		)
+	}
 }
 
 // Dispose of ORC scene resources
@@ -958,3 +1034,131 @@ export function createOrcPreview(width = 300, height = 200) {
 
 	return container
 }
+
+// === Decommission Logic ===
+
+// This function will be called from pyramid.js after the pane is created
+export function initializeDecommissionButton(getSat, startDecom) {
+	const decommissionBtn = document.getElementById("decommission-btn")
+	if (decommissionBtn) {
+		decommissionBtn.addEventListener("click", (e) => {
+			e.stopPropagation()
+			console.log("Gemini deco")
+			const selectedSatellite = getSat()
+			if (selectedSatellite && !selectedSatellite.userData.decommissioning) {
+				startDecom(selectedSatellite)
+			}
+		})
+	}
+}
+
+// === Decommission Logic ===
+
+// Start the decommission process for a satellite
+export function startDecommission(satellite) {
+	if (!satellite || satellite.userData.decommissioning) {
+		return
+	}
+
+	const data = satellite.userData
+
+	// Store original orbit parameters for de-orbit calculation
+	data.decommissioning = true
+	data.decommissionStartTime = Date.now()
+	data.decommissionDuration = 8000 // 8 seconds for full de-orbit
+
+	// Store original radius values
+	if (data.orbitRadiusX) {
+		// GEO satellite (elliptical)
+		data.originalOrbitRadiusX = data.orbitRadiusX
+		data.originalOrbitRadiusZ = data.orbitRadiusZ
+	} else {
+		// LEO satellite (circular)
+		data.originalOrbitRadius = data.orbitRadius
+	}
+
+	// Speed up the satellite as it de-orbits
+	data.originalOrbitSpeed = data.orbitSpeed
+
+	// Update UI
+	updateSatelliteListItemState(satellite.userData.id, true)
+}
+
+// Update the satellite list item to show decommissioning state
+function updateSatelliteListItemState(satelliteId, isDecommissioning) {
+	const orcInfoPane = document.getElementById("orc-info-pane")
+	if (!orcInfoPane) return
+	const items = orcInfoPane.querySelectorAll(".satellite-list-item")
+	items.forEach((item) => {
+		if (item.dataset.satelliteId === satelliteId) {
+			if (isDecommissioning) {
+				item.classList.add("decommissioning")
+				item.classList.remove("selected")
+			} else {
+				item.classList.remove("decommissioning")
+			}
+		}
+	})
+}
+
+// Remove a satellite from the scene and UI after decommission
+function removeSatelliteFromScene(satellite) {
+	const satId = satellite.userData.id
+
+	// Remove from satellites array
+	const index = satellites.indexOf(satellite)
+	if (index > -1) {
+		satellites.splice(index, 1)
+	}
+
+	// Remove from scene
+	if (satellite.parent) {
+		satellite.parent.remove(satellite)
+	}
+
+	// Dispose of geometry and materials
+	satellite.traverse((child) => {
+		if (child.geometry) child.geometry.dispose()
+		if (child.material) {
+			if (Array.isArray(child.material)) {
+				child.material.forEach((m) => m.dispose())
+			} else {
+				child.material.dispose()
+			}
+		}
+	})
+
+	// Remove from the available satellites list in the UI
+	const orcInfoPane = document.getElementById("orc-info-pane")
+	if (orcInfoPane) {
+		const listItem = orcInfoPane.querySelector(
+			`.satellite-list-item[data-satellite-id="${satId}"]`
+		)
+		if (listItem) {
+			listItem.remove()
+		}
+	}
+
+	// If this was the selected satellite, deselect it
+	// This requires access to the selection state, which should also be managed here.
+	// For now, we'll dispatch an event to be handled in pyramid.js
+	window.dispatchEvent(
+		new CustomEvent("satelliteRemoved", {
+			detail: { satelliteId: satId },
+		})
+	)
+}
+
+// Event handler for satellite decommission completion
+function handleSatelliteDecommissioned(event) {
+	const { satellite } = event.detail
+	if (satellite) {
+		removeSatelliteFromScene(satellite)
+	}
+}
+
+// Listen for decommission events
+window.addEventListener(
+	"satelliteDecommissioned",
+	handleSatelliteDecommissioned
+)

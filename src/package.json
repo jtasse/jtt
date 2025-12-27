@@ -1,0 +1,23 @@
+{
+  "name": "triangle",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lil-gui": "^0.21.0",
+    "three": "^0.180.0",
+    "three.regular.helvetiker": "^1.0.0"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  }
+}

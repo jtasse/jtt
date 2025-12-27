@@ -1,41 +1,53 @@
-<div class="content-page orc-demo-page">
-	<h1>Orbital Refuse Collector Demo</h1>
-	<p class="orc-subtitle">
-		Interactive API Documentation with Satellite Orbit Visualization
-	</p>
+<!-- ORC Demo Info Pane - This HTML is inserted directly into the DOM -->
+<div id="orc-info-pane">
+	<h2 class="orc-pane-title">Orbital Refuse Collector</h2>
 
-	<div class="orc-info">
-		<p>
-			This demo showcases an interactive visualization of the ORC (Orbital
-			Refuse Collector) API. The scene features a monochromatic Earth with two
-			satellites in different orbital patterns:
-		</p>
-		<ul>
-			<li>
-				<strong>Geosynchronous Satellite (Blue)</strong> - Maintains a fixed
-				position relative to Earth's surface
-			</li>
-			<li>
-				<strong>Non-Geosynchronous Satellite (Cyan)</strong> - Orbits at a
-				different altitude with its own period
-			</li>
-		</ul>
-		<p>
-			Use your mouse to rotate and zoom the view. Click the Home button to
-			return to the main site.
-		</p>
-	</div>
+	<div class="orc-pane-content">
+		<!-- Available Satellites List -->
+		<div id="available-satellites-pane">
+			<h3>Available Satellites</h3>
+			<ul id="satellite-list">
+				<!-- Populated by JavaScript -->
+			</ul>
+		</div>
 
-	<div class="orc-api-preview">
-		<h2>API Documentation Preview</h2>
-		<p>
-			Full API documentation coming soon at:
+		<!-- Actions List -->
+		<div id="actions-pane">
+			<h3>Actions</h3>
+			<button id="decommission-action" class="action-list-item disabled">
+				Decommission
+			</button>
+		</div>
+
+		<!-- Satellite Info Section -->
+		<div class="orc-pane-section">
+			<h3>Satellite Info</h3>
+			<p id="no-satellite-selected">No satellite selected</p>
+			<div id="satellite-info-content" style="display: none">
+				<p>
+					<strong>Status:</strong>
+					<span id="selected-satellite-status" class="status-operational"
+						>N/A</span
+					>
+				</p>
+				<p>
+					<strong>Orbit Type:</strong>
+					<span id="selected-satellite-orbit-type">N/A</span>
+				</p>
+			</div>
+		</div>
+
+		<!-- API Documentation Section -->
+		<div class="orc-pane-section">
+			<h3>API Documentation</h3>
+			<p>Full documentation available at:</p>
 			<a
 				href="https://jtj-inc.github.io/docusaurus-openapi-docs/"
 				target="_blank"
+				class="api-docs-link"
 			>
-				jtj-inc.github.io/docusaurus-openapi-docs
+				View API Docs
 			</a>
-		</p>
+		</div>
 	</div>
 </div>
