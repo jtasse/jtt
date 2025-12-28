@@ -344,27 +344,27 @@ function createPlanet() {
 	canvas.height = 512
 	const ctx = canvas.getContext("2d")
 
-	// Draw continents as white filled shapes with outlines
-	ctx.fillStyle = "#ffffff"
-	ctx.strokeStyle = "#ffffff"
+	// Fill background with ocean color (blue)
+	ctx.fillStyle = "#0c177aff"
+	ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+	// Draw continents
+	ctx.fillStyle = "#EAE9BD"
+	ctx.strokeStyle = "#EAE9BD"
 	ctx.lineWidth = 1.5
 	ctx.lineCap = "round"
 	ctx.lineJoin = "round"
-
-	// Draw all continents with accurate outlines
 	drawAccurateContinents(ctx, canvas.width, canvas.height)
 
 	const texture = new THREE.CanvasTexture(canvas)
+	// No colorSpace - use default
 	texture.wrapS = THREE.RepeatWrapping
 	texture.wrapT = THREE.ClampToEdgeWrapping
 	texture.anisotropy = 16
+	texture.needsUpdate = true
 
-	const material = new THREE.MeshStandardMaterial({
+	const material = new THREE.MeshBasicMaterial({
 		map: texture,
-		metalness: 0.1,
-		roughness: 0.9,
-		emissive: new THREE.Color(0x111111), // Slight self-illumination
-		emissiveIntensity: 0.3,
 	})
 
 	const sphere = new THREE.Mesh(geometry, material)
@@ -398,10 +398,10 @@ function createPlanet() {
 			varying vec3 vPositionNormal;
 			void main() {
 				float intensity = pow(0.7 - dot(vNormal, vPositionNormal), 2.0);
-				gl_FragColor = vec4(glowColor, intensity * 0.4);
+				gl_FragColor = vec4(glowColor, intensity * 0.3);
 			}
 		`,
-		side: THREE.FrontSide,
+		side: THREE.BackSide,
 		blending: THREE.AdditiveBlending,
 		transparent: true,
 		depthWrite: false,
@@ -899,7 +899,15 @@ function drawAccurateContinents(ctx, width, height) {
 }
 
 // Draw a continent outline from coordinate array
-function drawContinentPath(ctx, coords, width, height, closePath = true) {
+// Using a color that appears as beige after atmosphere effects
+function drawContinentPath(
+	ctx,
+	coords,
+	width,
+	height,
+	closePath = true,
+	fillColor = "#5A5840"
+) {
 	if (coords.length < 2) return
 
 	ctx.beginPath()
@@ -920,6 +928,8 @@ function drawContinentPath(ctx, coords, width, height, closePath = true) {
 		if (Math.abs(point.x - prevPoint.x) > width / 2) {
 			// Finish current subpath
 			if (closePath) ctx.closePath()
+			ctx.fillStyle = fillColor
+			ctx.strokeStyle = fillColor
 			ctx.fill()
 			ctx.stroke()
 
@@ -935,7 +945,9 @@ function drawContinentPath(ctx, coords, width, height, closePath = true) {
 		ctx.closePath()
 	}
 
-	// 🔑 Fill first, then stroke
+	// 🔑 Fill first, then stroke - set color immediately before
+	ctx.fillStyle = fillColor
+	ctx.strokeStyle = fillColor
 	ctx.fill()
 	ctx.stroke()
 }
@@ -1269,21 +1281,19 @@ export function createOrcPreview(width = 300, height = 200) {
 	const miniCtx = miniCanvas.getContext("2d")
 	miniCtx.fillStyle = "#000000"
 	miniCtx.fillRect(0, 0, miniCanvas.width, miniCanvas.height)
-	miniCtx.strokeStyle = "#ffffff"
+	// Draw continents
+	miniCtx.fillStyle = "#EAE9BD"
+	miniCtx.strokeStyle = "#EAE9BD"
 	miniCtx.lineWidth = 1
-	// Draw simplified continents for preview
 	drawAccurateContinents(miniCtx, miniCanvas.width, miniCanvas.height)
+
 	const miniTexture = new THREE.CanvasTexture(miniCanvas)
+	miniTexture.colorSpace = THREE.SRGBColorSpace
 	miniTexture.wrapS = THREE.RepeatWrapping
 
 	const miniPlanetGeo = new THREE.SphereGeometry(0.3, 32, 32)
-	const miniPlanetMat = new THREE.MeshStandardMaterial({
+	const miniPlanetMat = new THREE.MeshBasicMaterial({
 		map: miniTexture,
-		metalness: 0.1,
-		roughness: 0.9,
-		color: 0xffffff,
-		emissive: new THREE.Color(0x111111),
-		emissiveIntensity: 0.3,
 	})
 	const miniPlanet = new THREE.Mesh(miniPlanetGeo, miniPlanetMat)
 	miniGroup.add(miniPlanet)
