@@ -33,7 +33,7 @@ const LONGITUDE_OFFSET = 88
 // Constants
 const PLANET_RADIUS = 0.5 // Planet's size
 const LEO_ORBIT_RADIUS = 0.65 // Inner circular orbit
-const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
+const LEO_ORBIT_SPEED = 0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 const GEO_ALTITUDE = 2.0 // Geosynchronous orbit altitude (radius from planet center)
 
@@ -270,7 +270,7 @@ export function createOrcScene() {
 
 	const leoSatellite = createSatellite(0x00ffaa) // Cyan
 	leoSatellite.userData = {
-		name: "Leonard",
+		name: "Leona",
 		id: "leo-001",
 		orbitIndex: 0,
 		orbitRadius: LEO_ORBIT_RADIUS,
@@ -1140,15 +1140,18 @@ export function animateOrcScene(animateNormal = true) {
 				sat.position.set(x, y, 0)
 				sat.rotation.z = data.angle - Math.PI / 2
 			} else {
-				// LEO satellite (circular)
+				// LEO satellite (circular) - also handles George with orbitY
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
 				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
 
-				data.angle += data.orbitSpeed
+				// Calculate position first, then increment angle (prevents first-frame jump for George)
 				const x = Math.cos(data.angle) * data.orbitRadius
 				const z = Math.sin(data.angle) * data.orbitRadius
-				sat.position.set(x, 0, z)
+				// Use orbitY if set (for inclined orbits like George), otherwise 0
+				const y = data.orbitY !== undefined ? data.orbitY * radiusMultiplier : 0
+				sat.position.set(x, y, z)
 				sat.rotation.y = -data.angle - Math.PI / 2
+				data.angle += data.orbitSpeed
 			}
 
 			// Visual burn-up effect: scale down and change color as it enters atmosphere
@@ -1443,6 +1446,32 @@ export function startDecommission(satellite) {
 	data.decommissioning = true
 	data.decommissionStartTime = Date.now()
 	data.decommissionDuration = 8000 // 8 seconds for full de-orbit
+
+	// If this is George (geosynchronous satellite), handle specially
+	if (data.isGeosynchronous) {
+		// Hide tether and marker immediately
+		hideGeoTether()
+		if (surfaceMarker) surfaceMarker.visible = false
+		if (surfaceCircle) surfaceCircle.visible = false
+
+		// George is a child of planet - get world position and detach
+		const worldPos = new THREE.Vector3()
+		satellite.getWorldPosition(worldPos)
+
+		// Remove from planet and add to orcGroup
+		planet.remove(satellite)
+		orcGroup.add(satellite)
+		satellite.position.copy(worldPos)
+
+		// Set up LEO-compatible orbit parameters so George uses the same decommission code as Leona
+		// Calculate angle from current position (atan2(z, x) matches the cos/sin convention in animation)
+		data.angle = Math.atan2(worldPos.z, worldPos.x)
+		data.orbitRadius = Math.sqrt(
+			worldPos.x * worldPos.x + worldPos.z * worldPos.z
+		)
+		data.orbitSpeed = -0.005 // Negative for clockwise (prograde) motion, same magnitude as LEO
+		data.orbitY = worldPos.y // Store Y for inclined orbit decommission
+	}
 
 	// Store original radius values
 	if (data.eccentricity) {
