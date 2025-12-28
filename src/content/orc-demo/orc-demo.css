@@ -186,8 +186,8 @@
 }
 
 .status-indicator.blue {
-	background: #00aaff;
-	box-shadow: 0 0 8px #00aaff;
+	background: #ff00ff;
+	box-shadow: 0 0 8px #ff00ff;
 }
 
 .status-indicator.cyan {
@@ -257,7 +257,7 @@
 
 /* Orbit color indicators */
 .satellite-list-item.sat-geo {
-	border-left: 4px solid #00aaff;
+	border-left: 4px solid #ff00ff;
 }
 
 .satellite-list-item.sat-leo {

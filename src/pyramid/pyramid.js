@@ -15,6 +15,8 @@ import {
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
+	showGeoTether,
+	hideGeoTether,
 } from "../content/orc-demo/orc-demo.js"
 import "../content/bio/bio.css"
 import "../content/blog/blog.css"
@@ -1476,6 +1478,12 @@ function createOrcDemo() {
 				updateSelectedSatelliteInfo(clickedObject.userData.id)
 				updateAvailableSatellitesHighlight()
 				updateDecommissionActionState()
+				// Show tether for George (geosynchronous satellite)
+				if (clickedObject.userData.id === 'geo-001') {
+					showGeoTether()
+				} else {
+					hideGeoTether()
+				}
 			}
 		} else {
 			// Clicked on empty space, deselect
@@ -1484,6 +1492,7 @@ function createOrcDemo() {
 			updateSelectedSatelliteInfo(null)
 			updateAvailableSatellitesHighlight()
 			updateDecommissionActionState()
+			hideGeoTether()
 		}
 	})
 
@@ -1648,6 +1657,12 @@ window.orcSelectSatellite = function (satId) {
 		updateSelectedSatelliteInfo(targetSat.userData.id)
 		updateAvailableSatellitesHighlight()
 		updateDecommissionActionState()
+		// Show tether for George (geosynchronous satellite)
+		if (satId === 'geo-001') {
+			showGeoTether()
+		} else {
+			hideGeoTether()
+		}
 	}
 }
 

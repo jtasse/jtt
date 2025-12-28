@@ -13,6 +13,23 @@ export let planet = null
 export let satellites = []
 export let orbitalRings = []
 
+// Surface marker elements
+export let surfaceMarker = null
+export let surfaceCircle = null
+export let geoTether = null // Line from George to surface point
+
+// Surface marker position (editable lat/lon in degrees)
+// Latitude: -90 (south pole) to +90 (north pole)
+// Longitude: -180 to +180 (0 = prime meridian)
+export let markerLatitude = 33 // Charleston, SC (33° N)
+export let markerLongitude = -80 // Charleston, SC (80° W)
+export const MARKER_CIRCLE_RADIUS_DEG = 15 // Circle radius in degrees
+
+// Longitude offset to align internal coordinates with real Earth lat/lon
+// Internal system has lon=8 at Charleston, real Charleston is lon=-80
+// So: internal_lon = real_lon + 88
+const LONGITUDE_OFFSET = 88
+
 // Constants
 const PLANET_RADIUS = 0.5 // Planet's size
 const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
@@ -21,6 +38,183 @@ const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
 const GEO_ORBIT_SPEED = -0.003 // Counter-clockwise
 const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
+const GEO_ALTITUDE = 2.0 // Geosynchronous orbit altitude (radius from planet center)
+
+// Convert latitude/longitude (degrees) to 3D world coordinates on the planet surface
+// Returns { x, y, z } in world space (before planet rotation)
+export function latLonTo3D(lat, lon, radius = PLANET_RADIUS) {
+	const latRad = (lat * Math.PI) / 180
+	// Apply longitude offset to convert from real Earth coordinates
+	const lonRad = ((lon + LONGITUDE_OFFSET) * Math.PI) / 180
+	// Y is up (north pole), XZ is equatorial plane
+	// Longitude 0 points toward +Z, +90 points toward +X
+	const x = radius * Math.cos(latRad) * Math.sin(lonRad)
+	const y = radius * Math.sin(latRad)
+	const z = radius * Math.cos(latRad) * Math.cos(lonRad)
+	return { x, y, z }
+}
+
+// Create a point marker on the planet surface
+function createSurfaceMarker() {
+	const markerRadius = 0.02
+	const geometry = new THREE.SphereGeometry(markerRadius, 16, 16)
+	const material = new THREE.MeshBasicMaterial({
+		color: 0xff00ff, // Magenta
+		transparent: true,
+		opacity: 0.9,
+	})
+	surfaceMarker = new THREE.Mesh(geometry, material)
+	surfaceMarker.name = "surfaceMarker"
+	return surfaceMarker
+}
+
+// Create a circle on the planet surface around the marker
+function createSurfaceCircle() {
+	const segments = 64
+	const points = []
+
+	// Calculate circle points at angular distance from center
+	for (let i = 0; i <= segments; i++) {
+		const bearing = (i / segments) * 2 * Math.PI
+
+		// Calculate point at MARKER_CIRCLE_RADIUS_DEG degrees from center
+		// Using spherical geometry: given center (lat1, lon1) and bearing, find point at angular distance
+		const lat1 = (markerLatitude * Math.PI) / 180
+		const lon1 = (markerLongitude * Math.PI) / 180
+		const angularDistance = (MARKER_CIRCLE_RADIUS_DEG * Math.PI) / 180
+
+		// Spherical law of cosines
+		const lat2 = Math.asin(
+			Math.sin(lat1) * Math.cos(angularDistance) +
+				Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+		)
+		const lon2 =
+			lon1 +
+			Math.atan2(
+				Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+				Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+			)
+
+		// Convert to 3D with slight offset above surface
+		const pos = latLonTo3D(
+			(lat2 * 180) / Math.PI,
+			(lon2 * 180) / Math.PI,
+			PLANET_RADIUS * 1.005
+		)
+		points.push(new THREE.Vector3(pos.x, pos.y, pos.z))
+	}
+
+	const geometry = new THREE.BufferGeometry().setFromPoints(points)
+	const material = new THREE.LineBasicMaterial({
+		color: 0xff00ff, // Magenta
+		transparent: true,
+		opacity: 0.8,
+		linewidth: 2,
+	})
+	surfaceCircle = new THREE.LineLoop(geometry, material)
+	surfaceCircle.name = "surfaceCircle"
+	return surfaceCircle
+}
+
+// Create a proper geosynchronous orbital ring - a great circle around the planet center
+// The ring passes through George's exact position and orbits the planet center
+function createGeoRing(latitude, longitude, altitude, color) {
+	const segments = 128
+	const points = []
+	
+	// Get George's position (the peak of the orbit)
+	const peakPos = latLonTo3D(latitude, longitude, altitude)
+	const peak = new THREE.Vector3(peakPos.x, peakPos.y, peakPos.z)
+	
+	// Unit vector toward George (peak of orbit)
+	const u = peak.clone().normalize()
+	
+	// Vector perpendicular to u and horizontal (in XZ plane)
+	// This is the orbit direction at the peak
+	// v = normalize(Y × u) = normalize((-uz, 0, ux))
+	const v = new THREE.Vector3(-u.z, 0, u.x).normalize()
+	
+	// Generate points on the orbit: P(θ) = altitude * (cos(θ) * u + sin(θ) * v)
+	for (let i = 0; i <= segments; i++) {
+		const angle = (i / segments) * 2 * Math.PI
+		const point = new THREE.Vector3()
+			.addScaledVector(u, Math.cos(angle) * altitude)
+			.addScaledVector(v, Math.sin(angle) * altitude)
+		points.push(point)
+	}
+	
+	const geometry = new THREE.BufferGeometry().setFromPoints(points)
+	const material = new THREE.LineBasicMaterial({
+		color: color,
+		transparent: true,
+		opacity: 0.5,
+	})
+	const ring = new THREE.LineLoop(geometry, material)
+	ring.name = 'geoRing'
+	return ring
+}
+
+// Create the tether line between George and the surface point
+function createGeoTether() {
+	const surfacePos = latLonTo3D(markerLatitude, markerLongitude, PLANET_RADIUS * 1.01)
+	const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
+	
+	const points = [
+		new THREE.Vector3(surfacePos.x, surfacePos.y, surfacePos.z),
+		new THREE.Vector3(geoPos.x, geoPos.y, geoPos.z)
+	]
+	
+	const geometry = new THREE.BufferGeometry().setFromPoints(points)
+	const material = new THREE.LineDashedMaterial({
+		color: 0xff00ff, // Magenta
+		transparent: true,
+		opacity: 0.8,
+		dashSize: 0.05,
+		gapSize: 0.03,
+	})
+	
+	const line = new THREE.Line(geometry, material)
+	line.computeLineDistances() // Required for dashed lines
+	line.name = 'geoTether'
+	return line
+}
+
+// Show the tether line (call when George is selected)
+export function showGeoTether() {
+	if (geoTether) {
+		geoTether.visible = true
+	}
+}
+
+// Hide the tether line (call when George is deselected)
+export function hideGeoTether() {
+	if (geoTether) {
+		geoTether.visible = false
+	}
+}
+
+// Update the marker and circle positions based on current lat/lon
+export function updateMarkerPosition(lat, lon) {
+	markerLatitude = lat
+	markerLongitude = lon
+
+	if (surfaceMarker) {
+		const pos = latLonTo3D(
+			markerLatitude,
+			markerLongitude,
+			PLANET_RADIUS * 1.01
+		)
+		surfaceMarker.position.set(pos.x, pos.y, pos.z)
+	}
+
+	if (surfaceCircle && planet) {
+		// Recreate circle geometry at new position
+		planet.remove(surfaceCircle)
+		surfaceCircle.geometry.dispose()
+		surfaceCircle = createSurfaceCircle()
+		planet.add(surfaceCircle)
+	}
+}
 
 // Create the ORC scene group
 export function createOrcScene() {
@@ -31,30 +225,35 @@ export function createOrcScene() {
 	planet = createPlanet()
 	orcGroup.add(planet)
 
-	// Create a group for the GEO satellite and its ring to make it elliptical and tilted
-	const geoOrbitGroup = new THREE.Group()
-	const geoRing = createOrbitalRing(
-		GEO_ORBIT_RADIUS_X,
-		GEO_ORBIT_RADIUS_Z,
-		0x00aaff
-	)
-	const geoSatellite = createSatellite(0x00aaff) // Blue
+	// Create geosynchronous satellite (George) - always above the marker point
+	// George is added to the planet so it rotates with it
+	const geoSatellite = createSatellite(0xff00ff) // Magenta
+	const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
+	geoSatellite.position.set(geoPos.x, geoPos.y, geoPos.z)
+	// Orient satellite to face the planet (nadir pointing)
+	geoSatellite.lookAt(0, 0, 0)
+	geoSatellite.rotateX(Math.PI / 2)
+	
+	// Create orbital ring at the geosynchronous altitude, tilted to marker's latitude
+	const geoRing = createGeoRing(markerLatitude, markerLongitude, GEO_ALTITUDE, 0xff00ff)
+	
 	geoSatellite.userData = {
 		name: "George",
 		id: "geo-001",
-		orbitRadiusX: GEO_ORBIT_RADIUS_X,
-		orbitRadiusZ: GEO_ORBIT_RADIUS_Z,
-		orbitSpeed: GEO_ORBIT_SPEED,
-		angle: 0,
+		isGeosynchronous: true, // Flag for special handling
 		orbitalRing: geoRing,
 	}
-	geoOrbitGroup.add(geoRing)
-	geoOrbitGroup.add(geoSatellite)
-	geoOrbitGroup.rotation.x = Math.PI / 2 // Rotate group to XZ plane
-	geoOrbitGroup.rotation.z = Math.PI / 6 // Tilt group 30 degrees
-	orcGroup.add(geoOrbitGroup)
+	
+	// Add George to the planet so it rotates with the planet
+	planet.add(geoSatellite)
+	planet.add(geoRing) // Ring rotates with planet, keeping George on the ring
 	orbitalRings.push(geoRing)
 	satellites.push(geoSatellite)
+	
+	// Create tether line (initially hidden)
+	geoTether = createGeoTether()
+	geoTether.visible = false
+	planet.add(geoTether)
 
 	// Create LEO satellite and its ring (flat on XZ plane)
 	const leoRing = createOrbitalRing(LEO_ORBIT_RADIUS, undefined, 0x00ffaa)
@@ -109,6 +308,19 @@ export function createOrcScene() {
 	orcGroup.add(molOrbitGroup)
 	orbitalRings.push(molRing)
 	satellites.push(molSatellite)
+
+	// Create surface marker and circle on the planet
+	const marker = createSurfaceMarker()
+	const markerPos = latLonTo3D(
+		markerLatitude,
+		markerLongitude,
+		PLANET_RADIUS * 1.01
+	)
+	marker.position.set(markerPos.x, markerPos.y, markerPos.z)
+	planet.add(marker)
+
+	const circle = createSurfaceCircle()
+	planet.add(circle)
 
 	return orcGroup
 }
@@ -812,6 +1024,11 @@ export function animateOrcScene(animateNormal = true) {
 			return { x, y, r }
 		}
 
+		// Skip geosynchronous satellites - they move with the planet
+		if (data.isGeosynchronous && !data.decommissioning) {
+			return // George rotates with planet, no animation needed
+		}
+		
 		// Handle decommissioning satellites (always animate these)
 		if (data.decommissioning) {
 			const elapsed = Date.now() - data.decommissionStartTime
@@ -1042,7 +1259,7 @@ export function createOrcPreview(width = 300, height = 200) {
 
 	// Mini orbital rings
 	// Outer ring (blue, elliptical)
-	const ring1 = createOrbitalRing(0.8, 0.5, 0x00aaff)
+	const ring1 = createOrbitalRing(0.8, 0.5, 0xff00ff)
 
 	// Inner ring (green, circular)
 	const ring2Geo = new THREE.TorusGeometry(0.6, 0.008, 8, 64)
@@ -1058,8 +1275,8 @@ export function createOrcPreview(width = 300, height = 200) {
 	// Mini satellites
 	const satGeo = new THREE.SphereGeometry(0.04, 8, 8)
 	const sat1Mat = new THREE.MeshBasicMaterial({
-		color: 0x00aaff,
-		emissive: 0x00aaff,
+		color: 0xff00ff,
+		emissive: 0xff00ff,
 	})
 	const sat1 = new THREE.Mesh(satGeo, sat1Mat)
 
