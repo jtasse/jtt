@@ -32,10 +32,7 @@ const LONGITUDE_OFFSET = 88
 
 // Constants
 const PLANET_RADIUS = 0.5 // Planet's size
-const GEO_ORBIT_RADIUS_X = 2.7 // Elongated outer orbit (left-right)
-const GEO_ORBIT_RADIUS_Z = 1.7 // Elongated outer orbit (front-back)
-const LEO_ORBIT_RADIUS = 1.2 // Inner circular orbit
-const GEO_ORBIT_SPEED = -0.003 // Counter-clockwise
+const LEO_ORBIT_RADIUS = 0.65 // Inner circular orbit
 const LEO_ORBIT_SPEED = -0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 const GEO_ALTITUDE = 2.0 // Geosynchronous orbit altitude (radius from planet center)
@@ -121,19 +118,19 @@ function createSurfaceCircle() {
 function createGeoRing(latitude, longitude, altitude, color) {
 	const segments = 128
 	const points = []
-	
+
 	// Get George's position (the peak of the orbit)
 	const peakPos = latLonTo3D(latitude, longitude, altitude)
 	const peak = new THREE.Vector3(peakPos.x, peakPos.y, peakPos.z)
-	
+
 	// Unit vector toward George (peak of orbit)
 	const u = peak.clone().normalize()
-	
+
 	// Vector perpendicular to u and horizontal (in XZ plane)
 	// This is the orbit direction at the peak
 	// v = normalize(Y × u) = normalize((-uz, 0, ux))
 	const v = new THREE.Vector3(-u.z, 0, u.x).normalize()
-	
+
 	// Generate points on the orbit: P(θ) = altitude * (cos(θ) * u + sin(θ) * v)
 	for (let i = 0; i <= segments; i++) {
 		const angle = (i / segments) * 2 * Math.PI
@@ -142,7 +139,7 @@ function createGeoRing(latitude, longitude, altitude, color) {
 			.addScaledVector(v, Math.sin(angle) * altitude)
 		points.push(point)
 	}
-	
+
 	const geometry = new THREE.BufferGeometry().setFromPoints(points)
 	const material = new THREE.LineBasicMaterial({
 		color: color,
@@ -150,20 +147,24 @@ function createGeoRing(latitude, longitude, altitude, color) {
 		opacity: 0.5,
 	})
 	const ring = new THREE.LineLoop(geometry, material)
-	ring.name = 'geoRing'
+	ring.name = "geoRing"
 	return ring
 }
 
 // Create the tether line between George and the surface point
 function createGeoTether() {
-	const surfacePos = latLonTo3D(markerLatitude, markerLongitude, PLANET_RADIUS * 1.01)
+	const surfacePos = latLonTo3D(
+		markerLatitude,
+		markerLongitude,
+		PLANET_RADIUS * 1.01
+	)
 	const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
-	
+
 	const points = [
 		new THREE.Vector3(surfacePos.x, surfacePos.y, surfacePos.z),
-		new THREE.Vector3(geoPos.x, geoPos.y, geoPos.z)
+		new THREE.Vector3(geoPos.x, geoPos.y, geoPos.z),
 	]
-	
+
 	const geometry = new THREE.BufferGeometry().setFromPoints(points)
 	const material = new THREE.LineDashedMaterial({
 		color: 0xff00ff, // Magenta
@@ -172,10 +173,10 @@ function createGeoTether() {
 		dashSize: 0.05,
 		gapSize: 0.03,
 	})
-	
+
 	const line = new THREE.Line(geometry, material)
 	line.computeLineDistances() // Required for dashed lines
-	line.name = 'geoTether'
+	line.name = "geoTether"
 	return line
 }
 
@@ -233,23 +234,29 @@ export function createOrcScene() {
 	// Orient satellite to face the planet (nadir pointing)
 	geoSatellite.lookAt(0, 0, 0)
 	geoSatellite.rotateX(Math.PI / 2)
-	
+
 	// Create orbital ring at the geosynchronous altitude, tilted to marker's latitude
-	const geoRing = createGeoRing(markerLatitude, markerLongitude, GEO_ALTITUDE, 0xff00ff)
-	
+	const geoRing = createGeoRing(
+		markerLatitude,
+		markerLongitude,
+		GEO_ALTITUDE,
+		0xff00ff
+	)
+
 	geoSatellite.userData = {
 		name: "George",
 		id: "geo-001",
+		orbitIndex: 1,
 		isGeosynchronous: true, // Flag for special handling
 		orbitalRing: geoRing,
 	}
-	
+
 	// Add George to the planet so it rotates with the planet
 	planet.add(geoSatellite)
 	planet.add(geoRing) // Ring rotates with planet, keeping George on the ring
 	orbitalRings.push(geoRing)
 	satellites.push(geoSatellite)
-	
+
 	// Create tether line (initially hidden)
 	geoTether = createGeoTether()
 	geoTether.visible = false
@@ -265,6 +272,7 @@ export function createOrcScene() {
 	leoSatellite.userData = {
 		name: "Leonard",
 		id: "leo-001",
+		orbitIndex: 0,
 		orbitRadius: LEO_ORBIT_RADIUS,
 		orbitSpeed: LEO_ORBIT_SPEED,
 		angle: Math.PI, // Start on opposite side
@@ -279,7 +287,7 @@ export function createOrcScene() {
 
 	// Keplerian parameters for Molniya orbit
 	const molSemiMajor = 2.3 // a (Elongated)
-	const molEccentricity = 0.75 // e (0 = circle, < 1 = ellipse)
+	const molEccentricity = 0.72 // e (0 = circle, < 1 = ellipse)
 	const molSemiMinor = molSemiMajor * Math.sqrt(1 - molEccentricity ** 2) // b
 	const molLinearEccentricity = molSemiMajor * molEccentricity // c (distance from center to focus)
 
@@ -292,6 +300,7 @@ export function createOrcScene() {
 	molSatellite.userData = {
 		name: "Moltar",
 		id: "mol-001",
+		orbitIndex: 2,
 		semiMajorAxis: molSemiMajor,
 		eccentricity: molEccentricity,
 		orbitSpeed: 0.006, // Base speed factor (will be modulated by distance)
@@ -365,7 +374,7 @@ function createPlanet() {
 
 	// Add inner atmosphere glow (subtle rim light effect)
 	const innerAtmosphereGeometry = new THREE.SphereGeometry(
-		PLANET_RADIUS * 1.02,
+		PLANET_RADIUS * 1.1,
 		64,
 		64
 	)
@@ -405,8 +414,7 @@ function createPlanet() {
 
 	// Add outer atmosphere glow
 	const outerAtmosphereGeometry = new THREE.SphereGeometry(
-		PLANET_RADIUS * 1.15,
-		32,
+		PLANET_RADIUS * 1.4,
 		32
 	)
 	const outerAtmosphereMaterial = new THREE.ShaderMaterial({
@@ -424,7 +432,7 @@ function createPlanet() {
 			uniform vec3 glowColor;
 			varying vec3 vNormal;
 			void main() {
-				float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+				float intensity = pow(0.99 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
 				gl_FragColor = vec4(glowColor, intensity * 0.15);
 			}
 		`,
@@ -438,6 +446,39 @@ function createPlanet() {
 		outerAtmosphereMaterial
 	)
 	sphere.add(outerAtmosphere)
+
+	// Add exosphere (faint extended atmosphere)
+	const exosphereGeometry = new THREE.SphereGeometry(
+		PLANET_RADIUS * 2.5,
+		32,
+		32
+	)
+	const exosphereMaterial = new THREE.ShaderMaterial({
+		uniforms: {
+			glowColor: { value: new THREE.Color(0x113366) },
+		},
+		vertexShader: `
+			varying vec3 vNormal;
+			void main() {
+				vNormal = normalize(normalMatrix * normal);
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+		`,
+		fragmentShader: `
+			uniform vec3 glowColor;
+			varying vec3 vNormal;
+			void main() {
+				float intensity = pow(max(0.0, 0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
+				gl_FragColor = vec4(glowColor, intensity * 0.1);
+			}
+		`,
+		side: THREE.BackSide,
+		blending: THREE.AdditiveBlending,
+		transparent: true,
+		depthWrite: false,
+	})
+	const exosphere = new THREE.Mesh(exosphereGeometry, exosphereMaterial)
+	sphere.add(exosphere)
 
 	return sphere
 }
@@ -1028,7 +1069,7 @@ export function animateOrcScene(animateNormal = true) {
 		if (data.isGeosynchronous && !data.decommissioning) {
 			return // George rotates with planet, no animation needed
 		}
-		
+
 		// Handle decommissioning satellites (always animate these)
 		if (data.decommissioning) {
 			const elapsed = Date.now() - data.decommissionStartTime
