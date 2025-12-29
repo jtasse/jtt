@@ -128,13 +128,13 @@ window.addEventListener(
 	(event) => {
 		const content = document.getElementById("content")
 		const homeBtn = document.getElementById("home-button")
-		const orcPlayPauseBtn = document.getElementById("orc-play-pause-button")
+		const orcResetBtn = document.getElementById("orc-reset-button")
 		const orcInfoPane = document.getElementById("orc-info-pane")
 		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
 			(homeBtn && homeBtn.contains(event.target)) ||
-			(orcPlayPauseBtn && orcPlayPauseBtn.contains(event.target)) ||
+			(orcResetBtn && orcResetBtn.contains(event.target)) ||
 			(orcInfoPane && orcInfoPane.contains(event.target)) ||
 			(orcOverlay && orcOverlay.contains(event.target))
 		) {

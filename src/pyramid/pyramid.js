@@ -176,7 +176,6 @@ let orcDemoControls = null
 let selectionIndicator = null
 let selectedSatellite = null
 let availableSatellitesPane = null
-let orcAnimationRunning = true // State for play/pause button
 
 // Camera tracking state for decommission animations
 let originalCameraState = null // Stores camera position/target before decommission tracking
@@ -1176,103 +1175,48 @@ export function hideAllPlanes() {
 
 // === ORC Scene / Morph Functions ===
 
-// Morph pyramid into sphere and show ORC scene
+// Show ORC scene directly (no pyramid morph animation)
 export function morphToOrcScene() {
-	const myToken = ++pyramidAnimToken
+	++pyramidAnimToken
 	hideAllPlanes()
 
-	// Create the demo scene first (it starts invisible) so we have its camera/controls
-	// available for the transition animation.
-	createOrcDemo()
-	showOrcPlayPauseButton()
-	// The info pane now includes the available satellites (loads HTML from file)
-	showAvailableSatellitesPane()
+	// Immediately hide pyramid and labels
+	pyramidGroup.visible = false
+	Object.values(labels).forEach((label) => {
+		if (label.material) {
+			label.material.opacity = 0
+		}
+	})
+	morphSphere.visible = false
 
-	// Labels will be faded out during the animation
+	// Create the demo scene
+	createOrcDemo()
+	showOrcResetButton()
+	showAvailableSatellitesPane()
 
 	// Show home button
 	showHomeLabel()
 
-	const duration = 1200
+	// Set up camera for ORC scene
+	camera.position.copy(orcDemoCamera.position)
+	camera.lookAt(orcDemoControls.target)
+	controls.target.copy(orcDemoControls.target)
+	controls.enabled = false
 
-	// Starting states
-	const startPyramidScale = pyramidGroup.scale.clone()
-	const startPyramidOpacity = 1
-	const startSphereOpacity = 0
-	const startCamPos = camera.position.clone() // Current camera position
-	const endCamPos = orcDemoCamera.position.clone() // Target ORC demo camera position
+	orcSceneActive = true
 
-	morphSphere.visible = true // Make morph sphere visible and position it
-	morphSphere.position.copy(pyramidGroup.position)
-	morphSphere.scale.set(0.1, 0.1, 0.1)
-	morphSphereMaterial.opacity = 0
-	const startTime = performance.now()
-
-	function step(time) {
-		if (myToken !== pyramidAnimToken) return
-		const t = Math.min((time - startTime) / duration, 1)
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-
-		// Animate pyramid scale down and fade out
-		const pyramidScale = 1 - eased * 0.9
-		pyramidGroup.scale.set(pyramidScale, pyramidScale, pyramidScale)
-
-		// Fade out pyramid faces
-		pyramidGroup.children.forEach((child) => {
-			if (child.isMesh && child.material) {
-				child.material.opacity = 1 - eased
-				child.material.transparent = true
-			}
+	// Fade in the ORC demo container
+	if (orcDemoContainer) {
+		// Start with 0 opacity, then fade in
+		orcDemoContainer.style.opacity = "0"
+		orcDemoContainer.style.transition = "opacity 0.6s ease-in"
+		requestAnimationFrame(() => {
+			orcDemoContainer.style.opacity = "1"
 		})
-
-		// Fade out labels
-		Object.values(labels).forEach((label) => {
-			if (label.material) {
-				label.material.opacity = 1 - eased
-			}
-		})
-
-		// Animate sphere scale up and fade in
-		const sphereScale = 0.1 + eased * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
-		morphSphereMaterial.opacity = eased * 0.8
-
-		// Animate camera to isometric position
-		camera.position.lerpVectors(startCamPos, endCamPos, eased)
-		camera.lookAt(orcDemoControls.target) // Look at ORC demo controls target
-		controls.target.lerpVectors(controls.target, orcDemoControls.target, eased) // Animate main controls target
-		controls.update()
-
-		if (t < 1) {
-			requestAnimationFrame(step)
-		} else {
-			// Animation complete - hide pyramid, show ORC
-			if (myToken !== pyramidAnimToken) return
-
-			pyramidGroup.visible = false
-			morphSphere.visible = false
-
-			orcSceneActive = true
-
-			// Ensure camera is at final position
-			camera.position.copy(endCamPos)
-			camera.lookAt(orcDemoControls.target)
-			controls.target.copy(orcDemoControls.target)
-			controls.enabled = false // Disable main controls
-
-			// Fade in the ORC demo container now that the transition is complete
-			if (orcDemoContainer) {
-				requestAnimationFrame(() => {
-					orcDemoContainer.style.opacity = "1"
-				})
-			}
-
-			// Show the info pane on the right
-			showOrcInfoPane()
-		}
 	}
 
-	requestAnimationFrame(step)
+	// Show the info pane on the right
+	showOrcInfoPane()
 }
 
 // Return from ORC scene back to pyramid
@@ -1285,7 +1229,7 @@ export function morphFromOrcScene() {
 
 	destroyOrcDemo() // Destroy ORC demo before morphing back
 	hideOrcInfoPane() // This will now hide both
-	hideOrcPlayPauseButton() // Hide play/pause button
+	hideOrcResetButton() // Hide reset button
 
 	const duration = 1200
 
@@ -1559,9 +1503,8 @@ function createOrcDemo() {
 	// 5. Start animation loop
 	function animateOrcDemo() {
 		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
-		// Always call animateOrcScene - it handles both normal orbits and decommissioning
-		// Decommissioning satellites should animate even when paused
-		animateOrcScene(orcAnimationRunning)
+		// Animate the ORC scene (satellites orbiting)
+		animateOrcScene(true)
 
 		// Update indicator position to follow the selected satellite
 		if (selectedSatellite && selectionIndicator) {
@@ -1704,16 +1647,16 @@ function destroyOrcDemo() {
 	selectedSatellite = null
 }
 
-// New: Play/Pause button for ORC demo
-let orcPlayPauseButton = null
+// Reset button for ORC demo
+let orcResetButton = null
 
-function createOrcPlayPauseButton() {
-	if (orcPlayPauseButton) return
+function createOrcResetButton() {
+	if (orcResetButton) return
 
-	orcPlayPauseButton = document.createElement("button")
-	orcPlayPauseButton.id = "orc-play-pause-button"
-	orcPlayPauseButton.textContent = "Pause" // Initial state
-	Object.assign(orcPlayPauseButton.style, {
+	orcResetButton = document.createElement("button")
+	orcResetButton.id = "orc-reset-button"
+	orcResetButton.textContent = "Reset"
+	Object.assign(orcResetButton.style, {
 		position: "fixed",
 		left: "100px", // Next to home button
 		top: "12px",
@@ -1729,24 +1672,19 @@ function createOrcPlayPauseButton() {
 		display: "none",
 	})
 
-	orcPlayPauseButton.addEventListener("click", toggleOrcAnimation)
-	document.body.appendChild(orcPlayPauseButton)
+	orcResetButton.addEventListener("click", () => {
+		window.location.reload()
+	})
+	document.body.appendChild(orcResetButton)
 }
 
-function toggleOrcAnimation() {
-	orcAnimationRunning = !orcAnimationRunning
-	if (orcPlayPauseButton) {
-		orcPlayPauseButton.textContent = orcAnimationRunning ? "Pause" : "Play"
-	}
+function showOrcResetButton() {
+	if (!orcResetButton) createOrcResetButton()
+	if (orcResetButton) orcResetButton.style.display = "block"
 }
 
-function showOrcPlayPauseButton() {
-	if (!orcPlayPauseButton) createOrcPlayPauseButton()
-	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "block"
-}
-
-function hideOrcPlayPauseButton() {
-	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "none"
+function hideOrcResetButton() {
+	if (orcResetButton) orcResetButton.style.display = "none"
 }
 
 // === Global functions for HTML onclick handlers ===
@@ -1950,7 +1888,7 @@ export function animate() {
 	stars.rotation.y += 0.0008
 
 	// Animate ORC scene if active
-	if (orcSceneActive && orcAnimationRunning) {
+	if (orcSceneActive) {
 		animateOrcScene()
 	}
 
