@@ -1061,9 +1061,15 @@ function showOrcInfoPane() {
 }
 
 function hideOrcInfoPane() {
+	// Remove the module-level reference if it exists
 	if (orcInfoPane) {
 		orcInfoPane.remove()
 		orcInfoPane = null
+	}
+	// Also check for any DOM element with this ID (in case it was created elsewhere)
+	const existingPane = document.getElementById("orc-info-pane")
+	if (existingPane) {
+		existingPane.remove()
 	}
 }
 
@@ -1223,170 +1229,163 @@ export function morphToOrcScene() {
 export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
 
-	// Capture camera/controls state BEFORE destroying the demo
+	// Capture camera/controls state BEFORE fading out
 	const startCamPos = orcDemoCamera.position.clone()
 	const startControlsTarget = orcDemoControls.target.clone()
-
-	destroyOrcDemo() // Destroy ORC demo before morphing back
-	hideOrcInfoPane() // This will now hide both
-	hideOrcResetButton() // Hide reset button
-
-	const duration = 1200
-
-	// Starting states
 	const endCamPos = initialCameraState.position.clone()
-	morphSphere.visible = true
-	morphSphere.position.copy(startControlsTarget) // Start morph sphere at ORC demo controls target
-	morphSphere.scale.set(1, 1, 1) // Start at full size
-	morphSphereMaterial.opacity = 0.8 // Start at full opacity
-	hideOrcInfoPane()
 
-	// Prepare pyramid - set to initial state but scaled down for animation
-	pyramidGroup.visible = true
-	pyramidGroup.position.x = initialPyramidState.positionX
-	pyramidGroup.position.y = initialPyramidState.positionY
-	pyramidGroup.rotation.x = 0
-	pyramidGroup.rotation.y = initialPyramidState.rotationY
-	pyramidGroup.rotation.z = 0
-	pyramidGroup.scale.set(0.1, 0.1, 0.1)
+	const fadeOutDuration = 500 // Duration for ORC elements to fade out
+	const fadeInDuration = 800 // Duration for pyramid to fade in
 
-	// Show hover targets
-	for (const key in hoverTargets) {
-		if (hoverTargets[key]) hoverTargets[key].visible = true
+	// Phase 1: Fade out all ORC elements
+	if (orcDemoContainer) {
+		orcDemoContainer.style.transition = `opacity ${fadeOutDuration}ms ease-out`
+		orcDemoContainer.style.opacity = "0"
 	}
+	// Target the DOM element directly in case orcInfoPane variable is out of sync
+	const infoPane = document.getElementById("orc-info-pane")
+	if (infoPane) {
+		infoPane.style.transition = `opacity ${fadeOutDuration}ms ease-out`
+		infoPane.style.opacity = "0"
+	}
+	hideOrcResetButton()
 
-	// Set pyramid face materials to transparent for fade in
-	pyramidGroup.children.forEach((child) => {
-		if (
-			child.isMesh &&
-			child.material &&
-			!Object.values(labels).includes(child)
-		) {
-			child.material.opacity = 0
-			child.material.transparent = true
-		}
-	})
-
-	const startTime = performance.now()
-
-	function step(time) {
+	// After fade out completes, destroy ORC and show pyramid
+	setTimeout(() => {
 		if (myToken !== pyramidAnimToken) return
 
-		const t = Math.min((time - startTime) / duration, 1)
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+		// Now destroy the ORC elements
+		destroyOrcDemo()
+		hideOrcInfoPane()
 
-		// Animate sphere scale down and fade out
-		const sphereScale = 0.1 + (1 - eased) * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale) // This might need adjustment
-		morphSphereMaterial.opacity = 0.8 * (1 - eased)
+		// Prepare pyramid - set to initial state but transparent for fade in
+		pyramidGroup.visible = true
+		pyramidGroup.position.x = initialPyramidState.positionX
+		pyramidGroup.position.y = initialPyramidState.positionY
+		pyramidGroup.rotation.x = 0
+		pyramidGroup.rotation.y = initialPyramidState.rotationY
+		pyramidGroup.rotation.z = 0
+		pyramidGroup.scale.set(
+			initialPyramidState.scale,
+			initialPyramidState.scale,
+			initialPyramidState.scale
+		)
 
-		// Animate pyramid scale up and fade in
-		const pyramidScale = 0.1 + eased * 0.9
-		pyramidGroup.scale.set(pyramidScale, pyramidScale, pyramidScale)
+		// Show hover targets
+		for (const key in hoverTargets) {
+			if (hoverTargets[key]) hoverTargets[key].visible = true
+		}
 
-		// Fade in pyramid faces (not labels)
+		// Set pyramid face materials to transparent for fade in
 		pyramidGroup.children.forEach((child) => {
 			if (
 				child.isMesh &&
 				child.material &&
 				!Object.values(labels).includes(child)
 			) {
-				child.material.opacity = eased
+				child.material.opacity = 0
+				child.material.transparent = true
 			}
 		})
 
-		// Fade in labels (which were faded out in morphToOrcScene)
+		// Set labels to transparent
 		Object.values(labels).forEach((label) => {
 			if (label.material) {
-				label.material.opacity = eased
+				label.material.opacity = 0
 			}
 		})
 
-		// Animate camera back
-		camera.position.lerpVectors(startCamPos, endCamPos, eased)
+		// Set camera to final position immediately
+		camera.position.copy(endCamPos)
 		camera.lookAt(initialCameraState.target)
-		controls.target.lerpVectors(
-			startControlsTarget,
-			initialCameraState.target,
-			eased
-		)
+		controls.target.copy(initialCameraState.target)
+		controls.enabled = true
 		controls.update()
 
-		if (t < 1) {
-			requestAnimationFrame(step)
-		} else {
-			// Animation complete
+		orcSceneActive = false
+		isAtBottom = false
+		currentSection = null
+		morphSphere.visible = false
+
+		// Phase 2: Fade in pyramid and labels
+		const startTime = performance.now()
+
+		function fadeInStep(time) {
 			if (myToken !== pyramidAnimToken) return
 
-			morphSphere.visible = false
-			orcSceneActive = false
-			isAtBottom = false
-			currentSection = null
+			const t = Math.min((time - startTime) / fadeInDuration, 1)
+			const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
-			// Restore pyramid to exact initial state
-			pyramidGroup.scale.set(
-				initialPyramidState.scale,
-				initialPyramidState.scale,
-				initialPyramidState.scale
-			)
-			pyramidGroup.position.x = initialPyramidState.positionX
-			pyramidGroup.position.y = initialPyramidState.positionY
-			pyramidGroup.rotation.x = 0
-			pyramidGroup.rotation.y = initialPyramidState.rotationY
-			pyramidGroup.rotation.z = 0
-
-			// Restore pyramid face materials
+			// Fade in pyramid faces
 			pyramidGroup.children.forEach((child) => {
 				if (
 					child.isMesh &&
 					child.material &&
 					!Object.values(labels).includes(child)
 				) {
-					child.material.opacity = 1
-					child.material.transparent = false
+					child.material.opacity = eased
 				}
 			})
 
-			// Final check - ensure labels are visible and in correct positions
-			for (const key in labels) {
-				if (key === "Home") continue
-				const labelMesh = labels[key]
-				if (!labelMesh) continue
-				if (labelMesh.material) labelMesh.material.opacity = 1
+			// Fade in labels
+			Object.values(labels).forEach((label) => {
+				if (label.material) {
+					label.material.opacity = eased
+				}
+			})
 
-				labelMesh.userData.fixedNav = false
+			if (t < 1) {
+				requestAnimationFrame(fadeInStep)
+			} else {
+				// Animation complete
+				if (myToken !== pyramidAnimToken) return
 
-				// Ensure attached to pyramidGroup
-				if (labelMesh.parent !== pyramidGroup) {
-					pyramidGroup.add(labelMesh)
+				// Restore pyramid face materials to full opacity
+				pyramidGroup.children.forEach((child) => {
+					if (
+						child.isMesh &&
+						child.material &&
+						!Object.values(labels).includes(child)
+					) {
+						child.material.opacity = 1
+						child.material.transparent = false
+					}
+				})
+
+				// Final check - ensure labels are visible and in correct positions
+				for (const key in labels) {
+					if (key === "Home") continue
+					const labelMesh = labels[key]
+					if (!labelMesh) continue
+					if (labelMesh.material) labelMesh.material.opacity = 1
+
+					labelMesh.userData.fixedNav = false
+
+					// Ensure attached to pyramidGroup
+					if (labelMesh.parent !== pyramidGroup) {
+						pyramidGroup.add(labelMesh)
+					}
+
+					// Snap to exact original positions
+					const origPos = labelMesh.userData.origPosition
+					const origRot = labelMesh.userData.origRotation
+					const origScale = labelMesh.userData.originalScale
+					if (origPos) labelMesh.position.copy(origPos)
+					if (origRot) labelMesh.rotation.copy(origRot)
+					if (origScale) labelMesh.scale.copy(origScale)
 				}
 
-				// Snap to exact original positions
-				const origPos = labelMesh.userData.origPosition
-				const origRot = labelMesh.userData.origRotation
-				const origScale = labelMesh.userData.originalScale
-				if (origPos) labelMesh.position.copy(origPos)
-				if (origRot) labelMesh.rotation.copy(origRot)
-				if (origScale) labelMesh.scale.copy(origScale)
+				// Ensure hover targets visible
+				for (const key in hoverTargets) {
+					if (hoverTargets[key]) hoverTargets[key].visible = true
+				}
+
+				hideHomeLabel()
 			}
-
-			// Ensure hover targets visible
-			for (const key in hoverTargets) {
-				if (hoverTargets[key]) hoverTargets[key].visible = true
-			}
-
-			// Ensure camera at final position
-			camera.position.copy(endCamPos)
-			camera.lookAt(initialCameraState.target)
-			controls.target.copy(initialCameraState.target)
-			controls.enabled = true // Re-enable main controls
-			controls.update()
-
-			hideHomeLabel()
 		}
-	}
 
-	requestAnimationFrame(step)
+		requestAnimationFrame(fadeInStep)
+	}, fadeOutDuration)
 }
 
 // Check if ORC scene is currently active
@@ -1669,7 +1668,18 @@ function createOrcResetButton() {
 		font: "600 14px sans-serif",
 		cursor: "pointer",
 		backdropFilter: "blur(4px)",
+		transition: "background 0.2s ease, box-shadow 0.2s ease",
 		display: "none",
+	})
+
+	// Hover effects
+	orcResetButton.addEventListener("mouseenter", () => {
+		orcResetButton.style.background = "rgba(0,100,150,0.7)"
+		orcResetButton.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
+	})
+	orcResetButton.addEventListener("mouseleave", () => {
+		orcResetButton.style.background = "rgba(0,0,0,0.6)"
+		orcResetButton.style.boxShadow = "none"
 	})
 
 	orcResetButton.addEventListener("click", () => {

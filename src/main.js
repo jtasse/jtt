@@ -51,8 +51,18 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.style.font = "600 14px sans-serif"
 	btn.style.cursor = "pointer"
 	btn.style.backdropFilter = "blur(4px)"
+	btn.style.transition = "background 0.2s ease, box-shadow 0.2s ease"
 	// Hidden initially until the user interacts (drag or label click)
 	btn.style.display = "none"
+	// Hover effects
+	btn.addEventListener("mouseenter", () => {
+		btn.style.background = "rgba(0,100,150,0.7)"
+		btn.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
+	})
+	btn.addEventListener("mouseleave", () => {
+		btn.style.background = "rgba(0,0,0,0.6)"
+		btn.style.boxShadow = "none"
+	})
 	btn.addEventListener("mousedown", (e) => e.stopPropagation())
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
@@ -303,11 +313,13 @@ router.onRouteChange((route) => {
 	} else {
 		// For non-content routes (home), reset pyramid and hide all content planes
 		if (isOrcSceneActive()) {
+			// morphFromOrcScene handles its own cleanup with fade animation
+			// Don't call hideAllPlanes() here as it would remove elements before fade completes
 			morphFromOrcScene()
 		} else {
 			resetPyramidToHome()
+			hideAllPlanes()
 		}
-		hideAllPlanes()
 		currentContentVisible = null
 		window.centeredLabelName = null
 	}
