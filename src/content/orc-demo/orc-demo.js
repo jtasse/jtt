@@ -37,6 +37,98 @@ const LEO_ORBIT_SPEED = 0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 const GEO_ALTITUDE = 2.0 // Geosynchronous orbit altitude (radius from planet center)
 
+// Atmosphere boundaries for decommission effects
+// Exosphere should just envelop Leona's orbit (LEO at 0.65)
+const EXOSPHERE_RADIUS = 0.72 // Just outside LEO orbit - where burning starts
+const OUTER_ATMOSPHERE_RADIUS = PLANET_RADIUS * 1.25 // 0.625 - visible atmosphere layer
+const INNER_ATMOSPHERE_RADIUS = PLANET_RADIUS * 1.08 // 0.54 - where satellite is destroyed
+
+// Decommission animation configuration
+const DECOMMISSION_CONFIG = {
+	approachDurationBase: 6000, // Base time to reach exosphere (ms) - scales with orbit radius
+	approachDurationPerUnit: 3000, // Additional ms per unit of orbit radius above exosphere
+	burnDuration: 5000, // Time from exosphere entry to destruction (ms) - configurable
+	slowMotionFactor: 0.3, // How much to slow down during burn phase (30% speed)
+	cameraZoomDistanceFar: 3.0, // Camera distance during approach
+	cameraZoomDistanceClose: 0.8, // Camera distance during burn (close-up)
+	cameraApproachSpeed: 0.012, // Slow zoom during approach (slightly faster for smoothness)
+	cameraQuickZoomSpeed: 0.04, // Quick zoom when entering exosphere (reduced for smoothness)
+	cameraResetSpeed: 0.03, // Speed to return camera after destruction
+}
+
+// Decommission state tracking (for camera coordination with pyramid.js)
+let activeDecommission = null // The satellite currently decommissioning
+
+// Get the current decommission state for camera tracking
+export function getDecommissionState() {
+	if (!activeDecommission) return null
+
+	const sat = activeDecommission
+	const data = sat.userData
+	if (!data.decommissioning) return null
+
+	const worldPos = new THREE.Vector3()
+	sat.getWorldPosition(worldPos)
+	const distance = worldPos.length()
+
+	// Determine phase based on whether we've reached exosphere
+	const inBurnPhase = data.reachedExosphere || data.startedInExosphere
+	let phase = inBurnPhase ? "burning" : "approach"
+
+	// Calculate burn progress (0 at start of burn, 1 at destruction)
+	let burnProgress = 0
+	if (inBurnPhase && data.exosphereTime) {
+		const burnElapsed = Date.now() - data.exosphereTime
+		burnProgress = Math.min(burnElapsed / DECOMMISSION_CONFIG.burnDuration, 1)
+	}
+
+	// Smooth ease function for camera transitions
+	const smoothEase = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+
+	// Smoothly transition camera speed between phases
+	let cameraSpeed
+	if (!inBurnPhase) {
+		cameraSpeed = DECOMMISSION_CONFIG.cameraApproachSpeed
+	} else {
+		// Smooth transition from approach speed to burn speed over 800ms
+		const burnElapsed = Date.now() - data.exosphereTime
+		const transitionProgress = Math.min(burnElapsed / 800, 1)
+		const easedTransition = smoothEase(transitionProgress)
+		cameraSpeed = DECOMMISSION_CONFIG.cameraApproachSpeed +
+			easedTransition * (DECOMMISSION_CONFIG.cameraQuickZoomSpeed - DECOMMISSION_CONFIG.cameraApproachSpeed)
+	}
+
+	// Smoothly transition target camera distance
+	let targetZoomDistance
+	if (!inBurnPhase) {
+		targetZoomDistance = DECOMMISSION_CONFIG.cameraZoomDistanceFar
+	} else {
+		// Smooth transition from far to close over 1000ms
+		const burnElapsed = Date.now() - data.exosphereTime
+		const transitionProgress = Math.min(burnElapsed / 1000, 1)
+		const easedTransition = smoothEase(transitionProgress)
+		targetZoomDistance = DECOMMISSION_CONFIG.cameraZoomDistanceFar -
+			easedTransition * (DECOMMISSION_CONFIG.cameraZoomDistanceFar - DECOMMISSION_CONFIG.cameraZoomDistanceClose)
+	}
+
+	return {
+		satellite: sat,
+		position: worldPos,
+		distance,
+		phase,
+		burnProgress,
+		inBurnPhase,
+		cameraSpeed,
+		targetZoomDistance,
+		config: DECOMMISSION_CONFIG,
+	}
+}
+
+// Export config for external use
+export function getDecommissionConfig() {
+	return DECOMMISSION_CONFIG
+}
+
 // Convert latitude/longitude (degrees) to 3D world coordinates on the planet surface
 // Returns { x, y, z } in world space (before planet rotation)
 export function latLonTo3D(lat, lon, radius = PLANET_RADIUS) {
@@ -447,15 +539,15 @@ function createPlanet() {
 	)
 	sphere.add(outerAtmosphere)
 
-	// Add exosphere (faint extended atmosphere)
+	// Add exosphere (faint extended atmosphere) - should just envelop Leona's orbit
 	const exosphereGeometry = new THREE.SphereGeometry(
-		PLANET_RADIUS * 2.5,
+		EXOSPHERE_RADIUS, // Use the decommission boundary constant
 		32,
 		32
 	)
 	const exosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
-			glowColor: { value: new THREE.Color(0x113366) },
+			glowColor: { value: new THREE.Color(0x2255aa) }, // Slightly brighter to be visible at smaller size
 		},
 		vertexShader: `
 			varying vec3 vNormal;
@@ -468,8 +560,8 @@ function createPlanet() {
 			uniform vec3 glowColor;
 			varying vec3 vNormal;
 			void main() {
-				float intensity = pow(max(0.0, 0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
-				gl_FragColor = vec4(glowColor, intensity * 0.1);
+				float intensity = pow(max(0.0, 0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
+				gl_FragColor = vec4(glowColor, intensity * 0.15);
 			}
 		`,
 		side: THREE.BackSide,
@@ -1084,33 +1176,100 @@ export function animateOrcScene(animateNormal = true) {
 
 		// Handle decommissioning satellites (always animate these)
 		if (data.decommissioning) {
+			// Get current distance from planet center
+			const worldPos = new THREE.Vector3()
+			sat.getWorldPosition(worldPos)
+			const currentDistance = worldPos.length()
+
+			// Check if we've entered the exosphere (distance-based, not time-based)
+			if (currentDistance <= EXOSPHERE_RADIUS && !data.reachedExosphere && !data.startedInExosphere) {
+				data.reachedExosphere = true
+				data.exosphereTime = Date.now()
+			}
+
+			const inBurnPhase = data.reachedExosphere || data.startedInExosphere
+
+			// Calculate progress for each phase
 			const elapsed = Date.now() - data.decommissionStartTime
-			const progress = Math.min(elapsed / data.decommissionDuration, 1)
+			let burnProgress = 0
 
-			// Ease-in curve for acceleration effect
-			const easeProgress = progress * progress
+			if (inBurnPhase && data.exosphereTime) {
+				// Burn phase - 5 seconds of burning
+				const burnElapsed = Date.now() - data.exosphereTime
+				burnProgress = Math.min(burnElapsed / DECOMMISSION_CONFIG.burnDuration, 1)
+			}
 
-			// Calculate shrinking orbit radius (spiral inward)
-			const radiusMultiplier = 1 - easeProgress * 0.9 // Shrink to 10% of original
+			// Calculate target radius based on phase
+			let radiusMultiplier
+			const startRadius = data.originalOrbitRadius || data.originalOrbitRadiusX || LEO_ORBIT_RADIUS
 
-			// Speed up as satellite falls inward (conservation of angular momentum effect)
-			const speedMultiplier = 1 + easeProgress * 4
+			// Calculate scaled approach duration based on starting orbit radius
+			const distanceToExosphere = Math.max(0, startRadius - EXOSPHERE_RADIUS)
+			const approachDuration = DECOMMISSION_CONFIG.approachDurationBase +
+				distanceToExosphere * DECOMMISSION_CONFIG.approachDurationPerUnit
+
+			// Smooth ease-in-out function for gentler acceleration
+			const smoothEase = (t) => {
+				// Cubic ease-in-out: slow start, smooth middle, slow end
+				return t < 0.5
+					? 4 * t * t * t
+					: 1 - Math.pow(-2 * t + 2, 3) / 2
+			}
+
+			if (!inBurnPhase) {
+				// Approach: continuously shrink toward exosphere based on time
+				const approachProgress = Math.min(elapsed / approachDuration, 0.98)
+				const easeProgress = smoothEase(approachProgress)
+
+				// Target slightly inside exosphere to ensure we trigger the distance check
+				const targetRadius = EXOSPHERE_RADIUS * 0.9
+				radiusMultiplier = 1 - easeProgress * (1 - targetRadius / startRadius)
+
+				// If time ran out but we haven't reached exosphere, continue gently
+				if (approachProgress >= 0.98 && currentDistance > EXOSPHERE_RADIUS) {
+					const extraProgress = (elapsed - approachDuration) / 3000
+					radiusMultiplier = radiusMultiplier * (1 - Math.min(extraProgress, 0.5) * 0.2)
+				}
+			} else {
+				// Burn: shrink from current position to inner atmosphere with smooth easing
+				const entryMultiplier = data.startedInExosphere
+					? 1 // Started in exosphere, use original radius
+					: Math.min(EXOSPHERE_RADIUS / startRadius, currentDistance / startRadius)
+				const innerMultiplier = INNER_ATMOSPHERE_RADIUS / startRadius
+				// Use smooth ease for burn phase too
+				const easedBurnProgress = smoothEase(burnProgress)
+				radiusMultiplier = entryMultiplier - easedBurnProgress * (entryMultiplier - innerMultiplier)
+			}
+
+			// Speed multiplier - gradual increase during approach, smooth transition to slow-mo
+			let speedMultiplier
+			if (!inBurnPhase) {
+				const approachProgress = Math.min(elapsed / approachDuration, 1)
+				// Gentler speed increase: use smooth easing, max 2.5x speed
+				speedMultiplier = 1 + smoothEase(approachProgress) * 1.5
+			} else {
+				// Smooth transition into slow motion over first 500ms of burn
+				const burnElapsed = Date.now() - data.exosphereTime
+				const transitionProgress = Math.min(burnElapsed / 500, 1)
+				const approachEndSpeed = 2.5 // Speed at end of approach
+				const targetSpeed = DECOMMISSION_CONFIG.slowMotionFactor
+				// Lerp from approach speed to slow-mo
+				speedMultiplier = approachEndSpeed - smoothEase(transitionProgress) * (approachEndSpeed - targetSpeed)
+			}
 
 			// Pulse orbital ring color (black to red)
 			if (data.orbitalRing) {
 				const time = Date.now() * 0.003
-				// Oscillate between 0 and 1
 				const intensity = (Math.sin(time) + 1) / 2
 				data.orbitalRing.material.color.setRGB(intensity, 0, 0)
 			}
 
+			// Calculate orbit direction for flame trail orientation
+			let orbitDirection = null
+
 			// Apply de-orbit animation
 			if (data.eccentricity) {
 				// MEO (Keplerian)
-				// For MEO, we simply advance the angle and scale the resulting radius
-				// to simulate spiraling in.
-				// Speed up based on distance (Kepler's 2nd law approximation)
-				// We use the current calculated radius for speed modulation
 				const { r: currentR } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
@@ -1125,9 +1284,11 @@ export function animateOrcScene(animateNormal = true) {
 					data.semiMajorAxis,
 					data.eccentricity
 				)
-				// Apply radius multiplier to spiral in
 				sat.position.set(x * radiusMultiplier, y * radiusMultiplier, 0)
 				sat.rotation.z = data.angle + Math.PI / 2
+
+				// Calculate orbit direction (tangent to orbit)
+				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), Math.cos(data.angle), 0)
 			} else if (data.originalOrbitRadiusX) {
 				// GEO satellite (elliptical)
 				data.orbitRadiusX = data.originalOrbitRadiusX * radiusMultiplier
@@ -1139,38 +1300,45 @@ export function animateOrcScene(animateNormal = true) {
 				const y = Math.sin(data.angle) * data.orbitRadiusZ
 				sat.position.set(x, y, 0)
 				sat.rotation.z = data.angle - Math.PI / 2
+
+				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), Math.cos(data.angle), 0)
 			} else {
 				// LEO satellite (circular) - also handles George with orbitY
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
 				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
 
-				// Calculate position first, then increment angle (prevents first-frame jump for George)
 				const x = Math.cos(data.angle) * data.orbitRadius
 				const z = Math.sin(data.angle) * data.orbitRadius
-				// Use orbitY if set (for inclined orbits like George), otherwise 0
 				const y = data.orbitY !== undefined ? data.orbitY * radiusMultiplier : 0
 				sat.position.set(x, y, z)
 				sat.rotation.y = -data.angle - Math.PI / 2
 				data.angle += data.orbitSpeed
+
+				// Orbit direction for LEO (tangent in XZ plane)
+				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), 0, Math.cos(data.angle))
+				if (data.orbitSpeed < 0) orbitDirection.negate() // Reverse for clockwise orbits
 			}
 
-			// Visual burn-up effect: scale down and change color as it enters atmosphere
-			if (progress > 0.7) {
-				const burnProgress = (progress - 0.7) / 0.3
-				const scale = 1 - burnProgress * 0.8
+			// Update flame trail effect (only visible when inside exosphere)
+			updateFlameTrail(sat, burnProgress, orbitDirection, currentDistance)
+
+			// Scale down satellite as it burns
+			if (inBurnPhase) {
+				const scale = 1 - burnProgress * 0.85
 				sat.scale.set(scale, scale, scale)
 
-				// Make satellite glow orange/red as it burns
-				sat.traverse((child) => {
-					if (child.material && child.material.emissive) {
-						child.material.emissive.setRGB(1, 0.3 * (1 - burnProgress), 0)
-						child.material.emissiveIntensity = burnProgress * 2
-					}
-				})
+				// Fizzle effect near the end - flickering visibility
+				if (burnProgress > 0.8) {
+					const fizzleProgress = (burnProgress - 0.8) / 0.2
+					const flicker = Math.random() > fizzleProgress * 0.5
+					sat.visible = flicker
+				}
 			}
 
 			// Satellite has completed de-orbit - mark for removal
-			if (progress >= 1) {
+			if (inBurnPhase && burnProgress >= 1) {
+				disposeFlameTrail(sat)
+				activeDecommission = null
 				satellitesToRemove.push(sat)
 			}
 		} else if (animateNormal) {
@@ -1434,6 +1602,137 @@ export function initializeDecommissionButton(getSat, startDecom) {
 
 // === Decommission Logic ===
 
+// Create flame trail particles for burning effect
+function createFlameTrail(satellite) {
+	const flameGroup = new THREE.Group()
+	flameGroup.name = "flameTrail"
+
+	// Create multiple flame particles at different scales
+	const flameCount = 8
+	const flames = []
+
+	for (let i = 0; i < flameCount; i++) {
+		// Create a cone-shaped flame
+		const flameGeometry = new THREE.ConeGeometry(0.02 + i * 0.008, 0.08 + i * 0.02, 8)
+		const flameMaterial = new THREE.MeshBasicMaterial({
+			color: new THREE.Color().setHSL(0.08 - i * 0.01, 1, 0.5 + i * 0.05), // Orange to yellow
+			transparent: true,
+			opacity: 0.9 - i * 0.08,
+			blending: THREE.AdditiveBlending,
+			depthWrite: false,
+		})
+
+		const flame = new THREE.Mesh(flameGeometry, flameMaterial)
+		flame.rotation.x = Math.PI // Point backwards
+		flame.position.z = 0.03 + i * 0.025 // Stagger behind satellite
+		flame.visible = false // Hidden until burning starts
+
+		// Store initial properties for animation
+		flame.userData = {
+			baseScale: 1 + i * 0.3,
+			phaseOffset: i * 0.5,
+			baseOpacity: 0.9 - i * 0.08,
+		}
+
+		flames.push(flame)
+		flameGroup.add(flame)
+	}
+
+	// Add outer glow sphere
+	const glowGeometry = new THREE.SphereGeometry(0.06, 16, 16)
+	const glowMaterial = new THREE.MeshBasicMaterial({
+		color: 0xff4400,
+		transparent: true,
+		opacity: 0,
+		blending: THREE.AdditiveBlending,
+		depthWrite: false,
+	})
+	const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+	glow.name = "flameGlow"
+	flameGroup.add(glow)
+
+	// Add to satellite
+	satellite.add(flameGroup)
+
+	return { group: flameGroup, flames, glow }
+}
+
+// Update flame trail animation
+// currentDistance: the satellite's actual distance from planet center
+function updateFlameTrail(satellite, burnProgress, orbitDirection, currentDistance) {
+	const data = satellite.userData
+	if (!data.flameParticles) return
+
+	const { group, flames, glow } = data.flameParticles
+	const time = Date.now() * 0.01
+
+	// Only show flames when satellite has ACTUALLY entered the exosphere (distance check)
+	const inExosphere = currentDistance <= EXOSPHERE_RADIUS
+	const burning = inExosphere && (data.reachedExosphere || data.startedInExosphere)
+
+	flames.forEach((flame, i) => {
+		flame.visible = burning
+
+		if (burning) {
+			const { baseScale, phaseOffset, baseOpacity } = flame.userData
+
+			// Flickering scale animation
+			const flicker = 0.7 + Math.sin(time + phaseOffset) * 0.3
+			const intensityScale = 0.5 + burnProgress * 1.5 // Grows with burn progress
+			flame.scale.setScalar(baseScale * flicker * intensityScale)
+
+			// Opacity based on burn progress
+			flame.material.opacity = baseOpacity * (0.3 + burnProgress * 0.7) * flicker
+
+			// Color shifts from orange to white as it intensifies
+			const hue = 0.08 - burnProgress * 0.03 // Orange toward yellow
+			const lightness = 0.5 + burnProgress * 0.3
+			flame.material.color.setHSL(hue, 1, lightness)
+		}
+	})
+
+	// Update glow
+	if (glow) {
+		glow.visible = burning
+		if (burning) {
+			glow.material.opacity = burnProgress * 0.6
+			glow.scale.setScalar(1 + burnProgress * 2)
+			// Pulse effect
+			glow.material.opacity *= 0.8 + Math.sin(time * 2) * 0.2
+		}
+	}
+
+	// Orient flames to trail behind orbital direction
+	if (burning && orbitDirection) {
+		// Point flames opposite to velocity direction
+		group.lookAt(group.position.clone().sub(orbitDirection))
+	}
+}
+
+// Cleanup flame trail
+function disposeFlameTrail(satellite) {
+	const data = satellite.userData
+	if (!data.flameParticles) return
+
+	const { group, flames, glow } = data.flameParticles
+
+	flames.forEach((flame) => {
+		flame.geometry.dispose()
+		flame.material.dispose()
+	})
+
+	if (glow) {
+		glow.geometry.dispose()
+		glow.material.dispose()
+	}
+
+	if (group.parent) {
+		group.parent.remove(group)
+	}
+
+	data.flameParticles = null
+}
+
 // Start the decommission process for a satellite
 export function startDecommission(satellite) {
 	if (!satellite || satellite.userData.decommissioning) {
@@ -1442,10 +1741,32 @@ export function startDecommission(satellite) {
 
 	const data = satellite.userData
 
+	// Set as active decommission for camera tracking
+	activeDecommission = satellite
+
 	// Store original orbit parameters for de-orbit calculation
 	data.decommissioning = true
 	data.decommissionStartTime = Date.now()
-	data.decommissionDuration = 8000 // 8 seconds for full de-orbit
+
+	// Check if satellite is already within exosphere (like Leona at LEO orbit)
+	const worldPos = new THREE.Vector3()
+	satellite.getWorldPosition(worldPos)
+	const currentDistance = worldPos.length()
+
+	if (currentDistance <= EXOSPHERE_RADIUS) {
+		// Already in exosphere - start burning immediately
+		data.startedInExosphere = true
+		data.reachedExosphere = true
+		data.exosphereTime = Date.now()
+	} else {
+		// Outside exosphere - needs approach phase
+		data.startedInExosphere = false
+		data.reachedExosphere = false
+		data.exosphereTime = null
+	}
+
+	// Initialize flame trail
+	data.flameParticles = createFlameTrail(satellite)
 
 	// If this is George (geosynchronous satellite), handle specially
 	if (data.isGeosynchronous) {

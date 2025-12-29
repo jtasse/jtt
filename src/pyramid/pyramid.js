@@ -17,6 +17,8 @@ import {
 	createOrcPreview,
 	showGeoTether,
 	hideGeoTether,
+	getDecommissionState,
+	getDecommissionConfig,
 } from "../content/orc-demo/orc-demo.js"
 import "../content/bio/bio.css"
 import "../content/blog/blog.css"
@@ -175,6 +177,10 @@ let selectionIndicator = null
 let selectedSatellite = null
 let availableSatellitesPane = null
 let orcAnimationRunning = true // State for play/pause button
+
+// Camera tracking state for decommission animations
+let originalCameraState = null // Stores camera position/target before decommission tracking
+let isCameraTracking = false // Whether camera is currently tracking a decommissioning satellite
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
 	format: THREE.RGBAFormat,
@@ -1563,6 +1569,107 @@ function createOrcDemo() {
 			selectedSatellite.getWorldPosition(worldPos)
 			selectionIndicator.position.copy(worldPos)
 		}
+
+		// Camera tracking for decommissioning satellites
+		const decommState = getDecommissionState()
+		if (decommState) {
+			// Start tracking if not already
+			if (!isCameraTracking) {
+				isCameraTracking = true
+				// Store original camera state for reset later
+				originalCameraState = {
+					position: orcDemoCamera.position.clone(),
+					target: orcDemoControls.target.clone(),
+				}
+			}
+
+			// Calculate target camera position - follow satellite with zoom
+			const satPos = decommState.position.clone()
+			// Add orcGroup offset to satellite position (planet center in world space)
+			const planetCenter = new THREE.Vector3(orcGroup.position.x, 0, 0)
+			satPos.x += orcGroup.position.x
+
+			const config = decommState.config
+
+			// Camera should be positioned to keep satellite centered in VISIBLE area
+			// The sidebar takes 1/3 of screen on the right, so we offset the camera
+			// to center the satellite in the left 2/3
+			const sidebarCompensation = 0.4 // World units to shift target right
+			const adjustedTarget = satPos.clone()
+			adjustedTarget.x += sidebarCompensation
+
+			// Calculate direction from planet center to satellite (in world space)
+			const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
+
+			// Use different zoom distances based on phase
+			const targetDistance = decommState.targetZoomDistance
+
+			// Camera offset: position camera on the opposite side of satellite from planet
+			// This ensures the satellite is ALWAYS between camera and planet (never occluded)
+			const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
+			cameraOffset.y += targetDistance * 0.3 // Slight vertical offset for better view
+
+			// Target camera position: satellite position + offset (away from planet)
+			const targetCamPos = satPos.clone().add(cameraOffset)
+
+			// Check for potential occlusion: is the planet between camera and satellite?
+			// We detect this by checking if moving toward target would cross the planet
+			const currentCamPos = orcDemoCamera.position.clone()
+			const camToSat = satPos.clone().sub(currentCamPos)
+			const camToPlanet = planetCenter.clone().sub(currentCamPos)
+
+			// Project planet center onto camera-to-satellite line
+			const camToSatLength = camToSat.length()
+			const projLength = camToPlanet.dot(camToSat.normalize())
+
+			// Planet radius for occlusion check (approximate)
+			const PLANET_RADIUS = 0.5
+			const OCCLUSION_MARGIN = 0.15 // Extra margin to prevent near-misses
+
+			// Check if planet is between camera and satellite AND close to the line of sight
+			let isOccluded = false
+			if (projLength > 0 && projLength < camToSatLength) {
+				// Planet center is between camera and satellite (along the line)
+				// Check perpendicular distance from planet center to line of sight
+				const closestPointOnLine = currentCamPos.clone().add(camToSat.normalize().multiplyScalar(projLength))
+				const perpDistance = planetCenter.distanceTo(closestPointOnLine)
+				isOccluded = perpDistance < (PLANET_RADIUS + OCCLUSION_MARGIN)
+			}
+
+			// Use appropriate camera speed based on phase and occlusion
+			let cameraSpeed = decommState.cameraSpeed
+
+			if (isOccluded) {
+				// Satellite would be occluded - move camera much faster to maintain visibility
+				// Use a high lerp factor to quickly reposition around the planet
+				cameraSpeed = 0.15
+			}
+
+			// Smooth camera transition - lerp toward target
+			orcDemoCamera.position.lerp(targetCamPos, cameraSpeed)
+
+			// Look at adjusted target to keep satellite in visible center
+			orcDemoControls.target.lerp(adjustedTarget, cameraSpeed * 2)
+		} else if (isCameraTracking && originalCameraState) {
+			// Decommission finished - reset camera smoothly
+			const resetSpeed = getDecommissionConfig().cameraResetSpeed
+
+			orcDemoCamera.position.lerp(originalCameraState.position, resetSpeed)
+			orcDemoControls.target.lerp(originalCameraState.target, resetSpeed)
+
+			// Check if camera is close enough to original position
+			const posDistance = orcDemoCamera.position.distanceTo(originalCameraState.position)
+			const targetDistance = orcDemoControls.target.distanceTo(originalCameraState.target)
+
+			if (posDistance < 0.05 && targetDistance < 0.05) {
+				// Snap to exact position and clear tracking state
+				orcDemoCamera.position.copy(originalCameraState.position)
+				orcDemoControls.target.copy(originalCameraState.target)
+				isCameraTracking = false
+				originalCameraState = null
+			}
+		}
+
 		orcDemoControls.update() // Update ORC demo controls
 		orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
 	}

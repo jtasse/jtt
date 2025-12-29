@@ -134,6 +134,12 @@
 	z-index: 50;
 	overflow-y: auto;
 	box-sizing: border-box;
+	/* Prevent browser text size adjustments (fixes Chrome zoom issues) */
+	-webkit-text-size-adjust: 100%;
+	-moz-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	/* Ensure consistent font sizing */
+	font-size: 16px;
 }
 
 /* ============================================
@@ -142,13 +148,13 @@
 .orc-pane-title {
 	color: #00ffff;
 	margin: 0 0 16px 0;
-	font-size: 1.5rem;
+	font-size: 1.4em; /* Use em for consistent scaling from parent's 16px base */
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .orc-pane-content {
 	color: #aaddff;
-	font-size: 0.95rem;
+	font-size: 0.9em; /* Use em for consistent scaling from parent's 16px base */
 	line-height: 1.6;
 }
 
@@ -165,7 +171,7 @@
 
 .orc-pane-section h3 {
 	color: #00aaff;
-	font-size: 1.1rem;
+	font-size: 1em;
 	margin-bottom: 12px;
 }
 
@@ -232,7 +238,7 @@
 	color: #00ffff;
 	margin-top: 0;
 	margin-bottom: 12px;
-	font-size: 1.2rem;
+	font-size: 1.1em;
 	text-align: center;
 }
 
@@ -302,7 +308,7 @@
 	font-style: italic;
 	text-align: left;
 	margin: 0 0 8px 4px;
-	font-size: 0.9rem;
+	font-size: 0.85em;
 }
 
 /* Pulsing border animation for when selection is needed */
@@ -343,7 +349,7 @@
 	color: #ff6666;
 	margin-top: 0;
 	margin-bottom: 12px;
-	font-size: 1.2rem;
+	font-size: 1.1em;
 	text-align: center;
 }
 
@@ -401,17 +407,26 @@
 	width: 100%;
 	padding: 12px 16px;
 	margin-top: 16px;
-	background: linear-gradient(180deg, #cc2020 0%, #991515 100%);
-	border: 2px solid #ff3333;
+	background: rgba(80, 80, 80, 0.5);
+	border: 2px solid #666666;
 	border-radius: 8px;
-	color: #ffffff;
-	font-size: 0.95rem;
+	color: #888888;
+	font-size: 0.9em;
 	font-weight: bold;
-	cursor: pointer;
+	cursor: not-allowed;
 	transition: all 0.3s ease;
 	text-transform: uppercase;
 	letter-spacing: 1px;
-	box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+	box-shadow: none;
+}
+
+/* Enabled state - bright red when satellite is selected and operational */
+.decommission-btn:not(:disabled) {
+	background: linear-gradient(180deg, #cc2020 0%, #991515 100%);
+	border: 2px solid #ff3333;
+	color: #ffffff;
+	cursor: pointer;
+	box-shadow: 0 0 15px rgba(255, 50, 50, 0.4);
 }
 
 .decommission-btn:hover:not(:disabled) {
@@ -426,6 +441,7 @@
 	border-color: #666666;
 	color: #888888;
 	cursor: not-allowed;
+	box-shadow: none;
 }
 
 .decommission-btn.decommissioning {
