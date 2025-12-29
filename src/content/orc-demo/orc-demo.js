@@ -1816,20 +1816,10 @@ export function startDecommission(satellite) {
 }
 
 // Update the satellite list item to show decommissioning state
+// Keep satellite selected during decommission (visual feedback comes from other animations)
 function updateSatelliteListItemState(satelliteId, isDecommissioning) {
-	const orcInfoPane = document.getElementById("orc-info-pane")
-	if (!orcInfoPane) return
-	const items = orcInfoPane.querySelectorAll(".satellite-list-item")
-	items.forEach((item) => {
-		if (item.dataset.satelliteId === satelliteId) {
-			if (isDecommissioning) {
-				item.classList.add("decommissioning")
-				item.classList.remove("selected")
-			} else {
-				item.classList.remove("decommissioning")
-			}
-		}
-	})
+	// No longer changing the list item appearance during decommission
+	// The satellite stays selected until it's removed from the scene
 }
 
 // Remove a satellite from the scene and UI after decommission

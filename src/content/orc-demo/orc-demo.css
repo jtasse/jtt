@@ -128,8 +128,7 @@
 	);
 	border: 0;
 	border-left: 2px solid #00aaff;
-	padding: 24px;
-	padding-top: 20px;
+	padding: 12px 14px;
 	box-shadow: -10px 0 40px rgba(0, 170, 255, 0.2);
 	z-index: 50;
 	overflow-y: auto;
@@ -138,8 +137,8 @@
 	-webkit-text-size-adjust: 100%;
 	-moz-text-size-adjust: 100%;
 	text-size-adjust: 100%;
-	/* Ensure consistent font sizing */
-	font-size: 16px;
+	/* Smaller base font size to fit more content */
+	font-size: 13px;
 }
 
 /* ============================================
@@ -147,32 +146,32 @@
    ============================================ */
 .orc-pane-title {
 	color: #00ffff;
-	margin: 0 0 16px 0;
-	font-size: 1.4em; /* Use em for consistent scaling from parent's 16px base */
+	margin: 0 0 10px 0;
+	font-size: 1.3em;
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .orc-pane-content {
 	color: #aaddff;
-	font-size: 0.9em; /* Use em for consistent scaling from parent's 16px base */
-	line-height: 1.6;
+	font-size: 1em;
+	line-height: 1.5;
 }
 
 .orc-pane-content p {
-	margin-bottom: 16px;
+	margin-bottom: 10px;
 	margin-top: 0;
 }
 
 .orc-pane-section {
 	border-top: 1px solid rgba(0, 170, 255, 0.3);
-	padding-top: 16px;
-	margin-top: 16px;
+	padding-top: 10px;
+	margin-top: 10px;
 }
 
 .orc-pane-section h3 {
 	color: #00aaff;
 	font-size: 1em;
-	margin-bottom: 12px;
+	margin-bottom: 8px;
 }
 
 /* ============================================
@@ -181,13 +180,13 @@
 .status-item {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	margin-bottom: 8px;
+	gap: 8px;
+	margin-bottom: 4px;
 }
 
 .status-indicator {
-	width: 12px;
-	height: 12px;
+	width: 10px;
+	height: 10px;
 	border-radius: 50%;
 }
 
@@ -213,10 +212,11 @@
 	color: #00ffff;
 	text-decoration: none;
 	display: inline-block;
-	padding: 8px 16px;
+	padding: 6px 12px;
 	border: 1px solid #00ffff;
-	border-radius: 8px;
+	border-radius: 4px;
 	transition: all 0.3s ease;
+	font-size: 0.95em;
 }
 
 .api-docs-link:hover {
@@ -228,17 +228,17 @@
    ============================================ */
 #available-satellites-pane {
 	background: rgba(0, 40, 70, 0.4);
-	border-radius: 8px;
-	padding: 12px;
-	margin-bottom: 24px;
+	border-radius: 6px;
+	padding: 8px 10px;
+	margin-bottom: 12px;
 	box-sizing: border-box;
 }
 
 #available-satellites-pane h3 {
 	color: #00ffff;
 	margin-top: 0;
-	margin-bottom: 12px;
-	font-size: 1.1em;
+	margin-bottom: 8px;
+	font-size: 1.05em;
 	text-align: center;
 }
 
@@ -249,11 +249,11 @@
 }
 
 .satellite-list-item {
-	padding: 10px;
-	margin-bottom: 8px;
+	padding: 6px 8px;
+	margin-bottom: 4px;
 	background: rgba(0, 50, 80, 0.5);
 	border: 1px solid rgba(0, 170, 255, 0.1);
-	border-radius: 6px;
+	border-radius: 4px;
 	cursor: pointer;
 	transition: background 0.3s, border-color 0.3s;
 	text-align: center;
@@ -286,29 +286,13 @@
 	box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
-.satellite-list-item.decommissioning {
-	background: rgba(255, 100, 50, 0.4);
-	border-color: #ff6633;
-	color: #ffaa88;
-	animation: decommission-pulse 1s ease-in-out infinite;
-}
-
-@keyframes decommission-pulse {
-	0%,
-	100% {
-		box-shadow: 0 0 5px rgba(255, 100, 50, 0.3);
-	}
-	50% {
-		box-shadow: 0 0 15px rgba(255, 100, 50, 0.6);
-	}
-}
 
 #satellite-help-text {
 	color: #00aaff;
 	font-style: italic;
 	text-align: left;
-	margin: 0 0 8px 4px;
-	font-size: 0.85em;
+	margin: 0 0 6px 2px;
+	font-size: 0.9em;
 }
 
 /* Pulsing border animation for when selection is needed */
@@ -339,17 +323,17 @@
    ============================================ */
 #actions-pane {
 	background: rgba(40, 20, 20, 0.4);
-	border-radius: 8px;
-	padding: 12px;
-	margin-bottom: 24px;
+	border-radius: 6px;
+	padding: 8px 10px;
+	margin-bottom: 12px;
 	box-sizing: border-box;
 }
 
 #actions-pane h3 {
 	color: #ff6666;
 	margin-top: 0;
-	margin-bottom: 12px;
-	font-size: 1.1em;
+	margin-bottom: 8px;
+	font-size: 1.05em;
 	text-align: center;
 }
 
@@ -362,24 +346,29 @@
 .action-list-item {
 	width: 100%;
 	box-sizing: border-box;
-	padding: 10px;
-	margin-bottom: 8px;
+	padding: 6px 8px;
+	margin-bottom: 4px;
 	background: rgba(80, 30, 30, 0.5);
 	border: 1px solid transparent;
-	border-radius: 6px;
-	cursor: pointer;
-	transition: all 0.3s ease;
+	border-radius: 4px;
+	cursor: not-allowed;
 	text-align: center;
 	font-weight: bold;
-	color: #ff8888;
+	color: #888888;
 }
 
-.action-list-item:hover:not(.disabled) {
+/* Enabled state - bright and available */
+.action-list-item:not(.disabled) {
 	background: rgba(150, 40, 40, 0.7);
 	border-color: #ff4444;
 	box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
 	color: #ffffff;
-	transform: scale(1.02);
+	cursor: pointer;
+	transition: box-shadow 0.2s ease;
+}
+
+.action-list-item:not(.disabled):hover {
+	box-shadow: 0 0 25px rgba(255, 68, 68, 0.6);
 }
 
 .action-list-item.decommissioning {
@@ -405,13 +394,13 @@
 .decommission-btn {
 	display: block;
 	width: 100%;
-	padding: 12px 16px;
-	margin-top: 16px;
+	padding: 8px 12px;
+	margin-top: 10px;
 	background: rgba(80, 80, 80, 0.5);
 	border: 2px solid #666666;
-	border-radius: 8px;
+	border-radius: 6px;
 	color: #888888;
-	font-size: 0.9em;
+	font-size: 0.95em;
 	font-weight: bold;
 	cursor: not-allowed;
 	transition: all 0.3s ease;
@@ -422,18 +411,11 @@
 
 /* Enabled state - bright red when satellite is selected and operational */
 .decommission-btn:not(:disabled) {
-	background: linear-gradient(180deg, #cc2020 0%, #991515 100%);
-	border: 2px solid #ff3333;
+	background: linear-gradient(180deg, #ee3030 0%, #bb2020 100%);
+	border: 2px solid #ff5555;
 	color: #ffffff;
 	cursor: pointer;
-	box-shadow: 0 0 15px rgba(255, 50, 50, 0.4);
-}
-
-.decommission-btn:hover:not(:disabled) {
-	background: linear-gradient(180deg, #ee3030 0%, #bb2020 100%);
-	border-color: #ff5555;
 	box-shadow: 0 0 25px rgba(255, 50, 50, 0.5);
-	color: #ffffff;
 }
 
 .decommission-btn:disabled {
