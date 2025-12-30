@@ -348,6 +348,7 @@ export function createOrcScene() {
 		orbitIndex: 1,
 		isGeosynchronous: true, // Flag for special handling
 		orbitalRing: geoRing,
+		originalOrbitColor: 0xff00ff, // Magenta - store for cancel decommission
 	}
 
 	// Add George to the planet so it rotates with the planet
@@ -376,6 +377,7 @@ export function createOrcScene() {
 		orbitSpeed: LEO_ORBIT_SPEED,
 		angle: Math.PI, // Start on opposite side
 		orbitalRing: leoRing,
+		originalOrbitColor: 0x00ffaa, // Cyan - store for cancel decommission
 	}
 	satellites.push(leoSatellite)
 	orcGroup.add(leoSatellite)
@@ -405,6 +407,7 @@ export function createOrcScene() {
 		orbitSpeed: 0.006, // Base speed factor (will be modulated by distance)
 		angle: 0, // True anomaly (0 = perigee)
 		orbitalRing: molRing,
+		originalOrbitColor: 0xffaa00, // Orange - store for cancel decommission
 	}
 	molOrbitGroup.add(molRing)
 	molOrbitGroup.add(molSatellite)
@@ -1177,7 +1180,8 @@ export function animateOrcScene(animateNormal = true) {
 		}
 
 		// Skip geosynchronous satellites - they move with the planet
-		if (data.isGeosynchronous && !data.decommissioning) {
+		// (but not if decommissioning or returning from cancelled decommission)
+		if (data.isGeosynchronous && !data.decommissioning && !data.returning) {
 			return // George rotates with planet, no animation needed
 		}
 
@@ -1376,6 +1380,131 @@ export function animateOrcScene(animateNormal = true) {
 				disposeFlameTrail(sat)
 				activeDecommission = null
 				satellitesToRemove.push(sat)
+			}
+		} else if (data.returning) {
+			// Return-to-orbit animation (cancelled decommission)
+			if (!data._loggedReturning) {
+				console.log("Returning animation started for", data.id)
+				data._loggedReturning = true
+			}
+			const elapsed = Date.now() - data.returnStartTime
+			const returnProgress = Math.min(elapsed / data.returnDuration, 1)
+
+			// Smooth ease-out function for natural return
+			const smoothEaseOut = (t) => 1 - Math.pow(1 - t, 3)
+			const easedProgress = smoothEaseOut(returnProgress)
+
+			// Interpolate radius from return start position back to 1.0 (original)
+			const radiusMultiplier =
+				data.returnStartRadiusMultiplier +
+				easedProgress * (1 - data.returnStartRadiusMultiplier)
+
+			// Pulse orbital ring with original color (blink effect)
+			if (data.orbitalRing && data.originalOrbitColor !== undefined) {
+				const time = Date.now() * 0.003
+				const intensity = (Math.sin(time) + 1) / 2
+				const color = new THREE.Color(data.originalOrbitColor)
+				// Blink between black and original color
+				data.orbitalRing.material.color.setRGB(
+					color.r * intensity,
+					color.g * intensity,
+					color.b * intensity
+				)
+			}
+
+			// Apply position based on orbit type
+			if (data.eccentricity) {
+				// MEO (Keplerian)
+				const { r: currentR } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
+				const speed = data.originalOrbitSpeed * (1.5 / (currentR * currentR))
+				data.angle += speed
+
+				const { x, y } = updateKeplerianPosition(
+					data.angle,
+					data.semiMajorAxis,
+					data.eccentricity
+				)
+				sat.position.set(x * radiusMultiplier, y * radiusMultiplier, 0)
+				sat.rotation.z = data.angle + Math.PI / 2
+			} else if (data.originalOrbitRadiusX) {
+				// GEO satellite (elliptical)
+				data.angle += data.originalOrbitSpeed
+				const x = Math.cos(data.angle) * data.originalOrbitRadiusX * radiusMultiplier
+				const y = Math.sin(data.angle) * data.originalOrbitRadiusZ * radiusMultiplier
+				sat.position.set(x, y, 0)
+				sat.rotation.z = data.angle - Math.PI / 2
+			} else {
+				// LEO satellite (circular)
+				data.angle += data.originalOrbitSpeed
+				const x = Math.cos(data.angle) * data.originalOrbitRadius * radiusMultiplier
+				const z = Math.sin(data.angle) * data.originalOrbitRadius * radiusMultiplier
+				sat.position.set(x, 0, z)
+				sat.rotation.y = -data.angle - Math.PI / 2
+			}
+
+			// Check if return is complete
+			if (returnProgress >= 1) {
+				console.log("Return complete for", data.id)
+				// Restore original state
+				data.returning = false
+				data._loggedReturning = false
+				data.returnStartTime = null
+				data.returnStartRadiusMultiplier = null
+				data.returnDuration = null
+
+				// Restore orbit speed
+				data.orbitSpeed = data.originalOrbitSpeed
+
+				// Restore orbital ring to original color (no more blinking)
+				if (data.orbitalRing && data.originalOrbitColor !== undefined) {
+					data.orbitalRing.material.color.setHex(data.originalOrbitColor)
+				}
+
+				// Clean up decommission-related data
+				data.decommissionStartTime = null
+				data.reachedExosphere = false
+				data.exosphereTime = null
+				data.startedInExosphere = false
+
+				// Restore original radius values
+				if (data.originalOrbitRadius) {
+					data.orbitRadius = data.originalOrbitRadius
+				}
+				if (data.originalOrbitRadiusX) {
+					data.orbitRadiusX = data.originalOrbitRadiusX
+					data.orbitRadiusZ = data.originalOrbitRadiusZ
+				}
+
+				// Special handling for George (geosynchronous) - put back on planet
+				if (data.isGeosynchronous) {
+					// Remove from orcGroup and add back to planet
+					orcGroup.remove(sat)
+					planet.add(sat)
+
+					// Restore original position relative to planet
+					const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
+					sat.position.set(geoPos.x, geoPos.y, geoPos.z)
+					sat.lookAt(0, 0, 0)
+					sat.rotateX(Math.PI / 2)
+
+					// Clean up temporary LEO-like orbit params
+					delete data.angle
+					delete data.orbitRadius
+					delete data.orbitSpeed
+					delete data.orbitY
+					delete data.originalOrbitRadius
+					delete data.originalOrbitSpeed
+
+					// Restore surface marker and circle visibility
+					if (surfaceMarker) surfaceMarker.visible = true
+					if (surfaceCircle) surfaceCircle.visible = true
+
+					console.log("George restored to geosynchronous orbit")
+				}
 			}
 		} else if (animateNormal) {
 			// Normal orbit animation (only when not paused)
@@ -1867,6 +1996,96 @@ export function startDecommission(satellite) {
 function updateSatelliteListItemState(satelliteId, isDecommissioning) {
 	// No longer changing the list item appearance during decommission
 	// The satellite stays selected until it's removed from the scene
+}
+
+// Cancel the decommission process and return satellite to original orbit
+export function cancelDecommission(satellite) {
+	console.log("cancelDecommission called", satellite?.userData?.id)
+	if (!satellite || !satellite.userData.decommissioning) {
+		console.log("cancelDecommission: not decommissioning")
+		return false
+	}
+
+	const data = satellite.userData
+
+	// Can only cancel if satellite hasn't reached exosphere
+	if (data.reachedExosphere || data.startedInExosphere) {
+		console.log("cancelDecommission: already in exosphere", {
+			reachedExosphere: data.reachedExosphere,
+			startedInExosphere: data.startedInExosphere,
+		})
+		return false
+	}
+
+	// Get current position to calculate return starting point
+	// For Keplerian (MEO) orbits in rotated groups, use local position
+	let currentDistance
+	let originalRadius
+
+	if (data.eccentricity && data.semiMajorAxis) {
+		// MEO: Use local position (satellite is in a rotated orbit group)
+		currentDistance = satellite.position.length()
+		// Calculate expected radius at current angle using Kepler's equation
+		// r = a(1-e^2) / (1 + e*cos(theta))
+		const a = data.semiMajorAxis
+		const e = data.eccentricity
+		const theta = data.angle || 0
+		originalRadius = (a * (1 - e * e)) / (1 + e * Math.cos(theta))
+	} else {
+		// For other satellites, use world position
+		const worldPos = new THREE.Vector3()
+		satellite.getWorldPosition(worldPos)
+		currentDistance = worldPos.length()
+		originalRadius =
+			data.originalOrbitRadius ||
+			data.originalOrbitRadiusX ||
+			LEO_ORBIT_RADIUS
+	}
+	const currentRadiusMultiplier = currentDistance / originalRadius
+
+	console.log("cancelDecommission: setting up return", {
+		originalRadius,
+		currentDistance,
+		currentRadiusMultiplier,
+		eccentricity: data.eccentricity,
+		semiMajorAxis: data.semiMajorAxis,
+	})
+
+	// Store return animation state
+	data.decommissioning = false
+	data.returning = true
+	data.returnStartTime = Date.now()
+	data.returnStartRadiusMultiplier = currentRadiusMultiplier
+
+	// Duration proportional to how far satellite has descended
+	// More descent = longer return time
+	const descentProgress = 1 - currentRadiusMultiplier
+	data.returnDuration = 3000 + descentProgress * 5000 // 3-8 seconds
+
+	console.log("cancelDecommission: return state set", {
+		returning: data.returning,
+		returnDuration: data.returnDuration,
+	})
+
+	// Dispose flame trail since we're no longer decommissioning
+	disposeFlameTrail(satellite)
+
+	// Clear active decommission tracking
+	if (activeDecommission === satellite) {
+		activeDecommission = null
+	}
+
+	return true
+}
+
+// Check if a satellite can have its decommission cancelled
+export function canCancelDecommission(satellite) {
+	if (!satellite || !satellite.userData.decommissioning) {
+		return false
+	}
+	const data = satellite.userData
+	// Can only cancel if satellite hasn't reached exosphere
+	return !data.reachedExosphere && !data.startedInExosphere
 }
 
 // Remove a satellite from the scene and UI after decommission

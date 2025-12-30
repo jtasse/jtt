@@ -17,6 +17,8 @@ import {
 	animateOrcScene,
 	satellites,
 	startDecommission,
+	cancelDecommission,
+	canCancelDecommission,
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
@@ -1382,8 +1384,17 @@ function updateSelectedSatelliteInfo(satelliteId) {
 			infoContainer.style.display = "block"
 			noSelectionMsg.style.display = "none"
 
-			// Check if satellite is decommissioning
-			if (selectedSatellite.userData.decommissioning) {
+			// Check satellite status
+			if (selectedSatellite.userData.returning) {
+				// Satellite is returning to orbit after cancelled decommission
+				statusEl.textContent = "Returning"
+				statusEl.className = "status-returning"
+				if (decommissionBtn) {
+					decommissionBtn.disabled = true
+					decommissionBtn.classList.add("decommissioning")
+					decommissionBtn.textContent = "Returning..."
+				}
+			} else if (selectedSatellite.userData.decommissioning) {
 				statusEl.textContent = "Decommissioning"
 				statusEl.className = "status-decommissioning"
 				if (decommissionBtn) {
@@ -1693,6 +1704,7 @@ function createOrcDemo() {
 				updateSelectedSatelliteInfo(clickedObject.userData.id)
 				updateAvailableSatellitesHighlight()
 				updateDecommissionActionState()
+				updateCancelDecommissionActionState()
 				// Show tether for George (geosynchronous satellite)
 				if (clickedObject.userData.id === "geo-001") {
 					showGeoTether()
@@ -1707,6 +1719,7 @@ function createOrcDemo() {
 			updateSelectedSatelliteInfo(null)
 			updateAvailableSatellitesHighlight()
 			updateDecommissionActionState()
+			updateCancelDecommissionActionState()
 			hideGeoTether()
 		}
 	})
@@ -1776,6 +1789,13 @@ function createOrcDemo() {
 			const worldPos = new THREE.Vector3()
 			selectedSatellite.getWorldPosition(worldPos)
 			selectionIndicator.position.copy(worldPos)
+		}
+
+		// Update button states during animation (satellite state may change)
+		if (selectedSatellite) {
+			updateDecommissionActionState()
+			updateCancelDecommissionActionState()
+			updateSelectedSatelliteInfo(selectedSatellite.userData.id)
 		}
 
 		// Camera tracking for decommissioning satellites
@@ -1984,6 +2004,7 @@ window.orcSelectSatellite = function (satId) {
 		updateSelectedSatelliteInfo(targetSat.userData.id)
 		updateAvailableSatellitesHighlight()
 		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
 		// Show tether for George (geosynchronous satellite)
 		if (satId === "geo-001") {
 			showGeoTether()
@@ -1994,12 +2015,23 @@ window.orcSelectSatellite = function (satId) {
 }
 
 window.orcDecommissionSatellite = function () {
-	console.log(
-		"Decommission list item clicked (window.orcDecommissionSatellite)."
-	)
 	if (selectedSatellite && !selectedSatellite.userData.decommissioning) {
 		startDecommission(selectedSatellite)
 		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
+		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
+	}
+}
+
+window.orcCancelDecommission = function () {
+	console.log("Cancel decommission button clicked")
+	console.log("Selected satellite:", selectedSatellite?.userData?.id)
+	console.log("Can cancel:", selectedSatellite ? canCancelDecommission(selectedSatellite) : false)
+	if (selectedSatellite && canCancelDecommission(selectedSatellite)) {
+		const success = cancelDecommission(selectedSatellite)
+		console.log("Cancel decommission result:", success)
+		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
 		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
 	}
 }
@@ -2015,6 +2047,12 @@ function updateDecommissionActionState() {
 		decommissionAction.classList.remove("decommissioning")
 		decommissionAction.textContent = "Decommission"
 		decommissionAction.disabled = true
+	} else if (selectedSatellite.userData.returning) {
+		// Satellite is returning to orbit - show returning state
+		decommissionAction.classList.remove("disabled")
+		decommissionAction.classList.add("decommissioning")
+		decommissionAction.textContent = "Returning..."
+		decommissionAction.disabled = true
 	} else if (selectedSatellite.userData.decommissioning) {
 		// Satellite is decommissioning
 		decommissionAction.classList.remove("disabled")
@@ -2027,6 +2065,27 @@ function updateDecommissionActionState() {
 		decommissionAction.classList.remove("decommissioning")
 		decommissionAction.textContent = "Decommission"
 		decommissionAction.disabled = false
+	}
+}
+
+// Update the cancel decommission action button state based on selection
+function updateCancelDecommissionActionState() {
+	const cancelAction = document.getElementById("cancel-decommission-action")
+	if (!cancelAction) return
+
+	if (selectedSatellite && canCancelDecommission(selectedSatellite)) {
+		// Can cancel - show button
+		cancelAction.style.display = "block"
+		cancelAction.classList.remove("cancelling")
+		cancelAction.textContent = "Cancel Decommission"
+	} else if (selectedSatellite && selectedSatellite.userData.returning) {
+		// Currently returning - show but disable
+		cancelAction.style.display = "block"
+		cancelAction.classList.add("cancelling")
+		cancelAction.textContent = "Returning to Orbit..."
+	} else {
+		// Hide button - either no satellite selected, not decommissioning, or past point of no return
+		cancelAction.style.display = "none"
 	}
 }
 
@@ -2081,12 +2140,19 @@ async function showAvailableSatellitesPane() {
 		// Wire up decommission action click handler
 		const decommissionAction = orcInfoPane.querySelector("#decommission-action")
 		if (decommissionAction) {
-			console.log("Running decommissionAction")
 			decommissionAction.addEventListener(
 				"click",
 				window.orcDecommissionSatellite
 			)
-			//window.orcDecommissionSatellite()
+		}
+
+		// Wire up cancel decommission action click handler
+		const cancelDecommissionAction = orcInfoPane.querySelector("#cancel-decommission-action")
+		if (cancelDecommissionAction) {
+			cancelDecommissionAction.addEventListener(
+				"click",
+				window.orcCancelDecommission
+			)
 		}
 
 		updateAvailableSatellitesHighlight()
@@ -2143,6 +2209,7 @@ window.addEventListener("satelliteRemoved", (event) => {
 		}
 		updateSelectedSatelliteInfo(null)
 		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
 	}
 	updateAvailableSatellitesHighlight()
 })
