@@ -83,7 +83,8 @@ export function getDecommissionState() {
 	}
 
 	// Smooth ease function for camera transitions
-	const smoothEase = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+	const smoothEase = (t) =>
+		t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 
 	// Smoothly transition camera speed between phases
 	let cameraSpeed
@@ -94,8 +95,11 @@ export function getDecommissionState() {
 		const burnElapsed = Date.now() - data.exosphereTime
 		const transitionProgress = Math.min(burnElapsed / 800, 1)
 		const easedTransition = smoothEase(transitionProgress)
-		cameraSpeed = DECOMMISSION_CONFIG.cameraApproachSpeed +
-			easedTransition * (DECOMMISSION_CONFIG.cameraQuickZoomSpeed - DECOMMISSION_CONFIG.cameraApproachSpeed)
+		cameraSpeed =
+			DECOMMISSION_CONFIG.cameraApproachSpeed +
+			easedTransition *
+				(DECOMMISSION_CONFIG.cameraQuickZoomSpeed -
+					DECOMMISSION_CONFIG.cameraApproachSpeed)
 	}
 
 	// Smoothly transition target camera distance
@@ -107,8 +111,11 @@ export function getDecommissionState() {
 		const burnElapsed = Date.now() - data.exosphereTime
 		const transitionProgress = Math.min(burnElapsed / 1000, 1)
 		const easedTransition = smoothEase(transitionProgress)
-		targetZoomDistance = DECOMMISSION_CONFIG.cameraZoomDistanceFar -
-			easedTransition * (DECOMMISSION_CONFIG.cameraZoomDistanceFar - DECOMMISSION_CONFIG.cameraZoomDistanceClose)
+		targetZoomDistance =
+			DECOMMISSION_CONFIG.cameraZoomDistanceFar -
+			easedTransition *
+				(DECOMMISSION_CONFIG.cameraZoomDistanceFar -
+					DECOMMISSION_CONFIG.cameraZoomDistanceClose)
 	}
 
 	return {
@@ -1182,7 +1189,11 @@ export function animateOrcScene(animateNormal = true) {
 			const currentDistance = worldPos.length()
 
 			// Check if we've entered the exosphere (distance-based, not time-based)
-			if (currentDistance <= EXOSPHERE_RADIUS && !data.reachedExosphere && !data.startedInExosphere) {
+			if (
+				currentDistance <= EXOSPHERE_RADIUS &&
+				!data.reachedExosphere &&
+				!data.startedInExosphere
+			) {
 				data.reachedExosphere = true
 				data.exosphereTime = Date.now()
 			}
@@ -1196,24 +1207,29 @@ export function animateOrcScene(animateNormal = true) {
 			if (inBurnPhase && data.exosphereTime) {
 				// Burn phase - 5 seconds of burning
 				const burnElapsed = Date.now() - data.exosphereTime
-				burnProgress = Math.min(burnElapsed / DECOMMISSION_CONFIG.burnDuration, 1)
+				burnProgress = Math.min(
+					burnElapsed / DECOMMISSION_CONFIG.burnDuration,
+					1
+				)
 			}
 
 			// Calculate target radius based on phase
 			let radiusMultiplier
-			const startRadius = data.originalOrbitRadius || data.originalOrbitRadiusX || LEO_ORBIT_RADIUS
+			const startRadius =
+				data.originalOrbitRadius ||
+				data.originalOrbitRadiusX ||
+				LEO_ORBIT_RADIUS
 
 			// Calculate scaled approach duration based on starting orbit radius
 			const distanceToExosphere = Math.max(0, startRadius - EXOSPHERE_RADIUS)
-			const approachDuration = DECOMMISSION_CONFIG.approachDurationBase +
+			const approachDuration =
+				DECOMMISSION_CONFIG.approachDurationBase +
 				distanceToExosphere * DECOMMISSION_CONFIG.approachDurationPerUnit
 
 			// Smooth ease-in-out function for gentler acceleration
 			const smoothEase = (t) => {
 				// Cubic ease-in-out: slow start, smooth middle, slow end
-				return t < 0.5
-					? 4 * t * t * t
-					: 1 - Math.pow(-2 * t + 2, 3) / 2
+				return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 			}
 
 			if (!inBurnPhase) {
@@ -1228,17 +1244,23 @@ export function animateOrcScene(animateNormal = true) {
 				// If time ran out but we haven't reached exosphere, continue gently
 				if (approachProgress >= 0.98 && currentDistance > EXOSPHERE_RADIUS) {
 					const extraProgress = (elapsed - approachDuration) / 3000
-					radiusMultiplier = radiusMultiplier * (1 - Math.min(extraProgress, 0.5) * 0.2)
+					radiusMultiplier =
+						radiusMultiplier * (1 - Math.min(extraProgress, 0.5) * 0.2)
 				}
 			} else {
 				// Burn: shrink from current position to inner atmosphere with smooth easing
 				const entryMultiplier = data.startedInExosphere
 					? 1 // Started in exosphere, use original radius
-					: Math.min(EXOSPHERE_RADIUS / startRadius, currentDistance / startRadius)
+					: Math.min(
+							EXOSPHERE_RADIUS / startRadius,
+							currentDistance / startRadius
+					  )
 				const innerMultiplier = INNER_ATMOSPHERE_RADIUS / startRadius
 				// Use smooth ease for burn phase too
 				const easedBurnProgress = smoothEase(burnProgress)
-				radiusMultiplier = entryMultiplier - easedBurnProgress * (entryMultiplier - innerMultiplier)
+				radiusMultiplier =
+					entryMultiplier -
+					easedBurnProgress * (entryMultiplier - innerMultiplier)
 			}
 
 			// Speed multiplier - gradual increase during approach, smooth transition to slow-mo
@@ -1254,7 +1276,9 @@ export function animateOrcScene(animateNormal = true) {
 				const approachEndSpeed = 2.5 // Speed at end of approach
 				const targetSpeed = DECOMMISSION_CONFIG.slowMotionFactor
 				// Lerp from approach speed to slow-mo
-				speedMultiplier = approachEndSpeed - smoothEase(transitionProgress) * (approachEndSpeed - targetSpeed)
+				speedMultiplier =
+					approachEndSpeed -
+					smoothEase(transitionProgress) * (approachEndSpeed - targetSpeed)
 			}
 
 			// Pulse orbital ring color (black to red)
@@ -1288,7 +1312,11 @@ export function animateOrcScene(animateNormal = true) {
 				sat.rotation.z = data.angle + Math.PI / 2
 
 				// Calculate orbit direction (tangent to orbit)
-				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), Math.cos(data.angle), 0)
+				orbitDirection = new THREE.Vector3(
+					-Math.sin(data.angle),
+					Math.cos(data.angle),
+					0
+				)
 			} else if (data.originalOrbitRadiusX) {
 				// GEO satellite (elliptical)
 				data.orbitRadiusX = data.originalOrbitRadiusX * radiusMultiplier
@@ -1301,7 +1329,11 @@ export function animateOrcScene(animateNormal = true) {
 				sat.position.set(x, y, 0)
 				sat.rotation.z = data.angle - Math.PI / 2
 
-				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), Math.cos(data.angle), 0)
+				orbitDirection = new THREE.Vector3(
+					-Math.sin(data.angle),
+					Math.cos(data.angle),
+					0
+				)
 			} else {
 				// LEO satellite (circular) - also handles George with orbitY
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
@@ -1315,7 +1347,11 @@ export function animateOrcScene(animateNormal = true) {
 				data.angle += data.orbitSpeed
 
 				// Orbit direction for LEO (tangent in XZ plane)
-				orbitDirection = new THREE.Vector3(-Math.sin(data.angle), 0, Math.cos(data.angle))
+				orbitDirection = new THREE.Vector3(
+					-Math.sin(data.angle),
+					0,
+					Math.cos(data.angle)
+				)
 				if (data.orbitSpeed < 0) orbitDirection.negate() // Reverse for clockwise orbits
 			}
 
@@ -1613,7 +1649,11 @@ function createFlameTrail(satellite) {
 
 	for (let i = 0; i < flameCount; i++) {
 		// Create a cone-shaped flame
-		const flameGeometry = new THREE.ConeGeometry(0.02 + i * 0.008, 0.08 + i * 0.02, 8)
+		const flameGeometry = new THREE.ConeGeometry(
+			0.02 + i * 0.008,
+			0.08 + i * 0.02,
+			8
+		)
 		const flameMaterial = new THREE.MeshBasicMaterial({
 			color: new THREE.Color().setHSL(0.08 - i * 0.01, 1, 0.5 + i * 0.05), // Orange to yellow
 			transparent: true,
@@ -1659,7 +1699,12 @@ function createFlameTrail(satellite) {
 
 // Update flame trail animation
 // currentDistance: the satellite's actual distance from planet center
-function updateFlameTrail(satellite, burnProgress, orbitDirection, currentDistance) {
+function updateFlameTrail(
+	satellite,
+	burnProgress,
+	orbitDirection,
+	currentDistance
+) {
 	const data = satellite.userData
 	if (!data.flameParticles) return
 
@@ -1668,7 +1713,8 @@ function updateFlameTrail(satellite, burnProgress, orbitDirection, currentDistan
 
 	// Only show flames when satellite has ACTUALLY entered the exosphere (distance check)
 	const inExosphere = currentDistance <= EXOSPHERE_RADIUS
-	const burning = inExosphere && (data.reachedExosphere || data.startedInExosphere)
+	const burning =
+		inExosphere && (data.reachedExosphere || data.startedInExosphere)
 
 	flames.forEach((flame, i) => {
 		flame.visible = burning
@@ -1682,7 +1728,8 @@ function updateFlameTrail(satellite, burnProgress, orbitDirection, currentDistan
 			flame.scale.setScalar(baseScale * flicker * intensityScale)
 
 			// Opacity based on burn progress
-			flame.material.opacity = baseOpacity * (0.3 + burnProgress * 0.7) * flicker
+			flame.material.opacity =
+				baseOpacity * (0.3 + burnProgress * 0.7) * flicker
 
 			// Color shifts from orange to white as it intensifies
 			const hue = 0.08 - burnProgress * 0.03 // Orange toward yellow

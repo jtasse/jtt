@@ -29,73 +29,14 @@ export function makeLabelPlane(text, width = 1.6, height = 0.45) {
 }
 
 // === Contact Label Helper (multi-line with border) ===
-export function makeContactLabelPlane(lines, width = 2.0, height = 0.8) {
+export function makeContactLabelPlane(config) {
+	const { revealedSize } = config
+	const width = revealedSize[0]
+	const height = revealedSize[1]
+
 	const canvas = document.createElement("canvas")
 	canvas.width = 1024
 	canvas.height = 512
-	const ctx = canvas.getContext("2d")
-	ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-	// Draw border
-	ctx.strokeStyle = "white"
-	ctx.lineWidth = 4
-	ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
-
-	// Draw text lines
-	ctx.fillStyle = "white"
-	ctx.textAlign = "center"
-	ctx.textBaseline = "middle"
-
-	const lineHeight = canvas.height / (lines.length + 1)
-	lines.forEach((line, i) => {
-		// First line (title) is bold and larger
-		if (i === 0) {
-			ctx.font = "bold 80px sans-serif"
-			ctx.fillText(line, canvas.width / 2, lineHeight * (i + 1))
-		} else if (i === 1) {
-			// Email line - add clipboard icon before it
-			ctx.font = "60px sans-serif"
-			const textWidth = ctx.measureText(line).width
-			const iconSize = 40
-			const gap = 15
-			const totalWidth = iconSize + gap + textWidth
-			const startX = (canvas.width - totalWidth) / 2
-			const y = lineHeight * (i + 1)
-
-			// Draw clipboard icon
-			const iconX = startX
-			const iconY = y - iconSize / 2
-			ctx.strokeStyle = "white"
-			ctx.lineWidth = 3
-			// Clipboard body
-			ctx.strokeRect(iconX + 5, iconY + 8, iconSize - 10, iconSize - 10)
-			// Clipboard clip at top
-			ctx.beginPath()
-			ctx.moveTo(iconX + 12, iconY + 8)
-			ctx.lineTo(iconX + 12, iconY + 3)
-			ctx.lineTo(iconX + iconSize - 12, iconY + 3)
-			ctx.lineTo(iconX + iconSize - 12, iconY + 8)
-			ctx.stroke()
-			// Lines on clipboard
-			ctx.beginPath()
-			ctx.moveTo(iconX + 12, iconY + 18)
-			ctx.lineTo(iconX + iconSize - 12, iconY + 18)
-			ctx.moveTo(iconX + 12, iconY + 26)
-			ctx.lineTo(iconX + iconSize - 12, iconY + 26)
-			ctx.moveTo(iconX + 12, iconY + 34)
-			ctx.lineTo(iconX + iconSize - 17, iconY + 34)
-			ctx.stroke()
-
-			// Draw email text
-			ctx.fillStyle = "white"
-			ctx.textAlign = "left"
-			ctx.fillText(line, startX + iconSize + gap, y)
-			ctx.textAlign = "center" // Reset
-		} else {
-			ctx.font = "60px sans-serif"
-			ctx.fillText(line, canvas.width / 2, lineHeight * (i + 1))
-		}
-	})
 
 	const tex = new THREE.CanvasTexture(canvas)
 	const mat = new THREE.MeshBasicMaterial({
@@ -104,9 +45,102 @@ export function makeContactLabelPlane(lines, width = 2.0, height = 0.8) {
 		side: THREE.DoubleSide,
 		depthWrite: false,
 		depthTest: false,
+		alphaTest: 0.1,
 	})
 	const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat)
 	mesh.renderOrder = 999
+
+	function updateTexture(appearanceConfig) {
+		const { lines, textAlign, titleFontSize, bodyFontSize } = appearanceConfig
+
+		const ctx = canvas.getContext("2d")
+		ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+		// Draw border (Rectangle or Pentagon with cutout)
+		ctx.strokeStyle = "white"
+		ctx.lineWidth = 4
+		const margin = 20
+		const w = canvas.width
+		const h = canvas.height
+
+		ctx.beginPath()
+		ctx.rect(margin, margin, w - 2 * margin, h - 2 * margin)
+		ctx.stroke()
+
+		// Draw text lines
+		ctx.fillStyle = "white"
+		ctx.textAlign = textAlign || "left"
+		ctx.textBaseline = "middle"
+		const leftMargin = 40
+		const rightMargin = canvas.width - 40
+
+		const lineHeight = canvas.height / (lines.length + 1)
+		lines.forEach((line, i) => {
+			let xPos = leftMargin
+			if (textAlign === "center") {
+				xPos = canvas.width / 2
+			} else if (textAlign === "right") {
+				xPos = rightMargin
+			}
+
+			if (i === 0) {
+				ctx.font = `bold ${titleFontSize || 80}px sans-serif`
+				ctx.fillText(line, xPos, lineHeight * (i + 1))
+			} else if (i === 1) {
+				ctx.font = `${bodyFontSize || 60}px sans-serif`
+
+				const iconSize = 40
+				const gap = 15
+				let startX = xPos
+				if (textAlign === "center") {
+					const textWidth = ctx.measureText(line).width
+					const totalWidth = iconSize + gap + textWidth
+					startX = (canvas.width - totalWidth) / 2
+				}
+				const y = lineHeight * (i + 1)
+				const iconX = startX
+				const iconY = y - iconSize / 2
+				ctx.strokeStyle = "white"
+				ctx.lineWidth = 3
+				ctx.strokeRect(iconX + 5, iconY + 8, iconSize - 10, iconSize - 10)
+				ctx.beginPath()
+				ctx.moveTo(iconX + 12, iconY + 8)
+				ctx.lineTo(iconX + 12, iconY + 3)
+				ctx.lineTo(iconX + iconSize - 12, iconY + 3)
+				ctx.lineTo(iconX + iconSize - 12, iconY + 8)
+				ctx.stroke()
+				ctx.beginPath()
+				ctx.moveTo(iconX + 12, iconY + 18)
+				ctx.lineTo(iconX + iconSize - 12, iconY + 18)
+				ctx.moveTo(iconX + 12, iconY + 26)
+				ctx.lineTo(iconX + iconSize - 12, iconY + 26)
+				ctx.moveTo(iconX + 12, iconY + 34)
+				ctx.lineTo(iconX + iconSize - 17, iconY + 34)
+				ctx.stroke()
+				const originalAlign = ctx.textAlign
+				ctx.textAlign = "left"
+				ctx.fillStyle = "white"
+				ctx.fillText(line, startX + iconSize + gap, y)
+				ctx.textAlign = originalAlign
+			} else {
+				ctx.font = `${bodyFontSize || 60}px sans-serif`
+				ctx.fillText(line, xPos, lineHeight * (i + 1))
+			}
+		})
+		tex.needsUpdate = true
+	}
+
+	mesh.userData.updateTexture = updateTexture
+
+	// Initial draw with revealed settings
+	const revealedConfig = {
+		lines: config.lines,
+		textAlign: config.revealedTextAlign,
+		titleFontSize: config.revealedTitleFontSize,
+		bodyFontSize: config.revealedBodyFontSize,
+	}
+	mesh.userData.updateTexture(revealedConfig)
+
 	return mesh
 }
 
@@ -180,7 +214,7 @@ export function makeAboutPlane(aboutContent) {
 	})
 
 	const texture = new THREE.CanvasTexture(canvas)
-	const planeWidth = 8
+	const planeWidth = 6.5
 	const planeHeight = (canvasHeight / canvasWidth) * planeWidth
 
 	const mesh = new THREE.Mesh(
@@ -294,7 +328,7 @@ export function makePortfolioPlane(items) {
 
 	const texture = new THREE.CanvasTexture(canvas)
 	texture.minFilter = THREE.LinearFilter
-	const planeWidth = 8
+	const planeWidth = 6.5
 	const planeHeight = (canvasHeight / canvasWidth) * planeWidth
 	const planeGeo = new THREE.PlaneGeometry(planeWidth, planeHeight)
 	const planeMat = new THREE.MeshBasicMaterial({
@@ -437,7 +471,7 @@ export function makeBlogPlane(posts) {
 	})
 
 	const tex = new THREE.CanvasTexture(canvas)
-	const pw = 8
+	const pw = 6.5
 	const ph = (canvas.height / canvas.width) * pw
 	const mesh = new THREE.Mesh(
 		new THREE.PlaneGeometry(pw, ph),

@@ -74,6 +74,22 @@ controls.maxDistance = 12
 controls.minPolarAngle = 0.1
 controls.maxPolarAngle = Math.PI - 0.1
 
+// Helper function to convert 2D screen coordinates to 3D world coordinates
+export function screenToWorld(screenX, screenY, targetZ = 0) {
+	const ndcX = (screenX / window.innerWidth) * 2 - 1
+	const ndcY = -(screenY / window.innerHeight) * 2 + 1
+
+	// Calculate the intersection point with a plane at targetZ (e.g., z=0 for labels)
+	const raycaster = new THREE.Raycaster()
+	raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
+
+	// Define a plane at the target Z depth (e.g., where labels typically reside)
+	const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -targetZ)
+	const intersectionPoint = new THREE.Vector3()
+	const result = raycaster.ray.intersectPlane(plane, intersectionPoint)
+	return result || new THREE.Vector3(0, 0, targetZ)
+}
+
 // === Lighting ===
 scene.add(new THREE.AmbientLight(0xffffff, 0.6))
 const key = new THREE.DirectionalLight(0xffffff, 0.8)
@@ -126,8 +142,8 @@ faces.forEach((f) => {
 
 	const mat = new THREE.MeshStandardMaterial({
 		color: 0x111111,
-		metalness: 1.0,
-		roughness: 0.05,
+		metalness: 0.8,
+		roughness: 0.4,
 		side: THREE.DoubleSide,
 		transparent: false,
 		opacity: 1,
@@ -210,7 +226,7 @@ function updatePyramidEnvMap() {
 		m.visible = true
 		if (cubeCamera.renderTarget && cubeCamera.renderTarget.texture) {
 			m.material.envMap = cubeCamera.renderTarget.texture
-			m.material.envMapIntensity = 1.2
+			m.material.envMapIntensity = 0
 			m.material.needsUpdate = true
 		}
 	})
@@ -257,33 +273,44 @@ export const labelConfigs = {
 // Contact label configuration - configurable position/rotation
 export const contactConfig = {
 	lines: ["Contact", "james.tasse@gmail.com", "(216)-219-1538"],
+	revealedTextAlign: "left",
+	revealedTitleFontSize: 80,
+	revealedBodyFontSize: 60,
 	// Starting position (hidden below pyramid)
 	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
 	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: -0.93, z: 0.8 },
-	// Position when in left sidebar mode
-	leftPosition: { x: -4.85, y: 1.1, z: 0 },
-	rotation: { x: -0.3, y: 0, z: 0 },
-	size: [2.15, 1.3],
+	revealedPosition: { x: 0, y: -0.92, z: 0.8 },
+	revealedRotation: { x: -0.3, y: 0, z: 0 },
+	revealedSize: [2.15, 1.33],
+	leftTextAlign: "left",
+	leftTitleFontSize: 60,
+	leftBodyFontSize: 35,
+	leftTextAlign: "left",
+	leftTitleFontSize: 40,
+	leftBodyFontSize: 30,
 }
 
 // Contact label mesh (created in initContactLabel)
 export let contactLabel = null
 let contactVisible = false
-let contactPosition = "hidden" // "hidden", "center", "left"
+let contactPosition = "hidden" // "hidden", "center"
 
 // Initialize contact label
 export function initContactLabel() {
 	if (contactLabel) return // Already initialized
 
 	const cfg = contactConfig
-	contactLabel = makeContactLabelPlane(cfg.lines, ...cfg.size)
+	contactLabel = makeContactLabelPlane(cfg)
 	contactLabel.position.set(
 		cfg.hiddenPosition.x,
 		cfg.hiddenPosition.y,
 		cfg.hiddenPosition.z
 	)
-	contactLabel.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z)
+	contactLabel.rotation.set(
+		cfg.revealedRotation.x,
+		cfg.revealedRotation.y,
+		cfg.revealedRotation.z
+	)
 	contactLabel.material.opacity = 0
 	contactLabel.visible = false
 	contactLabel.userData.name = "Contact"
@@ -324,22 +351,74 @@ export function showContactLabelCentered() {
 	requestAnimationFrame(animateSlideUp)
 }
 
+// Calculate position for contact label on the left side
+function getContactLeftPosition() {
+	const cfg = contactConfig
+	const width = cfg.leftSize[0]
+
+	// Position: Left aligned with margin, Vertically centered
+	const marginX =
+		cfg.leftPositionOffset && cfg.leftPositionOffset.x !== undefined
+			? cfg.leftPositionOffset.x
+			: 6
+
+	// Center vertically in the window
+	const screenY = window.innerHeight / 2
+
+	const z = 0
+	const worldPos = screenToWorld(marginX, screenY, z)
+
+	return new THREE.Vector3(worldPos.x + width / 2, worldPos.y, z)
+}
+
 // Move contact label to left side (when pyramid moves to top nav)
 export function moveContactLabelToLeft() {
 	if (!contactLabel || !contactVisible) return
 	contactPosition = "left"
 
 	const cfg = contactConfig
-	// Detach from pyramid group and add to scene for fixed positioning
-	pyramidGroup.remove(contactLabel)
-	scene.add(contactLabel)
 
-	const startPos = contactLabel.position.clone()
-	const endPos = new THREE.Vector3(
-		cfg.leftPosition.x,
-		cfg.leftPosition.y,
-		cfg.leftPosition.z
+	// Get world position before re-parenting
+	contactLabel.updateMatrixWorld()
+	const startPos = new THREE.Vector3()
+	contactLabel.getWorldPosition(startPos)
+	const startQuat = new THREE.Quaternion()
+	contactLabel.getWorldQuaternion(startQuat)
+
+	// Detach from pyramid group and add to scene for fixed positioning
+	scene.add(contactLabel)
+	contactLabel.position.copy(startPos)
+	contactLabel.quaternion.copy(startQuat)
+
+	// Update texture to left state
+	if (contactLabel.userData.updateTexture) {
+		const leftConfig = {
+			lines: cfg.lines,
+			textAlign: cfg.leftTextAlign,
+			titleFontSize: cfg.leftTitleFontSize,
+			bodyFontSize: cfg.leftBodyFontSize,
+		}
+		contactLabel.userData.updateTexture(leftConfig)
+	}
+
+	const endPos = getContactLeftPosition()
+
+	const endQuat = new THREE.Quaternion().setFromEuler(
+		new THREE.Euler(
+			cfg.leftRotation.x,
+			cfg.leftRotation.y,
+			cfg.leftRotation.z,
+			"YXZ"
+		)
 	)
+
+	const startScale = contactLabel.scale.clone()
+	const endScale = new THREE.Vector3(
+		cfg.leftSize[0] / cfg.revealedSize[0],
+		cfg.leftSize[1] / cfg.revealedSize[1],
+		1
+	)
+
 	const duration = 500
 	const startTime = performance.now()
 
@@ -349,6 +428,8 @@ export function moveContactLabelToLeft() {
 		const eased = 1 - Math.pow(1 - t, 3)
 
 		contactLabel.position.lerpVectors(startPos, endPos, eased)
+		contactLabel.quaternion.slerpQuaternions(startQuat, endQuat, eased)
+		contactLabel.scale.lerpVectors(startScale, endScale, eased)
 
 		if (t < 1) {
 			requestAnimationFrame(animateToLeft)
@@ -365,6 +446,17 @@ export function hideContactLabel() {
 	const duration = 400
 	const startTime = performance.now()
 	const startOpacity = contactLabel.material.opacity
+	const startQuat = contactLabel.quaternion.clone()
+	const startScale = contactLabel.scale.clone()
+	const endQuat = new THREE.Quaternion().setFromEuler(
+		new THREE.Euler(
+			cfg.revealedRotation.x,
+			cfg.revealedRotation.y,
+			cfg.revealedRotation.z,
+			"YXZ"
+		)
+	)
+	const endScale = new THREE.Vector3(1, 1, 1)
 
 	function animateFadeOut(time) {
 		const elapsed = time - startTime
@@ -377,13 +469,32 @@ export function hideContactLabel() {
 			contactVisible = false
 			contactPosition = "hidden"
 			// Reset to pyramid group and hidden position
-			scene.remove(contactLabel)
-			pyramidGroup.add(contactLabel)
+			if (contactLabel.parent === scene) {
+				scene.remove(contactLabel)
+				pyramidGroup.add(contactLabel)
+			}
 			contactLabel.position.set(
 				cfg.hiddenPosition.x,
 				cfg.hiddenPosition.y,
 				cfg.hiddenPosition.z
 			)
+			contactLabel.rotation.set(
+				cfg.revealedRotation.x,
+				cfg.revealedRotation.y,
+				cfg.revealedRotation.z
+			)
+			contactLabel.scale.set(1, 1, 1)
+
+			// Reset texture to revealed state
+			if (contactLabel.userData.updateTexture) {
+				const revealedConfig = {
+					lines: cfg.lines,
+					textAlign: cfg.revealedTextAlign,
+					titleFontSize: cfg.revealedTitleFontSize,
+					bodyFontSize: cfg.revealedBodyFontSize,
+				}
+				contactLabel.userData.updateTexture(revealedConfig)
+			}
 		} else {
 			requestAnimationFrame(animateFadeOut)
 		}

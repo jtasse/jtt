@@ -23,7 +23,6 @@ import {
 	isOrcSceneActive,
 	initContactLabel,
 	showContactLabelCentered,
-	moveContactLabelToLeft,
 	hideContactLabel,
 	contactLabel,
 	contactConfig,
@@ -360,8 +359,8 @@ function centerAndOpenLabel(labelName) {
 	try {
 		showHomeLabel()
 	} catch (e) {}
-	// Move contact section to left side when entering nav state
-	moveContactLabelToLeft()
+	// Hide contact section when entering nav state (it will reappear if clicked)
+	hideContactLabel()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -1078,7 +1077,11 @@ function onSceneMouseDown(event) {
 		) {
 			return
 		}
-		// Clicking the pyramid acts like clicking Home: reset everything to initial state
-		router.navigate("/")
+		// Clicking the pyramid shows the contact info
+		showContactLabelCentered()
+		return
 	}
+
+	// If nothing else was hit (background click), show contact info
+	showContactLabelCentered()
 }
