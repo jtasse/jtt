@@ -125,9 +125,9 @@ faces.forEach((f) => {
 	geom.computeVertexNormals()
 
 	const mat = new THREE.MeshStandardMaterial({
-		color: 0x000000,
-		metalness: 0.95,
-		roughness: 0.1,
+		color: 0x111111,
+		metalness: 1.0,
+		roughness: 0.05,
 		side: THREE.DoubleSide,
 		transparent: false,
 		opacity: 1,
@@ -210,7 +210,7 @@ function updatePyramidEnvMap() {
 		m.visible = true
 		if (cubeCamera.renderTarget && cubeCamera.renderTarget.texture) {
 			m.material.envMap = cubeCamera.renderTarget.texture
-			m.material.envMapIntensity = 0.7
+			m.material.envMapIntensity = 1.2
 			m.material.needsUpdate = true
 		}
 	})
@@ -260,11 +260,11 @@ export const contactConfig = {
 	// Starting position (hidden below pyramid)
 	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
 	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: -0.95, z: 0.8 },
+	revealedPosition: { x: 0, y: -0.93, z: 0.8 },
 	// Position when in left sidebar mode
 	leftPosition: { x: -4.85, y: 1.1, z: 0 },
-	rotation: { x: 0, y: 0, z: 0 },
-	size: [2, 1.3],
+	rotation: { x: -0.3, y: 0, z: 0 },
+	size: [2.15, 1.3],
 }
 
 // Contact label mesh (created in initContactLabel)
