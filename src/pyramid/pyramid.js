@@ -164,6 +164,44 @@ faces.forEach((f) => {
 	f.mesh = mesh
 })
 
+// === Pyramid Base (closes the pyramid to make it a solid, opaque shape) ===
+const baseGeom = new THREE.BufferGeometry()
+// Base triangle uses v1, v2, v3 in reverse order (v3, v2, v1) so the normal points downward (inside the pyramid)
+baseGeom.setAttribute(
+	"position",
+	new THREE.BufferAttribute(
+		new Float32Array([
+			v3.x, v3.y, v3.z,
+			v2.x, v2.y, v2.z,
+			v1.x, v1.y, v1.z,
+		]),
+		3
+	)
+)
+baseGeom.computeVertexNormals()
+
+const baseMat = new THREE.MeshStandardMaterial({
+	color: 0x111111,
+	metalness: 0.8,
+	roughness: 0.4,
+	side: THREE.DoubleSide,
+	transparent: false,
+	opacity: 1,
+	depthWrite: true,
+	depthTest: true,
+})
+
+const baseMesh = new THREE.Mesh(baseGeom, baseMat)
+// Add edges to base for visual consistency
+const baseEdges = new THREE.EdgesGeometry(baseGeom)
+baseMesh.add(
+	new THREE.LineSegments(
+		baseEdges,
+		new THREE.LineBasicMaterial({ color: 0xffffff })
+	)
+)
+pyramidGroup.add(baseMesh)
+
 pyramidGroup.position.y = 0.35
 
 // === Morph Sphere (for ORC demo transition) ===

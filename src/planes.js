@@ -20,11 +20,10 @@ export function makeLabelPlane(text, width = 1.6, height = 0.45) {
 		// prevent transparent label textures from writing to the depth buffer
 		// which can cause dark occlusion artifacts when other geometry overlaps
 		depthWrite: false,
-		// Render labels on top of the scene so the pyramid never occludes them
-		depthTest: false,
+		// Enable depth testing so pyramid can properly occlude labels when viewed from behind
+		depthTest: true,
 	})
 	const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat)
-	mesh.renderOrder = 999
 	return mesh
 }
 
@@ -44,11 +43,11 @@ export function makeContactLabelPlane(config) {
 		transparent: true,
 		side: THREE.DoubleSide,
 		depthWrite: false,
-		depthTest: false,
+		// Enable depth testing so pyramid can properly occlude contact info when viewed from behind
+		depthTest: true,
 		alphaTest: 0.1,
 	})
 	const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat)
-	mesh.renderOrder = 999
 
 	function updateTexture(appearanceConfig) {
 		const { lines, textAlign, titleFontSize, bodyFontSize } = appearanceConfig

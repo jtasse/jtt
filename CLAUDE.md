@@ -46,7 +46,7 @@ See `ARCHITECTURE.md` for detailed content editing instructions.
 ### Key Animation Flow
 
 1. **Home state**: Pyramid centered with labels on faces
-2. **Label click**: Labels animate to horizontal top nav, pyramid moves up/shrinks behind selected label
+2. **Label click**: Labels animate to horizontal top nav, pyramid moves up/shrinks under selected label
 3. **Section switch**: Pyramid slides horizontally to new label position
 4. **Home click**: Everything animates back to initial state
 
