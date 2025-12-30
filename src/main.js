@@ -21,6 +21,12 @@ import {
 	morphToOrcScene,
 	morphFromOrcScene,
 	isOrcSceneActive,
+	initContactLabel,
+	showContactLabelCentered,
+	moveContactLabelToLeft,
+	hideContactLabel,
+	contactLabel,
+	contactConfig,
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
 
@@ -66,13 +72,8 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.addEventListener("mousedown", (e) => e.stopPropagation())
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
-		// Hide contact section when Home is clicked
-		const contactSection = document.getElementById("contact-section")
-		if (contactSection) {
-			contactSection.style.display = "none"
-		}
-		// Reset contactRevealed flag (will be set in the IIFE scope later)
-		window._contactRevealed = false
+		// Hide contact label when Home is clicked
+		hideContactLabel()
 		try {
 			router.navigate("/")
 		} catch (err) {
@@ -82,75 +83,80 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	document.body.appendChild(btn)
 })()
 
-// Create a Contact section that appears below the Home button
-// Revealed when hovering About label or navigating to /about
-// Stays visible once shown, except when on /orc-demo page or Home clicked
-let contactRevealed = false
-// Sync with window for access from Home button handler
-Object.defineProperty(window, '_contactRevealed', {
-	get: () => contactRevealed,
-	set: (v) => { contactRevealed = v }
-})
-;(function createContactSection() {
-	const existing = document.getElementById("contact-section")
-	if (existing) return
-	const section = document.createElement("div")
-	section.id = "contact-section"
-	section.style.position = "fixed"
-	section.style.left = "6px"
-	section.style.top = "48px"
-	section.style.zIndex = 10000
-	section.style.padding = "6px 10px"
-	section.style.background = "rgba(0,0,0,0.6)"
-	section.style.color = "white"
-	section.style.border = "1px solid rgba(255,255,255,0.08)"
-	section.style.borderRadius = "4px"
-	section.style.font = "400 12px sans-serif"
-	section.style.backdropFilter = "blur(4px)"
-	section.style.display = "none"
-	section.style.lineHeight = "1.4"
-	section.innerHTML = `
-		<div style="color: #00ffff; font-weight: 600; margin-bottom: 4px;">Contact</div>
-		<div><a href="mailto:james.tasse@gmail.com" style="color: #aaddff; text-decoration: none;">james.tasse@gmail.com</a></div>
-		<div><a href="tel:+12162191538" style="color: #aaddff; text-decoration: none;">(216)-219-1538</a></div>
-	`
-	document.body.appendChild(section)
-})()
-
-// Show the contact section (called on About hover or /about route)
-function showContactSection() {
-	const section = document.getElementById("contact-section")
-	if (section) {
-		section.style.display = "block"
-		contactRevealed = true
-	}
-}
-
-// Hide the contact section (called when entering orc-demo)
-function hideContactSection() {
-	const section = document.getElementById("contact-section")
-	if (section) {
-		section.style.display = "none"
-	}
-}
-
-// Restore contact section if it was previously revealed (when leaving orc-demo)
-function restoreContactSectionIfRevealed() {
-	if (contactRevealed) {
-		const section = document.getElementById("contact-section")
-		if (section) {
-			section.style.display = "block"
-		}
-	}
-}
-
-// Initialize Labels
+// Initialize Labels and Contact
 initLabels(makeLabelPlane)
+initContactLabel()
 
 // Start animation loop
 animate()
 
 window.addEventListener("resize", () => {})
+
+// === Email Copy Toast ===
+function showCopyToast(message) {
+	// Remove existing toast if any
+	const existing = document.getElementById("copy-toast")
+	if (existing) existing.remove()
+
+	// Project contact label's 3D position to screen coordinates
+	let screenX = window.innerWidth / 2
+	let screenY = window.innerHeight * 0.2
+
+	if (contactLabel) {
+		// Get the world position of the contact label
+		const worldPos = new THREE.Vector3()
+		contactLabel.getWorldPosition(worldPos)
+
+		// Offset upward in 3D space to position toast above the label
+		const toastPos = worldPos.clone()
+		toastPos.y += 0.5 // Move up above the contact label
+		toastPos.x += 0.5
+		// Project to screen coordinates
+		toastPos.project(camera)
+
+		// Convert to screen pixels
+		screenX = (toastPos.x * 0.5 + 0.5) * window.innerWidth
+		screenY = (-toastPos.y * 0.5 + 0.5) * window.innerHeight
+	}
+
+	const toast = document.createElement("div")
+	toast.id = "copy-toast"
+	toast.textContent = message
+	toast.style.position = "fixed"
+	toast.style.left = `${screenX}px`
+	toast.style.top = `${screenY}px`
+	toast.style.transform = "translate(-50%, -100%)"
+	toast.style.padding = "6px 12px"
+	toast.style.background = "rgba(0, 0, 0, 0.85)"
+	toast.style.color = "white"
+	toast.style.border = "1px solid white"
+	toast.style.borderRadius = "4px"
+	toast.style.font = "500 11px sans-serif"
+	toast.style.zIndex = "100000"
+	toast.style.opacity = "0"
+	toast.style.transition = "opacity 0.3s ease"
+	toast.style.whiteSpace = "nowrap"
+	document.body.appendChild(toast)
+
+	// Fade in
+	requestAnimationFrame(() => {
+		toast.style.opacity = "1"
+	})
+
+	// Fade out after 2 seconds
+	setTimeout(() => {
+		toast.style.opacity = "0"
+		setTimeout(() => toast.remove(), 300)
+	}, 2000)
+}
+
+// Copy email to clipboard when contact label is clicked
+function handleContactClick() {
+	const email = contactConfig.lines[1] // Email is the second line
+	navigator.clipboard.writeText(email).catch((err) => {
+		console.error("Failed to copy email:", err)
+	})
+}
 
 // === Click Handling ===
 const raycaster = new THREE.Raycaster()
@@ -275,6 +281,9 @@ function onMouseMove(event) {
 		}
 	}
 
+	// Check if pyramid is in centered/home position (not at top nav)
+	const isPyramidCentered = pyramidGroup.position.y < 1.0
+
 	if (hoverTargetIntersects.length > 0) {
 		const hoverObj = hoverTargetIntersects[0].object
 		const labelKey = hoverObj.userData.labelKey
@@ -288,12 +297,40 @@ function onMouseMove(event) {
 					.multiplyScalar(1.12)
 			}
 		}
-		// Show contact section when hovering over About label
-		if (labelKey === "About" && labelMesh && labelMesh.visible) {
-			showContactSection()
+		// Show contact section when hovering over any content label while pyramid is centered
+		if (
+			isPyramidCentered &&
+			labelKey !== "Home" &&
+			labelMesh &&
+			labelMesh.visible
+		) {
+			showContactLabelCentered()
 		}
 		renderer.domElement.style.cursor = "pointer"
 	} else {
+		// Check if hovering over the contact label (show pointer cursor)
+		if (contactLabel && contactLabel.visible) {
+			const contactHits = raycaster.intersectObject(contactLabel, false)
+			if (contactHits.length > 0) {
+				renderer.domElement.style.cursor = "pointer"
+				// Still clear hoveredLabel if we were on a label before
+				if (hoveredLabel) {
+					hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+					hoveredLabel = null
+				}
+				return
+			}
+		}
+		// Check if hovering over the pyramid mesh itself (when centered)
+		if (isPyramidCentered) {
+			const pyramidIntersects = raycaster.intersectObjects(
+				pyramidGroup.children,
+				true
+			)
+			if (pyramidIntersects.length > 0) {
+				showContactLabelCentered()
+			}
+		}
 		// No hover targets: ensure cursor is default and reset hoveredLabel
 		if (hoveredLabel) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
@@ -323,6 +360,8 @@ function centerAndOpenLabel(labelName) {
 	try {
 		showHomeLabel()
 	} catch (e) {}
+	// Move contact section to left side when entering nav state
+	moveContactLabelToLeft()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -345,8 +384,6 @@ function centerAndOpenLabel(labelName) {
 
 router.onRouteChange((route) => {
 	if (route === "/about") {
-		// Show contact section when navigating to /about
-		showContactSection()
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
@@ -359,7 +396,6 @@ router.onRouteChange((route) => {
 			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
-		restoreContactSectionIfRevealed()
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
@@ -371,7 +407,6 @@ router.onRouteChange((route) => {
 			currentContentVisible = "portfolio"
 		}
 	} else if (route === "/blog") {
-		restoreContactSectionIfRevealed()
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
@@ -384,14 +419,14 @@ router.onRouteChange((route) => {
 		}
 	} else if (route === "/orc-demo") {
 		// Hide contact section when entering orc-demo
-		hideContactSection()
+		hideContactLabel()
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"
 		window.centeredLabelName = null
 	} else {
-		// For non-content routes (home), reset pyramid and hide all content planes
-		restoreContactSectionIfRevealed()
+		// For non-content routes (home), reset pyramid, hide all content, and hide contact
+		hideContactLabel()
 		if (isOrcSceneActive()) {
 			// morphFromOrcScene handles its own cleanup with fade animation
 			// Don't call hideAllPlanes() here as it would remove elements before fade completes
@@ -419,6 +454,15 @@ function onSceneMouseDown(event) {
 	pointer.x = (event.clientX / window.innerWidth) * 2 - 1
 	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 	raycaster.setFromCamera(pointer, camera)
+
+	// Check if contact label was clicked
+	if (contactLabel && contactLabel.visible) {
+		const contactHits = raycaster.intersectObject(contactLabel, false)
+		if (contactHits.length > 0) {
+			handleContactClick()
+			return
+		}
+	}
 
 	// Helper: extract YouTube video id from a URL
 	function extractYouTubeID(url) {

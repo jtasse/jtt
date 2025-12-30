@@ -1,7 +1,12 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { contentFiles } from "./constants.js"
-import { makeAboutPlane, makePortfolioPlane, makeBlogPlane } from "../planes.js"
+import {
+	makeAboutPlane,
+	makePortfolioPlane,
+	makeBlogPlane,
+	makeContactLabelPlane,
+} from "../planes.js"
 import {
 	loadContentHTML,
 	parseAboutContent,
@@ -247,6 +252,148 @@ export const labelConfigs = {
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
+}
+
+// Contact label configuration - configurable position/rotation
+export const contactConfig = {
+	lines: ["Contact", "james.tasse@gmail.com", "(216)-219-1538"],
+	// Starting position (hidden below pyramid)
+	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
+	// Revealed position (front & center of pyramid face)
+	revealedPosition: { x: 0, y: -0.95, z: 0.8 },
+	// Position when in left sidebar mode
+	leftPosition: { x: -4.85, y: 1.1, z: 0 },
+	rotation: { x: 0, y: 0, z: 0 },
+	size: [2, 1.3],
+}
+
+// Contact label mesh (created in initContactLabel)
+export let contactLabel = null
+let contactVisible = false
+let contactPosition = "hidden" // "hidden", "center", "left"
+
+// Initialize contact label
+export function initContactLabel() {
+	if (contactLabel) return // Already initialized
+
+	const cfg = contactConfig
+	contactLabel = makeContactLabelPlane(cfg.lines, ...cfg.size)
+	contactLabel.position.set(
+		cfg.hiddenPosition.x,
+		cfg.hiddenPosition.y,
+		cfg.hiddenPosition.z
+	)
+	contactLabel.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z)
+	contactLabel.material.opacity = 0
+	contactLabel.visible = false
+	contactLabel.userData.name = "Contact"
+	pyramidGroup.add(contactLabel)
+}
+
+// Show contact label with slide-up animation (when pyramid is centered)
+export function showContactLabelCentered() {
+	if (!contactLabel || contactVisible) return
+	contactVisible = true
+	contactPosition = "center"
+
+	const cfg = contactConfig
+	contactLabel.visible = true
+
+	// Animate from hidden to revealed position
+	const startY = cfg.hiddenPosition.y
+	const endY = cfg.revealedPosition.y
+	const startZ = cfg.hiddenPosition.z
+	const endZ = cfg.revealedPosition.z
+	const duration = 600
+	const startTime = performance.now()
+
+	function animateSlideUp(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		// Ease out cubic
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		contactLabel.position.y = startY + (endY - startY) * eased
+		contactLabel.position.z = startZ + (endZ - startZ) * eased
+		contactLabel.material.opacity = eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateSlideUp)
+		}
+	}
+	requestAnimationFrame(animateSlideUp)
+}
+
+// Move contact label to left side (when pyramid moves to top nav)
+export function moveContactLabelToLeft() {
+	if (!contactLabel || !contactVisible) return
+	contactPosition = "left"
+
+	const cfg = contactConfig
+	// Detach from pyramid group and add to scene for fixed positioning
+	pyramidGroup.remove(contactLabel)
+	scene.add(contactLabel)
+
+	const startPos = contactLabel.position.clone()
+	const endPos = new THREE.Vector3(
+		cfg.leftPosition.x,
+		cfg.leftPosition.y,
+		cfg.leftPosition.z
+	)
+	const duration = 500
+	const startTime = performance.now()
+
+	function animateToLeft(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		contactLabel.position.lerpVectors(startPos, endPos, eased)
+
+		if (t < 1) {
+			requestAnimationFrame(animateToLeft)
+		}
+	}
+	requestAnimationFrame(animateToLeft)
+}
+
+// Hide contact label
+export function hideContactLabel() {
+	if (!contactLabel) return
+
+	const cfg = contactConfig
+	const duration = 400
+	const startTime = performance.now()
+	const startOpacity = contactLabel.material.opacity
+
+	function animateFadeOut(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+
+		contactLabel.material.opacity = startOpacity * (1 - t)
+
+		if (t >= 1) {
+			contactLabel.visible = false
+			contactVisible = false
+			contactPosition = "hidden"
+			// Reset to pyramid group and hidden position
+			scene.remove(contactLabel)
+			pyramidGroup.add(contactLabel)
+			contactLabel.position.set(
+				cfg.hiddenPosition.x,
+				cfg.hiddenPosition.y,
+				cfg.hiddenPosition.z
+			)
+		} else {
+			requestAnimationFrame(animateFadeOut)
+		}
+	}
+	requestAnimationFrame(animateFadeOut)
+}
+
+// Check if contact is currently visible
+export function isContactVisible() {
+	return contactVisible
 }
 
 export function initLabels(makeLabelPlane) {
@@ -1526,9 +1673,11 @@ function createOrcDemo() {
 			if (projLength > 0 && projLength < camToSatLength) {
 				// Planet center is between camera and satellite (along the line)
 				// Check perpendicular distance from planet center to line of sight
-				const closestPointOnLine = currentCamPos.clone().add(camToSat.normalize().multiplyScalar(projLength))
+				const closestPointOnLine = currentCamPos
+					.clone()
+					.add(camToSat.normalize().multiplyScalar(projLength))
 				const perpDistance = planetCenter.distanceTo(closestPointOnLine)
-				isOccluded = perpDistance < (PLANET_RADIUS + OCCLUSION_MARGIN)
+				isOccluded = perpDistance < PLANET_RADIUS + OCCLUSION_MARGIN
 			}
 
 			// Use appropriate camera speed based on phase and occlusion
@@ -1553,8 +1702,12 @@ function createOrcDemo() {
 			orcDemoControls.target.lerp(originalCameraState.target, resetSpeed)
 
 			// Check if camera is close enough to original position
-			const posDistance = orcDemoCamera.position.distanceTo(originalCameraState.position)
-			const targetDistance = orcDemoControls.target.distanceTo(originalCameraState.target)
+			const posDistance = orcDemoCamera.position.distanceTo(
+				originalCameraState.position
+			)
+			const targetDistance = orcDemoControls.target.distanceTo(
+				originalCameraState.target
+			)
 
 			if (posDistance < 0.05 && targetDistance < 0.05) {
 				// Snap to exact position and clear tracking state
