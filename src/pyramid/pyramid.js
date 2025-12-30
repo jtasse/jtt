@@ -1016,50 +1016,6 @@ function cleanupOrcPreviewOverlay() {
 // === ORC Info Pane (right 1/3 of screen during ORC demo) ===
 let orcInfoPane = null
 
-function showOrcInfoPane() {
-	if (!orcInfoPane) {
-		orcInfoPane = document.createElement("div")
-		orcInfoPane.id = "orc-info-pane"
-		// Styles are now in orc-demo.css. Set initial display state.
-		orcInfoPane.style.display = "none"
-
-		// Add content
-		orcInfoPane.innerHTML = `
-			<h2 class="orc-pane-title">
-				Orbital Refuse Collector
-			</h2>
-			<div class="orc-pane-content">
-				<p><strong>Selected Satellite:</strong> <span id="selected-satellite-id">None</span></p>
-
-				<div class="orc-pane-section">
-					<h3>Satellite Status</h3>
-					<div class="status-item">
-						<div class="status-indicator blue"></div>
-						<span>GEO Satellite - Geosynchronous Orbit</span>
-					</div>
-					<div class="status-item">
-						<div class="status-indicator cyan"></div>
-						<span>LEO Satellite - Low Earth Orbit</span>
-					</div>
-				</div>
-				<div class="orc-pane-section">
-					<h3>API Documentation</h3>
-					<p>
-						Full documentation available at:
-					</p>
-					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
-						View API Docs
-					</a>
-				</div>
-			</div>
-		`
-
-		document.body.appendChild(orcInfoPane)
-	}
-
-	orcInfoPane.style.display = "block"
-}
-
 function hideOrcInfoPane() {
 	// Remove the module-level reference if it exists
 	if (orcInfoPane) {
@@ -1220,9 +1176,6 @@ export function morphToOrcScene() {
 			orcDemoContainer.style.opacity = "1"
 		})
 	}
-
-	// Show the info pane on the right
-	showOrcInfoPane()
 }
 
 // Return from ORC scene back to pyramid
