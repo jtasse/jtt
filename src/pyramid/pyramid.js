@@ -170,11 +170,7 @@ const baseGeom = new THREE.BufferGeometry()
 baseGeom.setAttribute(
 	"position",
 	new THREE.BufferAttribute(
-		new Float32Array([
-			v3.x, v3.y, v3.z,
-			v2.x, v2.y, v2.z,
-			v1.x, v1.y, v1.z,
-		]),
+		new Float32Array([v3.x, v3.y, v3.z, v2.x, v2.y, v2.z, v1.x, v1.y, v1.z]),
 		3
 	)
 )
@@ -278,21 +274,21 @@ updatePyramidEnvMap()
 export const labelConfigs = {
 	About: {
 		text: "About",
-		position: { x: -1.05, y: 0.04, z: 0.5 },
-		rotation: { x: 0, y: 0.438, z: 1 },
+		position: { x: -1.0, y: 0.04, z: 0.53 },
+		rotation: { x: -0.1, y: 0.438, z: 1 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Portfolio: {
 		text: "Portfolio",
-		position: { x: 1.08, y: 0, z: 0.3 },
-		rotation: { x: 0.2, y: -0.6, z: -0.92 },
+		position: { x: 1.02, y: 0, z: 0.6 },
+		rotation: { x: 0.1, y: -0.6, z: -0.95 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Blog: {
 		text: "Blog",
-		position: { x: 0, y: -1.65, z: 1.2 },
+		position: { x: 0, y: -1.7, z: 1.0 },
 		rotation: { x: 0, y: 0, z: 0 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
@@ -317,7 +313,7 @@ export const contactConfig = {
 	// Starting position (hidden below pyramid)
 	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
 	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: -0.92, z: 0.8 },
+	revealedPosition: { x: 0, y: -0.92, z: 0.85 },
 	revealedRotation: { x: -0.3, y: 0, z: 0 },
 	revealedSize: [2.15, 1.33],
 	leftTextAlign: "left",
