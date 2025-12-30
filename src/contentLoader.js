@@ -12,8 +12,8 @@ export async function loadContentHTML(page) {
 	}
 }
 
-// Parse bio content from HTML (h1 for title, p elements for paragraphs)
-export function parseBioContent(htmlContent) {
+// Parse about content from HTML (h1 for title, p elements for paragraphs)
+export function parseAboutContent(htmlContent) {
 	try {
 		const parser = new DOMParser()
 		const doc = parser.parseFromString(htmlContent, "text/html")
@@ -32,7 +32,7 @@ export function parseBioContent(htmlContent) {
 
 		return content
 	} catch (error) {
-		console.error("Error parsing bio content:", error)
+		console.error("Error parsing about content:", error)
 		return { heading: "", paragraphs: [] }
 	}
 }

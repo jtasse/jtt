@@ -7,7 +7,7 @@ import {
 	initLabels,
 	animatePyramid,
 	spinPyramidToSection,
-	showBioPlane,
+	showAboutPlane,
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
@@ -40,7 +40,7 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.id = "home-button"
 	btn.textContent = "Home"
 	btn.style.position = "fixed"
-	btn.style.left = "16px"
+	btn.style.left = "6px"
 	btn.style.top = "12px"
 	btn.style.zIndex = 10000
 	btn.style.padding = "8px 14px"
@@ -66,6 +66,13 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.addEventListener("mousedown", (e) => e.stopPropagation())
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
+		// Hide contact section when Home is clicked
+		const contactSection = document.getElementById("contact-section")
+		if (contactSection) {
+			contactSection.style.display = "none"
+		}
+		// Reset contactRevealed flag (will be set in the IIFE scope later)
+		window._contactRevealed = false
 		try {
 			router.navigate("/")
 		} catch (err) {
@@ -74,6 +81,68 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	})
 	document.body.appendChild(btn)
 })()
+
+// Create a Contact section that appears below the Home button
+// Revealed when hovering About label or navigating to /about
+// Stays visible once shown, except when on /orc-demo page or Home clicked
+let contactRevealed = false
+// Sync with window for access from Home button handler
+Object.defineProperty(window, '_contactRevealed', {
+	get: () => contactRevealed,
+	set: (v) => { contactRevealed = v }
+})
+;(function createContactSection() {
+	const existing = document.getElementById("contact-section")
+	if (existing) return
+	const section = document.createElement("div")
+	section.id = "contact-section"
+	section.style.position = "fixed"
+	section.style.left = "6px"
+	section.style.top = "48px"
+	section.style.zIndex = 10000
+	section.style.padding = "6px 10px"
+	section.style.background = "rgba(0,0,0,0.6)"
+	section.style.color = "white"
+	section.style.border = "1px solid rgba(255,255,255,0.08)"
+	section.style.borderRadius = "4px"
+	section.style.font = "400 12px sans-serif"
+	section.style.backdropFilter = "blur(4px)"
+	section.style.display = "none"
+	section.style.lineHeight = "1.4"
+	section.innerHTML = `
+		<div style="color: #00ffff; font-weight: 600; margin-bottom: 4px;">Contact</div>
+		<div><a href="mailto:james.tasse@gmail.com" style="color: #aaddff; text-decoration: none;">james.tasse@gmail.com</a></div>
+		<div><a href="tel:+12162191538" style="color: #aaddff; text-decoration: none;">(216)-219-1538</a></div>
+	`
+	document.body.appendChild(section)
+})()
+
+// Show the contact section (called on About hover or /about route)
+function showContactSection() {
+	const section = document.getElementById("contact-section")
+	if (section) {
+		section.style.display = "block"
+		contactRevealed = true
+	}
+}
+
+// Hide the contact section (called when entering orc-demo)
+function hideContactSection() {
+	const section = document.getElementById("contact-section")
+	if (section) {
+		section.style.display = "none"
+	}
+}
+
+// Restore contact section if it was previously revealed (when leaving orc-demo)
+function restoreContactSectionIfRevealed() {
+	if (contactRevealed) {
+		const section = document.getElementById("contact-section")
+		if (section) {
+			section.style.display = "block"
+		}
+	}
+}
 
 // Initialize Labels
 initLabels(makeLabelPlane)
@@ -87,7 +156,7 @@ window.addEventListener("resize", () => {})
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
 let hoveredLabel = null
-let currentContentVisible = null // Track which content plane is showing (bio/portfolio/blog or null)
+let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
 let pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
 let isPointerDown = false
 let isDragging = false
@@ -219,6 +288,10 @@ function onMouseMove(event) {
 					.multiplyScalar(1.12)
 			}
 		}
+		// Show contact section when hovering over About label
+		if (labelKey === "About" && labelMesh && labelMesh.visible) {
+			showContactSection()
+		}
 		renderer.domElement.style.cursor = "pointer"
 	} else {
 		// No hover targets: ensure cursor is default and reset hoveredLabel
@@ -258,7 +331,7 @@ function centerAndOpenLabel(labelName) {
 		const sectionName = labelName.toLowerCase()
 		console.log("pyramidGroup at top nav state:", pyramidGroup)
 		spinPyramidToSection(sectionName, () => {
-			if (labelName === "Bio") showBioPlane()
+			if (labelName === "About") showAboutPlane()
 			else if (labelName === "Portfolio") showPortfolioPlane()
 			else if (labelName === "Blog") showBlogPlane()
 		})
@@ -271,19 +344,22 @@ function centerAndOpenLabel(labelName) {
 }
 
 router.onRouteChange((route) => {
-	if (route === "/bio") {
+	if (route === "/about") {
+		// Show contact section when navigating to /about
+		showContactSection()
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
-				centerAndOpenLabel("Bio")
-				currentContentVisible = "bio"
+				centerAndOpenLabel("About")
+				currentContentVisible = "about"
 			}, 1300)
 		} else {
-			centerAndOpenLabel("Bio")
-			currentContentVisible = "bio"
+			centerAndOpenLabel("About")
+			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
+		restoreContactSectionIfRevealed()
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
@@ -295,6 +371,7 @@ router.onRouteChange((route) => {
 			currentContentVisible = "portfolio"
 		}
 	} else if (route === "/blog") {
+		restoreContactSectionIfRevealed()
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
@@ -306,12 +383,15 @@ router.onRouteChange((route) => {
 			currentContentVisible = "blog"
 		}
 	} else if (route === "/orc-demo") {
+		// Hide contact section when entering orc-demo
+		hideContactSection()
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"
 		window.centeredLabelName = null
 	} else {
 		// For non-content routes (home), reset pyramid and hide all content planes
+		restoreContactSectionIfRevealed()
 		if (isOrcSceneActive()) {
 			// morphFromOrcScene handles its own cleanup with fade animation
 			// Don't call hideAllPlanes() here as it would remove elements before fade completes
@@ -863,9 +943,9 @@ function onSceneMouseDown(event) {
 				console.log("pyramidGroup at top nav state:", pyramidGroup)
 				spinPyramidToSection(sectionName, () => {
 					// Show content after spin completes
-					if (labelName === "Bio") {
-						showBioPlane()
-						currentContentVisible = "bio"
+					if (labelName === "About") {
+						showAboutPlane()
+						currentContentVisible = "about"
 					} else if (labelName === "Portfolio") {
 						showPortfolioPlane()
 						currentContentVisible = "portfolio"

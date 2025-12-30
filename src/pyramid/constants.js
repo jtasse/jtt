@@ -4,7 +4,7 @@
 
 // Content files for separation of concerns
 export const contentFiles = {
-	bio: "/src/content/bio/bio.html",
+	about: "/src/content/about/about.html",
 	portfolio: "/src/content/portfolio/portfolio.html",
 	blog: "/src/content/blog/blog.html",
 }

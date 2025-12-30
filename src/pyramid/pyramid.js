@@ -1,10 +1,10 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { contentFiles } from "./constants.js"
-import { makeBioPlane, makePortfolioPlane, makeBlogPlane } from "../planes.js"
+import { makeAboutPlane, makePortfolioPlane, makeBlogPlane } from "../planes.js"
 import {
 	loadContentHTML,
-	parseBioContent,
+	parseAboutContent,
 	parseBlogPosts,
 } from "../contentLoader.js"
 import {
@@ -20,7 +20,7 @@ import {
 	getDecommissionState,
 	getDecommissionConfig,
 } from "../content/orc-demo/orc-demo.js"
-import "../content/bio/bio.css"
+import "../content/about/about.css"
 import "../content/blog/blog.css"
 import "../content/portfolio/portfolio.css"
 import "../content/orc-demo/orc-demo.css"
@@ -105,7 +105,7 @@ scene.add(pyramidGroup)
 const faces = [
 	{ name: "Blog", verts: [apex.clone(), v1.clone(), v2.clone()] },
 	{ name: "Portfolio", verts: [apex.clone(), v2.clone(), v3.clone()] },
-	{ name: "Bio", verts: [apex.clone(), v3.clone(), v1.clone()] },
+	{ name: "About", verts: [apex.clone(), v3.clone(), v1.clone()] },
 ]
 
 faces.forEach((f) => {
@@ -217,8 +217,8 @@ updatePyramidEnvMap()
 
 // === Labels ===
 export const labelConfigs = {
-	Bio: {
-		text: "Bio",
+	About: {
+		text: "About",
 		position: { x: -1.05, y: 0.04, z: 0.5 },
 		rotation: { x: 0, y: 0.438, z: 1 },
 		pyramidCenteredSize: [2.4, 0.6],
@@ -319,14 +319,14 @@ const flattenedMenuState = {
 // These are WORLD positions (x/y/z) - fixed values that stay within camera view.
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
-	Bio: { x: -2.0, y: 2.5, z: 0 },
+	About: { x: -2.0, y: 2.5, z: 0 },
 	Portfolio: { x: 0, y: 2.5, z: 0 },
 	Blog: { x: 2.0, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
-	bio: -2.0,
+	about: -2.0,
 	portfolio: 0,
 	blog: 2.0,
 }
@@ -538,7 +538,7 @@ export function animatePyramid(down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (section === "bio") showBioPlane()
+			if (section === "about") showAboutPlane()
 			else if (section === "portfolio") showPortfolioPlane()
 			else if (section === "blog") showBlogPlane()
 		}
@@ -729,12 +729,12 @@ export function resetPyramidToHome() {
 	requestAnimationFrame(step)
 }
 
-export function showBioPlane() {
+export function showAboutPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
 	controls.enableZoom = false
 
-	// Ensure the DOM content pane is hidden when using a 3D bio plane so
+	// Ensure the DOM content pane is hidden when using a 3D about plane so
 	// we don't show duplicate/overlapping DOM text over the pyramid.
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
@@ -746,17 +746,17 @@ export function showBioPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let bioPlane = scene.getObjectByName("bioPlane")
-	if (!bioPlane) {
+	let aboutPlane = scene.getObjectByName("aboutPlane")
+	if (!aboutPlane) {
 		// Capture current animation token so we can abort if a reset occurs
 		const myToken = pyramidAnimToken
-		// Load HTML content and parse bio structure (heading + paragraphs)
-		loadContentHTML("bio").then((html) => {
+		// Load HTML content and parse about structure (heading + paragraphs)
+		loadContentHTML("about").then((html) => {
 			// If a newer pyramid animation/reset occurred, abort adding content
 			if (myToken !== pyramidAnimToken) return
-			const bioContent = parseBioContent(html)
-			const plane = makeBioPlane(bioContent)
-			plane.name = "bioPlane"
+			const aboutContent = parseAboutContent(html)
+			const plane = makeAboutPlane(aboutContent)
+			plane.name = "aboutPlane"
 			plane.frustumCulled = false // Prevent culling when scrolling out of initial bounds
 			plane.traverse((child) => {
 				if (child.material) {
@@ -907,9 +907,9 @@ export function showBlogPlane() {
 	}
 }
 
-function hideBio() {
-	const bioPlane = scene.getObjectByName("bioPlane")
-	if (bioPlane) scene.remove(bioPlane)
+function hideAbout() {
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (aboutPlane) scene.remove(aboutPlane)
 }
 
 function hidePortfolio() {
@@ -1113,7 +1113,7 @@ function updateSelectedSatelliteInfo(satelliteId) {
 
 // Exported helper to hide all content planes
 export function hideAllPlanes() {
-	hideBio()
+	hideAbout()
 	hidePortfolio()
 	hideBlog()
 	// Hide ORC preview overlay and info pane
@@ -1892,8 +1892,8 @@ window.addEventListener("resize", () => {
 	camera.updateProjectionMatrix()
 	renderer.setSize(window.innerWidth, window.innerHeight)
 
-	const bioPlane = scene.getObjectByName("bioPlane")
-	if (bioPlane) scene.remove(bioPlane)
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (aboutPlane) scene.remove(aboutPlane)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) scene.remove(portfolioPlane)
 })

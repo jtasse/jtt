@@ -28,8 +28,8 @@ export function makeLabelPlane(text, width = 1.6, height = 0.45) {
 	return mesh
 }
 
-// === Bio Plane ===
-export function makeBioPlane(bioContent) {
+// === About Plane ===
+export function makeAboutPlane(aboutContent) {
 	// Accept either a string (legacy) or the structured object { heading, paragraphs: [] }
 	const margin = 30
 	const canvasWidth = window.innerWidth * 0.95
@@ -46,16 +46,16 @@ export function makeBioPlane(bioContent) {
 	// Normalize input
 	let heading = ""
 	let paragraphs = []
-	if (!bioContent) {
+	if (!aboutContent) {
 		paragraphs = []
-	} else if (typeof bioContent === "string") {
+	} else if (typeof aboutContent === "string") {
 		// Legacy: split on double newlines
-		const parts = bioContent.split("\n\n")
+		const parts = aboutContent.split("\n\n")
 		paragraphs = parts
-	} else if (typeof bioContent === "object") {
-		heading = bioContent.heading || ""
-		paragraphs = Array.isArray(bioContent.paragraphs)
-			? bioContent.paragraphs
+	} else if (typeof aboutContent === "object") {
+		heading = aboutContent.heading || ""
+		paragraphs = Array.isArray(aboutContent.paragraphs)
+			? aboutContent.paragraphs
 			: []
 	}
 
@@ -113,7 +113,7 @@ export function makeBioPlane(bioContent) {
 	)
 	// Position content below nav area - center vertically in remaining space
 	mesh.position.set(0, -0.3, -1)
-	mesh.name = "bioPlane"
+	mesh.name = "aboutPlane"
 	mesh.userData._canvasTexture = texture
 	return mesh
 }

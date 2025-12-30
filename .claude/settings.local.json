@@ -15,7 +15,8 @@
       "Bash(git add:*)",
       "Bash(git -C \"C:/dev/github/pyramid\" status src/content/orc-demo/orc-demo.js)",
       "Bash(node:*)",
-      "WebFetch(domain:en.wikipedia.org)"
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(git rm:*)"
     ]
   }
 }
