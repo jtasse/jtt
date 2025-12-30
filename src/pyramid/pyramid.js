@@ -316,12 +316,33 @@ export const contactConfig = {
 	revealedPosition: { x: 0, y: -0.92, z: 0.85 },
 	revealedRotation: { x: -0.3, y: 0, z: 0 },
 	revealedSize: [2.15, 1.33],
-	leftTextAlign: "left",
-	leftTitleFontSize: 60,
-	leftBodyFontSize: 35,
-	leftTextAlign: "left",
-	leftTitleFontSize: 40,
-	leftBodyFontSize: 30,
+	// Phone number offset (aligns with email text, after icon+gap)
+	phoneOffsetX: 75,
+	// Tooltip configuration (hover state)
+	tooltipText: "Click to copy email address",
+	tooltipFontSize: 48,
+	tooltipColor: "#4da6ff",
+	tooltipBgColor: "rgba(0, 0, 0, 0.85)",
+	tooltipPadding: 0,
+	tooltipBorderRadius: 2,
+	tooltipOffsetX: 30,
+	tooltipOffsetY: -1,
+	tooltipSlideDistance: 50,
+	tooltipAnimationDuration: 200,
+	// Email hover color (matches tooltip by default)
+	emailHoverColor: "#4da6ff",
+	// Toast configuration (after click)
+	toastText: "Copied!",
+	toastFontSize: 48,
+	toastColor: "#08a13b",
+	toastBgColor: "rgba(0, 0, 0, 0.85)",
+	toastPadding: 0,
+	toastBorderRadius: 2,
+	toastOffsetX: 30,
+	toastOffsetY: -1,
+	toastSlideDistance: 50,
+	toastDuration: 2000,
+	toastAnimationDuration: 200,
 }
 
 // Contact label mesh (created in initContactLabel)

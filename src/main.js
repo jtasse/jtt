@@ -91,68 +91,15 @@ animate()
 
 window.addEventListener("resize", () => {})
 
-// === Email Copy Toast ===
-function showCopyToast(message) {
-	// Remove existing toast if any
-	const existing = document.getElementById("copy-toast")
-	if (existing) existing.remove()
-
-	// Project contact label's 3D position to screen coordinates
-	let screenX = window.innerWidth / 2
-	let screenY = window.innerHeight * 0.2
-
-	if (contactLabel) {
-		// Get the world position of the contact label
-		const worldPos = new THREE.Vector3()
-		contactLabel.getWorldPosition(worldPos)
-
-		// Offset upward in 3D space to position toast above the label
-		const toastPos = worldPos.clone()
-		toastPos.y += 0.5 // Move up above the contact label
-		toastPos.x += 0.5
-		// Project to screen coordinates
-		toastPos.project(camera)
-
-		// Convert to screen pixels
-		screenX = (toastPos.x * 0.5 + 0.5) * window.innerWidth
-		screenY = (-toastPos.y * 0.5 + 0.5) * window.innerHeight
-	}
-
-	const toast = document.createElement("div")
-	toast.id = "copy-toast"
-	toast.textContent = message
-	toast.style.position = "fixed"
-	toast.style.left = `${screenX}px`
-	toast.style.top = `${screenY}px`
-	toast.style.transform = "translate(-50%, -100%)"
-	toast.style.padding = "6px 12px"
-	toast.style.background = "rgba(0, 0, 0, 0.85)"
-	toast.style.color = "white"
-	toast.style.border = "1px solid white"
-	toast.style.borderRadius = "4px"
-	toast.style.font = "500 11px sans-serif"
-	toast.style.zIndex = "100000"
-	toast.style.opacity = "0"
-	toast.style.transition = "opacity 0.3s ease"
-	toast.style.whiteSpace = "nowrap"
-	document.body.appendChild(toast)
-
-	// Fade in
-	requestAnimationFrame(() => {
-		toast.style.opacity = "1"
-	})
-
-	// Fade out after 2 seconds
-	setTimeout(() => {
-		toast.style.opacity = "0"
-		setTimeout(() => toast.remove(), 300)
-	}, 2000)
-}
-
 // Copy email to clipboard when contact label is clicked
 function handleContactClick() {
 	const email = contactConfig.lines[1] // Email is the second line
-	navigator.clipboard.writeText(email).catch((err) => {
+	navigator.clipboard.writeText(email).then(() => {
+		// Show "Copied to clipboard!" message on the contact label
+		if (contactLabel && contactLabel.userData.showCopiedMessage) {
+			contactLabel.userData.showCopiedMessage()
+		}
+	}).catch((err) => {
 		console.error("Failed to copy email:", err)
 	})
 }
@@ -311,13 +258,47 @@ function onMouseMove(event) {
 		if (contactLabel && contactLabel.visible) {
 			const contactHits = raycaster.intersectObject(contactLabel, false)
 			if (contactHits.length > 0) {
-				renderer.domElement.style.cursor = "pointer"
+				const hit = contactHits[0]
+				// Check if hovering over email region using UV coordinates
+				const emailRegion = contactLabel.userData.emailClickRegion
+				if (emailRegion && hit.uv) {
+					const u = hit.uv.x
+					const v = hit.uv.y
+					// UV y is flipped (0 at bottom, 1 at top), so convert
+					const canvasY = 1 - v
+					const isOverEmail =
+						u >= emailRegion.x1 &&
+						u <= emailRegion.x2 &&
+						canvasY >= emailRegion.y1 &&
+						canvasY <= emailRegion.y2
+
+					if (isOverEmail) {
+						// Show tooltip when hovering over email
+						if (contactLabel.userData.showTooltip) {
+							contactLabel.userData.showTooltip()
+						}
+						renderer.domElement.style.cursor = "pointer"
+					} else {
+						// Hide tooltip when not over email
+						if (contactLabel.userData.hideTooltip) {
+							contactLabel.userData.hideTooltip()
+						}
+						renderer.domElement.style.cursor = "default"
+					}
+				} else {
+					renderer.domElement.style.cursor = "default"
+				}
 				// Still clear hoveredLabel if we were on a label before
 				if (hoveredLabel) {
 					hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
 					hoveredLabel = null
 				}
 				return
+			} else {
+				// Not hovering over contact label at all - hide tooltip
+				if (contactLabel.userData.hideTooltip) {
+					contactLabel.userData.hideTooltip()
+				}
 			}
 		}
 		// Check if hovering over the pyramid mesh itself (when centered)

@@ -33,6 +33,41 @@ export function makeContactLabelPlane(config) {
 	const width = revealedSize[0]
 	const height = revealedSize[1]
 
+	// Tooltip configuration (hover state)
+	const tooltipConfig = {
+		text: config.tooltipText || "Click to copy email address",
+		fontSize: config.tooltipFontSize || 36,
+		color: config.tooltipColor || "#4da6ff",
+		bgColor: config.tooltipBgColor || "rgba(0, 0, 0, 0.85)",
+		padding: config.tooltipPadding || 12,
+		borderRadius: config.tooltipBorderRadius || 8,
+		offsetX: config.tooltipOffsetX || 20,
+		offsetY: config.tooltipOffsetY || -50,
+		slideDistance: config.tooltipSlideDistance || 30,
+		animationDuration: config.tooltipAnimationDuration || 200,
+	}
+
+	// Toast configuration (after click)
+	const toastConfig = {
+		text: config.toastText || "Copied!",
+		fontSize: config.toastFontSize || 36,
+		color: config.toastColor || "#08a13b",
+		bgColor: config.toastBgColor || "rgba(0, 0, 0, 0.85)",
+		padding: config.toastPadding || 12,
+		borderRadius: config.toastBorderRadius || 8,
+		offsetX: config.toastOffsetX || 20,
+		offsetY: config.toastOffsetY || -50,
+		slideDistance: config.toastSlideDistance || 30,
+		duration: config.toastDuration || 2000,
+		animationDuration: config.toastAnimationDuration || 200,
+	}
+
+	// Phone number offset to align with email text (after icon+gap)
+	const phoneOffsetX = config.phoneOffsetX || 0
+
+	// Email hover color
+	const emailHoverColor = config.emailHoverColor || tooltipConfig.color
+
 	const canvas = document.createElement("canvas")
 	canvas.width = 1024
 	canvas.height = 512
@@ -49,7 +84,49 @@ export function makeContactLabelPlane(config) {
 	})
 	const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat)
 
-	function updateTexture(appearanceConfig) {
+	// Store current appearance config for redraws
+	let currentConfig = null
+	let animationId = null
+	let toastTimeout = null
+	let tooltipVisible = false
+	let emailHovered = false
+	let currentPopupType = null // 'tooltip' or 'toast'
+
+	// Copy icon SVG path (from Material Icons)
+	const copyIconPath = new Path2D(
+		"M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"
+	)
+
+	function drawClipboardIcon(ctx, x, y, size, color = "white") {
+		ctx.save()
+		// Transform from SVG viewBox (0 -960 960 960) to target position/size
+		ctx.translate(x, y + size)
+		const scale = size / 960
+		ctx.scale(scale, -scale) // Flip Y since SVG has inverted Y
+		ctx.translate(0, 960) // Shift to account for viewBox y=-960
+		ctx.fillStyle = color
+		ctx.fill(copyIconPath)
+		ctx.restore()
+	}
+
+	// Draw rounded rectangle helper
+	function drawRoundedRect(ctx, x, y, w, h, radius) {
+		ctx.beginPath()
+		ctx.moveTo(x + radius, y)
+		ctx.lineTo(x + w - radius, y)
+		ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+		ctx.lineTo(x + w, y + h - radius)
+		ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+		ctx.lineTo(x + radius, y + h)
+		ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+		ctx.lineTo(x, y + radius)
+		ctx.quadraticCurveTo(x, y, x + radius, y)
+		ctx.closePath()
+	}
+
+	// popupState: { type: 'tooltip'|'toast', slideOffset: 0-1, opacity: 0-1 } or null
+	function updateTexture(appearanceConfig, popupState = null) {
+		currentConfig = appearanceConfig
 		const { lines, textAlign, titleFontSize, bodyFontSize } = appearanceConfig
 
 		const ctx = canvas.getContext("2d")
@@ -85,10 +162,74 @@ export function makeContactLabelPlane(config) {
 			if (i === 0) {
 				ctx.font = `bold ${titleFontSize || 80}px sans-serif`
 				ctx.fillText(line, xPos, lineHeight * (i + 1))
+
+				// Draw popup (tooltip or toast) if active
+				if (popupState && popupState.opacity > 0) {
+					// Select config based on popup type
+					const cfg = popupState.type === 'tooltip' ? tooltipConfig : toastConfig
+					const titleY = lineHeight * (i + 1)
+
+					// Calculate popup position with slide offset
+					const slideOffset =
+						(1 - popupState.slideOffset) * cfg.slideDistance
+
+					// Get title width to position popup
+					ctx.font = `bold ${titleFontSize || 80}px sans-serif`
+					const titleWidth = ctx.measureText(line).width
+
+					// Calculate popup text dimensions
+					ctx.font = `${cfg.fontSize}px sans-serif`
+					const textMetrics = ctx.measureText(cfg.text)
+					const popupTextWidth = textMetrics.width
+					const popupTextHeight = cfg.fontSize
+
+					// Popup box dimensions
+					const boxPadding = cfg.padding
+					const boxWidth = popupTextWidth + boxPadding * 2
+					const boxHeight = popupTextHeight + boxPadding * 2
+
+					// Popup position
+					let popupX
+					if (textAlign === "center") {
+						popupX = xPos + titleWidth / 2 + cfg.offsetX
+					} else {
+						popupX = xPos + titleWidth + cfg.offsetX
+					}
+					const popupY = titleY + cfg.offsetY + slideOffset
+
+					// Save context for opacity
+					ctx.save()
+					ctx.globalAlpha = popupState.opacity
+
+					// Draw background
+					ctx.fillStyle = cfg.bgColor
+					drawRoundedRect(
+						ctx,
+						popupX - boxPadding,
+						popupY - popupTextHeight / 2 - boxPadding,
+						boxWidth,
+						boxHeight,
+						cfg.borderRadius
+					)
+					ctx.fill()
+
+					// Draw text
+					ctx.font = `${cfg.fontSize}px sans-serif`
+					ctx.fillStyle = cfg.color
+					ctx.textAlign = "left"
+					ctx.textBaseline = "middle"
+					ctx.fillText(cfg.text, popupX, popupY)
+
+					ctx.restore()
+
+					// Reset for remaining content
+					ctx.textAlign = textAlign || "left"
+					ctx.fillStyle = "white"
+				}
 			} else if (i === 1) {
 				ctx.font = `${bodyFontSize || 60}px sans-serif`
 
-				const iconSize = 40
+				const iconSize = 60
 				const gap = 15
 				let startX = xPos
 				if (textAlign === "center") {
@@ -99,37 +240,191 @@ export function makeContactLabelPlane(config) {
 				const y = lineHeight * (i + 1)
 				const iconX = startX
 				const iconY = y - iconSize / 2
-				ctx.strokeStyle = "white"
-				ctx.lineWidth = 3
-				ctx.strokeRect(iconX + 5, iconY + 8, iconSize - 10, iconSize - 10)
-				ctx.beginPath()
-				ctx.moveTo(iconX + 12, iconY + 8)
-				ctx.lineTo(iconX + 12, iconY + 3)
-				ctx.lineTo(iconX + iconSize - 12, iconY + 3)
-				ctx.lineTo(iconX + iconSize - 12, iconY + 8)
-				ctx.stroke()
-				ctx.beginPath()
-				ctx.moveTo(iconX + 12, iconY + 18)
-				ctx.lineTo(iconX + iconSize - 12, iconY + 18)
-				ctx.moveTo(iconX + 12, iconY + 26)
-				ctx.lineTo(iconX + iconSize - 12, iconY + 26)
-				ctx.moveTo(iconX + 12, iconY + 34)
-				ctx.lineTo(iconX + iconSize - 17, iconY + 34)
-				ctx.stroke()
+
+				// Draw the clipboard icon (always white)
+				drawClipboardIcon(ctx, iconX, iconY, iconSize, "white")
+
+				// Draw email text (use hover color if hovered)
 				const originalAlign = ctx.textAlign
 				ctx.textAlign = "left"
-				ctx.fillStyle = "white"
+				ctx.fillStyle = emailHovered ? emailHoverColor : "white"
 				ctx.fillText(line, startX + iconSize + gap, y)
+
+				// Store email click region in canvas coordinates (normalized 0-1)
+				const emailTextWidth = ctx.measureText(line).width
+				mesh.userData.emailClickRegion = {
+					x1: startX / canvas.width,
+					y1: (y - iconSize / 2) / canvas.height,
+					x2: (startX + iconSize + gap + emailTextWidth) / canvas.width,
+					y2: (y + iconSize / 2) / canvas.height,
+					email: line,
+				}
+
 				ctx.textAlign = originalAlign
 			} else {
+				// Phone number and other lines - apply offset to align with email text
 				ctx.font = `${bodyFontSize || 60}px sans-serif`
-				ctx.fillText(line, xPos, lineHeight * (i + 1))
+				ctx.fillStyle = "white"
+				ctx.fillText(line, xPos + phoneOffsetX, lineHeight * (i + 1))
 			}
 		})
 		tex.needsUpdate = true
 	}
 
+	// Easing function for smooth animation
+	function easeOutCubic(t) {
+		return 1 - Math.pow(1 - t, 3)
+	}
+
+	function easeInCubic(t) {
+		return t * t * t
+	}
+
+	// Cancel any running animation
+	function cancelAnimation() {
+		if (animationId) {
+			cancelAnimationFrame(animationId)
+			animationId = null
+		}
+		if (toastTimeout) {
+			clearTimeout(toastTimeout)
+			toastTimeout = null
+		}
+	}
+
+	// Show tooltip on hover
+	function showTooltip() {
+		// Don't show tooltip if toast is active
+		if (currentPopupType === 'toast') return
+		// Don't re-animate if already showing
+		if (tooltipVisible && currentPopupType === 'tooltip') return
+
+		cancelAnimation()
+		tooltipVisible = true
+		emailHovered = true
+		currentPopupType = 'tooltip'
+
+		const animDuration = tooltipConfig.animationDuration
+		let startTime = null
+
+		function animateIn(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			const eased = easeOutCubic(progress)
+
+			updateTexture(currentConfig, { type: 'tooltip', slideOffset: eased, opacity: eased })
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateIn)
+			} else {
+				animationId = null
+			}
+		}
+
+		animationId = requestAnimationFrame(animateIn)
+	}
+
+	// Hide tooltip when mouse leaves
+	function hideTooltip() {
+		// Don't hide if toast is showing (toast takes priority)
+		if (currentPopupType === 'toast') return
+		if (!tooltipVisible && !emailHovered) return
+
+		cancelAnimation()
+		tooltipVisible = false
+		emailHovered = false
+
+		const animDuration = tooltipConfig.animationDuration
+		let startTime = null
+
+		function animateOut(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			const eased = easeInCubic(progress)
+
+			updateTexture(currentConfig, {
+				type: 'tooltip',
+				slideOffset: 1 - eased,
+				opacity: 1 - eased,
+			})
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateOut)
+			} else {
+				animationId = null
+				currentPopupType = null
+				updateTexture(currentConfig, null)
+			}
+		}
+
+		animationId = requestAnimationFrame(animateOut)
+	}
+
+	// Show "Copied!" toast with slide up animation (replaces tooltip)
+	function showCopiedMessage() {
+		cancelAnimation()
+		tooltipVisible = false
+		emailHovered = false
+		currentPopupType = 'toast'
+
+		const animDuration = toastConfig.animationDuration
+		const showDuration = toastConfig.duration
+		let startTime = null
+
+		// Phase 1: Slide up animation
+		function animateIn(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			const eased = easeOutCubic(progress)
+
+			updateTexture(currentConfig, { type: 'toast', slideOffset: eased, opacity: eased })
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateIn)
+			} else {
+				// Animation complete, wait for duration then fade out
+				animationId = null
+				toastTimeout = setTimeout(() => {
+					startTime = null
+					animationId = requestAnimationFrame(animateOut)
+				}, showDuration)
+			}
+		}
+
+		// Phase 2: Slide down + fade out animation
+		function animateOut(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			const eased = easeInCubic(progress)
+
+			updateTexture(currentConfig, {
+				type: 'toast',
+				slideOffset: 1 - eased,
+				opacity: 1 - eased,
+			})
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateOut)
+			} else {
+				// Animation complete, clear popup
+				animationId = null
+				currentPopupType = null
+				updateTexture(currentConfig, null)
+			}
+		}
+
+		// Start slide up animation
+		animationId = requestAnimationFrame(animateIn)
+	}
+
 	mesh.userData.updateTexture = updateTexture
+	mesh.userData.showTooltip = showTooltip
+	mesh.userData.hideTooltip = hideTooltip
+	mesh.userData.showCopiedMessage = showCopiedMessage
 
 	// Initial draw with revealed settings
 	const revealedConfig = {
