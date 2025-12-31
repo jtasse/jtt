@@ -137,8 +137,8 @@
 	-webkit-text-size-adjust: 100%;
 	-moz-text-size-adjust: 100%;
 	text-size-adjust: 100%;
-	/* Smaller base font size to fit more content */
-	font-size: 13px;
+	/* Base font size for info pane content */
+	font-size: 14px;
 }
 
 /* ============================================
@@ -147,7 +147,7 @@
 .orc-pane-title {
 	color: #00ffff;
 	margin: 0 0 10px 0;
-	font-size: 1.3em;
+	font-size: 1.4em;
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
@@ -227,18 +227,19 @@
    Available Satellites Pane
    ============================================ */
 #available-satellites-pane {
-	background: rgba(0, 40, 70, 0.4);
+	background: rgba(0, 60, 100, 0.5);
+	border: 1px solid rgba(0, 170, 255, 0.4);
 	border-radius: 6px;
-	padding: 8px 10px;
+	padding: 10px 12px;
 	margin-bottom: 12px;
 	box-sizing: border-box;
 }
 
 #available-satellites-pane h3 {
-	color: #00ffff;
+	color: #00ddff;
 	margin-top: 0;
 	margin-bottom: 8px;
-	font-size: 1.05em;
+	font-size: 1.15em;
 	text-align: center;
 }
 
@@ -249,16 +250,17 @@
 }
 
 .satellite-list-item {
-	padding: 6px 8px;
-	margin-bottom: 4px;
-	background: rgba(0, 50, 80, 0.5);
-	border: 1px solid rgba(0, 170, 255, 0.1);
-	border-radius: 4px;
+	padding: 5px 8px;
+	margin-bottom: 3px;
+	background: rgba(0, 40, 60, 0.3);
+	border: 1px solid rgba(0, 150, 200, 0.15);
+	border-radius: 3px;
 	cursor: pointer;
-	transition: background 0.3s, border-color 0.3s;
+	transition: background 0.2s, border-color 0.2s;
 	text-align: center;
-	font-weight: bold;
-	color: #aaddff;
+	font-weight: normal;
+	color: #99ccee;
+	font-size: 0.95em;
 }
 
 /* Orbit color indicators */
@@ -275,15 +277,16 @@
 }
 
 .satellite-list-item:hover {
-	background: rgba(0, 80, 120, 0.7);
-	border-color: #00aaff;
+	background: rgba(0, 60, 90, 0.5);
+	border-color: rgba(0, 170, 255, 0.4);
+	color: #bbddff;
 }
 
 .satellite-list-item.selected {
-	background: rgba(0, 120, 150, 0.9);
-	border-color: #00ffff;
+	background: rgba(0, 80, 110, 0.6);
+	border-color: rgba(0, 200, 255, 0.5);
 	color: #ffffff;
-	box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+	font-weight: bold;
 }
 
 
@@ -322,18 +325,19 @@
    Actions Pane
    ============================================ */
 #actions-pane {
-	background: rgba(40, 20, 20, 0.4);
+	background: rgba(0, 60, 100, 0.5);
+	border: 1px solid rgba(0, 170, 255, 0.4);
 	border-radius: 6px;
-	padding: 8px 10px;
+	padding: 10px 12px;
 	margin-bottom: 12px;
 	box-sizing: border-box;
 }
 
 #actions-pane h3 {
-	color: #ff6666;
+	color: #00ddff;
 	margin-top: 0;
 	margin-bottom: 8px;
-	font-size: 1.05em;
+	font-size: 1.15em;
 	text-align: center;
 }
 
@@ -346,29 +350,61 @@
 .action-list-item {
 	width: 100%;
 	box-sizing: border-box;
-	padding: 6px 8px;
-	margin-bottom: 4px;
-	background: rgba(80, 30, 30, 0.5);
-	border: 1px solid transparent;
-	border-radius: 4px;
+	padding: 14px 20px;
+	margin-bottom: 8px;
+	background: linear-gradient(180deg, rgba(70, 70, 80, 0.7) 0%, rgba(50, 50, 60, 0.8) 100%);
+	border: none;
+	border-radius: 8px;
 	cursor: not-allowed;
 	text-align: center;
 	font-weight: bold;
-	color: #888888;
+	font-size: 1em;
+	letter-spacing: 0.5px;
+	text-transform: none;
+	color: #555566;
+	/* 3D raised effect */
+	box-shadow:
+		0 4px 0 rgba(30, 30, 40, 0.8),
+		0 6px 10px rgba(0, 0, 0, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	position: relative;
+	top: 0;
+	transition: all 0.1s ease;
 }
 
 /* Enabled state - bright and available */
 .action-list-item:not(.disabled) {
-	background: rgba(150, 40, 40, 0.7);
-	border-color: #ff4444;
-	box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+	background: linear-gradient(180deg, #dd4444 0%, #aa2222 100%);
 	color: #ffffff;
 	cursor: pointer;
-	transition: box-shadow 0.2s ease;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	/* 3D raised effect with red "sides" */
+	box-shadow:
+		0 6px 0 #881111,
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(255, 68, 68, 0.4),
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item:not(.disabled):hover {
-	box-shadow: 0 0 25px rgba(255, 68, 68, 0.6);
+	background: linear-gradient(180deg, #ee5555 0%, #bb3333 100%);
+	box-shadow:
+		0 6px 0 #991515,
+		0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(255, 68, 68, 0.6),
+		inset 0 1px 0 rgba(255, 255, 255, 0.25),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-list-item:not(.disabled):active {
+	top: 4px;
+	box-shadow:
+		0 2px 0 #881111,
+		0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(255, 68, 68, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .action-list-item.decommissioning {
@@ -448,16 +484,37 @@
 
 /* Cancel Decommission Button */
 .action-list-item.cancel-action {
-	background: rgba(30, 80, 120, 0.7);
-	border-color: #00aaff;
-	box-shadow: 0 0 15px rgba(0, 170, 255, 0.4);
+	background: linear-gradient(180deg, #33bb66 0%, #228844 100%);
 	color: #ffffff;
 	cursor: pointer;
-	transition: box-shadow 0.2s ease;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	/* 3D raised effect with green "sides" */
+	box-shadow:
+		0 6px 0 #115522,
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(0, 255, 136, 0.4),
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item.cancel-action:hover {
-	box-shadow: 0 0 25px rgba(0, 170, 255, 0.6);
+	background: linear-gradient(180deg, #44cc77 0%, #339955 100%);
+	box-shadow:
+		0 6px 0 #117728,
+		0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(0, 255, 136, 0.6),
+		inset 0 1px 0 rgba(255, 255, 255, 0.25),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-list-item.cancel-action:active {
+	top: 4px;
+	box-shadow:
+		0 2px 0 #115522,
+		0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(0, 255, 136, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .action-list-item.cancel-action.cancelling {
@@ -478,18 +535,74 @@
 	}
 }
 
+/* ============================================
+   Satellite Info Pane (prominent status display)
+   ============================================ */
+#satellite-info-pane {
+	background: rgba(0, 60, 100, 0.5);
+	border: 1px solid rgba(0, 170, 255, 0.4);
+	border-radius: 6px;
+	padding: 10px 12px;
+	margin-bottom: 12px;
+	box-sizing: border-box;
+}
+
+#satellite-info-pane h3 {
+	color: #00ddff;
+	margin-top: 0;
+	margin-bottom: 8px;
+	font-size: 1.15em;
+	text-align: center;
+}
+
+#no-satellite-selected {
+	color: #668899;
+	font-style: italic;
+	text-align: center;
+	margin: 0;
+	padding: 8px 0;
+}
+
+.satellite-info-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 0;
+	border-bottom: 1px solid rgba(0, 170, 255, 0.15);
+}
+
+.satellite-info-row:last-child {
+	border-bottom: none;
+}
+
+.info-label {
+	color: #ffffff;
+	font-size: 0.95em;
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.info-value {
+	color: #ffffff;
+	font-weight: bold;
+}
+
 /* Status text colors */
 .status-operational {
 	color: #00ffaa;
+	text-shadow: 0 0 8px rgba(0, 255, 170, 0.5);
 }
 
 .status-decommissioning {
-	color: #ff8844;
+	color: #dd4444;
+	text-shadow: 0 0 8px rgba(221, 68, 68, 0.5);
 	animation: status-blink 1s ease-in-out infinite;
 }
 
 .status-returning {
-	color: #00aaff;
+	color: #33bb66;
+	text-shadow: 0 0 8px rgba(51, 187, 102, 0.5);
 	animation: status-blink 1s ease-in-out infinite;
 }
 
@@ -499,7 +612,7 @@
 		opacity: 1;
 	}
 	50% {
-		opacity: 0.5;
+		opacity: 0.6;
 	}
 }
 

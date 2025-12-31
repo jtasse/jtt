@@ -1369,55 +1369,36 @@ function createSelectionIndicator() {
 	return sprite
 }
 
-// Update the info pane with the selected satellite's ID
+// Update the info pane with the selected satellite's info
 function updateSelectedSatelliteInfo(satelliteId) {
 	const statusEl = document.getElementById("selected-satellite-status")
 	const idEl = document.getElementById("selected-satellite-display-id")
 	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
 	const infoContainer = document.getElementById("satellite-info-content")
-	const topIdEl = document.getElementById("selected-satellite-id")
 	const noSelectionMsg = document.getElementById("no-satellite-selected")
-	const decommissionBtn = document.getElementById("decommission-btn")
 
 	if (statusEl && orbitTypeEl && infoContainer && noSelectionMsg) {
 		if (selectedSatellite) {
 			infoContainer.style.display = "block"
 			noSelectionMsg.style.display = "none"
 
-			// Check satellite status
+			// Check satellite status - update with info-value class preserved
 			if (selectedSatellite.userData.returning) {
-				// Satellite is returning to orbit after cancelled decommission
-				statusEl.textContent = "Returning"
-				statusEl.className = "status-returning"
-				if (decommissionBtn) {
-					decommissionBtn.disabled = true
-					decommissionBtn.classList.add("decommissioning")
-					decommissionBtn.textContent = "Returning..."
-				}
+				statusEl.textContent = "Returning to orbit"
+				statusEl.className = "info-value status-returning"
 			} else if (selectedSatellite.userData.decommissioning) {
 				statusEl.textContent = "Decommissioning"
-				statusEl.className = "status-decommissioning"
-				if (decommissionBtn) {
-					decommissionBtn.disabled = true
-					decommissionBtn.classList.add("decommissioning")
-					decommissionBtn.textContent = "Decommissioning..."
-				}
+				statusEl.className = "info-value status-decommissioning"
 			} else {
 				statusEl.textContent = "Operational"
-				statusEl.className = "status-operational"
-				if (decommissionBtn) {
-					decommissionBtn.disabled = false
-					decommissionBtn.classList.remove("decommissioning")
-					decommissionBtn.textContent = "Decommission"
-				}
+				statusEl.className = "info-value status-operational"
 			}
 
-			// Update ID fields
+			// Update ID field
 			if (idEl) idEl.textContent = selectedSatellite.userData.id
-			if (topIdEl) topIdEl.textContent = selectedSatellite.userData.name
 
-			// Lookup orbit type based on ID prefix or specific ID
-			let orbitType = "Unknown Orbit"
+			// Lookup orbit type based on ID prefix
+			let orbitType = "Unknown"
 			const satId = selectedSatellite.userData.id
 			if (satId.startsWith("geo")) {
 				orbitType = "Geosynchronous"
@@ -2026,7 +2007,10 @@ window.orcDecommissionSatellite = function () {
 window.orcCancelDecommission = function () {
 	console.log("Cancel decommission button clicked")
 	console.log("Selected satellite:", selectedSatellite?.userData?.id)
-	console.log("Can cancel:", selectedSatellite ? canCancelDecommission(selectedSatellite) : false)
+	console.log(
+		"Can cancel:",
+		selectedSatellite ? canCancelDecommission(selectedSatellite) : false
+	)
 	if (selectedSatellite && canCancelDecommission(selectedSatellite)) {
 		const success = cancelDecommission(selectedSatellite)
 		console.log("Cancel decommission result:", success)
@@ -2036,57 +2020,56 @@ window.orcCancelDecommission = function () {
 	}
 }
 
-// Update the decommission action list item state based on selection
-function updateDecommissionActionState() {
-	const decommissionAction = document.getElementById("decommission-action")
-	if (!decommissionAction) return
+// Update the action button state - transforms between Decommission and Cancel
+function updateActionButtonState() {
+	const actionBtn = document.getElementById("decommission-action")
+	if (!actionBtn) return
+
+	// Remove existing click handler to prevent duplicates
+	actionBtn.onclick = null
 
 	if (!selectedSatellite) {
-		// No satellite selected - disable
-		decommissionAction.classList.add("disabled")
-		decommissionAction.classList.remove("decommissioning")
-		decommissionAction.textContent = "Decommission"
-		decommissionAction.disabled = true
+		// No satellite selected - show disabled Decommission
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
+	} else if (canCancelDecommission(selectedSatellite)) {
+		// Can cancel decommission - show Cancel button
+		actionBtn.classList.remove("disabled")
+		actionBtn.classList.add("cancel-action")
+		actionBtn.textContent = "Cancel Decommission"
+		actionBtn.disabled = false
+		actionBtn.onclick = window.orcCancelDecommission
 	} else if (selectedSatellite.userData.returning) {
-		// Satellite is returning to orbit - show returning state
-		decommissionAction.classList.remove("disabled")
-		decommissionAction.classList.add("decommissioning")
-		decommissionAction.textContent = "Returning..."
-		decommissionAction.disabled = true
+		// Returning - disable button
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
 	} else if (selectedSatellite.userData.decommissioning) {
-		// Satellite is decommissioning
-		decommissionAction.classList.remove("disabled")
-		decommissionAction.classList.add("decommissioning")
-		decommissionAction.textContent = "Decommissioning..."
-		decommissionAction.disabled = true
+		// Decommissioning but can't cancel (past point of no return) - disable
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
 	} else {
-		// Satellite is selected and operational - enable
-		decommissionAction.classList.remove("disabled")
-		decommissionAction.classList.remove("decommissioning")
-		decommissionAction.textContent = "Decommission"
-		decommissionAction.disabled = false
+		// Satellite is operational - show Decommission button
+		actionBtn.classList.remove("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = false
+		actionBtn.onclick = window.orcDecommissionSatellite
 	}
 }
 
-// Update the cancel decommission action button state based on selection
-function updateCancelDecommissionActionState() {
-	const cancelAction = document.getElementById("cancel-decommission-action")
-	if (!cancelAction) return
+// Wrapper functions for compatibility with existing calls
+function updateDecommissionActionState() {
+	updateActionButtonState()
+}
 
-	if (selectedSatellite && canCancelDecommission(selectedSatellite)) {
-		// Can cancel - show button
-		cancelAction.style.display = "block"
-		cancelAction.classList.remove("cancelling")
-		cancelAction.textContent = "Cancel Decommission"
-	} else if (selectedSatellite && selectedSatellite.userData.returning) {
-		// Currently returning - show but disable
-		cancelAction.style.display = "block"
-		cancelAction.classList.add("cancelling")
-		cancelAction.textContent = "Returning to Orbit..."
-	} else {
-		// Hide button - either no satellite selected, not decommissioning, or past point of no return
-		cancelAction.style.display = "none"
-	}
+function updateCancelDecommissionActionState() {
+	// Now handled by updateActionButtonState
 }
 
 // === Available Satellites Pane (loads HTML from file) ===
@@ -2143,15 +2126,6 @@ async function showAvailableSatellitesPane() {
 			decommissionAction.addEventListener(
 				"click",
 				window.orcDecommissionSatellite
-			)
-		}
-
-		// Wire up cancel decommission action click handler
-		const cancelDecommissionAction = orcInfoPane.querySelector("#cancel-decommission-action")
-		if (cancelDecommissionAction) {
-			cancelDecommissionAction.addEventListener(
-				"click",
-				window.orcCancelDecommission
 			)
 		}
 
