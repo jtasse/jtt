@@ -1,4 +1,10 @@
 import * as THREE from "three"
+import {
+	createOrcHand,
+	HandStateMachine,
+	HandState,
+	calculateIrregularOrbitPosition,
+} from "./orc-hand.js"
 
 // ORC Demo Scene - Orbital Refuse Collector visualization
 // Features:
@@ -17,6 +23,10 @@ export let orbitalRings = []
 export let surfaceMarker = null
 export let surfaceCircle = null
 export let geoTether = null // Line from George to surface point
+
+// Hand of ORC
+export let orcHand = null
+export let orcHandStateMachine = null
 
 // Surface marker position (editable lat/lon in degrees)
 // Latitude: -90 (south pole) to +90 (north pole)
@@ -67,60 +77,76 @@ export function getDecommissionState() {
 	const data = sat.userData
 	if (!data.decommissioning) return null
 
-	const worldPos = new THREE.Vector3()
-	sat.getWorldPosition(worldPos)
-	const distance = worldPos.length()
-
-	// Determine phase based on whether we've reached exosphere
-	const inBurnPhase = data.reachedExosphere || data.startedInExosphere
-	let phase = inBurnPhase ? "burning" : "approach"
-
-	// Calculate burn progress (0 at start of burn, 1 at destruction)
-	let burnProgress = 0
-	if (inBurnPhase && data.exosphereTime) {
-		const burnElapsed = Date.now() - data.exosphereTime
-		burnProgress = Math.min(burnElapsed / DECOMMISSION_CONFIG.burnDuration, 1)
-	}
-
 	// Smooth ease function for camera transitions
 	const smoothEase = (t) =>
 		t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 
-	// Smoothly transition camera speed between phases
-	let cameraSpeed
-	if (!inBurnPhase) {
-		cameraSpeed = DECOMMISSION_CONFIG.cameraApproachSpeed
+	// Get tracking position - ALWAYS track the hand during decommission
+	let trackingPosition = new THREE.Vector3()
+	let phase = "approach"
+	let burnProgress = 0
+	let inBurnPhase = false
+
+	if (orcHandStateMachine && orcHand) {
+		const handState = orcHandStateMachine.state
+
+		// Always track the hand position during decommission
+		orcHand.getWorldPosition(trackingPosition)
+
+		// Determine phase based on hand state
+		switch (handState) {
+			case HandState.POINTING:
+			case HandState.APPROACHING:
+				phase = "approach"
+				break
+
+			case HandState.GRABBING:
+			case HandState.CARRYING:
+			case HandState.RELEASING:
+			case HandState.WINDING_UP:
+				phase = "carrying"
+				break
+
+			case HandState.SLAPPING:
+			case HandState.CELEBRATING:
+				phase = "burning"
+				inBurnPhase = true
+
+				// Calculate burn progress
+				if (sat.userData.burnStartTime) {
+					const burnElapsed = performance.now() - sat.userData.burnStartTime
+					burnProgress = Math.min(burnElapsed / 3000, 1)
+				}
+				break
+
+			default:
+				// Still track hand even in other states
+				break
+		}
 	} else {
-		// Smooth transition from approach speed to burn speed over 800ms
-		const burnElapsed = Date.now() - data.exosphereTime
-		const transitionProgress = Math.min(burnElapsed / 800, 1)
-		const easedTransition = smoothEase(transitionProgress)
-		cameraSpeed =
-			DECOMMISSION_CONFIG.cameraApproachSpeed +
-			easedTransition *
-				(DECOMMISSION_CONFIG.cameraQuickZoomSpeed -
-					DECOMMISSION_CONFIG.cameraApproachSpeed)
+		// Fallback to satellite if no hand available
+		sat.getWorldPosition(trackingPosition)
 	}
 
-	// Smoothly transition target camera distance
-	let targetZoomDistance
-	if (!inBurnPhase) {
-		targetZoomDistance = DECOMMISSION_CONFIG.cameraZoomDistanceFar
-	} else {
-		// Smooth transition from far to close over 1000ms
-		const burnElapsed = Date.now() - data.exosphereTime
-		const transitionProgress = Math.min(burnElapsed / 1000, 1)
-		const easedTransition = smoothEase(transitionProgress)
+	const distance = trackingPosition.length()
+
+	// Camera parameters based on phase
+	let cameraSpeed = DECOMMISSION_CONFIG.cameraApproachSpeed
+	let targetZoomDistance = DECOMMISSION_CONFIG.cameraZoomDistanceFar
+
+	if (inBurnPhase) {
+		cameraSpeed = DECOMMISSION_CONFIG.cameraQuickZoomSpeed
+		const easedBurn = smoothEase(Math.min(burnProgress * 2, 1))
 		targetZoomDistance =
 			DECOMMISSION_CONFIG.cameraZoomDistanceFar -
-			easedTransition *
+			easedBurn *
 				(DECOMMISSION_CONFIG.cameraZoomDistanceFar -
 					DECOMMISSION_CONFIG.cameraZoomDistanceClose)
 	}
 
 	return {
 		satellite: sat,
-		position: worldPos,
+		position: trackingPosition,
 		distance,
 		phase,
 		burnProgress,
@@ -128,6 +154,8 @@ export function getDecommissionState() {
 		cameraSpeed,
 		targetZoomDistance,
 		config: DECOMMISSION_CONFIG,
+		handState: orcHandStateMachine?.state,
+		hand: orcHand,
 	}
 }
 
@@ -432,6 +460,40 @@ export function createOrcScene() {
 
 	const circle = createSurfaceCircle()
 	planet.add(circle)
+
+	// Create Hand of ORC
+	orcHand = createOrcHand(5) // 5x satellite size
+	const initialHandPos = calculateIrregularOrbitPosition(performance.now())
+	orcHand.position.copy(initialHandPos)
+	orcGroup.add(orcHand)
+
+	// Initialize hand state machine
+	orcHandStateMachine = new HandStateMachine(orcHand, orcGroup, satellites)
+
+	// Set up callbacks for hand state machine
+	orcHandStateMachine.onSatelliteBurn = (satellite) => {
+		// Create flame trail when hand slaps satellite
+		if (!satellite.userData.flameParticles) {
+			satellite.userData.flameParticles = createFlameTrail(satellite)
+		}
+		satellite.userData.handSlapped = true
+		satellite.userData.burnStartTime = performance.now()
+	}
+
+	orcHandStateMachine.onSatelliteDestroyed = (satellite) => {
+		// Clean up and remove satellite
+		disposeFlameTrail(satellite)
+		removeSatelliteFromScene(satellite)
+	}
+
+	orcHandStateMachine.onSlowMotionStart = () => {
+		// Slow down normal satellite animations during slap
+		// This is handled by the hand state machine internally
+	}
+
+	orcHandStateMachine.onSlowMotionEnd = () => {
+		// Resume normal speed
+	}
 
 	return orcGroup
 }
@@ -1161,8 +1223,55 @@ export function animateOrcScene(animateNormal = true) {
 		planet.rotation.y += planet.userData.rotationSpeed
 	}
 
+	// Update Hand of ORC
+	if (orcHandStateMachine) {
+		orcHandStateMachine.update()
+
+		// Update satellite burn effect when hand has slapped it
+		if (orcHandStateMachine.state === HandState.CELEBRATING) {
+			const targetSat = orcHandStateMachine.targetSatellite
+			if (targetSat && targetSat.userData.handSlapped) {
+				const burnElapsed = performance.now() - targetSat.userData.burnStartTime
+				const burnDuration = 3000
+				const burnProgress = Math.min(burnElapsed / burnDuration, 1)
+
+				// Update flame trail
+				const worldPos = new THREE.Vector3()
+				targetSat.getWorldPosition(worldPos)
+				const orbitDir = worldPos.clone().normalize().negate()
+				updateFlameTrail(targetSat, burnProgress, orbitDir, worldPos.length())
+
+				// Scale down and fizzle
+				const scale = 1 - burnProgress * 0.85
+				targetSat.scale.set(scale, scale, scale)
+
+				if (burnProgress > 0.8) {
+					const fizzleProgress = (burnProgress - 0.8) / 0.2
+					targetSat.visible = Math.random() > fizzleProgress * 0.5
+				}
+
+				// Move satellite toward Earth during burn
+				const earthDir = worldPos.clone().normalize().negate()
+				targetSat.position.add(earthDir.multiplyScalar(0.002))
+			}
+		}
+	}
+
 	satellites.forEach((sat) => {
 		const data = sat.userData
+
+		// Skip satellites being handled by the Hand of ORC
+		if (orcHandStateMachine && orcHandStateMachine.targetSatellite === sat) {
+			const handState = orcHandStateMachine.state
+			// Only skip if hand is actively controlling the satellite
+			if (
+				handState !== HandState.IDLE_ORBIT &&
+				handState !== HandState.RETURNING &&
+				handState !== HandState.CANCELLED
+			) {
+				return // Hand is in control
+			}
+		}
 
 		// Helper to calculate position for Keplerian orbits (MEO)
 		const updateKeplerianPosition = (angle, semiMajor, eccentricity) => {
@@ -1582,6 +1691,8 @@ export function disposeOrcScene() {
 	planet = null
 	satellites = []
 	orbitalRings = []
+	orcHand = null
+	orcHandStateMachine = null
 }
 
 // Create a mini preview version for portfolio showcase
@@ -1920,29 +2031,9 @@ export function startDecommission(satellite) {
 	// Set as active decommission for camera tracking
 	activeDecommission = satellite
 
-	// Store original orbit parameters for de-orbit calculation
+	// Mark satellite as being decommissioned
 	data.decommissioning = true
 	data.decommissionStartTime = Date.now()
-
-	// Check if satellite is already within exosphere (like Leona at LEO orbit)
-	const worldPos = new THREE.Vector3()
-	satellite.getWorldPosition(worldPos)
-	const currentDistance = worldPos.length()
-
-	if (currentDistance <= EXOSPHERE_RADIUS) {
-		// Already in exosphere - start burning immediately
-		data.startedInExosphere = true
-		data.reachedExosphere = true
-		data.exosphereTime = Date.now()
-	} else {
-		// Outside exosphere - needs approach phase
-		data.startedInExosphere = false
-		data.reachedExosphere = false
-		data.exosphereTime = null
-	}
-
-	// Initialize flame trail
-	data.flameParticles = createFlameTrail(satellite)
 
 	// If this is George (geosynchronous satellite), handle specially
 	if (data.isGeosynchronous) {
@@ -1960,32 +2051,28 @@ export function startDecommission(satellite) {
 		orcGroup.add(satellite)
 		satellite.position.copy(worldPos)
 
-		// Set up LEO-compatible orbit parameters so George uses the same decommission code as Leona
-		// Calculate angle from current position (atan2(z, x) matches the cos/sin convention in animation)
-		data.angle = Math.atan2(worldPos.z, worldPos.x)
-		data.orbitRadius = Math.sqrt(
-			worldPos.x * worldPos.x + worldPos.z * worldPos.z
-		)
-		data.orbitSpeed = -0.005 // Negative for clockwise (prograde) motion, same magnitude as LEO
-		data.orbitY = worldPos.y // Store Y for inclined orbit decommission
+		// Store original orbit params for potential cancel
+		data.originalWorldPos = worldPos.clone()
 	}
 
-	// Store original radius values
+	// Store original orbit parameters for potential cancel
 	if (data.eccentricity) {
-		// MEO
-		// No specific radius to store as it's calculated dynamically,
-		// but we flag it to ensure logic persists.
+		// MEO - store current angle
+		data.originalAngle = data.angle
 	} else if (data.orbitRadiusX) {
 		// GEO satellite (elliptical)
 		data.originalOrbitRadiusX = data.orbitRadiusX
 		data.originalOrbitRadiusZ = data.orbitRadiusZ
-	} else {
+	} else if (data.orbitRadius) {
 		// LEO satellite (circular)
 		data.originalOrbitRadius = data.orbitRadius
 	}
-
-	// Speed up the satellite as it de-orbits
 	data.originalOrbitSpeed = data.orbitSpeed
+
+	// Start the Hand of ORC decommission sequence
+	if (orcHandStateMachine) {
+		orcHandStateMachine.startDecommission(satellite)
+	}
 
 	// Update UI
 	updateSatelliteListItemState(satellite.userData.id, true)
@@ -2006,68 +2093,63 @@ export function cancelDecommission(satellite) {
 		return false
 	}
 
-	const data = satellite.userData
-
-	// Can only cancel if satellite hasn't reached exosphere
-	if (data.reachedExosphere || data.startedInExosphere) {
-		console.log("cancelDecommission: already in exosphere", {
-			reachedExosphere: data.reachedExosphere,
-			startedInExosphere: data.startedInExosphere,
-		})
+	// Check if hand state machine can cancel
+	if (orcHandStateMachine && !orcHandStateMachine.canCancel()) {
+		console.log("cancelDecommission: hand cannot cancel (slap already delivered)")
 		return false
 	}
 
-	// Get current position to calculate return starting point
-	// For Keplerian (MEO) orbits in rotated groups, use local position
-	let currentDistance
-	let originalRadius
+	const data = satellite.userData
 
+	// Cancel through hand state machine
+	if (orcHandStateMachine) {
+		const cancelled = orcHandStateMachine.cancel()
+		if (!cancelled) {
+			console.log("cancelDecommission: hand cancel failed")
+			return false
+		}
+	}
+
+	// Mark satellite as returning to orbit
+	data.decommissioning = false
+	data.returning = true
+	data.returnStartTime = Date.now()
+
+	// Get current world position for return animation
+	const worldPos = new THREE.Vector3()
+	satellite.getWorldPosition(worldPos)
+
+	// Calculate return parameters based on orbit type
+	let originalRadius
 	if (data.eccentricity && data.semiMajorAxis) {
-		// MEO: Use local position (satellite is in a rotated orbit group)
-		currentDistance = satellite.position.length()
-		// Calculate expected radius at current angle using Kepler's equation
-		// r = a(1-e^2) / (1 + e*cos(theta))
+		// MEO: Calculate expected radius at current angle
 		const a = data.semiMajorAxis
 		const e = data.eccentricity
 		const theta = data.angle || 0
 		originalRadius = (a * (1 - e * e)) / (1 + e * Math.cos(theta))
+		data.returnStartRadiusMultiplier = satellite.position.length() / originalRadius
+	} else if (data.originalOrbitRadius) {
+		// LEO or GEO circular
+		originalRadius = data.originalOrbitRadius
+		data.returnStartRadiusMultiplier = worldPos.length() / originalRadius
+	} else if (data.originalOrbitRadiusX) {
+		// GEO elliptical
+		originalRadius = data.originalOrbitRadiusX
+		data.returnStartRadiusMultiplier = worldPos.length() / originalRadius
 	} else {
-		// For other satellites, use world position
-		const worldPos = new THREE.Vector3()
-		satellite.getWorldPosition(worldPos)
-		currentDistance = worldPos.length()
-		originalRadius =
-			data.originalOrbitRadius ||
-			data.originalOrbitRadiusX ||
-			LEO_ORBIT_RADIUS
+		originalRadius = LEO_ORBIT_RADIUS
+		data.returnStartRadiusMultiplier = 1
 	}
-	const currentRadiusMultiplier = currentDistance / originalRadius
 
-	console.log("cancelDecommission: setting up return", {
-		originalRadius,
-		currentDistance,
-		currentRadiusMultiplier,
-		eccentricity: data.eccentricity,
-		semiMajorAxis: data.semiMajorAxis,
-	})
+	// Duration based on how far through the sequence we were
+	data.returnDuration = 2000
 
-	// Store return animation state
-	data.decommissioning = false
-	data.returning = true
-	data.returnStartTime = Date.now()
-	data.returnStartRadiusMultiplier = currentRadiusMultiplier
-
-	// Duration proportional to how far satellite has descended
-	// More descent = longer return time
-	const descentProgress = 1 - currentRadiusMultiplier
-	data.returnDuration = 3000 + descentProgress * 5000 // 3-8 seconds
-
-	console.log("cancelDecommission: return state set", {
+	console.log("cancelDecommission: return animation started", {
 		returning: data.returning,
 		returnDuration: data.returnDuration,
 	})
 
-	// Dispose flame trail since we're no longer decommissioning
+	// Dispose flame trail if any
 	disposeFlameTrail(satellite)
 
 	// Clear active decommission tracking
@@ -2083,9 +2165,11 @@ export function canCancelDecommission(satellite) {
 	if (!satellite || !satellite.userData.decommissioning) {
 		return false
 	}
-	const data = satellite.userData
-	// Can only cancel if satellite hasn't reached exosphere
-	return !data.reachedExosphere && !data.startedInExosphere
+	// Check if hand state machine allows cancellation
+	if (orcHandStateMachine) {
+		return orcHandStateMachine.canCancel()
+	}
+	return false
 }
 
 // Remove a satellite from the scene and UI after decommission

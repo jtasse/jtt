@@ -26,6 +26,7 @@ import {
 	hideGeoTether,
 	getDecommissionState,
 	getDecommissionConfig,
+	orcHandStateMachine,
 } from "../content/orc-demo/orc-demo.js"
 import "../content/about/about.css"
 import "../content/blog/blog.css"
@@ -1692,6 +1693,10 @@ function createOrcDemo() {
 				} else {
 					hideGeoTether()
 				}
+				// Tell hand to point at the selected satellite
+				if (orcHandStateMachine) {
+					orcHandStateMachine.setSelectedSatellite(clickedObject)
+				}
 			}
 		} else {
 			// Clicked on empty space, deselect
@@ -1702,6 +1707,10 @@ function createOrcDemo() {
 			updateDecommissionActionState()
 			updateCancelDecommissionActionState()
 			hideGeoTether()
+			// Tell hand to stop pointing
+			if (orcHandStateMachine) {
+				orcHandStateMachine.setSelectedSatellite(null)
+			}
 		}
 	})
 
@@ -1992,6 +2001,10 @@ window.orcSelectSatellite = function (satId) {
 		} else {
 			hideGeoTether()
 		}
+		// Tell hand to point at the selected satellite
+		if (orcHandStateMachine) {
+			orcHandStateMachine.setSelectedSatellite(targetSat)
+		}
 	}
 }
 
@@ -2184,6 +2197,10 @@ window.addEventListener("satelliteRemoved", (event) => {
 		updateSelectedSatelliteInfo(null)
 		updateDecommissionActionState()
 		updateCancelDecommissionActionState()
+		// Tell hand to stop pointing
+		if (orcHandStateMachine) {
+			orcHandStateMachine.setSelectedSatellite(null)
+		}
 	}
 	updateAvailableSatellitesHighlight()
 })
