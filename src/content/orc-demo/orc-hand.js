@@ -47,11 +47,11 @@ export const SEQUENCE_TIMINGS = {
 	approachDuration: 2000, // Time to fly to satellite
 	grabDuration: 500, // Time for pinch gesture
 	carryDuration: 1500, // Time to carry to exosphere
-	releaseDuration: 300, // Time to open hand
-	windUpDuration: 600, // Time to wind up slap
-	slapDuration: 200, // Time for slap motion
+	releaseDuration: 400, // Time to open hand
+	windUpDuration: 2500, // Time to wind up slap (super slow dramatic wind-up)
+	slapDuration: 4000, // Time for slap motion (SUPER SLOW - 4 full seconds)
 	burnDuration: 3000, // Satellite burn time (slow-mo)
-	celebrateDuration: 1200, // Thumbs up duration
+	celebrateDuration: 2500, // Thumbs up duration (increased for visibility)
 	returnDuration: 2000, // Time to return to orbit
 }
 
@@ -303,8 +303,16 @@ function createFinger(config, materials) {
 	}
 
 	// Position finger on palm
-	fingerGroup.position.set(config.position[0], config.position[1], config.position[2])
-	fingerGroup.rotation.set(config.rotation[0], config.rotation[1], config.rotation[2])
+	fingerGroup.position.set(
+		config.position[0],
+		config.position[1],
+		config.position[2]
+	)
+	fingerGroup.rotation.set(
+		config.rotation[0],
+		config.rotation[1],
+		config.rotation[2]
+	)
 
 	return fingerGroup
 }
@@ -338,7 +346,11 @@ function createPalm(materials) {
 	})
 
 	// Add knuckle plate (top of palm)
-	const knucklePlateGeo = new THREE.BoxGeometry(PALM_WIDTH * 0.9, PALM_HEIGHT * 0.15, PALM_DEPTH * 1.1)
+	const knucklePlateGeo = new THREE.BoxGeometry(
+		PALM_WIDTH * 0.9,
+		PALM_HEIGHT * 0.15,
+		PALM_DEPTH * 1.1
+	)
 	const knucklePlate = new THREE.Mesh(knucklePlateGeo, materials.accent)
 	knucklePlate.position.y = PALM_HEIGHT * 0.35
 	palmGroup.add(knucklePlate)
@@ -363,7 +375,11 @@ function createWristWithPlume(materials) {
 	wristGroup.add(wristJoint)
 
 	// Forearm section
-	const forearmGeo = new THREE.BoxGeometry(PALM_WIDTH * 0.6, PALM_HEIGHT * 0.6, PALM_DEPTH * 1.2)
+	const forearmGeo = new THREE.BoxGeometry(
+		PALM_WIDTH * 0.6,
+		PALM_HEIGHT * 0.6,
+		PALM_DEPTH * 1.2
+	)
 	const forearm = new THREE.Mesh(forearmGeo, materials.metal)
 	forearm.position.y = -PALM_HEIGHT * 0.65
 	wristGroup.add(forearm)
@@ -399,14 +415,22 @@ function createPropulsionPlume(materials) {
 	plumeGroup.name = "propulsionPlume"
 
 	// Inner bright core
-	const innerConeGeo = new THREE.ConeGeometry(PALM_DEPTH * 0.4, PALM_HEIGHT * 0.6, 12)
+	const innerConeGeo = new THREE.ConeGeometry(
+		PALM_DEPTH * 0.4,
+		PALM_HEIGHT * 0.6,
+		12
+	)
 	const innerCone = new THREE.Mesh(innerConeGeo, materials.plumeInner)
 	innerCone.rotation.x = -Math.PI / 2 // Point backward
 	innerCone.position.z = -PALM_HEIGHT * 0.25
 	plumeGroup.add(innerCone)
 
 	// Outer glow
-	const outerConeGeo = new THREE.ConeGeometry(PALM_DEPTH * 0.7, PALM_HEIGHT * 0.9, 12)
+	const outerConeGeo = new THREE.ConeGeometry(
+		PALM_DEPTH * 0.7,
+		PALM_HEIGHT * 0.9,
+		12
+	)
 	const outerCone = new THREE.Mesh(outerConeGeo, materials.plumeOuter)
 	outerCone.rotation.x = -Math.PI / 2
 	outerCone.position.z = -PALM_HEIGHT * 0.35
@@ -558,13 +582,16 @@ function lerpGestures(hand, fromGesture, toGesture, t) {
 		const joints = finger.userData.joints
 		// Lerp each joint
 		if (joints[0]) {
-			joints[0].rotation.x = fromFinger.proximal + (toFinger.proximal - fromFinger.proximal) * t
+			joints[0].rotation.x =
+				fromFinger.proximal + (toFinger.proximal - fromFinger.proximal) * t
 		}
 		if (joints[1]) {
-			joints[1].rotation.x = fromFinger.middle + (toFinger.middle - fromFinger.middle) * t
+			joints[1].rotation.x =
+				fromFinger.middle + (toFinger.middle - fromFinger.middle) * t
 		}
 		if (joints[2]) {
-			joints[2].rotation.x = fromFinger.distal + (toFinger.distal - fromFinger.distal) * t
+			joints[2].rotation.x =
+				fromFinger.distal + (toFinger.distal - fromFinger.distal) * t
 		}
 	})
 
@@ -609,7 +636,11 @@ export function updatePlumeAnimation(plume, intensity = 1) {
 	const time = performance.now() * 0.01
 
 	// Flickering effect
-	const flicker = 0.7 + Math.sin(time * 3.7) * 0.15 + Math.sin(time * 7.3) * 0.1 + Math.random() * 0.05
+	const flicker =
+		0.7 +
+		Math.sin(time * 3.7) * 0.15 +
+		Math.sin(time * 7.3) * 0.1 +
+		Math.random() * 0.05
 	const scaledIntensity = intensity * flicker
 
 	// Scale cones
@@ -629,34 +660,75 @@ export function updatePlumeAnimation(plume, intensity = 1) {
 }
 
 // ============================================
-// Irregular Orbit Calculation
+// Free-Flying Hand Movement - Smooth and Graceful
 // ============================================
 
-export function calculateIrregularOrbitPosition(time) {
-	const config = HAND_ORBIT_CONFIG
-
-	// Base circular motion
-	const baseAngle = time * config.baseSpeed
-
-	// Add noise-based variations for irregularity
-	const t = time * config.noiseFrequency
-	const radiusNoise = Math.sin(t * 2.7) * Math.cos(t * 1.3) + Math.sin(t * 4.1) * 0.3
-	const speedNoise = Math.sin(t * 1.9) * 0.5 + Math.cos(t * 3.2) * 0.3
-	const inclinationNoise = Math.sin(t * 0.7) * Math.cos(t * 1.1)
-
-	const radius = config.baseRadius + radiusNoise * config.radiusVariation
-	const angle = baseAngle + speedNoise * config.speedVariation * time * 0.001
-	const inclination = config.inclinationBase + inclinationNoise * config.inclinationVariation
-
-	// Convert to 3D position
-	const x = Math.cos(angle) * radius
-	const y = Math.sin(inclination) * Math.sin(angle * 0.7) * radius * 0.4
-	const z = Math.sin(angle) * radius * Math.cos(inclination * 0.5)
-
-	return new THREE.Vector3(x, y, z)
+// Camera view bounds (approximate visible area)
+const VIEW_BOUNDS = {
+	minX: -2.2,
+	maxX: 2.2,
+	minY: -1.2,
+	maxY: 1.8,
+	minZ: -1.8,
+	maxZ: 2.2,
 }
 
-export function avoidSatellites(handPosition, satellites, avoidanceRadius = HAND_ORBIT_CONFIG.avoidanceRadius) {
+// Generate smooth, free-flowing movement using layered sine waves
+// No orbiting - just graceful, free-willed flight
+export function calculateIrregularOrbitPosition(time, currentPos = null) {
+	// Convert to seconds for smoother calculations
+	const t = time * 0.0001
+
+	// Layer multiple slow sine waves for organic, flowing movement
+	// Each axis uses different frequencies to avoid repetitive patterns
+
+	// X-axis: slow sweeping left-right with subtle variations
+	const x =
+		Math.sin(t * 0.7) * 1.2 + // Primary slow sweep
+		Math.sin(t * 0.31) * 0.5 + // Secondary variation
+		Math.sin(t * 0.13) * 0.3 // Tertiary drift
+
+	// Y-axis: gentle up-down bobbing
+	const y =
+		Math.sin(t * 0.53) * 0.5 + // Primary bob
+		Math.sin(t * 0.23) * 0.3 + // Secondary wave
+		Math.cos(t * 0.11) * 0.2 + // Slow drift
+		0.3 // Slight upward bias
+
+	// Z-axis: forward-back movement, staying mostly in front
+	const z =
+		Math.cos(t * 0.47) * 0.8 + // Primary depth change
+		Math.sin(t * 0.19) * 0.4 + // Variation
+		Math.cos(t * 0.07) * 0.3 + // Very slow drift
+		0.8 // Forward bias (toward camera)
+
+	const targetPos = new THREE.Vector3(x, y, z)
+
+	// Keep within camera view bounds
+	targetPos.x = Math.max(
+		VIEW_BOUNDS.minX,
+		Math.min(VIEW_BOUNDS.maxX, targetPos.x)
+	)
+	targetPos.y = Math.max(
+		VIEW_BOUNDS.minY,
+		Math.min(VIEW_BOUNDS.maxY, targetPos.y)
+	)
+	targetPos.z = Math.max(
+		VIEW_BOUNDS.minZ,
+		Math.min(VIEW_BOUNDS.maxZ, targetPos.z)
+	)
+
+	// Ensure minimum distance from planet
+	clampOutsidePlanet(targetPos)
+
+	return targetPos
+}
+
+export function avoidSatellites(
+	handPosition,
+	satellites,
+	avoidanceRadius = HAND_ORBIT_CONFIG.avoidanceRadius
+) {
 	const avoidanceVector = new THREE.Vector3()
 
 	if (!satellites || satellites.length === 0) return avoidanceVector
@@ -681,7 +753,10 @@ export function avoidSatellites(handPosition, satellites, avoidanceRadius = HAND
 }
 
 // Avoid flying through the planet
-export function avoidPlanet(position, minDistance = HAND_ORBIT_CONFIG.minPlanetDistance) {
+export function avoidPlanet(
+	position,
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+) {
 	const avoidanceVector = new THREE.Vector3()
 	const distanceFromCenter = position.length()
 
@@ -696,7 +771,10 @@ export function avoidPlanet(position, minDistance = HAND_ORBIT_CONFIG.minPlanetD
 }
 
 // Ensure a position stays outside the planet
-export function clampOutsidePlanet(position, minDistance = HAND_ORBIT_CONFIG.minPlanetDistance) {
+export function clampOutsidePlanet(
+	position,
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+) {
 	const distanceFromCenter = position.length()
 	if (distanceFromCenter < minDistance && distanceFromCenter > 0) {
 		// Move position to minimum distance from center
@@ -805,7 +883,10 @@ export class HandStateMachine {
 		if (!this.canCancel()) return false
 
 		// If satellite is attached to hand, detach it
-		if (this.targetSatellite && this.hand.children.includes(this.targetSatellite)) {
+		if (
+			this.targetSatellite &&
+			this.hand.children.includes(this.targetSatellite)
+		) {
 			const worldPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(worldPos)
 			this.hand.remove(this.targetSatellite)
@@ -882,7 +963,7 @@ export class HandStateMachine {
 
 	updateIdleOrbit() {
 		const time = performance.now() - this.orbitStartTime
-		const targetPos = calculateIrregularOrbitPosition(time)
+		const targetPos = calculateIrregularOrbitPosition(time, this.hand.position)
 
 		// Apply satellite avoidance
 		const avoidance = avoidSatellites(this.hand.position, this.satellites)
@@ -893,21 +974,29 @@ export class HandStateMachine {
 		targetPos.add(planetAvoidance)
 
 		// Smooth movement toward target
-		this.hand.position.lerp(targetPos, 0.015)
+		this.hand.position.lerp(targetPos, 0.02)
 
-		// If a satellite is selected, point at it while orbiting
+		// If a satellite is selected, point index fingertip at it like an arrow
 		if (this.selectedSatellite) {
 			const satPos = new THREE.Vector3()
 			this.selectedSatellite.getWorldPosition(satPos)
 
-			// Calculate direction to satellite
-			const direction = satPos.clone().sub(this.hand.position).normalize()
-			const up = new THREE.Vector3(0, 1, 0)
-			const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), direction, up)
-			const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+			// The index finger extends in local +Y direction when in pointing pose
+			// Think of it as an arrow: we need to rotate the hand so its +Y axis
+			// points directly at the satellite's position in space
+			const localFingerDirection = new THREE.Vector3(0, 1, 0)
+
+			// Calculate the world direction from hand to satellite
+			const worldDirectionToSat = satPos.clone().sub(this.hand.position).normalize()
+
+			// Create quaternion that rotates local +Y to point at satellite
+			const targetQuat = new THREE.Quaternion().setFromUnitVectors(
+				localFingerDirection,
+				worldDirectionToSat
+			)
 
 			// Smoothly rotate to point at satellite
-			this.hand.quaternion.slerp(targetQuat, 0.05)
+			this.hand.quaternion.slerp(targetQuat, 0.04)
 		} else {
 			// Face direction of travel when no satellite selected
 			const velocity = targetPos.clone().sub(this.hand.position)
@@ -923,23 +1012,28 @@ export class HandStateMachine {
 	updatePointing() {
 		const elapsed = this.getElapsedTime()
 
-		// Slow down idle orbit movement
+		// Continue gentle movement while pointing
 		const time = performance.now() - this.orbitStartTime
-		const targetPos = calculateIrregularOrbitPosition(time)
-		this.hand.position.lerp(targetPos, 0.005)
+		const targetPos = calculateIrregularOrbitPosition(time, this.hand.position)
+		this.hand.position.lerp(targetPos, 0.008)
 
-		// Turn toward satellite
+		// Point index fingertip at satellite like an arrow
 		if (this.targetSatellite) {
-			const targetPos = new THREE.Vector3()
-			this.targetSatellite.getWorldPosition(targetPos)
+			const satPos = new THREE.Vector3()
+			this.targetSatellite.getWorldPosition(satPos)
 
-			const direction = targetPos.clone().sub(this.hand.position).normalize()
-			const targetQuat = new THREE.Quaternion()
-			const up = new THREE.Vector3(0, 1, 0)
-			const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), direction, up)
-			targetQuat.setFromRotationMatrix(rotMatrix)
+			// The index finger extends in local +Y direction
+			// Rotate hand so +Y points directly at satellite position
+			const localFingerDirection = new THREE.Vector3(0, 1, 0)
+			const worldDirectionToSat = satPos.clone().sub(this.hand.position).normalize()
 
-			this.hand.quaternion.slerp(targetQuat, 0.08)
+			const targetQuat = new THREE.Quaternion().setFromUnitVectors(
+				localFingerDirection,
+				worldDirectionToSat
+			)
+
+			// Smoothly rotate to maintain arrow-like pointing
+			this.hand.quaternion.slerp(targetQuat, 0.06)
 		}
 
 		// Transition after duration + pause
@@ -963,7 +1057,9 @@ export class HandStateMachine {
 			// Use an arc if direct path would go through planet
 			const startPos = this.stateData.startPosition
 			const directPath = targetPos.clone().sub(startPos)
-			const midPoint = startPos.clone().add(directPath.clone().multiplyScalar(0.5))
+			const midPoint = startPos
+				.clone()
+				.add(directPath.clone().multiplyScalar(0.5))
 			const midDistance = midPoint.length()
 
 			// If midpoint is too close to planet, arc around it
@@ -971,7 +1067,9 @@ export class HandStateMachine {
 			if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
 				// Create an arc path by pushing the midpoint outward
 				const pushDirection = midPoint.clone().normalize()
-				const arcMidPoint = pushDirection.multiplyScalar(HAND_ORBIT_CONFIG.minPlanetDistance * 1.2)
+				const arcMidPoint = pushDirection.multiplyScalar(
+					HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+				)
 
 				// Quadratic bezier interpolation for smooth arc
 				const oneMinusT = 1 - eased
@@ -993,8 +1091,14 @@ export class HandStateMachine {
 			const direction = targetPos.clone().sub(this.hand.position).normalize()
 			if (direction.length() > 0) {
 				const up = new THREE.Vector3(0, 1, 0)
-				const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), direction, up)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+				const rotMatrix = new THREE.Matrix4().lookAt(
+					new THREE.Vector3(),
+					direction,
+					up
+				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+					rotMatrix
+				)
 				this.hand.quaternion.slerp(targetQuat, 0.1)
 			}
 		}
@@ -1016,7 +1120,10 @@ export class HandStateMachine {
 
 		if (elapsed > SEQUENCE_TIMINGS.grabDuration) {
 			// Attach satellite to hand
-			if (this.targetSatellite && !this.hand.children.includes(this.targetSatellite)) {
+			if (
+				this.targetSatellite &&
+				!this.hand.children.includes(this.targetSatellite)
+			) {
 				const worldPos = new THREE.Vector3()
 				this.targetSatellite.getWorldPosition(worldPos)
 
@@ -1054,7 +1161,9 @@ export class HandStateMachine {
 
 		// Target is on the exosphere edge, same general direction as start
 		// but we need to approach from the "outside" for the slap
-		const targetPos = startDirection.clone().multiplyScalar(EXOSPHERE_RADIUS + 0.08)
+		const targetPos = startDirection
+			.clone()
+			.multiplyScalar(EXOSPHERE_RADIUS + 0.08)
 
 		// Check if direct path would go through planet
 		const midPoint = startPos.clone().lerp(targetPos, 0.5)
@@ -1093,7 +1202,11 @@ export class HandStateMachine {
 		// Face Earth
 		const toEarth = new THREE.Vector3().sub(this.hand.position).normalize()
 		const up = new THREE.Vector3(0, 1, 0)
-		const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), toEarth, up)
+		const rotMatrix = new THREE.Matrix4().lookAt(
+			new THREE.Vector3(),
+			toEarth,
+			up
+		)
 		const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
 		this.hand.quaternion.slerp(targetQuat, 0.05)
 
@@ -1107,7 +1220,10 @@ export class HandStateMachine {
 
 		if (elapsed > SEQUENCE_TIMINGS.releaseDuration) {
 			// Detach satellite from hand
-			if (this.targetSatellite && this.hand.children.includes(this.targetSatellite)) {
+			if (
+				this.targetSatellite &&
+				this.hand.children.includes(this.targetSatellite)
+			) {
 				const worldPos = new THREE.Vector3()
 				this.targetSatellite.getWorldPosition(worldPos)
 				this.hand.remove(this.targetSatellite)
@@ -1126,15 +1242,33 @@ export class HandStateMachine {
 		const elapsed = this.getElapsedTime()
 		const t = Math.min(elapsed / SEQUENCE_TIMINGS.windUpDuration, 1)
 
-		// Wind up rotation (pull back arm)
-		const windUpAngle = t * Math.PI * 0.4 // 72 degree wind-up
-		this.hand.rotation.y = (this.stateData.windUpStartRotation || 0) - windUpAngle
+		// Smooth ease-in-out for graceful wind-up
+		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
-		// Move hand back slightly
 		if (this.stateData.satellitePosition) {
-			const backDirection = this.stateData.satellitePosition.clone().normalize()
-			const backPos = this.stateData.satellitePosition.clone().add(backDirection.multiplyScalar(0.15 * t))
-			this.hand.position.lerp(backPos, 0.1)
+			// Position hand to the SIDE of the satellite so it's not occluded
+			// Hand winds up from the right side (positive X offset from satellite)
+			const satPos = this.stateData.satellitePosition.clone()
+			const sideOffset = new THREE.Vector3(0.25, 0.15, 0.1) // Right, up, slightly forward
+			const windUpOffset = new THREE.Vector3(0.15 * eased, 0.1 * eased, 0.1 * eased) // Pull back during wind-up
+
+			const targetPos = satPos.clone().add(sideOffset).add(windUpOffset)
+			this.hand.position.lerp(targetPos, 0.08)
+
+			// Rotate hand to face satellite, with palm ready for backhand
+			const toSatellite = satPos.clone().sub(this.hand.position).normalize()
+			const up = new THREE.Vector3(0, 1, 0)
+			const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), toSatellite, up)
+			const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+
+			// Add wind-up rotation (pull arm back)
+			const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
+				new THREE.Vector3(0, 1, 0),
+				-eased * Math.PI * 0.4 // Wind up by rotating away
+			)
+			targetQuat.multiply(windUpQuat)
+
+			this.hand.quaternion.slerp(targetQuat, 0.06)
 		}
 
 		if (t >= 1) {
@@ -1146,22 +1280,54 @@ export class HandStateMachine {
 		const elapsed = this.getElapsedTime()
 		const t = Math.min(elapsed / SEQUENCE_TIMINGS.slapDuration, 1)
 
-		// Fast slap motion - ease out for impact
-		const slapEased = 1 - Math.pow(1 - t, 3)
+		// Very smooth easing - slow throughout with slight acceleration at end
+		const eased = t < 0.7
+			? t / 0.7 * 0.6 // Slow first 70%
+			: 0.6 + ((t - 0.7) / 0.3) * 0.4 // Slightly faster last 30%
 
-		// Swing forward
-		const startAngle = (this.stateData.windUpStartRotation || 0) - Math.PI * 0.4
-		const endAngle = (this.stateData.windUpStartRotation || 0) + Math.PI * 0.3
-		this.hand.rotation.y = startAngle + (endAngle - startAngle) * slapEased
-
-		// Move hand forward during slap
 		if (this.stateData.satellitePosition) {
-			const forwardDirection = this.stateData.satellitePosition.clone().normalize().negate()
-			const forwardPos = this.stateData.satellitePosition.clone().add(forwardDirection.multiplyScalar(0.1 * slapEased))
-			this.hand.position.lerp(forwardPos, 0.3)
+			const satPos = this.stateData.satellitePosition.clone()
+
+			// Arc the hand through the slap - starts to the side, swings across
+			// The hand sweeps from right side, across the satellite, to left side
+			const arcAngle = eased * Math.PI * 0.8 // Sweep 144 degrees
+			const arcRadius = 0.3
+			const arcHeight = Math.sin(eased * Math.PI) * 0.1 // Arc up then down
+
+			// Calculate arc position relative to satellite
+			const arcX = Math.cos(arcAngle) * arcRadius - arcRadius * 0.5
+			const arcY = arcHeight + 0.15
+			const arcZ = Math.sin(arcAngle) * arcRadius * 0.3
+
+			const targetPos = satPos.clone().add(new THREE.Vector3(arcX, arcY, arcZ))
+			this.hand.position.lerp(targetPos, 0.1)
+
+			// Rotate hand to follow the arc - palm sweeping across
+			const sweepDirection = new THREE.Vector3(
+				-Math.sin(arcAngle),
+				0,
+				Math.cos(arcAngle)
+			).normalize()
+
+			const up = new THREE.Vector3(0, 1, 0)
+			const forward = sweepDirection.clone()
+			const right = new THREE.Vector3().crossVectors(up, forward).normalize()
+			const adjustedUp = new THREE.Vector3().crossVectors(forward, right).normalize()
+
+			const rotMatrix = new THREE.Matrix4().makeBasis(right, adjustedUp, forward)
+			const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+
+			// Tilt hand for backhand strike
+			const tiltQuat = new THREE.Quaternion().setFromAxisAngle(
+				new THREE.Vector3(0, 0, 1),
+				Math.sin(eased * Math.PI) * 0.3
+			)
+			targetQuat.multiply(tiltQuat)
+
+			this.hand.quaternion.slerp(targetQuat, 0.08)
 		}
 
-		// Apply slap impulse at contact point
+		// Apply slap impulse at the middle of the swing
 		if (t > 0.5 && !this.stateData.slapApplied) {
 			this.stateData.slapApplied = true
 
@@ -1172,30 +1338,64 @@ export class HandStateMachine {
 		}
 
 		if (t >= 1) {
-			this.transition(HandState.CELEBRATING, { burnStartTime: performance.now() })
+			this.transition(HandState.CELEBRATING, {
+				burnStartTime: performance.now(),
+			})
 		}
 	}
 
 	updateCelebrating() {
 		const elapsed = this.getElapsedTime()
 
-		// Position hand for clear thumbs up visibility (no bounce)
-		// Move hand to a position where the thumbs up is clearly visible to the camera
+		// Position hand for clear thumbs up visibility
 		if (!this.stateData.celebrateStartPosition) {
 			this.stateData.celebrateStartPosition = this.hand.position.clone()
+			// Trigger thumbs up gesture immediately
+			transitionToGesture(this.hand, "thumbsUp", 400)
 		}
 
-		// Smoothly rotate hand to present thumbs up toward camera
-		// Thumbs up should be clearly visible - rotate wrist so thumb points upward
+		// Move hand to a good viewing position (in front and slightly above center)
+		const celebrateT = Math.min(elapsed / 800, 1)
+		const eased = 1 - Math.pow(1 - celebrateT, 3) // Ease out
+
+		// Target position: move out from planet, toward camera view
+		const viewPosition = new THREE.Vector3(0.3, 0.5, 1.2)
+		const targetPos = this.stateData.celebrateStartPosition
+			.clone()
+			.lerp(viewPosition, eased * 0.5)
+		this.hand.position.lerp(targetPos, 0.05)
+
+		// Rotate hand to present thumbs up toward camera
+		// The thumb extends in local -X direction when in thumbsUp gesture
+		// We want to orient so the thumb points upward (+Y world) and palm faces camera
 		const targetQuat = new THREE.Quaternion()
-		// Face toward camera (which is typically at positive Z, above the scene)
-		const up = new THREE.Vector3(0, 1, 0)
-		const forward = new THREE.Vector3(0, 0.5, 1).normalize()
-		const rotMatrix = new THREE.Matrix4().lookAt(new THREE.Vector3(), forward, up)
+
+		// Build rotation: thumb up (+Y world), palm facing camera (+Z world)
+		// Local thumb direction in thumbsUp pose is roughly (-X, +Y), normalized
+		// We want that to map to world +Y (up)
+		// And we want the palm (local +Z) to face toward +Z (camera)
+		const thumbDir = new THREE.Vector3(0, 1, 0) // World up
+		const palmDir = new THREE.Vector3(0, 0, 1) // Toward camera
+		const sideDir = new THREE.Vector3()
+			.crossVectors(thumbDir, palmDir)
+			.normalize()
+
+		// Rotation matrix: X=side, Y=thumb up, Z=palm toward camera
+		const rotMatrix = new THREE.Matrix4().makeBasis(sideDir, thumbDir, palmDir)
 		targetQuat.setFromRotationMatrix(rotMatrix)
 
+		// Apply a slight tilt to make it look more natural
+		const tiltQuat = new THREE.Quaternion().setFromAxisAngle(
+			new THREE.Vector3(0, 0, 1),
+			-0.2
+		)
+		targetQuat.multiply(tiltQuat)
+
 		// Smoothly rotate to thumbs up presentation angle
-		this.hand.quaternion.slerp(targetQuat, 0.03)
+		this.hand.quaternion.slerp(targetQuat, 0.06)
+
+		// Reset any accumulated rotation offsets from slapping
+		this.hand.rotation.z = THREE.MathUtils.lerp(this.hand.rotation.z, 0, 0.1)
 
 		// Monitor satellite burn progress
 		const burnElapsed = performance.now() - this.stateData.burnStartTime
@@ -1205,7 +1405,10 @@ export class HandStateMachine {
 				this.onSatelliteDestroyed(this.targetSatellite)
 			}
 
-			if (elapsed > SEQUENCE_TIMINGS.celebrateDuration + SEQUENCE_TIMINGS.burnDuration) {
+			if (
+				elapsed >
+				SEQUENCE_TIMINGS.celebrateDuration + SEQUENCE_TIMINGS.burnDuration
+			) {
 				this.targetSatellite = null
 				this.stateData.celebrateStartPosition = null
 				this.transition(HandState.RETURNING)
@@ -1231,7 +1434,9 @@ export class HandStateMachine {
 		if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
 			// Arc around the planet
 			const pushDirection = midPoint.clone().normalize()
-			const arcMidPoint = pushDirection.multiplyScalar(HAND_ORBIT_CONFIG.minPlanetDistance * 1.2)
+			const arcMidPoint = pushDirection.multiplyScalar(
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+			)
 
 			// Quadratic bezier interpolation for smooth arc
 			const oneMinusT = 1 - eased
@@ -1286,7 +1491,9 @@ export class HandStateMachine {
 		if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
 			// Arc around the planet
 			const pushDirection = midPoint.clone().normalize()
-			const arcMidPoint = pushDirection.multiplyScalar(HAND_ORBIT_CONFIG.minPlanetDistance * 1.2)
+			const arcMidPoint = pushDirection.multiplyScalar(
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+			)
 
 			// Quadratic bezier interpolation for smooth arc
 			const oneMinusT = 1 - eased
