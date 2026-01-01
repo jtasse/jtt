@@ -47,6 +47,10 @@ const LEO_ORBIT_SPEED = 0.0045 // Counter-clockwise
 const SATELLITE_SIZE = 0.08
 const GEO_ALTITUDE = 2.0 // Geosynchronous orbit altitude (radius from planet center)
 
+// Minimum Z value to stay in front of the planet from camera's perspective
+// Camera is at Z=6 looking at origin. Satellites should never go behind the planet.
+const MIN_FRONT_Z = 0.4
+
 // Atmosphere boundaries for decommission effects
 // Exosphere should just envelop Leona's orbit (LEO at 0.65)
 const EXOSPHERE_RADIUS = 0.72 // Just outside LEO orbit - where burning starts
@@ -71,11 +75,22 @@ let activeDecommission = null // The satellite currently decommissioning
 
 // Get the current decommission state for camera tracking
 export function getDecommissionState() {
-	if (!activeDecommission) return null
+	// Check if hand is still in a decommission-related state (even if satellite is gone)
+	const handInDecommissionState =
+		orcHandStateMachine &&
+		(orcHandStateMachine.state === HandState.POINTING ||
+			orcHandStateMachine.state === HandState.APPROACHING ||
+			orcHandStateMachine.state === HandState.WINDING_UP ||
+			orcHandStateMachine.state === HandState.SLAPPING ||
+			orcHandStateMachine.state === HandState.CELEBRATING ||
+			orcHandStateMachine.state === HandState.THUMBS_UP ||
+			orcHandStateMachine.state === HandState.RETURNING)
+
+	// Return null only if both satellite is gone AND hand is not in decommission state
+	if (!activeDecommission && !handInDecommissionState) return null
 
 	const sat = activeDecommission
-	const data = sat.userData
-	if (!data.decommissioning) return null
+	const data = sat?.userData
 
 	// Smooth ease function for camera transitions
 	const smoothEase = (t) =>
@@ -109,21 +124,31 @@ export function getDecommissionState() {
 
 			case HandState.SLAPPING:
 			case HandState.CELEBRATING:
+			case HandState.THUMBS_UP:
 				phase = "burning"
 				inBurnPhase = true
 
-				// Calculate burn progress
-				if (sat.userData.burnStartTime) {
-					const burnElapsed = performance.now() - sat.userData.burnStartTime
+				// Calculate burn progress - cap at 1 to maintain zoom during thumbs up
+				if (data?.burnStartTime) {
+					const burnElapsed = performance.now() - data.burnStartTime
 					burnProgress = Math.min(burnElapsed / 3000, 1)
+				} else {
+					// Satellite already removed, keep burn progress at max for zoom
+					burnProgress = 1
 				}
+				break
+
+			case HandState.RETURNING:
+				// Camera zooms out during RETURNING
+				phase = "returning"
+				inBurnPhase = false
 				break
 
 			default:
 				// Still track hand even in other states
 				break
 		}
-	} else {
+	} else if (sat) {
 		// Fallback to satellite if no hand available
 		sat.getWorldPosition(trackingPosition)
 	}
@@ -1259,30 +1284,52 @@ export function animateOrcScene(animateNormal = true) {
 					sat.visible = Math.random() > fizzleProgress * 0.5
 				}
 
-				// Move satellite toward Earth during burn
-				const earthDir = worldPos.clone().normalize().negate()
-				// Safety check for NaN
-				if (isNaN(earthDir.x)) earthDir.set(0, -1, 0)
+				// Move satellite toward Earth during burn, but keep it VISIBLE
+				// The satellite should burn up in the atmosphere, not clip through the planet
+				const currentDist = worldPos.length()
 
-				if (sat.parent) {
-					const parentWorldQuat = new THREE.Quaternion()
-					sat.parent.getWorldQuaternion(parentWorldQuat)
-					earthDir.applyQuaternion(parentWorldQuat.invert())
+				// Only move if still outside the visible burn zone
+				if (currentDist > INNER_ATMOSPHERE_RADIUS) {
+					const earthDir = worldPos.clone().normalize().negate()
+					// Safety check for NaN
+					if (isNaN(earthDir.x)) earthDir.set(0, -1, 0)
+
+					if (sat.parent) {
+						const parentWorldQuat = new THREE.Quaternion()
+						sat.parent.getWorldQuaternion(parentWorldQuat)
+						earthDir.applyQuaternion(parentWorldQuat.invert())
+					}
+
+					// Apply time scaling from hand state machine for slow motion effect
+					const timeScale = orcHandStateMachine
+						? orcHandStateMachine.timeScale
+						: 1.0
+					const speed = 0.08 * timeScale // Slower descent
+					sat.position.add(earthDir.multiplyScalar(speed))
 				}
 
-				// Apply time scaling from hand state machine for slow motion effect
-				const timeScale = orcHandStateMachine
-					? orcHandStateMachine.timeScale
-					: 1.0
-				const speed = 0.12 * timeScale
-				sat.position.add(earthDir.multiplyScalar(speed))
-				sat.rotation.x += 0.2 // Tumble
-				sat.rotation.z += 0.1
+				// Tumble animation
+				sat.rotation.x += 0.15
+				sat.rotation.z += 0.08
 
-				// Check for impact with Earth surface
-				if (worldPos.length() < PLANET_RADIUS + 0.05) {
+				// Keep satellite in front of planet (visible to camera)
+				sat.getWorldPosition(worldPos)
+				if (worldPos.z < MIN_FRONT_Z && currentDist > PLANET_RADIUS) {
+					// Push satellite to front while shrinking toward planet
+					const xyDist = Math.sqrt(worldPos.x * worldPos.x + worldPos.y * worldPos.y)
+					if (xyDist < 0.1) {
+						// Near the Y-axis, push forward in Z
+						sat.position.z = MIN_FRONT_Z
+					} else {
+						// Reflect position to front
+						sat.position.z = Math.abs(sat.position.z)
+						if (sat.position.z < MIN_FRONT_Z) sat.position.z = MIN_FRONT_Z
+					}
+				}
+
+				// Hide when reaching atmosphere (but don't reset slow motion - let hand state handle it)
+				if (currentDist < INNER_ATMOSPHERE_RADIUS + 0.02) {
 					sat.visible = false
-					if (orcHandStateMachine) orcHandStateMachine.timeScale = 1.0 // Reset to normal speed on impact
 				}
 			}
 			return // Skip normal orbit logic
@@ -1470,9 +1517,26 @@ export function animateOrcScene(animateNormal = true) {
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
 				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
 
-				const x = Math.cos(data.angle) * data.orbitRadius
-				const z = Math.sin(data.angle) * data.orbitRadius
+				let x = Math.cos(data.angle) * data.orbitRadius
+				let z = Math.sin(data.angle) * data.orbitRadius
 				const y = data.orbitY !== undefined ? data.orbitY * radiusMultiplier : 0
+
+				// During decommission, keep the satellite in front of the planet
+				// If Z would be negative (behind planet), reflect position to front
+				if (z < MIN_FRONT_Z) {
+					// Push Z forward while maintaining the same XY distance from center
+					const xyDist = Math.sqrt(x * x + y * y)
+					if (xyDist < data.orbitRadius * 0.8) {
+						// Close to center in XY - need to maintain orbit distance
+						const requiredZ = Math.sqrt(
+							Math.max(0, data.orbitRadius * data.orbitRadius - xyDist * xyDist)
+						)
+						z = Math.max(MIN_FRONT_Z, requiredZ)
+					} else {
+						z = MIN_FRONT_Z
+					}
+				}
+
 				sat.position.set(x, y, z)
 				sat.rotation.y = -data.angle - Math.PI / 2
 				data.angle += data.orbitSpeed

@@ -111,12 +111,12 @@ export const GESTURES = {
 
 	thumbsUp: {
 		thumb: {
-			proximal: -0.2,
-			middle: -0.2,
-			distal: 0,
-			proximalZ: 1.5,
-			proximalY: -0.2,
-		}, // extended up and out
+			proximal: -0.5, // Extend outward more
+			middle: 0, // Straight
+			distal: 0, // Straight
+			proximalZ: 2.2, // Rotate out perpendicular to palm (increased from 1.5)
+			proximalY: -0.4, // Rotate to face up
+		}, // extended up and out, perpendicular to other fingers
 		index: { proximal: 1.4, middle: 1.3, distal: 1.1 },
 		middle: { proximal: 1.4, middle: 1.3, distal: 1.1 },
 		ring: { proximal: 1.4, middle: 1.3, distal: 1.1 },
@@ -132,6 +132,7 @@ export const GESTURES = {
 export const HandState = {
 	IDLE_ORBIT: "IDLE_ORBIT", // Orbiting Earth, fist gesture
 	POINTING: "POINTING", // Pointing at target satellite
+	THUMBS_UP: "THUMBS_UP", // Holding thumbs up pose (slow motion, camera zoomed)
 	APPROACHING: "APPROACHING", // Flying toward satellite
 	WINDING_UP: "WINDING_UP", // Winding up for slap
 	SLAPPING: "SLAPPING", // Backhand slap motion
@@ -626,7 +627,8 @@ export function updateGestureAnimation(dt) {
 	// Smooth ease-in-out cubic
 	const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 
-	state.progress = eased
+	// Use eased value for interpolation, but DON'T overwrite progress
+	// (progress tracks linear 0→1 time, eased is just for smooth motion)
 	lerpGestures(state.hand, state.fromGesture, state.toGesture, eased)
 
 	if (t >= 1) {
@@ -673,14 +675,19 @@ export function updatePlumeAnimation(plume, intensity = 1, time = 0) {
 // ============================================
 
 // Camera view bounds (approximate visible area)
+// Camera is at Z=6 looking at origin. Planet is at origin with radius 0.5.
+// minZ must be positive to keep the hand in front of the planet from camera's perspective.
 const VIEW_BOUNDS = {
 	minX: -2.2,
 	maxX: 2.2,
 	minY: -1.2,
 	maxY: 1.8,
-	minZ: -1.8,
+	minZ: 0.6, // Changed from -1.8: hand must stay in front of planet (positive Z)
 	maxZ: 2.2,
 }
+
+// Minimum Z value to stay in front of the planet from camera's perspective
+const MIN_FRONT_Z = 0.5
 
 // Generate smooth, free-flowing movement using layered sine waves
 // No orbiting - just graceful, free-willed flight
@@ -704,14 +711,14 @@ export function calculateIrregularOrbitPosition(time, currentPos = null) {
 		Math.cos(t * 0.11) * 0.2 + // Slow drift
 		0.3 // Slight upward bias
 
-	// Z-axis: forward-back movement, staying mostly in front
-	const z =
-		Math.cos(t * 0.47) * 0.8 + // Primary depth change
-		Math.sin(t * 0.19) * 0.4 + // Variation
-		Math.cos(t * 0.07) * 0.3 + // Very slow drift
-		0.8 // Forward bias (toward camera)
+	// Z-axis: forward-back movement, ALWAYS staying in front of planet
+	// Use abs() on cosine to keep positive, then add forward bias
+	const zBase =
+		Math.abs(Math.cos(t * 0.47)) * 0.6 + // Primary depth (always positive)
+		Math.abs(Math.sin(t * 0.19)) * 0.3 + // Variation (always positive)
+		1.0 // Strong forward bias (toward camera)
 
-	const targetPos = new THREE.Vector3(x, y, z)
+	const targetPos = new THREE.Vector3(x, y, zBase)
 
 	// Keep within camera view bounds
 	targetPos.x = Math.max(
@@ -727,8 +734,8 @@ export function calculateIrregularOrbitPosition(time, currentPos = null) {
 		Math.min(VIEW_BOUNDS.maxZ, targetPos.z)
 	)
 
-	// Ensure minimum distance from planet
-	clampOutsidePlanet(targetPos)
+	// Ensure minimum distance from planet AND stay in front
+	clampToFrontOfPlanet(targetPos)
 
 	return targetPos
 }
@@ -792,6 +799,45 @@ export function clampOutsidePlanet(
 			position.normalize().multiplyScalar(minDistance)
 		}
 	}
+	return position
+}
+
+// Ensure a position stays in front of the planet from camera's perspective
+// Camera is at Z=6 looking at origin. Negative Z values put objects behind the planet.
+// This function ensures the hand never goes behind the planet and stays visible.
+export function clampToFrontOfPlanet(
+	position,
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+) {
+	// First ensure minimum distance from planet center
+	const distanceFromCenter = position.length()
+	if (distanceFromCenter < minDistance) {
+		if (distanceFromCenter < 0.0001) {
+			// At origin - push to front
+			position.set(0, 0, minDistance)
+		} else {
+			position.normalize().multiplyScalar(minDistance)
+		}
+	}
+
+	// Now ensure Z stays positive (in front of planet from camera's perspective)
+	// If Z is negative or too close to zero, push to front while maintaining XY
+	if (position.z < MIN_FRONT_Z) {
+		const xyDist = Math.sqrt(position.x * position.x + position.y * position.y)
+
+		// If position is close to the planet center in XY, we need to push out in Z
+		if (xyDist < minDistance * 0.8) {
+			// Push straight forward to maintain minimum distance
+			const requiredZ = Math.sqrt(
+				Math.max(0, minDistance * minDistance - xyDist * xyDist)
+			)
+			position.z = Math.max(MIN_FRONT_Z, requiredZ)
+		} else {
+			// XY is far enough, just clamp Z to minimum
+			position.z = MIN_FRONT_Z
+		}
+	}
+
 	return position
 }
 
@@ -874,7 +920,11 @@ export class HandStateMachine {
 				this.stateData.slapApplied = false
 				break
 			case HandState.CELEBRATING:
-				// Don't transition gesture yet - wait for burn to complete
+				// LOCK the hand position RIGHT NOW
+				this.stateData.lockedPosition = this.hand.position.clone()
+				this.stateData.lockedRotation = this.hand.quaternion.clone()
+				this.stateData.thumbsUpStarted = false
+				this.stateData.thumbsUpStartTime = null
 				break
 			case HandState.RETURNING:
 				transitionToGesture(this.hand, "fist", 400)
@@ -970,7 +1020,7 @@ export class HandStateMachine {
 				this.updateWindingUp()
 				break
 			case HandState.SLAPPING:
-				this.updateSlapping()
+				this.updateSlapping(dt)
 				break
 			case HandState.CELEBRATING:
 				this.updateCelebrating()
@@ -1085,6 +1135,10 @@ export class HandStateMachine {
 			const targetPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(targetPos)
 
+			// If satellite is behind the planet (negative Z), we need a special approach
+			// that keeps the hand in front of the planet at all times
+			const satBehindPlanet = targetPos.z < MIN_FRONT_Z
+
 			// Calculate path that avoids the planet
 			// Use an arc if direct path would go through planet
 			const startPos = this.stateData.startPosition
@@ -1094,35 +1148,38 @@ export class HandStateMachine {
 				.add(directPath.clone().multiplyScalar(0.5))
 			const midDistance = midPoint.length()
 
-			// If midpoint is too close to planet, arc around it
+			// If midpoint is too close to planet OR satellite is behind planet, arc around it
 			let interpolatedPos
-			if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
+			if (
+				midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
+				satBehindPlanet
+			) {
 				// Create an arc path by pushing the midpoint outward
-				let pushDirection = midPoint.clone()
-				if (pushDirection.lengthSq() < 0.0001) {
-					pushDirection.set(0, 1, 0)
+				// ALWAYS bias towards camera (positive Z) to stay visible
+				let pushDirection
+
+				if (this.camera) {
+					// Use camera direction as primary push direction
+					pushDirection = this.camera.position.clone().normalize()
 				} else {
+					// Fallback: push toward positive Z (camera direction)
+					pushDirection = new THREE.Vector3(0, 0, 1)
+				}
+
+				// Add some XY component from the midpoint for more natural arc
+				const xyBias = new THREE.Vector3(midPoint.x, midPoint.y, 0)
+				if (xyBias.lengthSq() > 0.01) {
+					xyBias.normalize().multiplyScalar(0.3)
+					pushDirection.add(xyBias)
 					pushDirection.normalize()
 				}
 
-				// Bias towards camera to ensure we fly on the visible side of the planet
-				if (this.camera) {
-					const toCamera = this.camera.position.clone().normalize()
-					if (midDistance < 0.1) {
-						pushDirection = toCamera
-					} else {
-						pushDirection.add(toCamera)
-						// Guard against cancellation (vectors pointing opposite)
-						if (pushDirection.lengthSq() < 0.0001) {
-							pushDirection = toCamera.clone()
-						}
-						pushDirection.normalize()
-					}
-				}
-
+				// Ensure arc midpoint has strong positive Z to stay in front
 				const arcMidPoint = pushDirection.multiplyScalar(
-					HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+					HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
 				)
+				// Force arc midpoint to stay in front of planet
+				arcMidPoint.z = Math.max(arcMidPoint.z, MIN_FRONT_Z + 0.3)
 
 				// Quadratic bezier interpolation for smooth arc
 				const oneMinusT = 1 - eased
@@ -1136,8 +1193,8 @@ export class HandStateMachine {
 				interpolatedPos = startPos.clone().lerp(targetPos, eased)
 			}
 
-			// Apply planet collision clamping as final safety
-			clampOutsidePlanet(interpolatedPos)
+			// Apply planet collision clamping AND ensure we stay in front
+			clampToFrontOfPlanet(interpolatedPos)
 			this.hand.position.copy(interpolatedPos)
 
 			// Face satellite
@@ -1176,7 +1233,7 @@ export class HandStateMachine {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
 
-			// Position hand OUTSIDE the orbit for a baseball-style swing
+			// Position hand for a swing toward the satellite
 			// Calculate vector from Earth to Satellite
 			let earthToSat = satPos.clone()
 			if (earthToSat.lengthSq() < 0.0001) {
@@ -1185,13 +1242,34 @@ export class HandStateMachine {
 				earthToSat.normalize()
 			}
 
-			// Wind up position is further out and slightly "up" (relative to orbit plane)
-			// We want to be behind the ball.
+			// Wind up position: outside the orbit but ALWAYS in front of planet
 			const windUpDist = 0.8 // Distance from satellite
-			const windUpPos = satPos
+			let windUpPos = satPos
 				.clone()
-				.add(earthToSat.multiplyScalar(windUpDist))
+				.add(earthToSat.clone().multiplyScalar(windUpDist))
 
+			// If the wind-up position would be behind the planet, reposition
+			// to the side/front while maintaining ability to swing at satellite
+			if (windUpPos.z < MIN_FRONT_Z) {
+				// Calculate a position that's in front of planet but offset to swing from
+				// Use the satellite's XY position to determine swing direction
+				const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
+				if (swingDir.lengthSq() > 0.01) {
+					swingDir.normalize()
+				} else {
+					swingDir.set(1, 0, 0) // Default swing from right
+				}
+
+				// Position to the side of the satellite, in front of planet
+				windUpPos = new THREE.Vector3(
+					satPos.x + swingDir.x * windUpDist,
+					satPos.y + swingDir.y * windUpDist * 0.5,
+					Math.max(MIN_FRONT_Z + 0.3, satPos.z + 0.5)
+				)
+			}
+
+			// Final safety clamp
+			clampToFrontOfPlanet(windUpPos)
 			this.hand.position.lerp(windUpPos, 0.1)
 
 			// Rotate hand to face satellite, with palm ready for backhand
@@ -1224,7 +1302,7 @@ export class HandStateMachine {
 		}
 	}
 
-	updateSlapping() {
+	updateSlapping(dt) {
 		const elapsed = this.getElapsedTime()
 		const t = Math.min(elapsed / SEQUENCE_TIMINGS.slapDuration, 1)
 
@@ -1247,14 +1325,14 @@ export class HandStateMachine {
 				toSat.normalize()
 			}
 
-			// Move hand rapidly along this vector
-			// We don't use lerp here because we want constant velocity impact
-			const speed = 0.8 // Units per frame approx
-			this.hand.position.add(toSat.multiplyScalar(speed * (16 / 1000) * 20)) // Scaling for frame time
+			const moveSpeed = 0.02 // units per ms
+			this.hand.position.add(toSat.multiplyScalar(moveSpeed * dt))
+
+			clampToFrontOfPlanet(this.hand.position)
 
 			// Check for contact
 			const dist = this.hand.position.distanceTo(satPos)
-			const CONTACT_THRESHOLD = 0.4
+			const CONTACT_THRESHOLD = 0.5
 
 			if (dist < CONTACT_THRESHOLD && !this.stateData.slapApplied) {
 				this.stateData.slapApplied = true
@@ -1264,12 +1342,10 @@ export class HandStateMachine {
 					this.onSatelliteBurn(this.targetSatellite)
 				}
 
-				// Transition to celebrate shortly after contact
-				setTimeout(() => {
-					this.transition(HandState.CELEBRATING, {
-						burnStartTime: this.internalTime,
-					})
-				}, 100)
+				// Transition to celebrate - thumbs up will start THERE after hand stops
+				this.transition(HandState.CELEBRATING, {
+					burnStartTime: this.internalTime,
+				})
 			}
 		}
 
@@ -1283,119 +1359,31 @@ export class HandStateMachine {
 
 	updateCelebrating() {
 		const elapsed = this.getElapsedTime()
-		const burnElapsed = this.internalTime - this.stateData.burnStartTime
 
-		// Destroy satellite visual when burn is done
-		if (
-			this.targetSatellite &&
-			burnElapsed > SEQUENCE_TIMINGS.burnDuration &&
-			this.onSatelliteDestroyed
-		) {
-			this.onSatelliteDestroyed(this.targetSatellite)
-			this.targetSatellite = null
+		// FORCE hand to locked position EVERY FRAME - absolutely no movement allowed
+		this.hand.position.copy(this.stateData.lockedPosition)
+		this.hand.quaternion.copy(this.stateData.lockedRotation)
+
+		// Phase 1: Wait for satellite to be destroyed
+		if (this.targetSatellite) {
+			if (elapsed > 1500 && this.onSatelliteDestroyed) {
+				this.onSatelliteDestroyed(this.targetSatellite)
+				this.targetSatellite = null
+			}
+			return
 		}
 
-		// Phase 2: Satellite destroyed, perform slow motion Thumbs Up
+		// Phase 2: Satellite is gone - now do thumbs up
 		if (!this.stateData.thumbsUpStarted) {
 			this.stateData.thumbsUpStarted = true
 			this.stateData.thumbsUpStartTime = this.internalTime
-
-			// Start slow gesture transition
-			transitionToGesture(this.hand, "thumbsUp", 1000)
+			transitionToGesture(this.hand, "thumbsUp", 500)
 		}
 
+		// After 3 seconds of thumbs up, transition to RETURNING
 		const thumbsUpElapsed = this.internalTime - this.stateData.thumbsUpStartTime
-		const thumbsUpDuration = 2000 // Slow motion move
-		const t = Math.min(thumbsUpElapsed / thumbsUpDuration, 1)
-
-		// Rotate hand to present thumbs up with KNUCKLES facing the camera
-		const targetQuat = new THREE.Quaternion()
-
-		// Hand Coordinate System:
-		// Local -X is Thumb direction
-		// Local -Z is Knuckles (Back of Hand)
-		// Local +Y is Fingers Up
-
-		// We want Thumb (Local -X) -> World +Y (Up)
-		// We want Knuckles (Local -Z) -> World +Z (Camera approx)
-
-		const m = new THREE.Matrix4().makeBasis(
-			new THREE.Vector3(0, -1, 0), // Local X (Right) -> World -Y (Down) so -X is Up
-			new THREE.Vector3(-1, 0, 0), // Local Y (Up) -> World -X (Left)
-			new THREE.Vector3(0, 0, -1) // Local Z (Palm) -> World -Z (Away) so -Z is Camera
-		)
-
-		targetQuat.setFromRotationMatrix(m)
-
-		// If we have a camera, we can look precisely at it with the knuckles
-		if (this.camera) {
-			// We want Local -Z to point at Camera
-			// Standard lookAt points Local +Z at target.
-			// So we look AWAY from camera to point -Z at camera?
-			// Actually, let's just use the fixed orientation above which is good for general viewing
-			// or refine it:
-
-			const toCamera = this.camera.position.clone().sub(this.hand.position)
-
-			if (toCamera.lengthSq() < 0.0001) toCamera.set(0, 0, 1)
-			else toCamera.normalize()
-
-			// We want Local -Z to align with toCamera
-			// We want Local -X to align with World Up (0,1,0)
-
-			// Construct basis vectors
-			const newZ = toCamera.clone().negate() // Local Z points away from camera
-			const up = new THREE.Vector3(0, 1, 0)
-			const newX = new THREE.Vector3()
-				.crossVectors(up, newZ)
-				.normalize()
-				.negate() // -X is Up? No.
-
-			// Let's stick to the matrix logic which is clearer:
-			// Thumb (-X) = Up (0,1,0) => X = (0,-1,0)
-			// Knuckles (-Z) = Camera (toCamera) => Z = -toCamera
-			// Y = Z cross X
-
-			const targetThumb = new THREE.Vector3(0, 1, 0)
-			const targetKnuckles = toCamera.clone()
-
-			const axisX = targetThumb.clone().negate() // Local X
-			const axisZ = targetKnuckles.clone().negate() // Local Z
-
-			// Guard against parallel vectors causing NaN (e.g. if hand is directly below camera)
-			if (
-				Math.abs(axisX.dot(axisZ)) > 0.99 ||
-				isNaN(axisX.x) ||
-				isNaN(axisZ.x)
-			) {
-				axisZ.x += 0.1
-				axisZ.y += 0.05
-				axisZ.normalize()
-			}
-
-			const axisY = new THREE.Vector3().crossVectors(axisZ, axisX).normalize()
-			if (isNaN(axisY.x) || axisY.lengthSq() < 0.5) {
-				axisY.set(0, 0, 1) // Failsafe
-			}
-
-			// Re-orthogonalize X to ensure valid basis
-			axisX.crossVectors(axisY, axisZ).normalize()
-			if (isNaN(axisX.x)) axisX.set(1, 0, 0) // Failsafe
-
-			const basis = new THREE.Matrix4().makeBasis(axisX, axisY, axisZ)
-			targetQuat.setFromRotationMatrix(basis)
-		}
-
-		// Add a slight tilt for style
-		targetQuat.multiply(
-			new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.2)
-		)
-
-		this.hand.quaternion.slerp(targetQuat, 0.05)
-
-		// Hold the pose for a moment after moving
-		if (t >= 1 && burnElapsed > SEQUENCE_TIMINGS.burnDuration + 500) {
-			this.targetSatellite = null // Ensure cleanup
+		const thumbsUpDuration = 3000
+		if (thumbsUpElapsed > thumbsUpDuration) {
 			this.transition(HandState.RETURNING)
 		}
 	}
@@ -1410,22 +1398,29 @@ export class HandStateMachine {
 		const targetPos = calculateIrregularOrbitPosition(time)
 		const startPos = this.stateData.returnStartPosition
 
-		// Check if direct path would go through planet
+		// Check if direct path would go through planet or if start is behind planet
 		const midPoint = startPos.clone().lerp(targetPos, 0.5)
 		const midDistance = midPoint.length()
+		const startBehindPlanet = startPos.z < MIN_FRONT_Z
 
 		let interpolatedPos
-		if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
-			// Arc around the planet
-			let pushDirection = midPoint.clone()
-			if (pushDirection.lengthSq() < 0.0001) {
-				pushDirection.set(0, 1, 0)
+		if (
+			midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
+			startBehindPlanet
+		) {
+			// Arc around the planet, always staying in front
+			let pushDirection
+			if (this.camera) {
+				pushDirection = this.camera.position.clone().normalize()
 			} else {
-				pushDirection.normalize()
+				pushDirection = new THREE.Vector3(0, 0, 1)
 			}
+
 			const arcMidPoint = pushDirection.multiplyScalar(
-				HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
 			)
+			// Ensure arc stays in front
+			arcMidPoint.z = Math.max(arcMidPoint.z, MIN_FRONT_Z + 0.3)
 
 			// Quadratic bezier interpolation for smooth arc
 			const oneMinusT = 1 - eased
@@ -1438,8 +1433,8 @@ export class HandStateMachine {
 			interpolatedPos = startPos.clone().lerp(targetPos, eased)
 		}
 
-		// Final safety clamp
-		clampOutsidePlanet(interpolatedPos)
+		// Final safety clamp - stay in front of planet
+		clampToFrontOfPlanet(interpolatedPos)
 		this.hand.position.copy(interpolatedPos)
 
 		// Gradually return to orbit orientation
@@ -1475,22 +1470,29 @@ export class HandStateMachine {
 		const targetPos = calculateIrregularOrbitPosition(time)
 		const startPos = this.stateData.cancelStartPosition
 
-		// Check if direct path would go through planet
+		// Check if direct path would go through planet or if start is behind planet
 		const midPoint = startPos.clone().lerp(targetPos, 0.5)
 		const midDistance = midPoint.length()
+		const startBehindPlanet = startPos.z < MIN_FRONT_Z
 
 		let interpolatedPos
-		if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance) {
-			// Arc around the planet
-			let pushDirection = midPoint.clone()
-			if (pushDirection.lengthSq() < 0.0001) {
-				pushDirection.set(0, 1, 0)
+		if (
+			midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
+			startBehindPlanet
+		) {
+			// Arc around the planet, always staying in front
+			let pushDirection
+			if (this.camera) {
+				pushDirection = this.camera.position.clone().normalize()
 			} else {
-				pushDirection.normalize()
+				pushDirection = new THREE.Vector3(0, 0, 1)
 			}
+
 			const arcMidPoint = pushDirection.multiplyScalar(
-				HAND_ORBIT_CONFIG.minPlanetDistance * 1.2
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
 			)
+			// Ensure arc stays in front
+			arcMidPoint.z = Math.max(arcMidPoint.z, MIN_FRONT_Z + 0.3)
 
 			// Quadratic bezier interpolation for smooth arc
 			const oneMinusT = 1 - eased
@@ -1503,8 +1505,8 @@ export class HandStateMachine {
 			interpolatedPos = startPos.clone().lerp(targetPos, eased)
 		}
 
-		// Final safety clamp
-		clampOutsidePlanet(interpolatedPos)
+		// Final safety clamp - stay in front of planet
+		clampToFrontOfPlanet(interpolatedPos)
 		this.hand.position.copy(interpolatedPos)
 
 		if (t >= 1) {
