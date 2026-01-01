@@ -345,7 +345,7 @@ export function updateMarkerPosition(lat, lon) {
 }
 
 // Create the ORC scene group
-export function createOrcScene() {
+export function createOrcScene(camera) {
 	orcGroup = new THREE.Group()
 	orcGroup.name = "orcScene"
 
@@ -468,7 +468,12 @@ export function createOrcScene() {
 	orcGroup.add(orcHand)
 
 	// Initialize hand state machine
-	orcHandStateMachine = new HandStateMachine(orcHand, orcGroup, satellites)
+	orcHandStateMachine = new HandStateMachine(
+		orcHand,
+		orcGroup,
+		satellites,
+		camera
+	)
 
 	// Set up callbacks for hand state machine
 	orcHandStateMachine.onSatelliteBurn = (satellite) => {
@@ -1226,51 +1231,61 @@ export function animateOrcScene(animateNormal = true) {
 	// Update Hand of ORC
 	if (orcHandStateMachine) {
 		orcHandStateMachine.update()
-
-		// Update satellite burn effect when hand has slapped it
-		if (orcHandStateMachine.state === HandState.CELEBRATING) {
-			const targetSat = orcHandStateMachine.targetSatellite
-			if (targetSat && targetSat.userData.handSlapped) {
-				const burnElapsed = performance.now() - targetSat.userData.burnStartTime
-				const burnDuration = 3000
-				const burnProgress = Math.min(burnElapsed / burnDuration, 1)
-
-				// Update flame trail
-				const worldPos = new THREE.Vector3()
-				targetSat.getWorldPosition(worldPos)
-				const orbitDir = worldPos.clone().normalize().negate()
-				updateFlameTrail(targetSat, burnProgress, orbitDir, worldPos.length())
-
-				// Scale down and fizzle
-				const scale = 1 - burnProgress * 0.85
-				targetSat.scale.set(scale, scale, scale)
-
-				if (burnProgress > 0.8) {
-					const fizzleProgress = (burnProgress - 0.8) / 0.2
-					targetSat.visible = Math.random() > fizzleProgress * 0.5
-				}
-
-				// Move satellite toward Earth during burn
-				const earthDir = worldPos.clone().normalize().negate()
-				targetSat.position.add(earthDir.multiplyScalar(0.002))
-			}
-		}
 	}
 
 	satellites.forEach((sat) => {
 		const data = sat.userData
 
-		// Skip satellites being handled by the Hand of ORC
-		if (orcHandStateMachine && orcHandStateMachine.targetSatellite === sat) {
-			const handState = orcHandStateMachine.state
-			// Only skip if hand is actively controlling the satellite
-			if (
-				handState !== HandState.IDLE_ORBIT &&
-				handState !== HandState.RETURNING &&
-				handState !== HandState.CANCELLED
-			) {
-				return // Hand is in control
+		// 1. Handle Crash Physics (Hand Slap) - Overrides all other logic
+		if (data.handSlapped) {
+			// Check if satellite is still active (not destroyed)
+			if (sat.parent) {
+				const burnElapsed = performance.now() - data.burnStartTime
+				const burnDuration = 4000 // Match extended duration in hand config
+				const burnProgress = Math.min(burnElapsed / burnDuration, 1)
+
+				// Update flame trail
+				const worldPos = new THREE.Vector3()
+				sat.getWorldPosition(worldPos)
+				const orbitDir = worldPos.clone().normalize().negate()
+				updateFlameTrail(sat, burnProgress, orbitDir, worldPos.length())
+
+				// Scale down and fizzle
+				const scale = 1 - burnProgress * 0.85
+				sat.scale.set(scale, scale, scale)
+
+				if (burnProgress > 0.8) {
+					const fizzleProgress = (burnProgress - 0.8) / 0.2
+					sat.visible = Math.random() > fizzleProgress * 0.5
+				}
+
+				// Move satellite toward Earth during burn
+				const earthDir = worldPos.clone().normalize().negate()
+				// Safety check for NaN
+				if (isNaN(earthDir.x)) earthDir.set(0, -1, 0)
+
+				if (sat.parent) {
+					const parentWorldQuat = new THREE.Quaternion()
+					sat.parent.getWorldQuaternion(parentWorldQuat)
+					earthDir.applyQuaternion(parentWorldQuat.invert())
+				}
+
+				// Apply time scaling from hand state machine for slow motion effect
+				const timeScale = orcHandStateMachine
+					? orcHandStateMachine.timeScale
+					: 1.0
+				const speed = 0.12 * timeScale
+				sat.position.add(earthDir.multiplyScalar(speed))
+				sat.rotation.x += 0.2 // Tumble
+				sat.rotation.z += 0.1
+
+				// Check for impact with Earth surface
+				if (worldPos.length() < PLANET_RADIUS + 0.05) {
+					sat.visible = false
+					if (orcHandStateMachine) orcHandStateMachine.timeScale = 1.0 // Reset to normal speed on impact
+				}
 			}
+			return // Skip normal orbit logic
 		}
 
 		// Helper to calculate position for Keplerian orbits (MEO)
@@ -1287,6 +1302,9 @@ export function animateOrcScene(animateNormal = true) {
 			const y = Math.sin(angle) * r
 			return { x, y, r }
 		}
+
+		// Apply global time scaling (for slow motion effects)
+		const timeScale = orcHandStateMachine ? orcHandStateMachine.timeScale : 1.0
 
 		// Skip geosynchronous satellites - they move with the planet
 		// (but not if decommissioning or returning from cancelled decommission)
@@ -1542,15 +1560,19 @@ export function animateOrcScene(animateNormal = true) {
 			} else if (data.originalOrbitRadiusX) {
 				// GEO satellite (elliptical)
 				data.angle += data.originalOrbitSpeed
-				const x = Math.cos(data.angle) * data.originalOrbitRadiusX * radiusMultiplier
-				const y = Math.sin(data.angle) * data.originalOrbitRadiusZ * radiusMultiplier
+				const x =
+					Math.cos(data.angle) * data.originalOrbitRadiusX * radiusMultiplier
+				const y =
+					Math.sin(data.angle) * data.originalOrbitRadiusZ * radiusMultiplier
 				sat.position.set(x, y, 0)
 				sat.rotation.z = data.angle - Math.PI / 2
 			} else {
 				// LEO satellite (circular)
 				data.angle += data.originalOrbitSpeed
-				const x = Math.cos(data.angle) * data.originalOrbitRadius * radiusMultiplier
-				const z = Math.sin(data.angle) * data.originalOrbitRadius * radiusMultiplier
+				const x =
+					Math.cos(data.angle) * data.originalOrbitRadius * radiusMultiplier
+				const z =
+					Math.sin(data.angle) * data.originalOrbitRadius * radiusMultiplier
 				sat.position.set(x, 0, z)
 				sat.rotation.y = -data.angle - Math.PI / 2
 			}
@@ -1595,7 +1617,11 @@ export function animateOrcScene(animateNormal = true) {
 					planet.add(sat)
 
 					// Restore original position relative to planet
-					const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
+					const geoPos = latLonTo3D(
+						markerLatitude,
+						markerLongitude,
+						GEO_ALTITUDE
+					)
 					sat.position.set(geoPos.x, geoPos.y, geoPos.z)
 					sat.lookAt(0, 0, 0)
 					sat.rotateX(Math.PI / 2)
@@ -1629,7 +1655,7 @@ export function animateOrcScene(animateNormal = true) {
 				// 2. Update angle (True Anomaly)
 				// Angular velocity is proportional to 1/r^2 (Conservation of angular momentum)
 				// 1.5 is a tuning factor to match visual speed expectations
-				const instantaneousSpeed = data.orbitSpeed * (1.5 / (r * r))
+				const instantaneousSpeed = data.orbitSpeed * (1.5 / (r * r)) * timeScale
 				data.angle += instantaneousSpeed
 
 				// 3. Update Position
@@ -1642,7 +1668,7 @@ export function animateOrcScene(animateNormal = true) {
 				sat.rotation.z = data.angle + Math.PI / 2
 			} else if (data.orbitRadiusX) {
 				// GEO satellite - counter-clockwise
-				data.angle += data.orbitSpeed
+				data.angle += data.orbitSpeed * timeScale
 				const x = Math.cos(data.angle) * data.orbitRadiusX
 				const y = Math.sin(data.angle) * data.orbitRadiusZ
 				sat.position.set(x, y, 0)
@@ -1650,7 +1676,7 @@ export function animateOrcScene(animateNormal = true) {
 				sat.rotation.z = data.angle - Math.PI / 2
 			} else {
 				// LEO satellite - counter-clockwise
-				data.angle += data.orbitSpeed
+				data.angle += data.orbitSpeed * timeScale
 				const x = Math.cos(data.angle) * data.orbitRadius
 				const z = Math.sin(data.angle) * data.orbitRadius
 				sat.position.set(x, 0, z)
@@ -2049,7 +2075,18 @@ export function startDecommission(satellite) {
 		// Remove from planet and add to orcGroup
 		planet.remove(satellite)
 		orcGroup.add(satellite)
+		orcGroup.worldToLocal(worldPos)
 		satellite.position.copy(worldPos)
+
+		// Initialize orbit parameters for animation (treat as circular orbit around Y axis)
+		// This ensures we don't get NaNs in animateOrcScene
+		const radiusXZ = Math.sqrt(
+			worldPos.x * worldPos.x + worldPos.z * worldPos.z
+		)
+		data.orbitRadius = radiusXZ
+		data.orbitY = worldPos.y
+		data.angle = Math.atan2(worldPos.z, worldPos.x)
+		data.orbitSpeed = 0.001 // Match planet rotation speed
 
 		// Store original orbit params for potential cancel
 		data.originalWorldPos = worldPos.clone()
@@ -2065,6 +2102,7 @@ export function startDecommission(satellite) {
 		data.originalOrbitRadiusZ = data.orbitRadiusZ
 	} else if (data.orbitRadius) {
 		// LEO satellite (circular)
+		// LEO satellite (circular) or initialized GEO
 		data.originalOrbitRadius = data.orbitRadius
 	}
 	data.originalOrbitSpeed = data.orbitSpeed
@@ -2095,7 +2133,9 @@ export function cancelDecommission(satellite) {
 
 	// Check if hand state machine can cancel
 	if (orcHandStateMachine && !orcHandStateMachine.canCancel()) {
-		console.log("cancelDecommission: hand cannot cancel (slap already delivered)")
+		console.log(
+			"cancelDecommission: hand cannot cancel (slap already delivered)"
+		)
 		return false
 	}
 
@@ -2127,7 +2167,8 @@ export function cancelDecommission(satellite) {
 		const e = data.eccentricity
 		const theta = data.angle || 0
 		originalRadius = (a * (1 - e * e)) / (1 + e * Math.cos(theta))
-		data.returnStartRadiusMultiplier = satellite.position.length() / originalRadius
+		data.returnStartRadiusMultiplier =
+			satellite.position.length() / originalRadius
 	} else if (data.originalOrbitRadius) {
 		// LEO or GEO circular
 		originalRadius = data.originalOrbitRadius
@@ -2180,6 +2221,11 @@ function removeSatelliteFromScene(satellite) {
 	const index = satellites.indexOf(satellite)
 	if (index > -1) {
 		satellites.splice(index, 1)
+	}
+
+	// Clear active decommission tracking if this was the active one
+	if (activeDecommission === satellite) {
+		activeDecommission = null
 	}
 
 	// Remove from scene

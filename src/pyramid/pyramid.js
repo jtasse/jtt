@@ -1760,7 +1760,7 @@ function createOrcDemo() {
 	orcDemoScene.add(keyLight)
 
 	// This creates the orcGroup and satellites at the module level in orcScene.js
-	const orcGroupForDemo = createOrcScene()
+	const orcGroupForDemo = createOrcScene(orcDemoCamera)
 	orcGroupForDemo.position.x = sceneOffsetX // Apply scene offset from CSS
 	orcDemoScene.add(orcGroupForDemo)
 
