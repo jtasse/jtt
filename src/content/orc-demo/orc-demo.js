@@ -519,7 +519,8 @@ export function createOrcScene(camera) {
 			planet.remove(satellite)
 			orcGroup.add(satellite)
 
-			// Set its position in the new parent's coordinate space
+			// Convert world position to local position in orcGroup
+			orcGroup.worldToLocal(worldPos)
 			satellite.position.copy(worldPos)
 		}
 	}
@@ -1343,15 +1344,12 @@ export function animateOrcScene(animateNormal = true) {
 						}
 					}
 
-					// Convert world position back to local position
-					if (sat.parent && sat.parent !== orcGroup) {
-						// For satellites with transformed parents
+					// Convert world position to local position for the satellite's parent
+					// Always use worldToLocal to handle any parent transforms correctly
+					if (sat.parent) {
 						sat.parent.worldToLocal(newWorldPos)
-						sat.position.copy(newWorldPos)
-					} else {
-						// For satellites directly in orcGroup (like Leona)
-						sat.position.copy(newWorldPos)
 					}
+					sat.position.copy(newWorldPos)
 				}
 
 				// Tumble animation
@@ -1380,8 +1378,8 @@ export function animateOrcScene(animateNormal = true) {
 						newPos = new THREE.Vector3(worldPos.x + 0.1, worldPos.y, targetZ)
 					}
 
-					// Apply to satellite
-					if (sat.parent && sat.parent !== orcGroup) {
+					// Apply to satellite (convert world to local)
+					if (sat.parent) {
 						sat.parent.worldToLocal(newPos)
 					}
 					sat.position.copy(newPos)
