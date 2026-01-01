@@ -54,7 +54,6 @@ const MIN_FRONT_Z = 0.4
 // Atmosphere boundaries for decommission effects
 // Exosphere should just envelop Leona's orbit (LEO at 0.65)
 const EXOSPHERE_RADIUS = 0.72 // Just outside LEO orbit - where burning starts
-const OUTER_ATMOSPHERE_RADIUS = PLANET_RADIUS * 1.25 // 0.625 - visible atmosphere layer
 const INNER_ATMOSPHERE_RADIUS = PLANET_RADIUS * 1.08 // 0.54 - where satellite is destroyed
 
 // Decommission animation configuration
@@ -97,7 +96,7 @@ export function getDecommissionState() {
 		t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 
 	// Get tracking position - ALWAYS track the hand during decommission
-	let trackingPosition = new THREE.Vector3()
+	const trackingPosition = new THREE.Vector3()
 	let phase = "approach"
 	let burnProgress = 0
 	let inBurnPhase = false
@@ -508,6 +507,21 @@ export function createOrcScene(camera) {
 		}
 		satellite.userData.handSlapped = true
 		satellite.userData.burnStartTime = performance.now()
+
+		// When a geosynchronous satellite (like George) is slapped, it must be
+		// detached from the rotating planet and attached to the main scene group.
+		// This ensures its crash trajectory is independent of the planet's rotation.
+		if (satellite.userData.isGeosynchronous && satellite.parent === planet) {
+			const worldPos = new THREE.Vector3()
+			satellite.getWorldPosition(worldPos) // Get world position
+
+			// Reparent from planet to the main scene group
+			planet.remove(satellite)
+			orcGroup.add(satellite)
+
+			// Set its position in the new parent's coordinate space
+			satellite.position.copy(worldPos)
+		}
 	}
 
 	orcHandStateMachine.onSatelliteDestroyed = (satellite) => {
@@ -1286,7 +1300,7 @@ export function animateOrcScene(animateNormal = true) {
 
 				// Move satellite toward Earth during burn, but keep it VISIBLE
 				// The satellite should burn up in the atmosphere, not clip through the planet
-				const currentDist = worldPos.length()
+				let currentDist = worldPos.length()
 
 				// Only move if still outside the visible burn zone
 				if (currentDist > INNER_ATMOSPHERE_RADIUS) {
@@ -1294,37 +1308,83 @@ export function animateOrcScene(animateNormal = true) {
 					// Safety check for NaN
 					if (isNaN(earthDir.x)) earthDir.set(0, -1, 0)
 
-					if (sat.parent) {
-						const parentWorldQuat = new THREE.Quaternion()
-						sat.parent.getWorldQuaternion(parentWorldQuat)
-						earthDir.applyQuaternion(parentWorldQuat.invert())
-					}
-
 					// Apply time scaling from hand state machine for slow motion effect
 					const timeScale = orcHandStateMachine
 						? orcHandStateMachine.timeScale
 						: 1.0
 					const speed = 0.08 * timeScale // Slower descent
-					sat.position.add(earthDir.multiplyScalar(speed))
+
+					// Move in WORLD space direction, then convert to local if needed
+					const movement = earthDir.clone().multiplyScalar(speed)
+
+					// For satellites parented to orcGroup (no rotation), local = world
+					// But we should work in world space to be safe
+					const newWorldPos = worldPos.clone().add(movement)
+
+					// CRITICAL: Keep satellite in front of planet (visible to camera)
+					// Clamp Z to stay visible regardless of where the satellite is moving
+					if (newWorldPos.z < MIN_FRONT_Z) {
+						// Instead of just clamping Z, adjust the trajectory
+						// Move more in XY and less in Z to spiral around the front
+						const xyDist = Math.sqrt(
+							newWorldPos.x * newWorldPos.x + newWorldPos.y * newWorldPos.y
+						)
+
+						if (xyDist > 0.15) {
+							// If we have XY distance, spiral inward on the front face
+							newWorldPos.z = MIN_FRONT_Z
+							// Slightly reduce XY to create inward spiral
+							const shrinkFactor = 0.98
+							newWorldPos.x *= shrinkFactor
+							newWorldPos.y *= shrinkFactor
+						} else {
+							// Very close to center in XY - maintain minimum visible position
+							newWorldPos.z = MIN_FRONT_Z
+						}
+					}
+
+					// Convert world position back to local position
+					if (sat.parent && sat.parent !== orcGroup) {
+						// For satellites with transformed parents
+						sat.parent.worldToLocal(newWorldPos)
+						sat.position.copy(newWorldPos)
+					} else {
+						// For satellites directly in orcGroup (like Leona)
+						sat.position.copy(newWorldPos)
+					}
 				}
 
 				// Tumble animation
 				sat.rotation.x += 0.15
 				sat.rotation.z += 0.08
 
-				// Keep satellite in front of planet (visible to camera)
+				// Double-check world position after movement and clamp if needed
 				sat.getWorldPosition(worldPos)
+				currentDist = worldPos.length()
+
 				if (worldPos.z < MIN_FRONT_Z && currentDist > PLANET_RADIUS) {
-					// Push satellite to front while shrinking toward planet
-					const xyDist = Math.sqrt(worldPos.x * worldPos.x + worldPos.y * worldPos.y)
-					if (xyDist < 0.1) {
-						// Near the Y-axis, push forward in Z
-						sat.position.z = MIN_FRONT_Z
+					// Emergency clamp - satellite got behind planet somehow
+					// Force it to the front while maintaining distance from center
+					const targetZ = MIN_FRONT_Z
+					const xyDist = Math.sqrt(
+						worldPos.x * worldPos.x + worldPos.y * worldPos.y
+					)
+
+					// Create a new position in front of planet
+					let newPos
+					if (xyDist > 0.1) {
+						// Maintain XY, push Z forward
+						newPos = new THREE.Vector3(worldPos.x, worldPos.y, targetZ)
 					} else {
-						// Reflect position to front
-						sat.position.z = Math.abs(sat.position.z)
-						if (sat.position.z < MIN_FRONT_Z) sat.position.z = MIN_FRONT_Z
+						// Near center - spread out slightly
+						newPos = new THREE.Vector3(worldPos.x + 0.1, worldPos.y, targetZ)
 					}
+
+					// Apply to satellite
+					if (sat.parent && sat.parent !== orcGroup) {
+						sat.parent.worldToLocal(newPos)
+					}
+					sat.position.copy(newPos)
 				}
 
 				// Hide when reaching atmosphere (but don't reset slow motion - let hand state handle it)
@@ -1517,7 +1577,7 @@ export function animateOrcScene(animateNormal = true) {
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
 				data.orbitSpeed = data.originalOrbitSpeed * speedMultiplier
 
-				let x = Math.cos(data.angle) * data.orbitRadius
+				const x = Math.cos(data.angle) * data.orbitRadius
 				let z = Math.sin(data.angle) * data.orbitRadius
 				const y = data.orbitY !== undefined ? data.orbitY * radiusMultiplier : 0
 
@@ -2046,7 +2106,7 @@ function updateFlameTrail(
 	const burning =
 		inExosphere && (data.reachedExosphere || data.startedInExosphere)
 
-	flames.forEach((flame, i) => {
+	flames.forEach((flame) => {
 		flame.visible = burning
 
 		if (burning) {
@@ -2182,7 +2242,7 @@ export function startDecommission(satellite) {
 
 // Update the satellite list item to show decommissioning state
 // Keep satellite selected during decommission (visual feedback comes from other animations)
-function updateSatelliteListItemState(satelliteId, isDecommissioning) {
+function updateSatelliteListItemState(_satelliteId, _isDecommissioning) {
 	// No longer changing the list item appearance during decommission
 	// The satellite stays selected until it's removed from the scene
 }

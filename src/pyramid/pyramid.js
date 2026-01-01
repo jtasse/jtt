@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import { contentFiles } from "./constants.js"
 import {
 	makeAboutPlane,
 	makePortfolioPlane,
@@ -224,7 +223,6 @@ scene.add(morphSphere)
 
 // ORC scene state
 let orcSceneActive = false
-let activeOrcGroup = null
 let orcDemoContainer = null
 let orcDemoRenderer = null
 let orcDemoScene = null
@@ -233,7 +231,6 @@ let orcDemoRequestId = null
 let orcDemoControls = null
 let selectionIndicator = null
 let selectedSatellite = null
-let availableSatellitesPane = null
 
 // Camera tracking state for decommission animations
 let originalCameraState = null // Stores camera position/target before decommission tracking
@@ -351,7 +348,6 @@ export const contactConfig = {
 // Contact label mesh (created in initContactLabel)
 export let contactLabel = null
 let contactVisible = false
-let contactPosition = "hidden" // "hidden", "center"
 
 // Initialize contact label
 export function initContactLabel() {
@@ -379,7 +375,6 @@ export function initContactLabel() {
 export function showContactLabelCentered() {
 	if (!contactLabel || contactVisible) return
 	contactVisible = true
-	contactPosition = "center"
 
 	const cfg = contactConfig
 	contactLabel.visible = true
@@ -432,7 +427,6 @@ function getContactLeftPosition() {
 // Move contact label to left side (when pyramid moves to top nav)
 export function moveContactLabelToLeft() {
 	if (!contactLabel || !contactVisible) return
-	contactPosition = "left"
 
 	const cfg = contactConfig
 
@@ -504,17 +498,6 @@ export function hideContactLabel() {
 	const duration = 400
 	const startTime = performance.now()
 	const startOpacity = contactLabel.material.opacity
-	const startQuat = contactLabel.quaternion.clone()
-	const startScale = contactLabel.scale.clone()
-	const endQuat = new THREE.Quaternion().setFromEuler(
-		new THREE.Euler(
-			cfg.revealedRotation.x,
-			cfg.revealedRotation.y,
-			cfg.revealedRotation.z,
-			"YXZ"
-		)
-	)
-	const endScale = new THREE.Vector3(1, 1, 1)
 
 	function animateFadeOut(time) {
 		const elapsed = time - startTime
@@ -525,7 +508,6 @@ export function hideContactLabel() {
 		if (t >= 1) {
 			contactLabel.visible = false
 			contactVisible = false
-			contactPosition = "hidden"
 			// Reset to pyramid group and hidden position
 			if (contactLabel.parent === scene) {
 				scene.remove(contactLabel)
@@ -605,7 +587,6 @@ export function initLabels(makeLabelPlane) {
 }
 
 // === Pyramid State ===
-let isAtBottom = false
 
 // Token to invalidate in-progress pyramid animations. Incrementing this
 // prevents prior animation completions from executing side-effects
@@ -668,7 +649,7 @@ export function animatePyramid(down = true, section = null) {
 
 	// No Y rotation when going to flattened state - pyramid slides horizontally
 	// and always points straight down. Only reset Y rotation when returning home.
-	let endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
+	const endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
 	if (down && section) {
 		currentSection = section
 	}
@@ -822,7 +803,6 @@ export function animatePyramid(down = true, section = null) {
 			// If a newer animation has been started since this one began,
 			// abort executing completion side-effects.
 			if (myToken !== pyramidAnimToken) return
-			isAtBottom = down
 
 			// Snap labels to final positions
 			for (const key in labels) {
@@ -1010,7 +990,6 @@ export function resetPyramidToHome() {
 
 		if (t < 1) requestAnimationFrame(step)
 		else {
-			isAtBottom = false
 			// Ensure exact values after animation
 			pyramidGroup.rotation.y = initialPyramidState.rotationY
 			pyramidGroup.rotation.x = 0
@@ -1062,7 +1041,7 @@ export function showAboutPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let aboutPlane = scene.getObjectByName("aboutPlane")
+	const aboutPlane = scene.getObjectByName("aboutPlane")
 	if (!aboutPlane) {
 		// Capture current animation token so we can abort if a reset occurs
 		const myToken = pyramidAnimToken
@@ -1112,7 +1091,7 @@ export function showPortfolioPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let portfolioPlane = scene.getObjectByName("portfolioPlane")
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (!portfolioPlane) {
 		const myToken = pyramidAnimToken
 		// Load portfolio HTML and extract items (title, description, link)
@@ -1120,7 +1099,6 @@ export function showPortfolioPlane() {
 			if (myToken !== pyramidAnimToken) return
 			// Do not populate the DOM content pane for portfolio to avoid
 			// duplicating the portfolio items. The 3D plane will be used.
-			const contentEl = document.getElementById("content")
 			const parser = new DOMParser()
 			const doc = parser.parseFromString(html, "text/html")
 			const items = []
@@ -1138,7 +1116,7 @@ export function showPortfolioPlane() {
 					try {
 						const url = new URL(link)
 						imageSrc = `${url.origin}/favicon.ico`
-					} catch (e) {
+					} catch {
 						imageSrc = null
 					}
 				}
@@ -1188,7 +1166,7 @@ export function showBlogPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let blogPlane = scene.getObjectByName("blogPlane")
+	const blogPlane = scene.getObjectByName("blogPlane")
 	if (!blogPlane) {
 		const myToken = pyramidAnimToken
 		// load HTML content and parse blog posts
@@ -1319,9 +1297,6 @@ function hideOrcPreviewOverlay() {
 }
 
 function cleanupOrcPreviewOverlay() {
-	if (orcPreviewElement && orcPreviewElement.cleanup) {
-		orcPreviewElement.cleanup()
-	}
 	if (orcPreviewOverlay && orcPreviewOverlay.parentNode) {
 		orcPreviewOverlay.parentNode.removeChild(orcPreviewOverlay)
 	}
@@ -1489,8 +1464,6 @@ export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
 
 	// Capture camera/controls state BEFORE fading out
-	const startCamPos = orcDemoCamera.position.clone()
-	const startControlsTarget = orcDemoControls.target.clone()
 	const endCamPos = initialCameraState.position.clone()
 
 	const fadeOutDuration = 500 // Duration for ORC elements to fade out
@@ -1562,7 +1535,6 @@ export function morphFromOrcScene() {
 		controls.update()
 
 		orcSceneActive = false
-		isAtBottom = false
 		currentSection = null
 		morphSphere.visible = false
 
@@ -1806,8 +1778,6 @@ function createOrcDemo() {
 			// Add orcGroup offset to satellite position (planet center in world space)
 			const planetCenter = new THREE.Vector3(orcGroup.position.x, 0, 0)
 			satPos.x += orcGroup.position.x
-
-			const config = decommState.config
 
 			// Camera should be positioned to keep satellite centered in VISIBLE area
 			// The sidebar takes 1/3 of screen on the right, so we offset the camera
@@ -2211,7 +2181,7 @@ export function showHomeLabel() {
 	try {
 		const btn = document.getElementById("home-button")
 		if (btn) btn.style.display = "block"
-	} catch (e) {}
+	} catch {}
 }
 
 export function hideHomeLabel() {
@@ -2219,7 +2189,7 @@ export function hideHomeLabel() {
 	try {
 		const btn = document.getElementById("home-button")
 		if (btn) btn.style.display = "none"
-	} catch (e) {}
+	} catch {}
 }
 
 // === Animate Loop ===

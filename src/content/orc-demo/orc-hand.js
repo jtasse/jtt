@@ -454,7 +454,7 @@ function createPropulsionPlume(materials) {
 // Main Hand Creation
 // ============================================
 
-export function createOrcHand(scaleFactor = HAND_SCALE_FACTOR) {
+export function createOrcHand(_scaleFactor = HAND_SCALE_FACTOR) {
 	const handGroup = new THREE.Group()
 	handGroup.name = "orcHand"
 
@@ -691,7 +691,7 @@ const MIN_FRONT_Z = 0.5
 
 // Generate smooth, free-flowing movement using layered sine waves
 // No orbiting - just graceful, free-willed flight
-export function calculateIrregularOrbitPosition(time, currentPos = null) {
+export function calculateIrregularOrbitPosition(time, _currentPos = null) {
 	// Convert to seconds for smoother calculations
 	const t = time * 0.0001
 
@@ -1135,6 +1135,10 @@ export class HandStateMachine {
 			const targetPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(targetPos)
 
+			// Check if this is a LEO satellite (close to planet)
+			const satDistance = targetPos.length()
+			const isLEO = satDistance < 0.8 // LEO orbit is 0.65, GEO is 2.0
+
 			// If satellite is behind the planet (negative Z), we need a special approach
 			// that keeps the hand in front of the planet at all times
 			const satBehindPlanet = targetPos.z < MIN_FRONT_Z
@@ -1148,11 +1152,13 @@ export class HandStateMachine {
 				.add(directPath.clone().multiplyScalar(0.5))
 			const midDistance = midPoint.length()
 
+			// For LEO satellites, always use an arc approach to stay clear of planet
 			// If midpoint is too close to planet OR satellite is behind planet, arc around it
 			let interpolatedPos
 			if (
 				midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
-				satBehindPlanet
+				satBehindPlanet ||
+				isLEO
 			) {
 				// Create an arc path by pushing the midpoint outward
 				// ALWAYS bias towards camera (positive Z) to stay visible
@@ -1174,12 +1180,18 @@ export class HandStateMachine {
 					pushDirection.normalize()
 				}
 
+				// For LEO satellites, push the arc further out to avoid planet proximity
+				const arcRadius = isLEO
+					? HAND_ORBIT_CONFIG.minPlanetDistance * 2.0
+					: HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
+
 				// Ensure arc midpoint has strong positive Z to stay in front
-				const arcMidPoint = pushDirection.multiplyScalar(
-					HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
-				)
+				const arcMidPoint = pushDirection.multiplyScalar(arcRadius)
 				// Force arc midpoint to stay in front of planet
-				arcMidPoint.z = Math.max(arcMidPoint.z, MIN_FRONT_Z + 0.3)
+				arcMidPoint.z = Math.max(
+					arcMidPoint.z,
+					MIN_FRONT_Z + (isLEO ? 0.6 : 0.3)
+				)
 
 				// Quadratic bezier interpolation for smooth arc
 				const oneMinusT = 1 - eased
@@ -1235,22 +1247,45 @@ export class HandStateMachine {
 
 			// Position hand for a swing toward the satellite
 			// Calculate vector from Earth to Satellite
-			let earthToSat = satPos.clone()
+			const earthToSat = satPos.clone()
 			if (earthToSat.lengthSq() < 0.0001) {
 				earthToSat.set(0, 1, 0) // Fallback
 			} else {
 				earthToSat.normalize()
 			}
 
+			// Check if this is a LEO satellite (close to planet)
+			const satDistance = satPos.length()
+			const isLEO = satDistance < 0.8 // LEO orbit is 0.65, GEO is 2.0
+
 			// Wind up position: outside the orbit but ALWAYS in front of planet
-			const windUpDist = 0.8 // Distance from satellite
+			// For LEO satellites, use a larger wind-up distance to stay clear of planet
+			const windUpDist = isLEO ? 1.2 : 0.8
 			let windUpPos = satPos
 				.clone()
 				.add(earthToSat.clone().multiplyScalar(windUpDist))
 
-			// If the wind-up position would be behind the planet, reposition
-			// to the side/front while maintaining ability to swing at satellite
-			if (windUpPos.z < MIN_FRONT_Z) {
+			// For LEO satellites, ALWAYS swing from above/side to avoid planet proximity
+			// The satellite is so close to the planet that we need a different approach angle
+			if (isLEO) {
+				// Position above and to the side of the satellite for a downward swing
+				// This keeps the hand far from the planet surface
+				const lateralDir = new THREE.Vector3(satPos.x, 0, satPos.z)
+				if (lateralDir.lengthSq() > 0.01) {
+					lateralDir.normalize()
+				} else {
+					lateralDir.set(1, 0, 0)
+				}
+
+				// Wind up position: above the satellite and pushed outward
+				windUpPos = new THREE.Vector3(
+					satPos.x + lateralDir.x * 0.5,
+					satPos.y + 0.8, // Above the satellite
+					Math.max(MIN_FRONT_Z + 0.5, satPos.z + 0.6) // In front of planet
+				)
+			} else if (windUpPos.z < MIN_FRONT_Z) {
+				// If the wind-up position would be behind the planet, reposition
+				// to the side/front while maintaining ability to swing at satellite
 				// Calculate a position that's in front of planet but offset to swing from
 				// Use the satellite's XY position to determine swing direction
 				const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
@@ -1273,7 +1308,7 @@ export class HandStateMachine {
 			this.hand.position.lerp(windUpPos, 0.1)
 
 			// Rotate hand to face satellite, with palm ready for backhand
-			let toSatellite = satPos.clone().sub(this.hand.position)
+			const toSatellite = satPos.clone().sub(this.hand.position)
 			if (toSatellite.lengthSq() < 0.0001) {
 				toSatellite.set(0, 0, 1) // Fallback
 			} else {
@@ -1318,7 +1353,7 @@ export class HandStateMachine {
 			// End pos is past the satellite
 
 			// Vector from Hand to Satellite
-			let toSat = satPos.clone().sub(this.hand.position)
+			const toSat = satPos.clone().sub(this.hand.position)
 			if (toSat.lengthSq() < 0.0001) {
 				toSat.set(0, -1, 0) // Fallback if on top of it
 			} else {
@@ -1425,6 +1460,8 @@ export class HandStateMachine {
 	updateReturning() {
 		const elapsed = this.getElapsedTime()
 		const t = Math.min(elapsed / SEQUENCE_TIMINGS.returnDuration, 1)
+
+		// Smooth ease-in-out for graceful return
 		const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 
 		// Return to orbit position
@@ -1474,7 +1511,6 @@ export class HandStateMachine {
 		// Gradually return to orbit orientation
 		const velocity = targetPos.clone().sub(this.hand.position)
 		if (velocity.length() > 0.001) {
-			const lookTarget = this.hand.position.clone().add(velocity.normalize())
 			const targetQuat = new THREE.Quaternion()
 			const up = new THREE.Vector3(0, 1, 0)
 			const dir = velocity.normalize()

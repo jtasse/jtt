@@ -109,7 +109,7 @@ const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
 let hoveredLabel = null
 let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
-let pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
+const pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
 let isPointerDown = false
 let isDragging = false
 const DRAG_THRESHOLD = 5 // pixels
@@ -896,7 +896,7 @@ function onSceneMouseDown(event) {
 	}
 
 	// Track which label is centered
-	let centeredLabelName = window.centeredLabelName || null
+	const centeredLabelName = window.centeredLabelName || null
 	// If a content plane is visible, prefer handling clickable overlays on it first
 	try {
 		const portfolioPlaneEarly = scene.getObjectByName("portfolioPlane")
@@ -941,7 +941,7 @@ function onSceneMouseDown(event) {
 		if (labelIntersects.length > 0) obj = labelIntersects[0].object
 	}
 	if (obj) {
-		let labelName = obj.userData.name
+		const labelName = obj.userData.name
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
 		// restore all labels to original positions, hide all content, and navigate home.
 		if (labelName === "Home") {
@@ -1024,7 +1024,7 @@ function onSceneMouseDown(event) {
 			// Fallback: raycast the whole plane if no explicit clickables found
 			const pHits = raycaster.intersectObjects([portfolioPlane], true)
 			if (pHits.length > 0) {
-				let hit = pHits[0].object
+				const hit = pHits[0].object
 				let node = hit
 				while (node) {
 					if (node.userData && node.userData.link) {
