@@ -1360,12 +1360,12 @@ export class HandStateMachine {
 	updateCelebrating() {
 		const elapsed = this.getElapsedTime()
 
-		// FORCE hand to locked position EVERY FRAME - absolutely no movement allowed
+		// Keep position locked - no movement allowed
 		this.hand.position.copy(this.stateData.lockedPosition)
-		this.hand.quaternion.copy(this.stateData.lockedRotation)
 
-		// Phase 1: Wait for satellite to be destroyed
+		// Phase 1: Wait for satellite to be destroyed - keep original rotation
 		if (this.targetSatellite) {
+			this.hand.quaternion.copy(this.stateData.lockedRotation)
 			if (elapsed > 1500 && this.onSatelliteDestroyed) {
 				this.onSatelliteDestroyed(this.targetSatellite)
 				this.targetSatellite = null
@@ -1378,6 +1378,40 @@ export class HandStateMachine {
 			this.stateData.thumbsUpStarted = true
 			this.stateData.thumbsUpStartTime = this.internalTime
 			transitionToGesture(this.hand, "thumbsUp", 500)
+
+			// Calculate target rotation: palm faces camera, thumb points straight up
+			// Like looking at Washington Monument from the front - thumb rises vertically
+			// - Palm (local +Z) faces camera (world +Z)
+			// - Fingers (local +Y) point sideways (world +X, to the right)
+			// - Thumb side (local -X) points up (world +Y)
+			const targetQuat = new THREE.Quaternion()
+
+			// Use makeBasis to define where each local axis points in world space
+			const localXInWorld = new THREE.Vector3(0, -1, 0) // local X points down
+			const localYInWorld = new THREE.Vector3(1, 0, 0) // fingers point right
+			const localZInWorld = new THREE.Vector3(0, 0, 1) // palm faces camera
+
+			const rotMatrix = new THREE.Matrix4()
+			rotMatrix.makeBasis(localXInWorld, localYInWorld, localZInWorld)
+			targetQuat.setFromRotationMatrix(rotMatrix)
+
+			this.stateData.targetThumbsUpQuat = targetQuat
+		}
+
+		// Smoothly rotate to thumbs-up orientation
+		if (this.stateData.targetThumbsUpQuat) {
+			const rotationProgress = Math.min(
+				(this.internalTime - this.stateData.thumbsUpStartTime) / 500,
+				1
+			)
+			const eased =
+				rotationProgress < 0.5
+					? 4 * rotationProgress * rotationProgress * rotationProgress
+					: 1 - Math.pow(-2 * rotationProgress + 2, 3) / 2
+
+			this.hand.quaternion
+				.copy(this.stateData.lockedRotation)
+				.slerp(this.stateData.targetThumbsUpQuat, eased)
 		}
 
 		// After 3 seconds of thumbs up, transition to RETURNING
