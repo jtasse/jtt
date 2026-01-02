@@ -12,11 +12,7 @@
       "Bash(git checkout:*)",
       "Bash(git restore:*)",
       "Bash(timeout /t 3 /nobreak)",
-      "Bash(git add:*)",
-      "Bash(git -C \"C:/dev/github/pyramid\" status src/content/orc-demo/orc-demo.js)",
-      "Bash(node:*)",
-      "WebFetch(domain:en.wikipedia.org)",
-      "Bash(git rm:*)"
+      "Bash(git add:*)"
     ]
   }
 }
