@@ -1,5 +1,5 @@
-/* Styles specific to the Bio content page (merged) */
-.bio-content {
+/* Styles specific to the About content page */
+.about-content {
 	background: rgba(0, 0, 0, 0.6);
 	border: 1px solid #00ffff;
 	border-radius: 12px;
@@ -10,7 +10,7 @@
 	line-height: 1.6;
 }
 
-.bio-content h1 {
+.about-content h1 {
 	text-align: center;
-	color: blue; /* retained from earlier merged file */
+	color: blue;
 }

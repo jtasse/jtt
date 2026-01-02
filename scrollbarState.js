@@ -7,12 +7,12 @@ export class ScrollbarState {
 	constructor() {
 		this.activeScrollable = null // Currently hoverable scrollable content
 		this.scrollOffsets = {
-			bio: 0,
+			about: 0,
 			portfolio: 0,
 			blog: 0,
 		}
 		this.maxScrollOffsets = {
-			bio: 0,
+			about: 0,
 			portfolio: 0,
 			blog: 0,
 		}
@@ -69,7 +69,7 @@ export class ScrollbarState {
 	// Reset all scroll offsets
 	resetAllScrolls() {
 		this.scrollOffsets = {
-			bio: 0,
+			about: 0,
 			portfolio: 0,
 			blog: 0,
 		}

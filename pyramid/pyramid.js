@@ -1,21 +1,33 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import { contentFiles } from "./constants.js"
-import { makeBioPlane, makePortfolioPlane, makeBlogPlane } from "../planes.js"
+import {
+	makeAboutPlane,
+	makePortfolioPlane,
+	makeBlogPlane,
+	makeContactLabelPlane,
+} from "../planes.js"
 import {
 	loadContentHTML,
-	parseBioContent,
+	parseAboutContent,
 	parseBlogPosts,
 } from "../contentLoader.js"
 import {
 	createOrcScene,
 	animateOrcScene,
 	satellites,
+	startDecommission,
+	cancelDecommission,
+	canCancelDecommission,
 	disposeOrcScene,
 	orcGroup,
 	createOrcPreview,
+	showGeoTether,
+	hideGeoTether,
+	getDecommissionState,
+	getDecommissionConfig,
+	orcHandStateMachine,
 } from "../content/orc-demo/orc-demo.js"
-import "../content/bio/bio.css"
+import "../content/about/about.css"
 import "../content/blog/blog.css"
 import "../content/portfolio/portfolio.css"
 import "../content/orc-demo/orc-demo.css"
@@ -64,6 +76,22 @@ controls.maxDistance = 12
 controls.minPolarAngle = 0.1
 controls.maxPolarAngle = Math.PI - 0.1
 
+// Helper function to convert 2D screen coordinates to 3D world coordinates
+export function screenToWorld(screenX, screenY, targetZ = 0) {
+	const ndcX = (screenX / window.innerWidth) * 2 - 1
+	const ndcY = -(screenY / window.innerHeight) * 2 + 1
+
+	// Calculate the intersection point with a plane at targetZ (e.g., z=0 for labels)
+	const raycaster = new THREE.Raycaster()
+	raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
+
+	// Define a plane at the target Z depth (e.g., where labels typically reside)
+	const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -targetZ)
+	const intersectionPoint = new THREE.Vector3()
+	const result = raycaster.ray.intersectPlane(plane, intersectionPoint)
+	return result || new THREE.Vector3(0, 0, targetZ)
+}
+
 // === Lighting ===
 scene.add(new THREE.AmbientLight(0xffffff, 0.6))
 const key = new THREE.DirectionalLight(0xffffff, 0.8)
@@ -100,7 +128,7 @@ scene.add(pyramidGroup)
 const faces = [
 	{ name: "Blog", verts: [apex.clone(), v1.clone(), v2.clone()] },
 	{ name: "Portfolio", verts: [apex.clone(), v2.clone(), v3.clone()] },
-	{ name: "Bio", verts: [apex.clone(), v3.clone(), v1.clone()] },
+	{ name: "About", verts: [apex.clone(), v3.clone(), v1.clone()] },
 ]
 
 faces.forEach((f) => {
@@ -115,9 +143,9 @@ faces.forEach((f) => {
 	geom.computeVertexNormals()
 
 	const mat = new THREE.MeshStandardMaterial({
-		color: 0x000000,
-		metalness: 0.95,
-		roughness: 0.1,
+		color: 0x111111,
+		metalness: 0.8,
+		roughness: 0.4,
 		side: THREE.DoubleSide,
 		transparent: false,
 		opacity: 1,
@@ -137,6 +165,40 @@ faces.forEach((f) => {
 	pyramidGroup.add(mesh)
 	f.mesh = mesh
 })
+
+// === Pyramid Base (closes the pyramid to make it a solid, opaque shape) ===
+const baseGeom = new THREE.BufferGeometry()
+// Base triangle uses v1, v2, v3 in reverse order (v3, v2, v1) so the normal points downward (inside the pyramid)
+baseGeom.setAttribute(
+	"position",
+	new THREE.BufferAttribute(
+		new Float32Array([v3.x, v3.y, v3.z, v2.x, v2.y, v2.z, v1.x, v1.y, v1.z]),
+		3
+	)
+)
+baseGeom.computeVertexNormals()
+
+const baseMat = new THREE.MeshStandardMaterial({
+	color: 0x111111,
+	metalness: 0.8,
+	roughness: 0.4,
+	side: THREE.DoubleSide,
+	transparent: false,
+	opacity: 1,
+	depthWrite: true,
+	depthTest: true,
+})
+
+const baseMesh = new THREE.Mesh(baseGeom, baseMat)
+// Add edges to base for visual consistency
+const baseEdges = new THREE.EdgesGeometry(baseGeom)
+baseMesh.add(
+	new THREE.LineSegments(
+		baseEdges,
+		new THREE.LineBasicMaterial({ color: 0xffffff })
+	)
+)
+pyramidGroup.add(baseMesh)
 
 pyramidGroup.position.y = 0.35
 
@@ -161,7 +223,6 @@ scene.add(morphSphere)
 
 // ORC scene state
 let orcSceneActive = false
-let activeOrcGroup = null
 let orcDemoContainer = null
 let orcDemoRenderer = null
 let orcDemoScene = null
@@ -170,8 +231,10 @@ let orcDemoRequestId = null
 let orcDemoControls = null
 let selectionIndicator = null
 let selectedSatellite = null
-let availableSatellitesPane = null
-let orcAnimationRunning = true // State for play/pause button
+
+// Camera tracking state for decommission animations
+let originalCameraState = null // Stores camera position/target before decommission tracking
+let isCameraTracking = false // Whether camera is currently tracking a decommissioning satellite
 // Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
 	format: THREE.RGBAFormat,
@@ -197,7 +260,7 @@ function updatePyramidEnvMap() {
 		m.visible = true
 		if (cubeCamera.renderTarget && cubeCamera.renderTarget.texture) {
 			m.material.envMap = cubeCamera.renderTarget.texture
-			m.material.envMapIntensity = 0.7
+			m.material.envMapIntensity = 0
 			m.material.needsUpdate = true
 		}
 	})
@@ -209,23 +272,23 @@ updatePyramidEnvMap()
 
 // === Labels ===
 export const labelConfigs = {
-	Bio: {
-		text: "Bio",
-		position: { x: -1.05, y: 0.04, z: 0.5 },
-		rotation: { x: 0, y: 0.438, z: 1 },
+	About: {
+		text: "About",
+		position: { x: -1.0, y: 0.04, z: 0.53 },
+		rotation: { x: -0.1, y: 0.438, z: 1 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Portfolio: {
 		text: "Portfolio",
-		position: { x: 1.08, y: 0, z: 0.3 },
-		rotation: { x: 0.2, y: -0.6, z: -0.92 },
+		position: { x: 1.02, y: 0, z: 0.6 },
+		rotation: { x: 0.1, y: -0.6, z: -0.95 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
 	Blog: {
 		text: "Blog",
-		position: { x: 0, y: -1.65, z: 1.2 },
+		position: { x: 0, y: -1.7, z: 1.0 },
 		rotation: { x: 0, y: 0, z: 0 },
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
@@ -239,6 +302,249 @@ export const labelConfigs = {
 		pyramidCenteredSize: [2.4, 0.6],
 		pyramidUncenteredSize: [2.4, 0.6],
 	},
+}
+
+// Contact label configuration - configurable position/rotation
+export const contactConfig = {
+	lines: ["Contact", "james.tasse@gmail.com", "(216)-219-1538"],
+	revealedTextAlign: "left",
+	revealedTitleFontSize: 80,
+	revealedBodyFontSize: 60,
+	// Starting position (hidden below pyramid)
+	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
+	// Revealed position (front & center of pyramid face)
+	revealedPosition: { x: 0, y: -0.92, z: 0.85 },
+	revealedRotation: { x: -0.3, y: 0, z: 0 },
+	revealedSize: [2.15, 1.33],
+	// Phone number offset (aligns with email text, after icon+gap)
+	phoneOffsetX: 75,
+	// Tooltip configuration (hover state)
+	tooltipText: "Click to copy email address",
+	tooltipFontSize: 48,
+	tooltipColor: "#4da6ff",
+	tooltipBgColor: "rgba(0, 0, 0, 0.85)",
+	tooltipPadding: 0,
+	tooltipBorderRadius: 2,
+	tooltipOffsetX: 30,
+	tooltipOffsetY: -1,
+	tooltipSlideDistance: 50,
+	tooltipAnimationDuration: 200,
+	// Email hover color (matches tooltip by default)
+	emailHoverColor: "#4da6ff",
+	// Toast configuration (after click)
+	toastText: "Copied!",
+	toastFontSize: 48,
+	toastColor: "#08a13b",
+	toastBgColor: "rgba(0, 0, 0, 0.85)",
+	toastPadding: 0,
+	toastBorderRadius: 2,
+	toastOffsetX: 30,
+	toastOffsetY: -1,
+	toastSlideDistance: 50,
+	toastDuration: 2000,
+	toastAnimationDuration: 200,
+}
+
+// Contact label mesh (created in initContactLabel)
+export let contactLabel = null
+let contactVisible = false
+
+// Initialize contact label
+export function initContactLabel() {
+	if (contactLabel) return // Already initialized
+
+	const cfg = contactConfig
+	contactLabel = makeContactLabelPlane(cfg)
+	contactLabel.position.set(
+		cfg.hiddenPosition.x,
+		cfg.hiddenPosition.y,
+		cfg.hiddenPosition.z
+	)
+	contactLabel.rotation.set(
+		cfg.revealedRotation.x,
+		cfg.revealedRotation.y,
+		cfg.revealedRotation.z
+	)
+	contactLabel.material.opacity = 0
+	contactLabel.visible = false
+	contactLabel.userData.name = "Contact"
+	pyramidGroup.add(contactLabel)
+}
+
+// Show contact label with slide-up animation (when pyramid is centered)
+export function showContactLabelCentered() {
+	if (!contactLabel || contactVisible) return
+	contactVisible = true
+
+	const cfg = contactConfig
+	contactLabel.visible = true
+
+	// Animate from hidden to revealed position
+	const startY = cfg.hiddenPosition.y
+	const endY = cfg.revealedPosition.y
+	const startZ = cfg.hiddenPosition.z
+	const endZ = cfg.revealedPosition.z
+	const duration = 600
+	const startTime = performance.now()
+
+	function animateSlideUp(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		// Ease out cubic
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		contactLabel.position.y = startY + (endY - startY) * eased
+		contactLabel.position.z = startZ + (endZ - startZ) * eased
+		contactLabel.material.opacity = eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateSlideUp)
+		}
+	}
+	requestAnimationFrame(animateSlideUp)
+}
+
+// Calculate position for contact label on the left side
+function getContactLeftPosition() {
+	const cfg = contactConfig
+	const width = cfg.leftSize[0]
+
+	// Position: Left aligned with margin, Vertically centered
+	const marginX =
+		cfg.leftPositionOffset && cfg.leftPositionOffset.x !== undefined
+			? cfg.leftPositionOffset.x
+			: 6
+
+	// Center vertically in the window
+	const screenY = window.innerHeight / 2
+
+	const z = 0
+	const worldPos = screenToWorld(marginX, screenY, z)
+
+	return new THREE.Vector3(worldPos.x + width / 2, worldPos.y, z)
+}
+
+// Move contact label to left side (when pyramid moves to top nav)
+export function moveContactLabelToLeft() {
+	if (!contactLabel || !contactVisible) return
+
+	const cfg = contactConfig
+
+	// Get world position before re-parenting
+	contactLabel.updateMatrixWorld()
+	const startPos = new THREE.Vector3()
+	contactLabel.getWorldPosition(startPos)
+	const startQuat = new THREE.Quaternion()
+	contactLabel.getWorldQuaternion(startQuat)
+
+	// Detach from pyramid group and add to scene for fixed positioning
+	scene.add(contactLabel)
+	contactLabel.position.copy(startPos)
+	contactLabel.quaternion.copy(startQuat)
+
+	// Update texture to left state
+	if (contactLabel.userData.updateTexture) {
+		const leftConfig = {
+			lines: cfg.lines,
+			textAlign: cfg.leftTextAlign,
+			titleFontSize: cfg.leftTitleFontSize,
+			bodyFontSize: cfg.leftBodyFontSize,
+		}
+		contactLabel.userData.updateTexture(leftConfig)
+	}
+
+	const endPos = getContactLeftPosition()
+
+	const endQuat = new THREE.Quaternion().setFromEuler(
+		new THREE.Euler(
+			cfg.leftRotation.x,
+			cfg.leftRotation.y,
+			cfg.leftRotation.z,
+			"YXZ"
+		)
+	)
+
+	const startScale = contactLabel.scale.clone()
+	const endScale = new THREE.Vector3(
+		cfg.leftSize[0] / cfg.revealedSize[0],
+		cfg.leftSize[1] / cfg.revealedSize[1],
+		1
+	)
+
+	const duration = 500
+	const startTime = performance.now()
+
+	function animateToLeft(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		contactLabel.position.lerpVectors(startPos, endPos, eased)
+		contactLabel.quaternion.slerpQuaternions(startQuat, endQuat, eased)
+		contactLabel.scale.lerpVectors(startScale, endScale, eased)
+
+		if (t < 1) {
+			requestAnimationFrame(animateToLeft)
+		}
+	}
+	requestAnimationFrame(animateToLeft)
+}
+
+// Hide contact label
+export function hideContactLabel() {
+	if (!contactLabel) return
+
+	const cfg = contactConfig
+	const duration = 400
+	const startTime = performance.now()
+	const startOpacity = contactLabel.material.opacity
+
+	function animateFadeOut(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+
+		contactLabel.material.opacity = startOpacity * (1 - t)
+
+		if (t >= 1) {
+			contactLabel.visible = false
+			contactVisible = false
+			// Reset to pyramid group and hidden position
+			if (contactLabel.parent === scene) {
+				scene.remove(contactLabel)
+				pyramidGroup.add(contactLabel)
+			}
+			contactLabel.position.set(
+				cfg.hiddenPosition.x,
+				cfg.hiddenPosition.y,
+				cfg.hiddenPosition.z
+			)
+			contactLabel.rotation.set(
+				cfg.revealedRotation.x,
+				cfg.revealedRotation.y,
+				cfg.revealedRotation.z
+			)
+			contactLabel.scale.set(1, 1, 1)
+
+			// Reset texture to revealed state
+			if (contactLabel.userData.updateTexture) {
+				const revealedConfig = {
+					lines: cfg.lines,
+					textAlign: cfg.revealedTextAlign,
+					titleFontSize: cfg.revealedTitleFontSize,
+					bodyFontSize: cfg.revealedBodyFontSize,
+				}
+				contactLabel.userData.updateTexture(revealedConfig)
+			}
+		} else {
+			requestAnimationFrame(animateFadeOut)
+		}
+	}
+	requestAnimationFrame(animateFadeOut)
+}
+
+// Check if contact is currently visible
+export function isContactVisible() {
+	return contactVisible
 }
 
 export function initLabels(makeLabelPlane) {
@@ -281,7 +587,6 @@ export function initLabels(makeLabelPlane) {
 }
 
 // === Pyramid State ===
-let isAtBottom = false
 
 // Token to invalidate in-progress pyramid animations. Incrementing this
 // prevents prior animation completions from executing side-effects
@@ -311,14 +616,14 @@ const flattenedMenuState = {
 // These are WORLD positions (x/y/z) - fixed values that stay within camera view.
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
-	Bio: { x: -2.0, y: 2.5, z: 0 },
+	About: { x: -2.0, y: 2.5, z: 0 },
 	Portfolio: { x: 0, y: 2.5, z: 0 },
 	Blog: { x: 2.0, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
-	bio: -2.0,
+	about: -2.0,
 	portfolio: 0,
 	blog: 2.0,
 }
@@ -344,7 +649,7 @@ export function animatePyramid(down = true, section = null) {
 
 	// No Y rotation when going to flattened state - pyramid slides horizontally
 	// and always points straight down. Only reset Y rotation when returning home.
-	let endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
+	const endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
 	if (down && section) {
 		currentSection = section
 	}
@@ -498,7 +803,6 @@ export function animatePyramid(down = true, section = null) {
 			// If a newer animation has been started since this one began,
 			// abort executing completion side-effects.
 			if (myToken !== pyramidAnimToken) return
-			isAtBottom = down
 
 			// Snap labels to final positions
 			for (const key in labels) {
@@ -530,7 +834,7 @@ export function animatePyramid(down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (section === "bio") showBioPlane()
+			if (section === "about") showAboutPlane()
 			else if (section === "portfolio") showPortfolioPlane()
 			else if (section === "blog") showBlogPlane()
 		}
@@ -686,7 +990,6 @@ export function resetPyramidToHome() {
 
 		if (t < 1) requestAnimationFrame(step)
 		else {
-			isAtBottom = false
 			// Ensure exact values after animation
 			pyramidGroup.rotation.y = initialPyramidState.rotationY
 			pyramidGroup.rotation.x = 0
@@ -721,12 +1024,12 @@ export function resetPyramidToHome() {
 	requestAnimationFrame(step)
 }
 
-export function showBioPlane() {
+export function showAboutPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
 	controls.enableZoom = false
 
-	// Ensure the DOM content pane is hidden when using a 3D bio plane so
+	// Ensure the DOM content pane is hidden when using a 3D about plane so
 	// we don't show duplicate/overlapping DOM text over the pyramid.
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
@@ -738,17 +1041,17 @@ export function showBioPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let bioPlane = scene.getObjectByName("bioPlane")
-	if (!bioPlane) {
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (!aboutPlane) {
 		// Capture current animation token so we can abort if a reset occurs
 		const myToken = pyramidAnimToken
-		// Load HTML content and parse bio structure (heading + paragraphs)
-		loadContentHTML("bio").then((html) => {
+		// Load HTML content and parse about structure (heading + paragraphs)
+		loadContentHTML("about").then((html) => {
 			// If a newer pyramid animation/reset occurred, abort adding content
 			if (myToken !== pyramidAnimToken) return
-			const bioContent = parseBioContent(html)
-			const plane = makeBioPlane(bioContent)
-			plane.name = "bioPlane"
+			const aboutContent = parseAboutContent(html)
+			const plane = makeAboutPlane(aboutContent)
+			plane.name = "aboutPlane"
 			plane.frustumCulled = false // Prevent culling when scrolling out of initial bounds
 			plane.traverse((child) => {
 				if (child.material) {
@@ -788,7 +1091,7 @@ export function showPortfolioPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let portfolioPlane = scene.getObjectByName("portfolioPlane")
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (!portfolioPlane) {
 		const myToken = pyramidAnimToken
 		// Load portfolio HTML and extract items (title, description, link)
@@ -796,7 +1099,6 @@ export function showPortfolioPlane() {
 			if (myToken !== pyramidAnimToken) return
 			// Do not populate the DOM content pane for portfolio to avoid
 			// duplicating the portfolio items. The 3D plane will be used.
-			const contentEl = document.getElementById("content")
 			const parser = new DOMParser()
 			const doc = parser.parseFromString(html, "text/html")
 			const items = []
@@ -814,7 +1116,7 @@ export function showPortfolioPlane() {
 					try {
 						const url = new URL(link)
 						imageSrc = `${url.origin}/favicon.ico`
-					} catch (e) {
+					} catch {
 						imageSrc = null
 					}
 				}
@@ -864,7 +1166,7 @@ export function showBlogPlane() {
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	let blogPlane = scene.getObjectByName("blogPlane")
+	const blogPlane = scene.getObjectByName("blogPlane")
 	if (!blogPlane) {
 		const myToken = pyramidAnimToken
 		// load HTML content and parse blog posts
@@ -899,9 +1201,9 @@ export function showBlogPlane() {
 	}
 }
 
-function hideBio() {
-	const bioPlane = scene.getObjectByName("bioPlane")
-	if (bioPlane) scene.remove(bioPlane)
+function hideAbout() {
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (aboutPlane) scene.remove(aboutPlane)
 }
 
 function hidePortfolio() {
@@ -995,9 +1297,6 @@ function hideOrcPreviewOverlay() {
 }
 
 function cleanupOrcPreviewOverlay() {
-	if (orcPreviewElement && orcPreviewElement.cleanup) {
-		orcPreviewElement.cleanup()
-	}
 	if (orcPreviewOverlay && orcPreviewOverlay.parentNode) {
 		orcPreviewOverlay.parentNode.removeChild(orcPreviewOverlay)
 	}
@@ -1008,53 +1307,16 @@ function cleanupOrcPreviewOverlay() {
 // === ORC Info Pane (right 1/3 of screen during ORC demo) ===
 let orcInfoPane = null
 
-function showOrcInfoPane() {
-	if (!orcInfoPane) {
-		orcInfoPane = document.createElement("div")
-		orcInfoPane.id = "orc-info-pane"
-		// Styles are now in orc-demo.css. Set initial display state.
-		orcInfoPane.style.display = "none"
-
-		// Add content
-		orcInfoPane.innerHTML = `
-			<h2 class="orc-pane-title">
-				Orbital Refuse Collector
-			</h2>
-			<div class="orc-pane-content">
-				<p><strong>Selected Satellite:</strong> <span id="selected-satellite-id">None</span></p>
-
-				<div class="orc-pane-section">
-					<h3>Satellite Status</h3>
-					<div class="status-item">
-						<div class="status-indicator blue"></div>
-						<span>GEO Satellite - Geosynchronous Orbit</span>
-					</div>
-					<div class="status-item">
-						<div class="status-indicator cyan"></div>
-						<span>LEO Satellite - Low Earth Orbit</span>
-					</div>
-				</div>
-				<div class="orc-pane-section">
-					<h3>API Documentation</h3>
-					<p>
-						Full documentation available at:
-					</p>
-					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
-						View API Docs
-					</a>
-				</div>
-			</div>
-		`
-
-		document.body.appendChild(orcInfoPane)
-	}
-
-	orcInfoPane.style.display = "block"
-}
-
 function hideOrcInfoPane() {
+	// Remove the module-level reference if it exists
 	if (orcInfoPane) {
-		orcInfoPane.style.display = "none"
+		orcInfoPane.remove()
+		orcInfoPane = null
+	}
+	// Also check for any DOM element with this ID (in case it was created elsewhere)
+	const existingPane = document.getElementById("orc-info-pane")
+	if (existingPane) {
+		existingPane.remove()
 	}
 }
 
@@ -1083,9 +1345,10 @@ function createSelectionIndicator() {
 	return sprite
 }
 
-// Update the info pane with the selected satellite's ID
+// Update the info pane with the selected satellite's info
 function updateSelectedSatelliteInfo(satelliteId) {
 	const statusEl = document.getElementById("selected-satellite-status")
+	const idEl = document.getElementById("selected-satellite-display-id")
 	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
 	const infoContainer = document.getElementById("satellite-info-content")
 	const noSelectionMsg = document.getElementById("no-satellite-selected")
@@ -1095,11 +1358,33 @@ function updateSelectedSatelliteInfo(satelliteId) {
 			infoContainer.style.display = "block"
 			noSelectionMsg.style.display = "none"
 
-			statusEl.textContent = "Operational"
-			orbitTypeEl.textContent =
-				selectedSatellite.userData.id === "geo-001"
-					? "Geosynchronous"
-					: "Low Earth Orbit"
+			// Check satellite status - update with info-value class preserved
+			if (selectedSatellite.userData.returning) {
+				statusEl.textContent = "Returning to orbit"
+				statusEl.className = "info-value status-returning"
+			} else if (selectedSatellite.userData.decommissioning) {
+				statusEl.textContent = "Decommissioning"
+				statusEl.className = "info-value status-decommissioning"
+			} else {
+				statusEl.textContent = "Operational"
+				statusEl.className = "info-value status-operational"
+			}
+
+			// Update ID field
+			if (idEl) idEl.textContent = selectedSatellite.userData.id
+
+			// Lookup orbit type based on ID prefix
+			let orbitType = "Unknown"
+			const satId = selectedSatellite.userData.id
+			if (satId.startsWith("geo")) {
+				orbitType = "Geosynchronous"
+			} else if (satId.startsWith("leo")) {
+				orbitType = "Low Earth"
+			} else if (satId.startsWith("mol")) {
+				orbitType = "Molniya"
+			}
+
+			orbitTypeEl.textContent = orbitType
 		} else {
 			infoContainer.style.display = "none"
 			noSelectionMsg.style.display = "block"
@@ -1109,7 +1394,7 @@ function updateSelectedSatelliteInfo(satelliteId) {
 
 // Exported helper to hide all content planes
 export function hideAllPlanes() {
-	hideBio()
+	hideAbout()
 	hidePortfolio()
 	hideBlog()
 	// Hide ORC preview overlay and info pane
@@ -1133,273 +1418,205 @@ export function hideAllPlanes() {
 
 // === ORC Scene / Morph Functions ===
 
-// Morph pyramid into sphere and show ORC scene
+// Show ORC scene directly (no pyramid morph animation)
 export function morphToOrcScene() {
-	const myToken = ++pyramidAnimToken
+	++pyramidAnimToken
 	hideAllPlanes()
 
-	// Create the demo scene first (it starts invisible) so we have its camera/controls
-	// available for the transition animation.
-	createOrcDemo()
-	showOrcPlayPauseButton()
-	// The info pane now includes the available satellites
-	showAvailableSatellitesPane()
+	// Immediately hide pyramid and labels
+	pyramidGroup.visible = false
+	Object.values(labels).forEach((label) => {
+		if (label.material) {
+			label.material.opacity = 0
+		}
+	})
+	morphSphere.visible = false
 
-	// Labels will be faded out during the animation
+	// Create the demo scene
+	createOrcDemo()
+	showOrcResetButton()
+	showAvailableSatellitesPane()
 
 	// Show home button
 	showHomeLabel()
 
-	const duration = 1200
+	// Set up camera for ORC scene
+	camera.position.copy(orcDemoCamera.position)
+	camera.lookAt(orcDemoControls.target)
+	controls.target.copy(orcDemoControls.target)
+	controls.enabled = false
 
-	// Starting states
-	const startPyramidScale = pyramidGroup.scale.clone()
-	const startPyramidOpacity = 1
-	const startSphereOpacity = 0
-	const startCamPos = camera.position.clone() // Current camera position
-	const endCamPos = orcDemoCamera.position.clone() // Target ORC demo camera position
+	orcSceneActive = true
 
-	morphSphere.visible = true // Make morph sphere visible and position it
-	morphSphere.position.copy(pyramidGroup.position)
-	morphSphere.scale.set(0.1, 0.1, 0.1)
-	morphSphereMaterial.opacity = 0
-	const startTime = performance.now()
-
-	function step(time) {
-		if (myToken !== pyramidAnimToken) return
-		const t = Math.min((time - startTime) / duration, 1)
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-
-		// Animate pyramid scale down and fade out
-		const pyramidScale = 1 - eased * 0.9
-		pyramidGroup.scale.set(pyramidScale, pyramidScale, pyramidScale)
-
-		// Fade out pyramid faces
-		pyramidGroup.children.forEach((child) => {
-			if (child.isMesh && child.material) {
-				child.material.opacity = 1 - eased
-				child.material.transparent = true
-			}
+	// Fade in the ORC demo container
+	if (orcDemoContainer) {
+		// Start with 0 opacity, then fade in
+		orcDemoContainer.style.opacity = "0"
+		orcDemoContainer.style.transition = "opacity 0.6s ease-in"
+		requestAnimationFrame(() => {
+			orcDemoContainer.style.opacity = "1"
 		})
-
-		// Fade out labels
-		Object.values(labels).forEach((label) => {
-			if (label.material) {
-				label.material.opacity = 1 - eased
-			}
-		})
-
-		// Animate sphere scale up and fade in
-		const sphereScale = 0.1 + eased * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale)
-		morphSphereMaterial.opacity = eased * 0.8
-
-		// Animate camera to isometric position
-		camera.position.lerpVectors(startCamPos, endCamPos, eased)
-		camera.lookAt(orcDemoControls.target) // Look at ORC demo controls target
-		controls.target.lerpVectors(controls.target, orcDemoControls.target, eased) // Animate main controls target
-		controls.update()
-
-		if (t < 1) {
-			requestAnimationFrame(step)
-		} else {
-			// Animation complete - hide pyramid, show ORC
-			if (myToken !== pyramidAnimToken) return
-
-			pyramidGroup.visible = false
-			morphSphere.visible = false
-
-			orcSceneActive = true
-
-			// Ensure camera is at final position
-			camera.position.copy(endCamPos)
-			camera.lookAt(orcDemoControls.target)
-			controls.target.copy(orcDemoControls.target)
-			controls.enabled = false // Disable main controls
-
-			// Fade in the ORC demo container now that the transition is complete
-			if (orcDemoContainer) {
-				requestAnimationFrame(() => {
-					orcDemoContainer.style.opacity = "1"
-				})
-			}
-
-			// Show the info pane on the right
-			showOrcInfoPane()
-		}
 	}
-
-	requestAnimationFrame(step)
 }
 
 // Return from ORC scene back to pyramid
 export function morphFromOrcScene() {
 	const myToken = ++pyramidAnimToken
 
-	// Capture camera/controls state BEFORE destroying the demo
-	const startCamPos = orcDemoCamera.position.clone()
-	const startControlsTarget = orcDemoControls.target.clone()
-
-	destroyOrcDemo() // Destroy ORC demo before morphing back
-	hideOrcInfoPane() // This will now hide both
-	hideOrcPlayPauseButton() // Hide play/pause button
-
-	const duration = 1200
-
-	// Starting states
+	// Capture camera/controls state BEFORE fading out
 	const endCamPos = initialCameraState.position.clone()
-	morphSphere.visible = true
-	morphSphere.position.copy(startControlsTarget) // Start morph sphere at ORC demo controls target
-	morphSphere.scale.set(1, 1, 1) // Start at full size
-	morphSphereMaterial.opacity = 0.8 // Start at full opacity
-	hideOrcInfoPane()
 
-	// Prepare pyramid - set to initial state but scaled down for animation
-	pyramidGroup.visible = true
-	pyramidGroup.position.x = initialPyramidState.positionX
-	pyramidGroup.position.y = initialPyramidState.positionY
-	pyramidGroup.rotation.x = 0
-	pyramidGroup.rotation.y = initialPyramidState.rotationY
-	pyramidGroup.rotation.z = 0
-	pyramidGroup.scale.set(0.1, 0.1, 0.1)
+	const fadeOutDuration = 500 // Duration for ORC elements to fade out
+	const fadeInDuration = 800 // Duration for pyramid to fade in
 
-	// Show hover targets
-	for (const key in hoverTargets) {
-		if (hoverTargets[key]) hoverTargets[key].visible = true
+	// Phase 1: Fade out all ORC elements
+	if (orcDemoContainer) {
+		orcDemoContainer.style.transition = `opacity ${fadeOutDuration}ms ease-out`
+		orcDemoContainer.style.opacity = "0"
 	}
+	// Target the DOM element directly in case orcInfoPane variable is out of sync
+	const infoPane = document.getElementById("orc-info-pane")
+	if (infoPane) {
+		infoPane.style.transition = `opacity ${fadeOutDuration}ms ease-out`
+		infoPane.style.opacity = "0"
+	}
+	hideOrcResetButton()
 
-	// Set pyramid face materials to transparent for fade in
-	pyramidGroup.children.forEach((child) => {
-		if (
-			child.isMesh &&
-			child.material &&
-			!Object.values(labels).includes(child)
-		) {
-			child.material.opacity = 0
-			child.material.transparent = true
-		}
-	})
-
-	const startTime = performance.now()
-
-	function step(time) {
+	// After fade out completes, destroy ORC and show pyramid
+	setTimeout(() => {
 		if (myToken !== pyramidAnimToken) return
 
-		const t = Math.min((time - startTime) / duration, 1)
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+		// Now destroy the ORC elements
+		destroyOrcDemo()
+		hideOrcInfoPane()
 
-		// Animate sphere scale down and fade out
-		const sphereScale = 0.1 + (1 - eased) * 0.9
-		morphSphere.scale.set(sphereScale, sphereScale, sphereScale) // This might need adjustment
-		morphSphereMaterial.opacity = 0.8 * (1 - eased)
+		// Prepare pyramid - set to initial state but transparent for fade in
+		pyramidGroup.visible = true
+		pyramidGroup.position.x = initialPyramidState.positionX
+		pyramidGroup.position.y = initialPyramidState.positionY
+		pyramidGroup.rotation.x = 0
+		pyramidGroup.rotation.y = initialPyramidState.rotationY
+		pyramidGroup.rotation.z = 0
+		pyramidGroup.scale.set(
+			initialPyramidState.scale,
+			initialPyramidState.scale,
+			initialPyramidState.scale
+		)
 
-		// Animate pyramid scale up and fade in
-		const pyramidScale = 0.1 + eased * 0.9
-		pyramidGroup.scale.set(pyramidScale, pyramidScale, pyramidScale)
+		// Show hover targets
+		for (const key in hoverTargets) {
+			if (hoverTargets[key]) hoverTargets[key].visible = true
+		}
 
-		// Fade in pyramid faces (not labels)
+		// Set pyramid face materials to transparent for fade in
 		pyramidGroup.children.forEach((child) => {
 			if (
 				child.isMesh &&
 				child.material &&
 				!Object.values(labels).includes(child)
 			) {
-				child.material.opacity = eased
+				child.material.opacity = 0
+				child.material.transparent = true
 			}
 		})
 
-		// Fade in labels (which were faded out in morphToOrcScene)
+		// Set labels to transparent
 		Object.values(labels).forEach((label) => {
 			if (label.material) {
-				label.material.opacity = eased
+				label.material.opacity = 0
 			}
 		})
 
-		// Animate camera back
-		camera.position.lerpVectors(startCamPos, endCamPos, eased)
+		// Set camera to final position immediately
+		camera.position.copy(endCamPos)
 		camera.lookAt(initialCameraState.target)
-		controls.target.lerpVectors(
-			startControlsTarget,
-			initialCameraState.target,
-			eased
-		)
+		controls.target.copy(initialCameraState.target)
+		controls.enabled = true
 		controls.update()
 
-		if (t < 1) {
-			requestAnimationFrame(step)
-		} else {
-			// Animation complete
+		orcSceneActive = false
+		currentSection = null
+		morphSphere.visible = false
+
+		// Phase 2: Fade in pyramid and labels
+		const startTime = performance.now()
+
+		function fadeInStep(time) {
 			if (myToken !== pyramidAnimToken) return
 
-			morphSphere.visible = false
-			orcSceneActive = false
-			isAtBottom = false
-			currentSection = null
+			const t = Math.min((time - startTime) / fadeInDuration, 1)
+			const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
-			// Restore pyramid to exact initial state
-			pyramidGroup.scale.set(
-				initialPyramidState.scale,
-				initialPyramidState.scale,
-				initialPyramidState.scale
-			)
-			pyramidGroup.position.x = initialPyramidState.positionX
-			pyramidGroup.position.y = initialPyramidState.positionY
-			pyramidGroup.rotation.x = 0
-			pyramidGroup.rotation.y = initialPyramidState.rotationY
-			pyramidGroup.rotation.z = 0
-
-			// Restore pyramid face materials
+			// Fade in pyramid faces
 			pyramidGroup.children.forEach((child) => {
 				if (
 					child.isMesh &&
 					child.material &&
 					!Object.values(labels).includes(child)
 				) {
-					child.material.opacity = 1
-					child.material.transparent = false
+					child.material.opacity = eased
 				}
 			})
 
-			// Final check - ensure labels are visible and in correct positions
-			for (const key in labels) {
-				if (key === "Home") continue
-				const labelMesh = labels[key]
-				if (!labelMesh) continue
-				if (labelMesh.material) labelMesh.material.opacity = 1
+			// Fade in labels
+			Object.values(labels).forEach((label) => {
+				if (label.material) {
+					label.material.opacity = eased
+				}
+			})
 
-				labelMesh.userData.fixedNav = false
+			if (t < 1) {
+				requestAnimationFrame(fadeInStep)
+			} else {
+				// Animation complete
+				if (myToken !== pyramidAnimToken) return
 
-				// Ensure attached to pyramidGroup
-				if (labelMesh.parent !== pyramidGroup) {
-					pyramidGroup.add(labelMesh)
+				// Restore pyramid face materials to full opacity
+				pyramidGroup.children.forEach((child) => {
+					if (
+						child.isMesh &&
+						child.material &&
+						!Object.values(labels).includes(child)
+					) {
+						child.material.opacity = 1
+						child.material.transparent = false
+					}
+				})
+
+				// Final check - ensure labels are visible and in correct positions
+				for (const key in labels) {
+					if (key === "Home") continue
+					const labelMesh = labels[key]
+					if (!labelMesh) continue
+					if (labelMesh.material) labelMesh.material.opacity = 1
+
+					labelMesh.userData.fixedNav = false
+
+					// Ensure attached to pyramidGroup
+					if (labelMesh.parent !== pyramidGroup) {
+						pyramidGroup.add(labelMesh)
+					}
+
+					// Snap to exact original positions
+					const origPos = labelMesh.userData.origPosition
+					const origRot = labelMesh.userData.origRotation
+					const origScale = labelMesh.userData.originalScale
+					if (origPos) labelMesh.position.copy(origPos)
+					if (origRot) labelMesh.rotation.copy(origRot)
+					if (origScale) labelMesh.scale.copy(origScale)
 				}
 
-				// Snap to exact original positions
-				const origPos = labelMesh.userData.origPosition
-				const origRot = labelMesh.userData.origRotation
-				const origScale = labelMesh.userData.originalScale
-				if (origPos) labelMesh.position.copy(origPos)
-				if (origRot) labelMesh.rotation.copy(origRot)
-				if (origScale) labelMesh.scale.copy(origScale)
+				// Ensure hover targets visible
+				for (const key in hoverTargets) {
+					if (hoverTargets[key]) hoverTargets[key].visible = true
+				}
+
+				hideHomeLabel()
 			}
-
-			// Ensure hover targets visible
-			for (const key in hoverTargets) {
-				if (hoverTargets[key]) hoverTargets[key].visible = true
-			}
-
-			// Ensure camera at final position
-			camera.position.copy(endCamPos)
-			camera.lookAt(initialCameraState.target)
-			controls.target.copy(initialCameraState.target)
-			controls.enabled = true // Re-enable main controls
-			controls.update()
-
-			hideHomeLabel()
 		}
-	}
 
-	requestAnimationFrame(step)
+		requestAnimationFrame(fadeInStep)
+	}, fadeOutDuration)
 }
 
 // Check if ORC scene is currently active
@@ -1439,12 +1656,33 @@ function createOrcDemo() {
 				selectedSatellite = clickedObject
 				selectionIndicator.visible = true
 				updateSelectedSatelliteInfo(clickedObject.userData.id)
+				updateAvailableSatellitesHighlight()
+				updateDecommissionActionState()
+				updateCancelDecommissionActionState()
+				// Show tether for George (geosynchronous satellite)
+				if (clickedObject.userData.id === "geo-001") {
+					showGeoTether()
+				} else {
+					hideGeoTether()
+				}
+				// Tell hand to point at the selected satellite
+				if (orcHandStateMachine) {
+					orcHandStateMachine.setSelectedSatellite(clickedObject)
+				}
 			}
 		} else {
 			// Clicked on empty space, deselect
 			selectedSatellite = null
 			selectionIndicator.visible = false
 			updateSelectedSatelliteInfo(null)
+			updateAvailableSatellitesHighlight()
+			updateDecommissionActionState()
+			updateCancelDecommissionActionState()
+			hideGeoTether()
+			// Tell hand to stop pointing
+			if (orcHandStateMachine) {
+				orcHandStateMachine.setSelectedSatellite(null)
+			}
 		}
 	})
 
@@ -1470,7 +1708,8 @@ function createOrcDemo() {
 	const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
 	const camY = parseFloat(styles.getPropertyValue("--orc-camera-y")) || 7
 	const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
-	const sceneOffsetX = parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
+	const sceneOffsetX =
+		parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
 
 	// Position camera for a top-down isometric view so satellites are not occluded
 	orcDemoCamera.position.set(camX, camY, camZ)
@@ -1493,7 +1732,7 @@ function createOrcDemo() {
 	orcDemoScene.add(keyLight)
 
 	// This creates the orcGroup and satellites at the module level in orcScene.js
-	const orcGroupForDemo = createOrcScene()
+	const orcGroupForDemo = createOrcScene(orcDemoCamera)
 	orcGroupForDemo.position.x = sceneOffsetX // Apply scene offset from CSS
 	orcDemoScene.add(orcGroupForDemo)
 
@@ -1504,10 +1743,8 @@ function createOrcDemo() {
 	// 5. Start animation loop
 	function animateOrcDemo() {
 		orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
-		if (orcAnimationRunning) {
-			// Only animate if play is active
-			animateOrcScene() // Animates the module-level orcGroup
-		}
+		// Animate the ORC scene (satellites orbiting)
+		animateOrcScene(true)
 
 		// Update indicator position to follow the selected satellite
 		if (selectedSatellite && selectionIndicator) {
@@ -1515,6 +1752,118 @@ function createOrcDemo() {
 			selectedSatellite.getWorldPosition(worldPos)
 			selectionIndicator.position.copy(worldPos)
 		}
+
+		// Update button states during animation (satellite state may change)
+		if (selectedSatellite) {
+			updateDecommissionActionState()
+			updateCancelDecommissionActionState()
+			updateSelectedSatelliteInfo(selectedSatellite.userData.id)
+		}
+
+		// Camera tracking for decommissioning satellites
+		const decommState = getDecommissionState()
+		if (decommState) {
+			// Start tracking if not already
+			if (!isCameraTracking) {
+				isCameraTracking = true
+				// Store original camera state for reset later
+				originalCameraState = {
+					position: orcDemoCamera.position.clone(),
+					target: orcDemoControls.target.clone(),
+				}
+			}
+
+			// Calculate target camera position - follow satellite with zoom
+			const satPos = decommState.position.clone()
+			// Add orcGroup offset to satellite position (planet center in world space)
+			const planetCenter = new THREE.Vector3(orcGroup.position.x, 0, 0)
+			satPos.x += orcGroup.position.x
+
+			// Camera should be positioned to keep satellite centered in VISIBLE area
+			// The sidebar takes 1/3 of screen on the right, so we offset the camera
+			// to center the satellite in the left 2/3
+			const sidebarCompensation = 0.4 // World units to shift target right
+			const adjustedTarget = satPos.clone()
+			adjustedTarget.x += sidebarCompensation
+
+			// Calculate direction from planet center to satellite (in world space)
+			const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
+
+			// Use different zoom distances based on phase
+			const targetDistance = decommState.targetZoomDistance
+
+			// Camera offset: position camera on the opposite side of satellite from planet
+			// This ensures the satellite is ALWAYS between camera and planet (never occluded)
+			const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
+			cameraOffset.y += targetDistance * 0.3 // Slight vertical offset for better view
+
+			// Target camera position: satellite position + offset (away from planet)
+			const targetCamPos = satPos.clone().add(cameraOffset)
+
+			// Check for potential occlusion: is the planet between camera and satellite?
+			// We detect this by checking if moving toward target would cross the planet
+			const currentCamPos = orcDemoCamera.position.clone()
+			const camToSat = satPos.clone().sub(currentCamPos)
+			const camToPlanet = planetCenter.clone().sub(currentCamPos)
+
+			// Project planet center onto camera-to-satellite line
+			const camToSatLength = camToSat.length()
+			const projLength = camToPlanet.dot(camToSat.normalize())
+
+			// Planet radius for occlusion check (approximate)
+			const PLANET_RADIUS = 0.5
+			const OCCLUSION_MARGIN = 0.15 // Extra margin to prevent near-misses
+
+			// Check if planet is between camera and satellite AND close to the line of sight
+			let isOccluded = false
+			if (projLength > 0 && projLength < camToSatLength) {
+				// Planet center is between camera and satellite (along the line)
+				// Check perpendicular distance from planet center to line of sight
+				const closestPointOnLine = currentCamPos
+					.clone()
+					.add(camToSat.normalize().multiplyScalar(projLength))
+				const perpDistance = planetCenter.distanceTo(closestPointOnLine)
+				isOccluded = perpDistance < PLANET_RADIUS + OCCLUSION_MARGIN
+			}
+
+			// Use appropriate camera speed based on phase and occlusion
+			let cameraSpeed = decommState.cameraSpeed
+
+			if (isOccluded) {
+				// Satellite would be occluded - move camera much faster to maintain visibility
+				// Use a high lerp factor to quickly reposition around the planet
+				cameraSpeed = 0.15
+			}
+
+			// Smooth camera transition - lerp toward target
+			orcDemoCamera.position.lerp(targetCamPos, cameraSpeed)
+
+			// Look at adjusted target to keep satellite in visible center
+			orcDemoControls.target.lerp(adjustedTarget, cameraSpeed * 2)
+		} else if (isCameraTracking && originalCameraState) {
+			// Decommission finished - reset camera smoothly
+			const resetSpeed = getDecommissionConfig().cameraResetSpeed
+
+			orcDemoCamera.position.lerp(originalCameraState.position, resetSpeed)
+			orcDemoControls.target.lerp(originalCameraState.target, resetSpeed)
+
+			// Check if camera is close enough to original position
+			const posDistance = orcDemoCamera.position.distanceTo(
+				originalCameraState.position
+			)
+			const targetDistance = orcDemoControls.target.distanceTo(
+				originalCameraState.target
+			)
+
+			if (posDistance < 0.05 && targetDistance < 0.05) {
+				// Snap to exact position and clear tracking state
+				orcDemoCamera.position.copy(originalCameraState.position)
+				orcDemoControls.target.copy(originalCameraState.target)
+				isCameraTracking = false
+				originalCameraState = null
+			}
+		}
+
 		orcDemoControls.update() // Update ORC demo controls
 		orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
 	}
@@ -1549,16 +1898,16 @@ function destroyOrcDemo() {
 	selectedSatellite = null
 }
 
-// New: Play/Pause button for ORC demo
-let orcPlayPauseButton = null
+// Reset button for ORC demo
+let orcResetButton = null
 
-function createOrcPlayPauseButton() {
-	if (orcPlayPauseButton) return
+function createOrcResetButton() {
+	if (orcResetButton) return
 
-	orcPlayPauseButton = document.createElement("button")
-	orcPlayPauseButton.id = "orc-play-pause-button"
-	orcPlayPauseButton.textContent = "Pause" // Initial state
-	Object.assign(orcPlayPauseButton.style, {
+	orcResetButton = document.createElement("button")
+	orcResetButton.id = "orc-reset-button"
+	orcResetButton.textContent = "Reset"
+	Object.assign(orcResetButton.style, {
 		position: "fixed",
 		left: "100px", // Next to home button
 		top: "12px",
@@ -1571,96 +1920,199 @@ function createOrcPlayPauseButton() {
 		font: "600 14px sans-serif",
 		cursor: "pointer",
 		backdropFilter: "blur(4px)",
+		transition: "background 0.2s ease, box-shadow 0.2s ease",
 		display: "none",
 	})
 
-	orcPlayPauseButton.addEventListener("click", toggleOrcAnimation)
-	document.body.appendChild(orcPlayPauseButton)
+	// Hover effects
+	orcResetButton.addEventListener("mouseenter", () => {
+		orcResetButton.style.background = "rgba(0,100,150,0.7)"
+		orcResetButton.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
+	})
+	orcResetButton.addEventListener("mouseleave", () => {
+		orcResetButton.style.background = "rgba(0,0,0,0.6)"
+		orcResetButton.style.boxShadow = "none"
+	})
+
+	orcResetButton.addEventListener("click", () => {
+		window.location.reload()
+	})
+	document.body.appendChild(orcResetButton)
 }
 
-function toggleOrcAnimation() {
-	orcAnimationRunning = !orcAnimationRunning
-	if (orcPlayPauseButton) {
-		orcPlayPauseButton.textContent = orcAnimationRunning ? "Pause" : "Play"
+function showOrcResetButton() {
+	if (!orcResetButton) createOrcResetButton()
+	if (orcResetButton) orcResetButton.style.display = "block"
+}
+
+function hideOrcResetButton() {
+	if (orcResetButton) orcResetButton.style.display = "none"
+}
+
+// === Global functions for HTML onclick handlers ===
+// These are called by inline onclick in orc-demo.html
+window.orcDontSuck = function () {
+	console.log("Gemini doesn't suck")
+}
+
+window.orcSelectSatellite = function (satId) {
+	console.log("[DEBUG] Satellite selected via onclick, satId:", satId)
+	const targetSat = satellites.find((s) => s.userData.id === satId)
+	if (targetSat) {
+		selectedSatellite = targetSat
+		selectionIndicator.visible = true
+		updateSelectedSatelliteInfo(targetSat.userData.id)
+		updateAvailableSatellitesHighlight()
+		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
+		// Show tether for George (geosynchronous satellite)
+		if (satId === "geo-001") {
+			showGeoTether()
+		} else {
+			hideGeoTether()
+		}
+		// Tell hand to point at the selected satellite
+		if (orcHandStateMachine) {
+			orcHandStateMachine.setSelectedSatellite(targetSat)
+		}
 	}
 }
 
-function showOrcPlayPauseButton() {
-	if (!orcPlayPauseButton) createOrcPlayPauseButton()
-	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "block"
+window.orcDecommissionSatellite = function () {
+	if (selectedSatellite && !selectedSatellite.userData.decommissioning) {
+		startDecommission(selectedSatellite)
+		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
+		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
+	}
 }
 
-function hideOrcPlayPauseButton() {
-	if (orcPlayPauseButton) orcPlayPauseButton.style.display = "none"
+window.orcCancelDecommission = function () {
+	console.log("Cancel decommission button clicked")
+	console.log("Selected satellite:", selectedSatellite?.userData?.id)
+	console.log(
+		"Can cancel:",
+		selectedSatellite ? canCancelDecommission(selectedSatellite) : false
+	)
+	if (selectedSatellite && canCancelDecommission(selectedSatellite)) {
+		const success = cancelDecommission(selectedSatellite)
+		console.log("Cancel decommission result:", success)
+		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
+		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
+	}
 }
 
-// === Available Satellites Pane ===
-function showAvailableSatellitesPane() {
+// Update the action button state - transforms between Decommission and Cancel
+function updateActionButtonState() {
+	const actionBtn = document.getElementById("decommission-action")
+	if (!actionBtn) return
+
+	// Remove existing click handler to prevent duplicates
+	actionBtn.onclick = null
+
+	if (!selectedSatellite) {
+		// No satellite selected - show disabled Decommission
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
+	} else if (canCancelDecommission(selectedSatellite)) {
+		// Can cancel decommission - show Cancel button
+		actionBtn.classList.remove("disabled")
+		actionBtn.classList.add("cancel-action")
+		actionBtn.textContent = "Cancel Decommission"
+		actionBtn.disabled = false
+		actionBtn.onclick = window.orcCancelDecommission
+	} else if (selectedSatellite.userData.returning) {
+		// Returning - disable button
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
+	} else if (selectedSatellite.userData.decommissioning) {
+		// Decommissioning but can't cancel (past point of no return) - disable
+		actionBtn.classList.add("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = true
+	} else {
+		// Satellite is operational - show Decommission button
+		actionBtn.classList.remove("disabled")
+		actionBtn.classList.remove("cancel-action")
+		actionBtn.textContent = "Decommission Satellite"
+		actionBtn.disabled = false
+		actionBtn.onclick = window.orcDecommissionSatellite
+	}
+}
+
+// Wrapper functions for compatibility with existing calls
+function updateDecommissionActionState() {
+	updateActionButtonState()
+}
+
+function updateCancelDecommissionActionState() {
+	// Now handled by updateActionButtonState
+}
+
+// === Available Satellites Pane (loads HTML from file) ===
+async function showAvailableSatellitesPane() {
 	if (!orcInfoPane) {
-		orcInfoPane = document.createElement("div")
-		orcInfoPane.id = "orc-info-pane"
+		// Fetch the HTML template
+		const response = await fetch("/src/content/orc-demo/orc-demo.html")
+		const html = await response.text()
 
-		const availableSatellitesContainer = document.createElement("div")
-		availableSatellitesContainer.id = "available-satellites-pane"
-		const title = document.createElement("h3")
-		title.textContent = "Available Satellites"
-		availableSatellitesContainer.appendChild(title)
+		// Create a temporary container to parse the HTML
+		const temp = document.createElement("div")
+		temp.innerHTML = html
 
-		const list = document.createElement("ul")
-		satellites.forEach((sat) => {
-			const listItem = document.createElement("li")
-			listItem.textContent = sat.userData.id
-			listItem.dataset.satelliteId = sat.userData.id
-			listItem.className = "satellite-list-item"
+		// Get the orc-info-pane element from the template
+		orcInfoPane = temp.querySelector("#orc-info-pane")
+		if (!orcInfoPane) {
+			console.error("Could not find #orc-info-pane in orc-demo.html")
+			return
+		}
 
-			listItem.addEventListener("click", (e) => {
-				e.stopPropagation()
-				const satId = e.target.dataset.satelliteId
-				const targetSat = satellites.find((s) => s.userData.id === satId)
+		// Populate the satellite list
+		const list = orcInfoPane.querySelector("#satellite-list")
+		if (list) {
+			const sortedSatellites = [...satellites].sort(
+				(a, b) => a.userData.orbitIndex - b.userData.orbitIndex
+			)
+			sortedSatellites.forEach((sat) => {
+				const listItem = document.createElement("li")
+				listItem.textContent = sat.userData.name
+				listItem.dataset.satelliteId = sat.userData.id
+				listItem.className = "satellite-list-item"
 
-				if (targetSat) {
-					selectedSatellite = targetSat
-					selectionIndicator.visible = true
-					updateSelectedSatelliteInfo(targetSat.userData.id)
-					updateAvailableSatellitesHighlight()
+				// Add color class based on ID prefix
+				if (sat.userData.id.startsWith("leo")) {
+					listItem.classList.add("sat-leo")
+				} else if (sat.userData.id.startsWith("geo")) {
+					listItem.classList.add("sat-geo")
+				} else if (sat.userData.id.startsWith("mol")) {
+					listItem.classList.add("sat-mol")
 				}
+
+				// Use inline onclick to call global function
+				listItem.setAttribute(
+					"onclick",
+					`window.orcSelectSatellite('${sat.userData.id}')`
+				)
+				list.appendChild(listItem)
 			})
-			list.appendChild(listItem)
-		})
+		}
 
-		availableSatellitesContainer.appendChild(list)
+		// Wire up decommission action click handler
+		const decommissionAction = orcInfoPane.querySelector("#decommission-action")
+		if (decommissionAction) {
+			decommissionAction.addEventListener(
+				"click",
+				window.orcDecommissionSatellite
+			)
+		}
 
-		// Main Info Pane Content
-		const mainContent = `
-			<h2 class="orc-pane-title">
-				Orbital Refuse Collector
-			</h2>
-			<div class="orc-pane-content">
-				<div class="orc-pane-section">
-					<h3>Satellite Info</h3>
-					<p id="no-satellite-selected">No satellite selected</p>
-					<div id="satellite-info-content" style="display: none;">
-						<p><strong>Status:</strong> <span id="selected-satellite-status">N/A</span></p>
-						<p><strong>Orbit Type:</strong> <span id="selected-satellite-orbit-type">N/A</span></p>
-					</div>
-				</div>
-				<div class="orc-pane-section">
-					<h3>API Documentation</h3>
-					<p>
-						Full documentation available at:
-					</p>
-					<a href="https://jtj-inc.github.io/docusaurus-openapi-docs/" target="_blank" class="api-docs-link">
-						View API Docs
-					</a>
-				</div>
-			</div>
-		`
-
-		orcInfoPane.innerHTML = mainContent
-		// Insert the satellite list container at the top of the content
-		orcInfoPane
-			.querySelector(".orc-pane-content")
-			.prepend(availableSatellitesContainer)
+		updateAvailableSatellitesHighlight()
 
 		document.body.appendChild(orcInfoPane)
 	}
@@ -1673,6 +2125,17 @@ function showAvailableSatellitesPane() {
 
 function updateAvailableSatellitesHighlight() {
 	if (!orcInfoPane) return
+
+	const hasSatellites = satellites.length > 0
+	const showHelp = hasSatellites && !selectedSatellite
+
+	// Toggle selection pulse on the list container
+	const list = orcInfoPane.querySelector("#satellite-list")
+	if (list) {
+		if (showHelp) list.classList.add("selection-needed")
+		else list.classList.remove("selection-needed")
+	}
+
 	const items = orcInfoPane.querySelectorAll(".satellite-list-item")
 	items.forEach((item) => {
 		if (
@@ -1684,7 +2147,33 @@ function updateAvailableSatellitesHighlight() {
 			item.classList.remove("selected")
 		}
 	})
+
+	// Update help text visibility
+	const helpText = document.getElementById("satellite-help-text")
+	if (helpText) {
+		helpText.style.display = showHelp ? "block" : "none"
+	}
 }
+
+// Handle satellite removal after decommission completes
+window.addEventListener("satelliteRemoved", (event) => {
+	const { satelliteId } = event.detail
+	// If the removed satellite was selected, deselect it
+	if (selectedSatellite && selectedSatellite.userData.id === satelliteId) {
+		selectedSatellite = null
+		if (selectionIndicator) {
+			selectionIndicator.visible = false
+		}
+		updateSelectedSatelliteInfo(null)
+		updateDecommissionActionState()
+		updateCancelDecommissionActionState()
+		// Tell hand to stop pointing
+		if (orcHandStateMachine) {
+			orcHandStateMachine.setSelectedSatellite(null)
+		}
+	}
+	updateAvailableSatellitesHighlight()
+})
 
 // Show/hide helpers for Home label
 export function showHomeLabel() {
@@ -1692,7 +2181,7 @@ export function showHomeLabel() {
 	try {
 		const btn = document.getElementById("home-button")
 		if (btn) btn.style.display = "block"
-	} catch (e) {}
+	} catch {}
 }
 
 export function hideHomeLabel() {
@@ -1700,7 +2189,7 @@ export function hideHomeLabel() {
 	try {
 		const btn = document.getElementById("home-button")
 		if (btn) btn.style.display = "none"
-	} catch (e) {}
+	} catch {}
 }
 
 // === Animate Loop ===
@@ -1709,7 +2198,7 @@ export function animate() {
 	stars.rotation.y += 0.0008
 
 	// Animate ORC scene if active
-	if (orcSceneActive && orcAnimationRunning) {
+	if (orcSceneActive) {
 		animateOrcScene()
 	}
 
@@ -1750,8 +2239,8 @@ window.addEventListener("resize", () => {
 	camera.updateProjectionMatrix()
 	renderer.setSize(window.innerWidth, window.innerHeight)
 
-	const bioPlane = scene.getObjectByName("bioPlane")
-	if (bioPlane) scene.remove(bioPlane)
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (aboutPlane) scene.remove(aboutPlane)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) scene.remove(portfolioPlane)
 })

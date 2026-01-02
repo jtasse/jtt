@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-TODO: testing backup solution at 20251223 - 11:44AM (remove this line)
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -22,6 +20,7 @@ npm run build  # Production build to dist/
 - **src/main.js** - Application entry point. Initializes labels, handles click/hover detection via raycasting, manages route changes, and coordinates between pyramid animations and content display.
 
 - **src/pyramid/pyramid.js** - The heart of the 3D scene. Contains:
+
   - Three.js scene setup (camera, renderer, lighting, starfield)
   - Pyramid geometry with three labeled faces
   - Animation functions: `animatePyramid()`, `spinPyramidToSection()`, `resetPyramidToHome()`

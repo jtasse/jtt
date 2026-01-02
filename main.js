@@ -7,7 +7,7 @@ import {
 	initLabels,
 	animatePyramid,
 	spinPyramidToSection,
-	showBioPlane,
+	showAboutPlane,
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
@@ -21,6 +21,11 @@ import {
 	morphToOrcScene,
 	morphFromOrcScene,
 	isOrcSceneActive,
+	initContactLabel,
+	showContactLabelCentered,
+	hideContactLabel,
+	contactLabel,
+	contactConfig,
 } from "./pyramid/pyramid.js"
 import { router } from "./router.js"
 
@@ -40,7 +45,7 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.id = "home-button"
 	btn.textContent = "Home"
 	btn.style.position = "fixed"
-	btn.style.left = "16px"
+	btn.style.left = "6px"
 	btn.style.top = "12px"
 	btn.style.zIndex = 10000
 	btn.style.padding = "8px 14px"
@@ -51,11 +56,23 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	btn.style.font = "600 14px sans-serif"
 	btn.style.cursor = "pointer"
 	btn.style.backdropFilter = "blur(4px)"
+	btn.style.transition = "background 0.2s ease, box-shadow 0.2s ease"
 	// Hidden initially until the user interacts (drag or label click)
 	btn.style.display = "none"
+	// Hover effects
+	btn.addEventListener("mouseenter", () => {
+		btn.style.background = "rgba(0,100,150,0.7)"
+		btn.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
+	})
+	btn.addEventListener("mouseleave", () => {
+		btn.style.background = "rgba(0,0,0,0.6)"
+		btn.style.boxShadow = "none"
+	})
 	btn.addEventListener("mousedown", (e) => e.stopPropagation())
 	btn.addEventListener("click", (e) => {
 		e.stopPropagation()
+		// Hide contact label when Home is clicked
+		hideContactLabel()
 		try {
 			router.navigate("/")
 		} catch (err) {
@@ -65,20 +82,34 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 	document.body.appendChild(btn)
 })()
 
-// Initialize Labels
+// Initialize Labels and Contact
 initLabels(makeLabelPlane)
+initContactLabel()
 
 // Start animation loop
 animate()
 
 window.addEventListener("resize", () => {})
 
+// Copy email to clipboard when contact label is clicked
+function handleContactClick() {
+	const email = contactConfig.lines[1] // Email is the second line
+	navigator.clipboard.writeText(email).then(() => {
+		// Show "Copied to clipboard!" message on the contact label
+		if (contactLabel && contactLabel.userData.showCopiedMessage) {
+			contactLabel.userData.showCopiedMessage()
+		}
+	}).catch((err) => {
+		console.error("Failed to copy email:", err)
+	})
+}
+
 // === Click Handling ===
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
 let hoveredLabel = null
-let currentContentVisible = null // Track which content plane is showing (bio/portfolio/blog or null)
-let pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
+let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
+const pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
 let isPointerDown = false
 let isDragging = false
 const DRAG_THRESHOLD = 5 // pixels
@@ -128,17 +159,14 @@ window.addEventListener(
 	(event) => {
 		const content = document.getElementById("content")
 		const homeBtn = document.getElementById("home-button")
-		const orcPlayPauseBtn = document.getElementById("orc-play-pause-button")
-		const availableSatellitesPane = document.getElementById(
-			"available-satellites-pane"
-		)
+		const orcResetBtn = document.getElementById("orc-reset-button")
+		const orcInfoPane = document.getElementById("orc-info-pane")
 		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
 			(homeBtn && homeBtn.contains(event.target)) ||
-			(orcPlayPauseBtn && orcPlayPauseBtn.contains(event.target)) ||
-			(availableSatellitesPane &&
-				availableSatellitesPane.contains(event.target)) ||
+			(orcResetBtn && orcResetBtn.contains(event.target)) ||
+			(orcInfoPane && orcInfoPane.contains(event.target)) ||
 			(orcOverlay && orcOverlay.contains(event.target))
 		) {
 			// Allow clicks inside content area or home button to pass through
@@ -199,6 +227,9 @@ function onMouseMove(event) {
 		}
 	}
 
+	// Check if pyramid is in centered/home position (not at top nav)
+	const isPyramidCentered = pyramidGroup.position.y < 1.0
+
 	if (hoverTargetIntersects.length > 0) {
 		const hoverObj = hoverTargetIntersects[0].object
 		const labelKey = hoverObj.userData.labelKey
@@ -212,8 +243,74 @@ function onMouseMove(event) {
 					.multiplyScalar(1.12)
 			}
 		}
+		// Show contact section when hovering over any content label while pyramid is centered
+		if (
+			isPyramidCentered &&
+			labelKey !== "Home" &&
+			labelMesh &&
+			labelMesh.visible
+		) {
+			showContactLabelCentered()
+		}
 		renderer.domElement.style.cursor = "pointer"
 	} else {
+		// Check if hovering over the contact label (show pointer cursor)
+		if (contactLabel && contactLabel.visible) {
+			const contactHits = raycaster.intersectObject(contactLabel, false)
+			if (contactHits.length > 0) {
+				const hit = contactHits[0]
+				// Check if hovering over email region using UV coordinates
+				const emailRegion = contactLabel.userData.emailClickRegion
+				if (emailRegion && hit.uv) {
+					const u = hit.uv.x
+					const v = hit.uv.y
+					// UV y is flipped (0 at bottom, 1 at top), so convert
+					const canvasY = 1 - v
+					const isOverEmail =
+						u >= emailRegion.x1 &&
+						u <= emailRegion.x2 &&
+						canvasY >= emailRegion.y1 &&
+						canvasY <= emailRegion.y2
+
+					if (isOverEmail) {
+						// Show tooltip when hovering over email
+						if (contactLabel.userData.showTooltip) {
+							contactLabel.userData.showTooltip()
+						}
+						renderer.domElement.style.cursor = "pointer"
+					} else {
+						// Hide tooltip when not over email
+						if (contactLabel.userData.hideTooltip) {
+							contactLabel.userData.hideTooltip()
+						}
+						renderer.domElement.style.cursor = "default"
+					}
+				} else {
+					renderer.domElement.style.cursor = "default"
+				}
+				// Still clear hoveredLabel if we were on a label before
+				if (hoveredLabel) {
+					hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+					hoveredLabel = null
+				}
+				return
+			} else {
+				// Not hovering over contact label at all - hide tooltip
+				if (contactLabel.userData.hideTooltip) {
+					contactLabel.userData.hideTooltip()
+				}
+			}
+		}
+		// Check if hovering over the pyramid mesh itself (when centered)
+		if (isPyramidCentered) {
+			const pyramidIntersects = raycaster.intersectObjects(
+				pyramidGroup.children,
+				true
+			)
+			if (pyramidIntersects.length > 0) {
+				showContactLabelCentered()
+			}
+		}
 		// No hover targets: ensure cursor is default and reset hoveredLabel
 		if (hoveredLabel) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
@@ -243,6 +340,8 @@ function centerAndOpenLabel(labelName) {
 	try {
 		showHomeLabel()
 	} catch (e) {}
+	// Hide contact section when entering nav state (it will reappear if clicked)
+	hideContactLabel()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -251,7 +350,7 @@ function centerAndOpenLabel(labelName) {
 		const sectionName = labelName.toLowerCase()
 		console.log("pyramidGroup at top nav state:", pyramidGroup)
 		spinPyramidToSection(sectionName, () => {
-			if (labelName === "Bio") showBioPlane()
+			if (labelName === "About") showAboutPlane()
 			else if (labelName === "Portfolio") showPortfolioPlane()
 			else if (labelName === "Blog") showBlogPlane()
 		})
@@ -264,17 +363,17 @@ function centerAndOpenLabel(labelName) {
 }
 
 router.onRouteChange((route) => {
-	if (route === "/bio") {
+	if (route === "/about") {
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
-				centerAndOpenLabel("Bio")
-				currentContentVisible = "bio"
+				centerAndOpenLabel("About")
+				currentContentVisible = "about"
 			}, 1300)
 		} else {
-			centerAndOpenLabel("Bio")
-			currentContentVisible = "bio"
+			centerAndOpenLabel("About")
+			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
 		if (isOrcSceneActive()) {
@@ -299,18 +398,23 @@ router.onRouteChange((route) => {
 			currentContentVisible = "blog"
 		}
 	} else if (route === "/orc-demo") {
+		// Hide contact section when entering orc-demo
+		hideContactLabel()
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"
 		window.centeredLabelName = null
 	} else {
-		// For non-content routes (home), reset pyramid and hide all content planes
+		// For non-content routes (home), reset pyramid, hide all content, and hide contact
+		hideContactLabel()
 		if (isOrcSceneActive()) {
+			// morphFromOrcScene handles its own cleanup with fade animation
+			// Don't call hideAllPlanes() here as it would remove elements before fade completes
 			morphFromOrcScene()
 		} else {
 			resetPyramidToHome()
+			hideAllPlanes()
 		}
-		hideAllPlanes()
 		currentContentVisible = null
 		window.centeredLabelName = null
 	}
@@ -330,6 +434,15 @@ function onSceneMouseDown(event) {
 	pointer.x = (event.clientX / window.innerWidth) * 2 - 1
 	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 	raycaster.setFromCamera(pointer, camera)
+
+	// Check if contact label was clicked
+	if (contactLabel && contactLabel.visible) {
+		const contactHits = raycaster.intersectObject(contactLabel, false)
+		if (contactHits.length > 0) {
+			handleContactClick()
+			return
+		}
+	}
 
 	// Helper: extract YouTube video id from a URL
 	function extractYouTubeID(url) {
@@ -783,7 +896,7 @@ function onSceneMouseDown(event) {
 	}
 
 	// Track which label is centered
-	let centeredLabelName = window.centeredLabelName || null
+	const centeredLabelName = window.centeredLabelName || null
 	// If a content plane is visible, prefer handling clickable overlays on it first
 	try {
 		const portfolioPlaneEarly = scene.getObjectByName("portfolioPlane")
@@ -828,7 +941,7 @@ function onSceneMouseDown(event) {
 		if (labelIntersects.length > 0) obj = labelIntersects[0].object
 	}
 	if (obj) {
-		let labelName = obj.userData.name
+		const labelName = obj.userData.name
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
 		// restore all labels to original positions, hide all content, and navigate home.
 		if (labelName === "Home") {
@@ -854,9 +967,9 @@ function onSceneMouseDown(event) {
 				console.log("pyramidGroup at top nav state:", pyramidGroup)
 				spinPyramidToSection(sectionName, () => {
 					// Show content after spin completes
-					if (labelName === "Bio") {
-						showBioPlane()
-						currentContentVisible = "bio"
+					if (labelName === "About") {
+						showAboutPlane()
+						currentContentVisible = "about"
 					} else if (labelName === "Portfolio") {
 						showPortfolioPlane()
 						currentContentVisible = "portfolio"
@@ -911,7 +1024,7 @@ function onSceneMouseDown(event) {
 			// Fallback: raycast the whole plane if no explicit clickables found
 			const pHits = raycaster.intersectObjects([portfolioPlane], true)
 			if (pHits.length > 0) {
-				let hit = pHits[0].object
+				const hit = pHits[0].object
 				let node = hit
 				while (node) {
 					if (node.userData && node.userData.link) {
@@ -945,7 +1058,11 @@ function onSceneMouseDown(event) {
 		) {
 			return
 		}
-		// Clicking the pyramid acts like clicking Home: reset everything to initial state
-		router.navigate("/")
+		// Clicking the pyramid shows the contact info
+		showContactLabelCentered()
+		return
 	}
+
+	// If nothing else was hit (background click), show contact info
+	showContactLabelCentered()
 }
