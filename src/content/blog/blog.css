@@ -1,44 +1,119 @@
-/* Styles specific to the Blog content page */
-.blog-list {
-	display: grid;
-	grid-template-columns: 1fr; /* one post per row */
-	gap: 1rem;
-	padding-top: 1rem;
+body {
+	background-color: #2e2e2e;
+	color: #ffffff;
+	font-family: "Nunito", sans-serif;
+	font-weight: 500;
+	margin: 0;
+	padding: 2rem;
 }
-.blog-post {
-	background: rgba(0, 0, 0, 0.55);
-	border: 1px solid rgba(0, 255, 255, 0.06);
-	border-radius: 10px;
-	overflow: hidden;
-	padding: 0.75rem;
+a {
+	color: #296deb;
+	text-decoration: none;
+}
+a:hover {
+	color: #d1d5db;
+}
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+header {
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	border-bottom: 2px solid white;
+	padding-bottom: 2rem;
+	margin-bottom: 3rem;
 }
-.blog-post img.blog-thumb {
-	width: 100%;
-	height: 160px;
-	object-fit: cover;
-	border-radius: 6px;
+@media (min-width: 768px) {
+	header {
+		flex-direction: row;
+		justify-content: space-between;
+	}
+}
+.site-branding h1 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 3rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	margin: 0 0 1rem 0;
+}
+.site-branding h2 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 2rem;
+	font-weight: 800;
+	margin: 0 0 1rem 0;
+}
+.back-link {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.25rem;
 	display: block;
+	margin-top: 1rem;
 }
-.blog-post h2 {
-	margin: 0;
-	font-size: 1.05rem;
+.contact-info {
+	text-align: left;
+	margin-top: 2rem;
 }
-.blog-post .meta {
-	color: #9fb;
-	font-size: 0.85rem;
-	margin-bottom: 0.5rem;
+@media (min-width: 768px) {
+	.contact-info {
+		text-align: right;
+		margin-top: 0;
+	}
 }
-.blog-post .summary {
-	color: #ddd;
-	font-size: 0.95rem;
-	line-height: 1.4;
+.contact-info h2 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.5rem;
+	font-weight: 800;
+	margin: 0 0 1rem 0;
+}
+.contact-info p {
+	font-family: "Orbitron", sans-serif;
+	margin: 0 0 0.5rem 0;
+}
+main {
+	max-width: 900px;
+	margin: 0 auto;
+}
+.posts-heading {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.5rem;
+	font-weight: 800;
+	border-left: 2px solid white;
+	padding-left: 1rem;
+	margin-bottom: 2rem;
+}
+article {
+	margin-bottom: 4rem;
+}
+article h3 {
+	font-size: 1.875rem;
+	font-weight: 800;
+	margin: 0 0 0.5rem 0;
+}
+.post-meta {
+	color: #9ca3af;
+	font-size: 0.875rem;
+	margin-bottom: 1rem;
+}
+.post-image {
+	width: 100%;
+	aspect-ratio: 3/2;
+	background-color: #374151;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #9ca3af;
+	border: 1px solid #4b5563;
+	margin-bottom: 1rem;
+	overflow: hidden;
 }
 
-@media (max-width: 700px) {
-	.blog-list {
-		grid-template-columns: 1fr;
-	}
+.post-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+hr {
+	border: 0;
+	border-top: 1px solid #4b5563;
+	margin-top: 2rem;
 }
