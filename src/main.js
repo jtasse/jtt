@@ -1,0 +1,1071 @@
+import * as THREE from "three"
+import { makeLabelPlane } from "./planes.js"
+import {
+	pyramidGroup,
+	labels,
+	hoverTargets,
+	initLabels,
+	animatePyramid,
+	spinPyramidToSection,
+	showAboutPlane,
+	showPortfolioPlane,
+	hideAllPlanes,
+	showBlogPlane,
+	showHomeLabel,
+	animate,
+	renderer,
+	camera,
+	scene,
+	controls,
+	resetPyramidToHome,
+	morphToOrcScene,
+	morphFromOrcScene,
+	isOrcSceneActive,
+	initContactLabel,
+	showContactLabelCentered,
+	hideContactLabel,
+	contactLabel,
+	contactConfig,
+} from "./pyramid.js"
+import { router } from "./router.js"
+
+// Expose router navigate for pyramid.js to use in overlays
+window.routerNavigate = (path) => router.navigate(path)
+
+// Attach renderer DOM element
+document.getElementById("scene-container").appendChild(renderer.domElement)
+
+// Create a DOM Home button top-left that overlays the scene. This button is
+// always visible and acts independently of the 3D scene so it behaves like a
+// sticky HUD element while using similar styling as the 3D labels.
+;(function createHomeButton() {
+	const existing = document.getElementById("home-button")
+	if (existing) return
+	const btn = document.createElement("button")
+	btn.id = "home-button"
+	btn.textContent = "Home"
+	btn.style.position = "fixed"
+	btn.style.left = "6px"
+	btn.style.top = "12px"
+	btn.style.zIndex = 10000
+	btn.style.padding = "8px 14px"
+	btn.style.background = "rgba(0,0,0,0.6)"
+	btn.style.color = "white"
+	btn.style.border = "1px solid rgba(255,255,255,0.08)"
+	btn.style.borderRadius = "4px"
+	btn.style.font = "600 14px sans-serif"
+	btn.style.cursor = "pointer"
+	btn.style.backdropFilter = "blur(4px)"
+	btn.style.transition = "background 0.2s ease, box-shadow 0.2s ease"
+	// Hidden initially until the user interacts (drag or label click)
+	btn.style.display = "none"
+	// Hover effects
+	btn.addEventListener("mouseenter", () => {
+		btn.style.background = "rgba(0,100,150,0.7)"
+		btn.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
+	})
+	btn.addEventListener("mouseleave", () => {
+		btn.style.background = "rgba(0,0,0,0.6)"
+		btn.style.boxShadow = "none"
+	})
+	btn.addEventListener("mousedown", (e) => e.stopPropagation())
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation()
+		// Hide contact label when Home is clicked
+		hideContactLabel()
+		try {
+			router.navigate("/")
+		} catch (err) {
+			console.error("Home button handler error", err)
+		}
+	})
+	document.body.appendChild(btn)
+})()
+
+// Initialize Labels and Contact
+initLabels(makeLabelPlane)
+initContactLabel()
+
+// Start animation loop
+animate()
+
+window.addEventListener("resize", () => {})
+
+// Copy email to clipboard when contact label is clicked
+function handleContactClick() {
+	const email = contactConfig.lines[1] // Email is the second line
+	navigator.clipboard
+		.writeText(email)
+		.then(() => {
+			// Show "Copied to clipboard!" message on the contact label
+			if (contactLabel && contactLabel.userData.showCopiedMessage) {
+				contactLabel.userData.showCopiedMessage()
+			}
+		})
+		.catch((err) => {
+			console.error("Failed to copy email:", err)
+		})
+}
+
+// === Click Handling ===
+const raycaster = new THREE.Raycaster()
+const pointer = new THREE.Vector2()
+let hoveredLabel = null
+let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
+const pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
+let isPointerDown = false
+let isDragging = false
+const DRAG_THRESHOLD = 5 // pixels
+
+// Track mousedown to detect if click is a drag, and process scene interaction
+function onMouseDown(event) {
+	// Ignore mousedown on DOM elements (buttons, scrollbars, content pane)
+	// Only track clicks that originate on the canvas
+	if (event.target.tagName !== "CANVAS") {
+		return
+	}
+	isPointerDown = true
+	isDragging = false
+	pointerDownPos.x = event.clientX
+	pointerDownPos.y = event.clientY
+	// Don't process scene interaction on mousedown - wait for mouseup to confirm it's a real click
+}
+
+window.addEventListener("mousedown", onMouseDown)
+
+// Track mousemove to detect drag
+window.addEventListener("mousemove", (event) => {
+	if (isPointerDown) {
+		const dx = event.clientX - pointerDownPos.x
+		const dy = event.clientY - pointerDownPos.y
+		if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+			isDragging = true
+		}
+	}
+})
+
+// Track mouseup to mark end of interaction AND trigger scene click
+window.addEventListener("mouseup", (event) => {
+	isPointerDown = false
+	// Only trigger scene interaction if this wasn't a drag
+	if (!isDragging) {
+		if (event.target.tagName !== "CANVAS") return
+		onSceneMouseDown(event)
+	}
+	isDragging = false
+})
+
+// Completely block click events at capture phase - we'll use mousedown instead
+// But allow clicks inside #content (for close button, etc.)
+window.addEventListener(
+	"click",
+	(event) => {
+		const content = document.getElementById("content")
+		const homeBtn = document.getElementById("home-button")
+		const orcResetBtn = document.getElementById("orc-reset-button")
+		const orcInfoPane = document.getElementById("orc-info-pane")
+		const orcOverlay = document.getElementById("orc-preview-overlay")
+		if (
+			(content && content.contains(event.target)) ||
+			(homeBtn && homeBtn.contains(event.target)) ||
+			(orcResetBtn && orcResetBtn.contains(event.target)) ||
+			(orcInfoPane && orcInfoPane.contains(event.target)) ||
+			(orcOverlay && orcOverlay.contains(event.target))
+		) {
+			// Allow clicks inside content area or home button to pass through
+			return
+		}
+		event.preventDefault()
+		event.stopPropagation()
+	},
+	true
+) // Use capture phase to prevent ALL clicks from reaching handlers
+
+// Hover detection
+function onMouseMove(event) {
+	// Compute normalized device coordinates (NDC) relative to renderer canvas
+	try {
+		const rect = renderer.domElement.getBoundingClientRect()
+		pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+		pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+	} catch (e) {
+		// Fallback to window-based coords
+		pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+		pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+	}
+	raycaster.setFromCamera(pointer, camera)
+
+	// Check for portfolio item clickables FIRST (highest priority)
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
+	if (portfolioPlane) {
+		const portfolioClickables = portfolioPlane.children.filter(
+			(c) => c && c.userData && c.userData.link
+		)
+		if (portfolioClickables.length > 0) {
+			const portfolioHits = raycaster.intersectObjects(
+				portfolioClickables,
+				false
+			)
+			if (portfolioHits.length > 0) {
+				renderer.domElement.style.cursor = "pointer"
+				return
+			}
+		}
+	}
+
+	// Check hover targets for pyramid labels
+	const hoverTargetIntersects = raycaster.intersectObjects(
+		Object.values(hoverTargets)
+	)
+
+	// Clear previous hover if not still over its hover target
+	if (hoveredLabel) {
+		const stillOver = hoverTargetIntersects.some(
+			(h) => h.object.userData.labelKey === hoveredLabel.userData.name
+		)
+		if (!stillOver) {
+			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			hoveredLabel = null
+			renderer.domElement.style.cursor = "default"
+		}
+	}
+
+	// Check if pyramid is in centered/home position (not at top nav)
+	const isPyramidCentered = pyramidGroup.position.y < 1.0
+
+	if (hoverTargetIntersects.length > 0) {
+		const hoverObj = hoverTargetIntersects[0].object
+		const labelKey = hoverObj.userData.labelKey
+		const labelMesh = labels[labelKey]
+		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
+			// Only scale if the label is visible and not Home (Home doesn't scale on hover)
+			if (labelKey !== "Home" && labelMesh.userData.originalScale) {
+				hoveredLabel = labelMesh
+				hoveredLabel.scale
+					.copy(hoveredLabel.userData.originalScale)
+					.multiplyScalar(1.12)
+			}
+		}
+		// Show contact section when hovering over any content label while pyramid is centered
+		if (
+			isPyramidCentered &&
+			labelKey !== "Home" &&
+			labelMesh &&
+			labelMesh.visible
+		) {
+			showContactLabelCentered()
+		}
+		renderer.domElement.style.cursor = "pointer"
+	} else {
+		// Check if hovering over the contact label (show pointer cursor)
+		if (contactLabel && contactLabel.visible) {
+			const contactHits = raycaster.intersectObject(contactLabel, false)
+			if (contactHits.length > 0) {
+				const hit = contactHits[0]
+				// Check if hovering over email region using UV coordinates
+				const emailRegion = contactLabel.userData.emailClickRegion
+				if (emailRegion && hit.uv) {
+					const u = hit.uv.x
+					const v = hit.uv.y
+					// UV y is flipped (0 at bottom, 1 at top), so convert
+					const canvasY = 1 - v
+					const isOverEmail =
+						u >= emailRegion.x1 &&
+						u <= emailRegion.x2 &&
+						canvasY >= emailRegion.y1 &&
+						canvasY <= emailRegion.y2
+
+					if (isOverEmail) {
+						// Show tooltip when hovering over email
+						if (contactLabel.userData.showTooltip) {
+							contactLabel.userData.showTooltip()
+						}
+						renderer.domElement.style.cursor = "pointer"
+					} else {
+						// Hide tooltip when not over email
+						if (contactLabel.userData.hideTooltip) {
+							contactLabel.userData.hideTooltip()
+						}
+						renderer.domElement.style.cursor = "default"
+					}
+				} else {
+					renderer.domElement.style.cursor = "default"
+				}
+				// Still clear hoveredLabel if we were on a label before
+				if (hoveredLabel) {
+					hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+					hoveredLabel = null
+				}
+				return
+			} else {
+				// Not hovering over contact label at all - hide tooltip
+				if (contactLabel.userData.hideTooltip) {
+					contactLabel.userData.hideTooltip()
+				}
+			}
+		}
+		// Check if hovering over the pyramid mesh itself (when centered)
+		if (isPyramidCentered) {
+			const pyramidIntersects = raycaster.intersectObjects(
+				pyramidGroup.children,
+				true
+			)
+			if (pyramidIntersects.length > 0) {
+				showContactLabelCentered()
+			}
+		}
+		// No hover targets: ensure cursor is default and reset hoveredLabel
+		if (hoveredLabel) {
+			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			hoveredLabel = null
+		}
+		renderer.domElement.style.cursor = "default"
+	}
+}
+
+window.addEventListener("mousemove", onMouseMove)
+
+// Show corner Home when the user starts an OrbitControls interaction (drag)
+// This replaces the previous interval-based camera polling.
+try {
+	if (controls && controls.addEventListener) {
+		controls.addEventListener("start", () => {
+			showHomeLabel()
+		})
+	}
+} catch (e) {}
+
+// Listen for route changes and show correct content
+// Helper to animate pyramid to top menu and show a section
+function centerAndOpenLabel(labelName) {
+	if (!labels || !labels[labelName]) return
+	// Clicking a label should reveal the corner Home control
+	try {
+		showHomeLabel()
+	} catch (e) {}
+	// Hide contact section when entering nav state (it will reappear if clicked)
+	hideContactLabel()
+	const isAtTop = pyramidGroup.position.y >= 1.5
+
+	if (isAtTop) {
+		// Already at top, just spin to new section
+		hideAllPlanes()
+		const sectionName = labelName.toLowerCase()
+		console.log("pyramidGroup at top nav state:", pyramidGroup)
+		spinPyramidToSection(sectionName, () => {
+			if (labelName === "About") showAboutPlane()
+			else if (labelName === "Portfolio") showPortfolioPlane()
+			else if (labelName === "Blog") showBlogPlane()
+		})
+	} else if (!isAtTop) {
+		// animate pyramid to top and flatten labels - content will be shown when animation completes
+		animatePyramid(true, labelName.toLowerCase())
+	}
+	// Track which section is active (for highlighting in menu if desired)
+	window.centeredLabelName = labelName
+}
+
+router.onRouteChange((route) => {
+	if (route === "/about") {
+		// If coming from ORC scene, morph back first
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("About")
+				currentContentVisible = "about"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("About")
+			currentContentVisible = "about"
+		}
+	} else if (route === "/portfolio") {
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("Portfolio")
+				currentContentVisible = "portfolio"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("Portfolio")
+			currentContentVisible = "portfolio"
+		}
+	} else if (route === "/blog") {
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				centerAndOpenLabel("Blog")
+				currentContentVisible = "blog"
+			}, 1300)
+		} else {
+			centerAndOpenLabel("Blog")
+			currentContentVisible = "blog"
+		}
+	} else if (route === "/orc-demo") {
+		// Hide contact section when entering orc-demo
+		hideContactLabel()
+		// Morph pyramid into ORC demo scene
+		morphToOrcScene()
+		currentContentVisible = "orc-demo"
+		window.centeredLabelName = null
+	} else {
+		// For non-content routes (home), reset pyramid, hide all content, and hide contact
+		hideContactLabel()
+		if (isOrcSceneActive()) {
+			// morphFromOrcScene handles its own cleanup with fade animation
+			// Don't call hideAllPlanes() here as it would remove elements before fade completes
+			morphFromOrcScene()
+		} else {
+			resetPyramidToHome()
+			hideAllPlanes()
+		}
+		currentContentVisible = null
+		window.centeredLabelName = null
+	}
+})
+
+// Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
+router.notify()
+
+function onSceneMouseDown(event) {
+	// Only handle mousedown if it's a true click (not part of a drag)
+	// We detect this by waiting for mouseup to see if isDragging was set
+	// For now, just mark that we're ready to process a click
+	if (isDragging) {
+		return
+	}
+
+	pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+	raycaster.setFromCamera(pointer, camera)
+
+	// Check if contact label was clicked
+	if (contactLabel && contactLabel.visible) {
+		const contactHits = raycaster.intersectObject(contactLabel, false)
+		if (contactHits.length > 0) {
+			handleContactClick()
+			return
+		}
+	}
+
+	// Helper: extract YouTube video id from a URL
+	function extractYouTubeID(url) {
+		try {
+			const u = new URL(url)
+			if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
+			if (u.hostname === "youtu.be") return u.pathname.slice(1)
+		} catch (e) {
+			return null
+		}
+		return null
+	}
+
+	// Helper: extract Google Docs document ID from a URL
+	function extractGoogleDocsID(url) {
+		try {
+			const u = new URL(url)
+			if (u.hostname.includes("docs.google.com")) {
+				const match = u.pathname.match(/\/document\/d\/([^\/]+)/)
+				return match ? match[1] : null
+			}
+		} catch (e) {
+			return null
+		}
+		return null
+	}
+
+	// Helper: check if URL points to an image
+	function isImageUrl(url) {
+		try {
+			const u = new URL(url)
+			const path = u.pathname.toLowerCase()
+			return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/.test(path)
+		} catch (e) {
+			return false
+		}
+	}
+
+	// Helper: handle a content link (embed YouTube if applicable, otherwise open)
+	function handleContentLink(link) {
+		if (!link) return false
+
+		// Check for internal routes (like /orc-demo)
+		if (link.startsWith("/")) {
+			router.navigate(link)
+			return true
+		}
+
+		const ytId = extractYouTubeID(link)
+		const content = document.getElementById("content")
+		// Use the exported function from pyramid module (imported above)
+		try {
+			hideAllPlanes()
+		} catch (e) {
+			// fallback to any global if available
+			if (window.hideAllPlanes) window.hideAllPlanes()
+		}
+		if (content) {
+			content.style.bottom = ""
+			content.style.maxHeight = ""
+		}
+		if (ytId) {
+			if (content) {
+				content.innerHTML = ""
+				try {
+					// Full page layout with margins
+					const sideMargin = 40
+					const topMargin = 85
+					const bottomMargin = 20
+					const availableHeight = window.innerHeight - topMargin - bottomMargin
+
+					// Override CSS and set full-page positioning
+					content.style.maxHeight = "none"
+					content.style.height = availableHeight + "px"
+					content.style.top = topMargin + "px"
+					content.style.left = sideMargin + "px"
+					content.style.right = sideMargin + "px"
+					content.style.width = "auto"
+					content.style.transform = "none"
+
+					// Create close button
+					const closeBtn = document.createElement("button")
+					closeBtn.innerHTML = "&times;"
+					closeBtn.style.cssText = `
+						position: absolute;
+						top: 10px;
+						right: 10px;
+						width: 36px;
+						height: 36px;
+						border: 2px solid #00ffff;
+						border-radius: 50%;
+						background: rgba(0, 0, 0, 0.8);
+						color: #00ffff;
+						font-size: 24px;
+						line-height: 1;
+						cursor: pointer;
+						z-index: 10;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					`
+					closeBtn.onmouseover = () => {
+						closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+					}
+					closeBtn.onmouseout = () => {
+						closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+					}
+					closeBtn.onclick = (e) => {
+						e.preventDefault()
+						e.stopPropagation()
+						// Restore pyramid at bottom position
+						if (pyramidGroup) {
+							pyramidGroup.visible = true
+							animatePyramid(true, "portfolio")
+						}
+						// Clear content and hide
+						content.innerHTML = ""
+						content.style.display = "none"
+						// Reset content styles
+						content.style.height = ""
+						content.style.top = ""
+						content.style.left = ""
+						content.style.right = ""
+						content.style.width = ""
+						content.style.transform = ""
+						content.style.maxHeight = ""
+						content.style.overflow = ""
+						content.style.padding = ""
+						// Show portfolio plane again
+						showPortfolioPlane()
+						currentContentVisible = "portfolio"
+					}
+
+					const iframe = document.createElement("iframe")
+					iframe.setAttribute(
+						"src",
+						`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`
+					)
+					iframe.setAttribute("width", "100%")
+					iframe.style.height = "calc(100% - 20px)"
+					iframe.setAttribute(
+						"allow",
+						"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+					)
+					iframe.setAttribute("frameborder", "0")
+					iframe.setAttribute("allowfullscreen", "")
+					const wrapper = document.createElement("div")
+					wrapper.className = "video-wrapper"
+					wrapper.id = "embedded-video-wrapper"
+					wrapper.style.width = "100%"
+					wrapper.style.height = "100%"
+					wrapper.style.overflow = "hidden"
+					wrapper.style.position = "relative"
+					wrapper.appendChild(iframe)
+					wrapper.appendChild(closeBtn)
+					content.appendChild(wrapper)
+
+					content.style.display = "block"
+					content.style.overflow = "hidden"
+					content.style.padding = "0"
+					content.style.zIndex = String(2147483646)
+					content.style.position = "fixed"
+					content.style.pointerEvents = "auto"
+					currentContentVisible = "portfolio"
+					return true
+				} catch (e) {
+					// If creating the iframe failed for some reason, open the link instead
+					console.error("Failed to create YouTube iframe:", e)
+					window.open(link, "_blank")
+					return true
+				}
+			}
+		} else {
+			// Check for Google Docs
+			const docId = extractGoogleDocsID(link)
+			if (docId && content) {
+				content.innerHTML = ""
+
+				// Full page layout with margins
+				const sideMargin = 40
+				const topMargin = 85
+				const bottomMargin = 20
+				const availableHeight = window.innerHeight - topMargin - bottomMargin
+
+				// Override CSS and set full-page positioning
+				content.style.maxHeight = "none"
+				content.style.height = availableHeight + "px"
+				content.style.top = topMargin + "px"
+				content.style.left = sideMargin + "px"
+				content.style.right = sideMargin + "px"
+				content.style.width = "auto"
+				content.style.transform = "none"
+
+				// Create close button
+				const closeBtn = document.createElement("button")
+				closeBtn.innerHTML = "&times;"
+				closeBtn.style.cssText = `
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					width: 36px;
+					height: 36px;
+					border: 2px solid #00ffff;
+					border-radius: 50%;
+					background: rgba(0, 0, 0, 0.8);
+					color: #00ffff;
+					font-size: 24px;
+					line-height: 1;
+					cursor: pointer;
+					z-index: 10;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				`
+				closeBtn.onmouseover = () => {
+					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+				}
+				closeBtn.onmouseout = () => {
+					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+				}
+				closeBtn.onclick = (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					// Restore pyramid at bottom position
+					if (pyramidGroup) {
+						pyramidGroup.visible = true
+						animatePyramid(true, "portfolio")
+					}
+					// Clear content and hide
+					content.innerHTML = ""
+					content.style.display = "none"
+					// Reset content styles
+					content.style.height = ""
+					content.style.top = ""
+					content.style.left = ""
+					content.style.right = ""
+					content.style.width = ""
+					content.style.transform = ""
+					content.style.maxHeight = ""
+					content.style.overflow = ""
+					content.style.padding = ""
+					// Show portfolio plane again
+					showPortfolioPlane()
+					currentContentVisible = "portfolio"
+				}
+
+				const iframe = document.createElement("iframe")
+				iframe.src = `https://docs.google.com/document/d/${docId}/preview`
+				iframe.width = "100%"
+				iframe.style.height = "calc(100% - 20px)"
+				iframe.style.border = "1px solid #00ffff"
+				iframe.style.borderRadius = "8px"
+				iframe.style.display = "block"
+				const wrapper = document.createElement("div")
+				wrapper.className = "doc-wrapper"
+				wrapper.style.width = "100%"
+				wrapper.style.height = "100%"
+				wrapper.style.overflow = "hidden"
+				wrapper.style.position = "relative"
+				wrapper.appendChild(iframe)
+				wrapper.appendChild(closeBtn)
+				content.appendChild(wrapper)
+				content.style.display = "block"
+				content.style.overflow = "hidden"
+				content.style.padding = "0"
+				content.style.zIndex = String(2147483646)
+				content.style.position = "fixed"
+				content.style.pointerEvents = "auto"
+				currentContentVisible = "portfolio"
+				return true
+			}
+
+			// Check for image URL
+			if (isImageUrl(link)) {
+				content.innerHTML = ""
+
+				// Full page layout with margins
+				const sideMargin = 40
+				const topMargin = 85
+				const bottomMargin = 20
+				const availableHeight = window.innerHeight - topMargin - bottomMargin
+
+				// Override CSS and set full-page positioning
+				content.style.maxHeight = "none"
+				content.style.height = availableHeight + "px"
+				content.style.top = topMargin + "px"
+				content.style.left = sideMargin + "px"
+				content.style.right = sideMargin + "px"
+				content.style.width = "auto"
+				content.style.transform = "none"
+
+				// Create close button
+				const closeBtn = document.createElement("button")
+				closeBtn.innerHTML = "&times;"
+				closeBtn.style.cssText = `
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					width: 36px;
+					height: 36px;
+					border: 2px solid #00ffff;
+					border-radius: 50%;
+					background: rgba(0, 0, 0, 0.8);
+					color: #00ffff;
+					font-size: 24px;
+					line-height: 1;
+					cursor: pointer;
+					z-index: 10;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				`
+				closeBtn.onmouseover = () => {
+					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
+				}
+				closeBtn.onmouseout = () => {
+					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
+				}
+				closeBtn.onclick = (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					// Restore pyramid at bottom position
+					if (pyramidGroup) {
+						pyramidGroup.visible = true
+						animatePyramid(true, "portfolio")
+					}
+					// Clear content and hide
+					content.innerHTML = ""
+					content.style.display = "none"
+					// Reset content styles
+					content.style.height = ""
+					content.style.top = ""
+					content.style.left = ""
+					content.style.right = ""
+					content.style.width = ""
+					content.style.transform = ""
+					content.style.maxHeight = ""
+					content.style.overflow = ""
+					content.style.padding = ""
+					// Show portfolio plane again
+					showPortfolioPlane()
+					currentContentVisible = "portfolio"
+				}
+
+				const img = document.createElement("img")
+				img.src = link
+				img.alt = "Visual Resume"
+				img.style.width = "100%"
+				img.style.height = "auto"
+				img.style.display = "block"
+				img.style.margin = "0 auto"
+
+				const wrapper = document.createElement("div")
+				wrapper.className = "image-wrapper"
+				wrapper.style.width = "100%"
+				wrapper.style.height = "100%"
+				wrapper.style.overflow = "auto"
+				wrapper.style.position = "relative"
+				wrapper.appendChild(img)
+
+				// Zoom Controls
+				let zoom = 1.0
+				const updateZoom = (newZoom) => {
+					zoom = Math.max(0.25, newZoom)
+					img.style.width = `${zoom * 100}%`
+					img.style.maxWidth = "none"
+				}
+
+				const zoomContainer = document.createElement("div")
+				zoomContainer.style.cssText = `
+					position: absolute;
+					bottom: 20px;
+					right: 20px;
+					display: flex;
+					gap: 10px;
+					z-index: 11;
+				`
+				const btnStyle = `
+					width: 40px;
+					height: 40px;
+					border: 2px solid #00ffff;
+					border-radius: 50%;
+					background: rgba(0, 0, 0, 0.8);
+					color: #00ffff;
+					font-size: 24px;
+					line-height: 1;
+					cursor: pointer;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					user-select: none;
+				`
+				const zoomIn = document.createElement("div")
+				zoomIn.innerHTML = "+"
+				zoomIn.style.cssText = btnStyle
+				zoomIn.onclick = (e) => {
+					e.stopPropagation()
+					updateZoom(zoom + 0.25)
+				}
+
+				const zoomOut = document.createElement("div")
+				zoomOut.innerHTML = "&minus;"
+				zoomOut.style.cssText = btnStyle
+				zoomOut.onclick = (e) => {
+					e.stopPropagation()
+					updateZoom(zoom - 0.25)
+				}
+
+				const addHover = (btn) => {
+					btn.onmouseover = () =>
+						(btn.style.background = "rgba(0, 255, 255, 0.3)")
+					btn.onmouseout = () => (btn.style.background = "rgba(0, 0, 0, 0.8)")
+				}
+				addHover(zoomIn)
+				addHover(zoomOut)
+
+				zoomContainer.appendChild(zoomOut)
+				zoomContainer.appendChild(zoomIn)
+
+				// Scrollwheel zoom support
+				wrapper.addEventListener(
+					"wheel",
+					(e) => {
+						e.preventDefault()
+						e.stopPropagation()
+						const direction = e.deltaY > 0 ? -1 : 1
+						updateZoom(zoom + direction * 0.1)
+					},
+					{ passive: false }
+				)
+
+				content.appendChild(wrapper)
+				content.appendChild(closeBtn)
+				content.appendChild(zoomContainer)
+
+				content.style.display = "block"
+				content.style.overflow = "hidden"
+				content.style.padding = "0"
+				content.style.zIndex = String(2147483646)
+				content.style.position = "fixed"
+				content.style.pointerEvents = "auto"
+				currentContentVisible = "portfolio"
+				return true
+			}
+
+			// Fallback: open in new tab
+			window.open(link, "_blank")
+			return true
+		}
+		return false
+	}
+
+	// Track which label is centered
+	const centeredLabelName = window.centeredLabelName || null
+	// If a content plane is visible, prefer handling clickable overlays on it first
+	try {
+		const portfolioPlaneEarly = scene.getObjectByName("portfolioPlane")
+		if (portfolioPlaneEarly) {
+			const clickablesEarly = portfolioPlaneEarly.children.filter(
+				(c) => c && c.userData && c.userData.link
+			)
+			if (clickablesEarly.length > 0) {
+				const hitsEarly = raycaster.intersectObjects(clickablesEarly, true)
+				if (hitsEarly.length > 0) {
+					let node = hitsEarly[0].object
+					while (node) {
+						if (node.userData && node.userData.link) {
+							console.debug(
+								"[onSceneMouseDown] EARLY clicked portfolio link:",
+								node.userData.link
+							)
+							try {
+								if (handleContentLink(node.userData.link)) return
+							} catch (e) {
+								console.error("Error handling content link (early)", e)
+							}
+						}
+						node = node.parent
+					}
+				}
+			}
+		}
+	} catch (e) {
+		// ignore early plane detection errors
+	}
+	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
+	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
+	let obj = null
+	if (hoverHits.length > 0) {
+		const hoverObj = hoverHits[0].object
+		const labelKey = hoverObj.userData.labelKey
+		obj = labels[labelKey]
+	} else {
+		// Fallback: check tight label meshes
+		const labelIntersects = raycaster.intersectObjects(Object.values(labels))
+		if (labelIntersects.length > 0) obj = labelIntersects[0].object
+	}
+	if (obj) {
+		const labelName = obj.userData.name
+		// If Home was clicked, perform a complete reset: return pyramid to home state,
+		// restore all labels to original positions, hide all content, and navigate home.
+		if (labelName === "Home") {
+			router.navigate("/")
+			return
+		}
+		console.debug(
+			"[onClick] clicked object labelName=",
+			labelName,
+			"active=",
+			window.centeredLabelName
+		)
+
+		// With flattened menu, all labels are visible at the top
+		// Clicking a label navigates to that section
+		if (window.centeredLabelName !== labelName) {
+			// If already showing content, spin pyramid and switch sections
+			const isAtTop = pyramidGroup.position.y >= 0.75
+			if (isAtTop) {
+				// Already in flattened state, spin pyramid to new face and switch content
+				hideAllPlanes()
+				const sectionName = labelName.toLowerCase()
+				console.log("pyramidGroup at top nav state:", pyramidGroup)
+				spinPyramidToSection(sectionName, () => {
+					// Show content after spin completes
+					if (labelName === "About") {
+						showAboutPlane()
+						currentContentVisible = "about"
+					} else if (labelName === "Portfolio") {
+						showPortfolioPlane()
+						currentContentVisible = "portfolio"
+					} else if (labelName === "Blog") {
+						showBlogPlane()
+						currentContentVisible = "blog"
+					}
+				})
+				window.centeredLabelName = labelName
+			} else {
+				// Animate pyramid to top and show content
+				animatePyramid(true, labelName.toLowerCase())
+				window.centeredLabelName = labelName
+			}
+
+			// Update route
+			router.navigate("/" + labelName.toLowerCase())
+		}
+		return
+	}
+
+	// Click on pyramid toggles back up
+
+	// If the click intersected a clickable overlay on a content plane (portfolio items), handle it.
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
+	if (portfolioPlane) {
+		// Prefer to raycast against the explicit clickable overlays added as children
+		const clickables = portfolioPlane.children.filter(
+			(c) => c && c.userData && c.userData.link
+		)
+		if (clickables.length > 0) {
+			const hits = raycaster.intersectObjects(clickables, true)
+			if (hits.length > 0) {
+				let node = hits[0].object
+				// climb up to find any userData.link on the clicked object or its parents
+				while (node) {
+					if (node.userData && node.userData.link) {
+						console.debug(
+							"[onSceneMouseDown] clicked portfolio link:",
+							node.userData.link
+						)
+						try {
+							if (handleContentLink(node.userData.link)) return
+						} catch (e) {
+							console.error("Error handling content link", e)
+						}
+					}
+					node = node.parent
+				}
+			}
+		} else {
+			// Fallback: raycast the whole plane if no explicit clickables found
+			const pHits = raycaster.intersectObjects([portfolioPlane], true)
+			if (pHits.length > 0) {
+				const hit = pHits[0].object
+				let node = hit
+				while (node) {
+					if (node.userData && node.userData.link) {
+						console.debug(
+							"[onSceneMouseDown] clicked portfolio link (fallback):",
+							node.userData.link
+						)
+						try {
+							if (handleContentLink(node.userData.link)) return
+						} catch (e) {
+							console.error("Error handling content link", e)
+						}
+					}
+					node = node.parent
+				}
+			}
+		}
+	}
+
+	const pyramidIntersects = raycaster.intersectObjects(
+		pyramidGroup.children,
+		true
+	)
+	if (pyramidIntersects.length > 0) {
+		const firstHit = pyramidIntersects[0]
+		const hitObj = firstHit.object
+		// If the hit object is a label mesh or a hover target, ignore here (labels handled above)
+		if (
+			Object.values(labels).includes(hitObj) ||
+			(hitObj.name || "").endsWith("_hover")
+		) {
+			return
+		}
+		// Clicking the pyramid shows the contact info
+		showContactLabelCentered()
+		return
+	}
+
+	// If nothing else was hit (background click), show contact info
+	showContactLabelCentered()
+}
