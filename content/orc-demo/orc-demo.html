@@ -1,0 +1,60 @@
+<!-- ORC Demo Info Pane - This HTML is inserted directly into the DOM -->
+<div id="orc-info-pane">
+	<h2 class="orc-pane-title">Orbital Refuse Collector Demo</h2>
+
+	<div class="orc-pane-content">
+		<!-- Available Satellites List -->
+		<div id="available-satellites-pane">
+			<h3>Available Satellites</h3>
+			<p id="satellite-help-text">Select a satellite</p>
+			<ul id="satellite-list">
+				<!-- Populated by JavaScript -->
+			</ul>
+		</div>
+
+		<!-- Actions List -->
+		<div id="actions-pane">
+			<h3>Actions</h3>
+			<button id="decommission-action" class="action-list-item disabled">
+				Decommission Satellite
+			</button>
+		</div>
+
+		<!-- Satellite Info Section -->
+		<div id="satellite-info-pane">
+			<h3>Satellite Info</h3>
+			<p id="no-satellite-selected">No satellite selected</p>
+			<div id="satellite-info-content" style="display: none">
+				<div class="satellite-info-row">
+					<span class="info-label">ID</span>
+					<span id="selected-satellite-display-id" class="info-value">N/A</span>
+				</div>
+				<div class="satellite-info-row">
+					<span class="info-label">Orbit Type</span>
+					<span id="selected-satellite-orbit-type" class="info-value">N/A</span>
+				</div>
+				<div class="satellite-info-row">
+					<span class="info-label">Status</span>
+					<span
+						id="selected-satellite-status"
+						class="info-value status-operational"
+						>Operational</span
+					>
+				</div>
+			</div>
+		</div>
+
+		<!-- API Documentation Section -->
+		<div class="orc-pane-section">
+			<h3>API Documentation</h3>
+			<p>Full documentation available at:</p>
+			<a
+				href="https://jtj-inc.github.io/docusaurus-openapi-docs/"
+				target="_blank"
+				class="api-docs-link"
+			>
+				View API Docs
+			</a>
+		</div>
+	</div>
+</div>
