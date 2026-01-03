@@ -26,7 +26,10 @@ import {
 	getDecommissionState,
 	getDecommissionConfig,
 	orcHandStateMachine,
+	setOrcHand,
+	releaseOrcHand,
 } from "./content/orc-demo/orc-demo.js"
+import { createOrcHand } from "./content/orc-demo/orc-hand.js"
 import "./content/about/about.css"
 import "./content/blog/blog.css"
 import "./content/portfolio/portfolio.css"
@@ -545,6 +548,245 @@ export function hideContactLabel() {
 // Check if contact is currently visible
 export function isContactVisible() {
 	return contactVisible
+}
+
+// === Roaming Hand of ORC ===
+// The website is one continuous horizontal scene. Pages exist at different x-coordinates.
+// The hand physically moves between pages when navigating.
+
+const pageOrder = ["home", "about", "blog", "portfolio", "orc-demo"]
+const pageXPositions = {
+	home: -4,
+	about: -2,
+	blog: 0,
+	portfolio: 2,
+	"orc-demo": 4,
+}
+
+let roamingHand = null
+let currentHandPage = "home"
+let isHandAnimating = false
+let handEntryTimeoutId = null
+let handHasEntered = false // Track if hand has done initial entry
+
+// Initialize the roaming hand
+export function initRoamingHand() {
+	if (roamingHand) return // Already initialized
+
+	roamingHand = createOrcHand(5) // Scale factor of 5
+	roamingHand.name = "roamingHand"
+	// Start off-screen to the right, behind content (z: -2)
+	roamingHand.position.set(10, 0, -2)
+	// Orient the hand so it looks like it's flying (palm facing down, fingers forward)
+	roamingHand.rotation.set(0, -Math.PI / 2, 0)
+	scene.add(roamingHand)
+}
+
+// Get the roaming hand for ORC demo to use
+export function getRoamingHand() {
+	return roamingHand
+}
+
+// Fly hand in from the right edge (initial home page entrance)
+export function flyHandIn() {
+	if (!roamingHand || handHasEntered) return
+
+	handHasEntered = true
+	isHandAnimating = true
+
+	const startX = 10 // Off-screen right
+	const endX = 5 // Visible on right edge, consistent with page transition rest position
+	const duration = 1500
+
+	roamingHand.position.x = startX
+	const startTime = performance.now()
+
+	function animateEntry(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		// Ease out cubic for smooth deceleration
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		roamingHand.position.x = startX + (endX - startX) * eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateEntry)
+		} else {
+			isHandAnimating = false
+		}
+	}
+	requestAnimationFrame(animateEntry)
+}
+
+// Schedule hand entry after delay (called on home page load)
+export function scheduleHandEntry(delayMs = 2000) {
+	if (handEntryTimeoutId) {
+		clearTimeout(handEntryTimeoutId)
+	}
+	handEntryTimeoutId = setTimeout(() => {
+		flyHandIn()
+		handEntryTimeoutId = null
+	}, delayMs)
+}
+
+// Cancel scheduled hand entry (if user navigates away before it triggers)
+export function cancelHandEntry() {
+	if (handEntryTimeoutId) {
+		clearTimeout(handEntryTimeoutId)
+		handEntryTimeoutId = null
+	}
+}
+
+// Animate hand transition between pages
+export function triggerHandPageTransition(fromPage, toPage) {
+	if (!roamingHand) return
+
+	const fromIndex = pageOrder.indexOf(fromPage)
+	const toIndex = pageOrder.indexOf(toPage)
+
+	if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return
+
+	isHandAnimating = true
+	const movingRight = toIndex > fromIndex
+
+	// Animation timing to sync with pyramid animation (600ms total)
+	const exitDuration = 300
+	const entryDuration = 300
+
+	// Exit: fly off-screen in direction of travel
+	const exitX = movingRight ? 10 : -10
+
+	// Entry: appear on opposite side and fly into view
+	const entryStartX = movingRight ? -10 : 10
+	// Rest at a visible position on the side the hand entered from
+	// When entering from left (moving right), rest on left side (x: -5)
+	// When entering from right (moving left), rest on right side (x: 5)
+	const entryEndX = movingRight ? -5 : 5
+
+	const startX = roamingHand.position.x
+	const exitStartTime = performance.now()
+
+	function animateExit(time) {
+		const elapsed = time - exitStartTime
+		const t = Math.min(elapsed / exitDuration, 1)
+		const eased = t * t // Ease in (accelerate)
+
+		roamingHand.position.x = startX + (exitX - startX) * eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateExit)
+		} else {
+			// Teleport to entry position
+			roamingHand.position.x = entryStartX
+			currentHandPage = toPage
+			// Start entry animation
+			const entryStartTime = performance.now()
+			animateEntryPhase(entryStartTime)
+		}
+	}
+
+	function animateEntryPhase(entryStartTime) {
+		function animateEntry(time) {
+			const elapsed = time - entryStartTime
+			const t = Math.min(elapsed / entryDuration, 1)
+			// Ease out cubic for smooth deceleration
+			const eased = 1 - Math.pow(1 - t, 3)
+
+			roamingHand.position.x = entryStartX + (entryEndX - entryStartX) * eased
+
+			if (t < 1) {
+				requestAnimationFrame(animateEntry)
+			} else {
+				isHandAnimating = false
+			}
+		}
+		requestAnimationFrame(animateEntry)
+	}
+
+	requestAnimationFrame(animateExit)
+}
+
+// Get current hand page
+export function getCurrentHandPage() {
+	return currentHandPage
+}
+
+// Check if hand is currently animating
+export function isHandInAnimation() {
+	return isHandAnimating
+}
+
+// Update idle hand motion (called from animate loop)
+function updateHandIdleMotion() {
+	if (!roamingHand || isHandAnimating) return
+	// Don't apply idle motion when ORC scene is active (state machine handles it)
+	if (orcSceneActive) return
+
+	const time = performance.now() * 0.001
+	// Gentle bobbing motion
+	roamingHand.position.y = Math.sin(time * 0.5) * 0.15
+	// Slight swaying
+	roamingHand.rotation.z = Math.sin(time * 0.3) * 0.08
+}
+
+// Fly hand into ORC scene from the left
+function flyHandIntoOrcScene() {
+	if (!roamingHand) return
+
+	isHandAnimating = true
+	const startX = -10 // Off-screen left
+	const endX = 3 // Visible in ORC scene
+	const duration = 1200
+
+	roamingHand.position.x = startX
+	const startTime = performance.now()
+
+	function animateEntry(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		// Ease out cubic
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		roamingHand.position.x = startX + (endX - startX) * eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateEntry)
+		} else {
+			isHandAnimating = false
+		}
+	}
+	requestAnimationFrame(animateEntry)
+}
+
+// Fly hand out of ORC scene to the right (when leaving ORC demo)
+export function flyHandOutOfOrcScene(onComplete) {
+	if (!roamingHand) {
+		if (onComplete) onComplete()
+		return
+	}
+
+	isHandAnimating = true
+	const startX = roamingHand.position.x
+	const endX = 10 // Off-screen right
+	const duration = 500
+
+	const startTime = performance.now()
+
+	function animateExit(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		const eased = t * t // Ease in
+
+		roamingHand.position.x = startX + (endX - startX) * eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateExit)
+		} else {
+			isHandAnimating = false
+			if (onComplete) onComplete()
+		}
+	}
+	requestAnimationFrame(animateExit)
 }
 
 export function initLabels(makeLabelPlane) {
@@ -1432,6 +1674,12 @@ export function morphToOrcScene() {
 	})
 	morphSphere.visible = false
 
+	// Remove hand from main scene before creating ORC demo
+	// The hand will be added to the ORC scene after creation
+	if (roamingHand && roamingHand.parent === scene) {
+		scene.remove(roamingHand)
+	}
+
 	// Create the demo scene
 	createOrcDemo()
 	showOrcResetButton()
@@ -1456,6 +1704,19 @@ export function morphToOrcScene() {
 		requestAnimationFrame(() => {
 			orcDemoContainer.style.opacity = "1"
 		})
+	}
+
+	// Transfer hand to ORC demo scene and set up state machine
+	// The hand will fly in from the left after a brief delay
+	if (roamingHand) {
+		// Position hand off-screen to the left in ORC scene coordinates
+		roamingHand.position.set(-10, 0, 4) // z:4 to be in front in ORC scene
+		setOrcHand(roamingHand, orcDemoCamera)
+
+		// Animate hand flying in from the left
+		setTimeout(() => {
+			flyHandIntoOrcScene()
+		}, 300) // Small delay for scene to be ready
 	}
 }
 
@@ -1485,6 +1746,16 @@ export function morphFromOrcScene() {
 	// After fade out completes, destroy ORC and show pyramid
 	setTimeout(() => {
 		if (myToken !== pyramidAnimToken) return
+
+		// Release hand from ORC demo before destroying
+		const hand = releaseOrcHand()
+		if (hand) {
+			// Add hand back to main scene, positioned off-screen right
+			// (it will animate in from the right when entering new page)
+			hand.position.set(10, 0, -2) // Off-screen right, behind content
+			scene.add(hand)
+			currentHandPage = "orc-demo" // Will be updated by next page transition
+		}
 
 		// Now destroy the ORC elements
 		destroyOrcDemo()
@@ -2201,6 +2472,9 @@ export function animate() {
 	if (orcSceneActive) {
 		animateOrcScene()
 	}
+
+	// Update roaming hand idle motion
+	updateHandIdleMotion()
 
 	// Only update controls when they are explicitly enabled (during label animations)
 	if (controls.enabled) {

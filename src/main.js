@@ -26,6 +26,12 @@ import {
 	hideContactLabel,
 	contactLabel,
 	contactConfig,
+	// Roaming hand functions
+	initRoamingHand,
+	scheduleHandEntry,
+	cancelHandEntry,
+	triggerHandPageTransition,
+	getCurrentHandPage,
 } from "./pyramid.js"
 import { router } from "./router.js"
 
@@ -85,6 +91,9 @@ document.getElementById("scene-container").appendChild(renderer.domElement)
 // Initialize Labels and Contact
 initLabels(makeLabelPlane)
 initContactLabel()
+
+// Initialize roaming hand
+initRoamingHand()
 
 // Start animation loop
 animate()
@@ -365,12 +374,44 @@ function centerAndOpenLabel(labelName) {
 	window.centeredLabelName = labelName
 }
 
+// Helper to map routes to page names for hand transitions
+function routeToPage(route) {
+	const routeMap = {
+		"/": "home",
+		"/about": "about",
+		"/blog": "blog",
+		"/portfolio": "portfolio",
+		"/orc-demo": "orc-demo",
+	}
+	return routeMap[route] || "home"
+}
+
 router.onRouteChange((route) => {
+	// Handle hand transitions
+	const newPage = routeToPage(route)
+	const currentPage = getCurrentHandPage()
+
+	if (newPage !== currentPage) {
+		// Cancel any pending hand entry if navigating away from home
+		cancelHandEntry()
+
+		// Don't trigger hand page transition when going to/from ORC demo
+		// - morphToOrcScene handles entry into ORC demo (hand flies in from left)
+		// - morphFromOrcScene handles exit from ORC demo (releases hand to main scene)
+		const isOrcTransition = newPage === "orc-demo" || currentPage === "orc-demo"
+		if (!isOrcTransition) {
+			triggerHandPageTransition(currentPage, newPage)
+		}
+	}
+
 	if (route === "/about") {
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
+				// After ORC scene fade out, trigger hand entry from the right
+				// (ORC demo is rightmost, so leaving it means entering from right)
+				triggerHandPageTransition("orc-demo", "about")
 				centerAndOpenLabel("About")
 				currentContentVisible = "about"
 			}, 1300)
@@ -382,6 +423,7 @@ router.onRouteChange((route) => {
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
+				triggerHandPageTransition("orc-demo", "portfolio")
 				centerAndOpenLabel("Portfolio")
 				currentContentVisible = "portfolio"
 			}, 1300)
@@ -393,6 +435,7 @@ router.onRouteChange((route) => {
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
+				triggerHandPageTransition("orc-demo", "blog")
 				centerAndOpenLabel("Blog")
 				currentContentVisible = "blog"
 			}, 1300)
@@ -414,9 +457,15 @@ router.onRouteChange((route) => {
 			// morphFromOrcScene handles its own cleanup with fade animation
 			// Don't call hideAllPlanes() here as it would remove elements before fade completes
 			morphFromOrcScene()
+			// After transition, animate hand from right (ORC demo is rightmost)
+			setTimeout(() => {
+				triggerHandPageTransition("orc-demo", "home")
+			}, 1300)
 		} else {
 			resetPyramidToHome()
 			hideAllPlanes()
+			// Schedule hand entry on home page (2 second delay) only if not coming from ORC
+			scheduleHandEntry(2000)
 		}
 		currentContentVisible = null
 		window.centeredLabelName = null

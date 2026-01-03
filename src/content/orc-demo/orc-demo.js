@@ -485,13 +485,24 @@ export function createOrcScene(camera) {
 	const circle = createSurfaceCircle()
 	planet.add(circle)
 
-	// Create Hand of ORC
-	orcHand = createOrcHand(5) // 5x satellite size
-	const initialHandPos = calculateIrregularOrbitPosition(performance.now())
-	orcHand.position.copy(initialHandPos)
-	orcGroup.add(orcHand)
+	// Hand of ORC is now passed in from outside (the roaming hand)
+	// Don't create a new hand here - it will be set via setOrcHand()
 
-	// Initialize hand state machine
+	return orcGroup
+}
+
+// Set the hand for the ORC demo (called from pyramid.js with the roaming hand)
+export function setOrcHand(hand, camera) {
+	if (!hand) return
+
+	orcHand = hand
+
+	// Add hand to orcGroup if not already a child
+	if (orcHand.parent !== orcGroup && orcGroup) {
+		orcGroup.add(orcHand)
+	}
+
+	// Initialize hand state machine with the provided hand
 	orcHandStateMachine = new HandStateMachine(
 		orcHand,
 		orcGroup,
@@ -539,8 +550,6 @@ export function createOrcScene(camera) {
 	orcHandStateMachine.onSlowMotionEnd = () => {
 		// Resume normal speed
 	}
-
-	return orcGroup
 }
 
 // Create a monochromatic Earth-like sphere with accurate continent outlines
@@ -1820,10 +1829,29 @@ export function animateOrcScene(animateNormal = true) {
 	}
 }
 
+// Release the hand from ORC demo (returns it so it can be re-added to main scene)
+export function releaseOrcHand() {
+	const hand = orcHand
+	if (hand && orcGroup && hand.parent === orcGroup) {
+		orcGroup.remove(hand)
+	}
+	orcHand = null
+	orcHandStateMachine = null
+	return hand
+}
+
 // Dispose of ORC scene resources
 export function disposeOrcScene() {
 	if (orcGroup) {
+		// Remove the hand first so it doesn't get disposed (it's shared)
+		if (orcHand && orcHand.parent === orcGroup) {
+			orcGroup.remove(orcHand)
+		}
+
 		orcGroup.traverse((child) => {
+			// Skip the hand - it's shared and shouldn't be disposed
+			if (child.name === "orcHand") return
+
 			if (child.geometry) child.geometry.dispose()
 			if (child.material) {
 				if (Array.isArray(child.material)) {
@@ -1839,7 +1867,7 @@ export function disposeOrcScene() {
 	planet = null
 	satellites = []
 	orbitalRings = []
-	orcHand = null
+	// Don't set orcHand to null here - releaseOrcHand handles that
 	orcHandStateMachine = null
 }
 
