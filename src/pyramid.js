@@ -859,16 +859,16 @@ const flattenedMenuState = {
 // These are WORLD positions (x/y/z) - fixed values that stay within camera view.
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
-	About: { x: -2.0, y: 2.5, z: 0 },
-	Blog: { x: 0, y: 2.5, z: 0 },
-	Portfolio: { x: 2.0, y: 2.5, z: 0 },
+	About: { x: -3.5, y: 2.5, z: 0 },
+	Blog: { x: -1.5, y: 2.5, z: 0 },
+	Portfolio: { x: 0.5, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
-	about: -2.0,
-	blog: 0,
-	portfolio: 2.0,
+	about: -3.5,
+	blog: -1.5,
+	portfolio: 0.5,
 }
 
 // Track current active section for rotation calculations
@@ -2212,8 +2212,8 @@ function createOrcResetButton() {
 	orcResetButton.textContent = "Reset"
 	Object.assign(orcResetButton.style, {
 		position: "fixed",
-		left: "100px", // Next to home button
-		top: "12px",
+		left: "6px", // Aligned with home button
+		top: "50px", // Under home button
 		zIndex: "10000",
 		padding: "8px 14px",
 		background: "rgba(0,0,0,0.6)",

@@ -104,10 +104,10 @@
    ============================================ */
 #orc-demo-container {
 	position: fixed;
-	top: var(--orc-nav-height);
+	top: 0;
 	left: var(--orc-container-left);
 	width: var(--orc-container-width);
-	height: calc(100vh - var(--orc-nav-height));
+	height: 100vh;
 	z-index: 40;
 	opacity: 0;
 	transition: opacity 0.5s ease-in;
@@ -118,10 +118,10 @@
    ============================================ */
 #orc-info-pane {
 	position: fixed;
-	top: var(--orc-nav-height);
+	top: 0;
 	right: 0;
 	width: var(--orc-info-pane-width);
-	height: calc(100vh - var(--orc-nav-height));
+	height: 100vh;
 	background: linear-gradient(
 		180deg,
 		rgba(0, 20, 40, 0.95) 0%,

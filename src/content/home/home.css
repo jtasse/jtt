@@ -3,11 +3,11 @@
 	position: fixed;
 	/* place content a bit lower so there's breathing room above and below */
 	top: 14vh;
-	left: 50%;
-	/* only translate on X-axis so vertical positioning is deterministic */
-	transform: translateX(-50%);
-	width: 80%;
-	max-width: 1100px;
+	left: 12%;
+	/* Remove centering transform to align left with nav */
+	transform: none;
+	width: 84%;
+	max-width: 1600px;
 	/* reserve vertical space so content never overlaps the pyramid/home area */
 	/* increase reserved space so content ends higher (more breathing room) */
 	/* Increased subtraction so content bottom sits higher on screen */
