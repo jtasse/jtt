@@ -30,6 +30,7 @@ import {
 	releaseOrcHand,
 } from "./content/orc-demo/orc-demo.js"
 import { createOrcHand } from "./content/orc-demo/orc-hand.js"
+import "./content/home/home.css"
 import "./content/about/about.css"
 import "./content/blog/blog.css"
 import "./content/portfolio/portfolio.css"
@@ -1418,6 +1419,7 @@ export function showBlogPlane() {
 			const contentEl = document.getElementById("content")
 			if (contentEl) {
 				contentEl.innerHTML = html
+				contentEl.classList.add("blog-active")
 				contentEl.style.display = "block"
 				// Ensure content accepts pointer events when visible
 				contentEl.style.pointerEvents = "auto"
@@ -1440,6 +1442,11 @@ export function showBlogPlane() {
 	} else {
 		blogPlane.visible = true
 		setupContentScrolling(blogPlane)
+		// Ensure DOM content is also shown/active if returning to cached plane
+		const contentEl = document.getElementById("content")
+		if (contentEl) {
+			contentEl.classList.add("blog-active")
+		}
 	}
 }
 
@@ -1650,6 +1657,7 @@ export function hideAllPlanes() {
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
 		contentEl.style.display = "none"
+		contentEl.classList.remove("blog-active")
 	}
 	hideContentScrolling()
 	controls.enableZoom = true
@@ -2246,10 +2254,6 @@ function hideOrcResetButton() {
 
 // === Global functions for HTML onclick handlers ===
 // These are called by inline onclick in orc-demo.html
-window.orcDontSuck = function () {
-	console.log("Gemini doesn't suck")
-}
-
 window.orcSelectSatellite = function (satId) {
 	console.log("[DEBUG] Satellite selected via onclick, satId:", satId)
 	const targetSat = satellites.find((s) => s.userData.id === satId)

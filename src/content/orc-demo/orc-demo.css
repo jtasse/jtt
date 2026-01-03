@@ -290,7 +290,6 @@
 	font-weight: bold;
 }
 
-
 #satellite-help-text {
 	color: #00aaff;
 	font-style: italic;
@@ -353,7 +352,11 @@
 	box-sizing: border-box;
 	padding: 14px 20px;
 	margin-bottom: 8px;
-	background: linear-gradient(180deg, rgba(70, 70, 80, 0.7) 0%, rgba(50, 50, 60, 0.8) 100%);
+	background: linear-gradient(
+		180deg,
+		rgba(70, 70, 80, 0.7) 0%,
+		rgba(50, 50, 60, 0.8) 100%
+	);
 	border: none;
 	border-radius: 8px;
 	cursor: not-allowed;
@@ -364,9 +367,7 @@
 	text-transform: none;
 	color: #555566;
 	/* 3D raised effect */
-	box-shadow:
-		0 4px 0 rgba(30, 30, 40, 0.8),
-		0 6px 10px rgba(0, 0, 0, 0.3),
+	box-shadow: 0 4px 0 rgba(30, 30, 40, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3),
 		inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	position: relative;
 	top: 0;
@@ -380,31 +381,22 @@
 	cursor: pointer;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	/* 3D raised effect with red "sides" */
-	box-shadow:
-		0 6px 0 #881111,
-		0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 20px rgba(255, 68, 68, 0.4),
-		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+	box-shadow: 0 6px 0 #881111, 0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(255, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item:not(.disabled):hover {
 	background: linear-gradient(180deg, #ee5555 0%, #bb3333 100%);
-	box-shadow:
-		0 6px 0 #991515,
-		0 10px 20px rgba(0, 0, 0, 0.5),
-		0 0 30px rgba(255, 68, 68, 0.6),
-		inset 0 1px 0 rgba(255, 255, 255, 0.25),
+	box-shadow: 0 6px 0 #991515, 0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(255, 68, 68, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item:not(.disabled):active {
 	top: 4px;
-	box-shadow:
-		0 2px 0 #881111,
-		0 3px 5px rgba(0, 0, 0, 0.3),
-		0 0 15px rgba(255, 68, 68, 0.3),
-		inset 0 1px 0 rgba(255, 255, 255, 0.1),
+	box-shadow: 0 2px 0 #881111, 0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(255, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -490,31 +482,22 @@
 	cursor: pointer;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	/* 3D raised effect with green "sides" */
-	box-shadow:
-		0 6px 0 #115522,
-		0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 20px rgba(0, 255, 136, 0.4),
-		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+	box-shadow: 0 6px 0 #115522, 0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(0, 255, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item.cancel-action:hover {
 	background: linear-gradient(180deg, #44cc77 0%, #339955 100%);
-	box-shadow:
-		0 6px 0 #117728,
-		0 10px 20px rgba(0, 0, 0, 0.5),
-		0 0 30px rgba(0, 255, 136, 0.6),
-		inset 0 1px 0 rgba(255, 255, 255, 0.25),
+	box-shadow: 0 6px 0 #117728, 0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(0, 255, 136, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item.cancel-action:active {
 	top: 4px;
-	box-shadow:
-		0 2px 0 #115522,
-		0 3px 5px rgba(0, 0, 0, 0.3),
-		0 0 15px rgba(0, 255, 136, 0.3),
-		inset 0 1px 0 rgba(255, 255, 255, 0.1),
+	box-shadow: 0 2px 0 #115522, 0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(0, 255, 136, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -615,12 +598,4 @@
 	50% {
 		opacity: 0.6;
 	}
-}
-
-#dontsuckbtn {
-	top: 0;
-	left: 200;
-	display: block;
-	color: red;
-	background-color: white;
 }
