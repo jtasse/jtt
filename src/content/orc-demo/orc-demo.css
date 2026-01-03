@@ -13,6 +13,7 @@
 	--orc-scene-offset-x: -0.3; /* Shift scene left to center in left 2/3 pane */
 
 	/* Container layout */
+	--orc-nav-height: 85px; /* Height reserved for top navigation bar */
 	--orc-container-width: calc(66.67vw - 30px); /* Account for left sidebar */
 	--orc-container-left: 30px;
 	--orc-info-pane-width: 33.33%;
@@ -103,10 +104,10 @@
    ============================================ */
 #orc-demo-container {
 	position: fixed;
-	top: 0;
+	top: var(--orc-nav-height);
 	left: var(--orc-container-left);
 	width: var(--orc-container-width);
-	height: 100vh;
+	height: calc(100vh - var(--orc-nav-height));
 	z-index: 40;
 	opacity: 0;
 	transition: opacity 0.5s ease-in;
@@ -117,10 +118,10 @@
    ============================================ */
 #orc-info-pane {
 	position: fixed;
-	top: 0;
+	top: var(--orc-nav-height);
 	right: 0;
 	width: var(--orc-info-pane-width);
-	height: 100vh;
+	height: calc(100vh - var(--orc-nav-height));
 	background: linear-gradient(
 		180deg,
 		rgba(0, 20, 40, 0.95) 0%,

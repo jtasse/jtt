@@ -1665,13 +1665,39 @@ export function morphToOrcScene() {
 	++pyramidAnimToken
 	hideAllPlanes()
 
-	// Immediately hide pyramid and labels
-	pyramidGroup.visible = false
-	Object.values(labels).forEach((label) => {
-		if (label.material) {
-			label.material.opacity = 0
+	// Show pyramid in flattened state under Portfolio label (ORC demo is part of Portfolio)
+	pyramidGroup.visible = true
+	pyramidGroup.position.x = pyramidXPositions.portfolio // x: 0
+	pyramidGroup.position.y = flattenedMenuState.positionY
+	pyramidGroup.scale.set(
+		flattenedMenuState.scale,
+		flattenedMenuState.scaleY,
+		flattenedMenuState.scaleZ
+	)
+	pyramidGroup.rotation.x = flattenedMenuState.rotationX
+
+	// Move labels to flattened top nav positions
+	for (const key in labels) {
+		if (key === "Home") continue
+		const labelMesh = labels[key]
+		if (!labelMesh) continue
+
+		const flatPos = flattenedLabelPositions[key]
+		if (flatPos) {
+			// Detach from pyramid and add to scene for fixed positioning
+			if (labelMesh.parent !== scene) {
+				scene.add(labelMesh)
+			}
+			labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
+			labelMesh.rotation.set(0, 0, 0)
+			labelMesh.scale.set(1, 1, 1)
+			labelMesh.userData.fixedNav = true
+			if (labelMesh.material) {
+				labelMesh.material.opacity = 1
+			}
 		}
-	})
+	}
+
 	morphSphere.visible = false
 
 	// Remove hand from main scene before creating ORC demo
@@ -1688,10 +1714,8 @@ export function morphToOrcScene() {
 	// Show home button
 	showHomeLabel()
 
-	// Set up camera for ORC scene
-	camera.position.copy(orcDemoCamera.position)
-	camera.lookAt(orcDemoControls.target)
-	controls.target.copy(orcDemoControls.target)
+	// Keep main scene camera in place for top nav rendering
+	// The ORC demo has its own camera
 	controls.enabled = false
 
 	orcSceneActive = true
