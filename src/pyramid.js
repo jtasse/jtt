@@ -860,15 +860,15 @@ const flattenedMenuState = {
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
 	About: { x: -2.0, y: 2.5, z: 0 },
-	Portfolio: { x: 0, y: 2.5, z: 0 },
-	Blog: { x: 2.0, y: 2.5, z: 0 },
+	Blog: { x: 0, y: 2.5, z: 0 },
+	Portfolio: { x: 2.0, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
 	about: -2.0,
-	portfolio: 0,
-	blog: 2.0,
+	blog: 0,
+	portfolio: 2.0,
 }
 
 // Track current active section for rotation calculations
