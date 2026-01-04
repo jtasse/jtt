@@ -24,7 +24,10 @@ import {
 	initContactLabel,
 	showContactLabelCentered,
 	hideContactLabel,
+	moveContactLabelToLeft,
+	setContactExpanded,
 	contactLabel,
+	contactDetails,
 	contactConfig,
 	// Roaming hand functions
 	initRoamingHand,
@@ -41,53 +44,6 @@ window.routerNavigate = (path) => router.navigate(path)
 // Attach renderer DOM element
 document.getElementById("scene-container").appendChild(renderer.domElement)
 
-// Create a DOM Home button top-left that overlays the scene. This button is
-// always visible and acts independently of the 3D scene so it behaves like a
-// sticky HUD element while using similar styling as the 3D labels.
-;(function createHomeButton() {
-	const existing = document.getElementById("home-button")
-	if (existing) return
-	const btn = document.createElement("button")
-	btn.id = "home-button"
-	btn.textContent = "Home"
-	btn.style.position = "fixed"
-	btn.style.left = "6px"
-	btn.style.top = "12px"
-	btn.style.zIndex = 10000
-	btn.style.padding = "8px 14px"
-	btn.style.background = "rgba(0,0,0,0.6)"
-	btn.style.color = "white"
-	btn.style.border = "1px solid rgba(255,255,255,0.08)"
-	btn.style.borderRadius = "4px"
-	btn.style.font = "600 14px sans-serif"
-	btn.style.cursor = "pointer"
-	btn.style.backdropFilter = "blur(4px)"
-	btn.style.transition = "background 0.2s ease, box-shadow 0.2s ease"
-	// Hidden initially until the user interacts (drag or label click)
-	btn.style.display = "none"
-	// Hover effects
-	btn.addEventListener("mouseenter", () => {
-		btn.style.background = "rgba(0,100,150,0.7)"
-		btn.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
-	})
-	btn.addEventListener("mouseleave", () => {
-		btn.style.background = "rgba(0,0,0,0.6)"
-		btn.style.boxShadow = "none"
-	})
-	btn.addEventListener("mousedown", (e) => e.stopPropagation())
-	btn.addEventListener("click", (e) => {
-		e.stopPropagation()
-		// Hide contact label when Home is clicked
-		hideContactLabel()
-		try {
-			router.navigate("/")
-		} catch (err) {
-			console.error("Home button handler error", err)
-		}
-	})
-	document.body.appendChild(btn)
-})()
-
 // Initialize Labels and Contact
 initLabels(makeLabelPlane)
 initContactLabel()
@@ -102,13 +58,13 @@ window.addEventListener("resize", () => {})
 
 // Copy email to clipboard when contact label is clicked
 function handleContactClick() {
-	const email = contactConfig.lines[1] // Email is the second line
+	const email = contactConfig.lines[0] // Email is the first line in details
 	navigator.clipboard
 		.writeText(email)
 		.then(() => {
 			// Show "Copied to clipboard!" message on the contact label
-			if (contactLabel && contactLabel.userData.showCopiedMessage) {
-				contactLabel.userData.showCopiedMessage()
+			if (contactDetails && contactDetails.userData.showCopiedMessage) {
+				contactDetails.userData.showCopiedMessage()
 			}
 		})
 		.catch((err) => {
@@ -170,14 +126,10 @@ window.addEventListener(
 	"click",
 	(event) => {
 		const content = document.getElementById("content")
-		const homeBtn = document.getElementById("home-button")
-		const orcResetBtn = document.getElementById("orc-reset-button")
 		const orcInfoPane = document.getElementById("orc-info-pane")
 		const orcOverlay = document.getElementById("orc-preview-overlay")
 		if (
 			(content && content.contains(event.target)) ||
-			(homeBtn && homeBtn.contains(event.target)) ||
-			(orcResetBtn && orcResetBtn.contains(event.target)) ||
 			(orcInfoPane && orcInfoPane.contains(event.target)) ||
 			(orcOverlay && orcOverlay.contains(event.target))
 		) {
@@ -247,8 +199,8 @@ function onMouseMove(event) {
 		const labelKey = hoverObj.userData.labelKey
 		const labelMesh = labels[labelKey]
 		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
-			// Only scale if the label is visible and not Home (Home doesn't scale on hover)
-			if (labelKey !== "Home" && labelMesh.userData.originalScale) {
+			// Only scale if the label is visible
+			if (labelMesh.userData.originalScale) {
 				hoveredLabel = labelMesh
 				hoveredLabel.scale
 					.copy(hoveredLabel.userData.originalScale)
@@ -256,27 +208,34 @@ function onMouseMove(event) {
 			}
 		}
 		// Show contact section when hovering over any content label while pyramid is centered
-		if (
-			isPyramidCentered &&
-			labelKey !== "Home" &&
-			labelMesh &&
-			labelMesh.visible
-		) {
+		if (isPyramidCentered && labelMesh && labelMesh.visible) {
 			showContactLabelCentered()
 		}
 		renderer.domElement.style.cursor = "pointer"
 	} else {
-		// Check if hovering over the contact label (show pointer cursor)
-		if (contactLabel && contactLabel.visible) {
+		// Check contact label/details hover state for expansion logic
+		let isOverContactLabel = false
+		let isOverContactDetails = false
+
+		// 1. Check Contact Label (in nav mode)
+		if (contactLabel && contactLabel.visible && contactLabel.parent === scene) {
 			const contactHits = raycaster.intersectObject(contactLabel, false)
 			if (contactHits.length > 0) {
+				isOverContactLabel = true
+			}
+		}
+
+		// 2. Check Contact Details (if visible)
+		if (contactDetails && contactDetails.visible) {
+			const contactHits = raycaster.intersectObject(contactDetails, false)
+			if (contactHits.length > 0) {
+				isOverContactDetails = true
 				const hit = contactHits[0]
 				// Check if hovering over email region using UV coordinates
-				const emailRegion = contactLabel.userData.emailClickRegion
+				const emailRegion = contactDetails.userData.emailClickRegion
 				if (emailRegion && hit.uv) {
 					const u = hit.uv.x
 					const v = hit.uv.y
-					// UV y is flipped (0 at bottom, 1 at top), so convert
 					const canvasY = 1 - v
 					const isOverEmail =
 						u >= emailRegion.x1 &&
@@ -285,36 +244,36 @@ function onMouseMove(event) {
 						canvasY <= emailRegion.y2
 
 					if (isOverEmail) {
-						// Show tooltip when hovering over email
-						if (contactLabel.userData.showTooltip) {
-							contactLabel.userData.showTooltip()
+						if (contactDetails.userData.showTooltip) {
+							contactDetails.userData.showTooltip()
 						}
 						renderer.domElement.style.cursor = "pointer"
 					} else {
-						// Hide tooltip when not over email
-						if (contactLabel.userData.hideTooltip) {
-							contactLabel.userData.hideTooltip()
+						if (contactDetails.userData.hideTooltip) {
+							contactDetails.userData.hideTooltip()
 						}
 						renderer.domElement.style.cursor = "default"
 					}
 				} else {
 					renderer.domElement.style.cursor = "default"
 				}
-				// Still clear hoveredLabel if we were on a label before
-				if (hoveredLabel) {
-					hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
-					hoveredLabel = null
-				}
-				return
 			} else {
-				// Not hovering over contact label at all - hide tooltip
-				if (contactLabel.userData.hideTooltip) {
-					contactLabel.userData.hideTooltip()
+				if (contactDetails.userData.hideTooltip) {
+					contactDetails.userData.hideTooltip()
 				}
 			}
 		}
+
+		// Handle Expansion State
+		if (isOverContactLabel || isOverContactDetails) {
+			setContactExpanded(true)
+			if (isOverContactLabel) renderer.domElement.style.cursor = "pointer"
+		} else if (contactLabel && contactLabel.parent === scene) {
+			setContactExpanded(false)
+		}
+
 		// Check if hovering over the pyramid mesh itself (when centered)
-		if (isPyramidCentered) {
+		if (isPyramidCentered && !isOverContactLabel && !isOverContactDetails) {
 			const pyramidIntersects = raycaster.intersectObjects(
 				pyramidGroup.children,
 				true
@@ -328,21 +287,16 @@ function onMouseMove(event) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
 			hoveredLabel = null
 		}
+
+		if (isOverContactLabel || isOverContactDetails) {
+			return
+		}
+
 		renderer.domElement.style.cursor = "default"
 	}
 }
 
 window.addEventListener("mousemove", onMouseMove)
-
-// Show corner Home when the user starts an OrbitControls interaction (drag)
-// This replaces the previous interval-based camera polling.
-try {
-	if (controls && controls.addEventListener) {
-		controls.addEventListener("start", () => {
-			showHomeLabel()
-		})
-	}
-} catch (e) {}
 
 // Listen for route changes and show correct content
 // Helper to animate pyramid to top menu and show a section
@@ -352,8 +306,8 @@ function centerAndOpenLabel(labelName) {
 	try {
 		showHomeLabel()
 	} catch (e) {}
-	// Hide contact section when entering nav state (it will reappear if clicked)
-	hideContactLabel()
+	// Move contact label to left sidebar position instead of hiding it
+	moveContactLabelToLeft()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -444,8 +398,8 @@ router.onRouteChange((route) => {
 			currentContentVisible = "blog"
 		}
 	} else if (route === "/orc-demo") {
-		// Hide contact section when entering orc-demo
-		hideContactLabel()
+		// Move contact label to left sidebar position instead of hiding it
+		moveContactLabelToLeft()
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"
@@ -488,8 +442,8 @@ function onSceneMouseDown(event) {
 	raycaster.setFromCamera(pointer, camera)
 
 	// Check if contact label was clicked
-	if (contactLabel && contactLabel.visible) {
-		const contactHits = raycaster.intersectObject(contactLabel, false)
+	if (contactDetails && contactDetails.visible) {
+		const contactHits = raycaster.intersectObject(contactDetails, false)
 		if (contactHits.length > 0) {
 			handleContactClick()
 			return

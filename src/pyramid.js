@@ -5,6 +5,7 @@ import {
 	makePortfolioPlane,
 	makeBlogPlane,
 	makeContactLabelPlane,
+	makeLabelPlane,
 } from "./planes.js"
 import {
 	loadContentHTML,
@@ -310,16 +311,16 @@ export const labelConfigs = {
 
 // Contact label configuration - configurable position/rotation
 export const contactConfig = {
-	lines: ["Contact", "james.tasse@gmail.com", "(216)-219-1538"],
+	lines: ["james.tasse@gmail.com", "(216)-219-1538"],
 	revealedTextAlign: "left",
 	revealedTitleFontSize: 80,
 	revealedBodyFontSize: 60,
 	// Starting position (hidden below pyramid)
 	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
 	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: -0.92, z: 0.85 },
+	revealedPosition: { x: 0, y: 0.0, z: 0.85 }, // Centered on pyramid face
 	revealedRotation: { x: -0.3, y: 0, z: 0 },
-	revealedSize: [2.15, 1.33],
+	revealedSize: [2.15, 0.8], // Smaller height for just details
 	// Phone number offset (aligns with email text, after icon+gap)
 	phoneOffsetX: 75,
 	// Tooltip configuration (hover state)
@@ -347,10 +348,15 @@ export const contactConfig = {
 	toastSlideDistance: 50,
 	toastDuration: 2000,
 	toastAnimationDuration: 200,
+	// Collapsed state (when moved to left)
+	collapsedSize: [2.4, 0.6],
+	// Expanded state (when moved to left)
+	leftExpandedSize: [2.4, 1.4],
 }
 
 // Contact label mesh (created in initContactLabel)
 export let contactLabel = null
+export let contactDetails = null
 let contactVisible = false
 
 // Initialize contact label
@@ -358,7 +364,10 @@ export function initContactLabel() {
 	if (contactLabel) return // Already initialized
 
 	const cfg = contactConfig
-	contactLabel = makeContactLabelPlane(cfg)
+
+	// 1. Create the main "Contact" label using the standard label generator
+	// This ensures it looks exactly like About/Blog/Portfolio
+	contactLabel = makeLabelPlane("Contact", 2.4, 0.6)
 	contactLabel.position.set(
 		cfg.hiddenPosition.x,
 		cfg.hiddenPosition.y,
@@ -373,6 +382,17 @@ export function initContactLabel() {
 	contactLabel.visible = false
 	contactLabel.userData.name = "Contact"
 	pyramidGroup.add(contactLabel)
+
+	// 2. Create the details pane (Email/Phone) separately
+	contactDetails = makeContactLabelPlane(cfg)
+	contactDetails.position.copy(contactLabel.position)
+	contactDetails.rotation.copy(contactLabel.rotation)
+	// Position details below the label
+	contactDetails.position.y -= 0.6
+	contactDetails.material.opacity = 0
+	contactDetails.visible = false
+	contactDetails.userData.name = "ContactDetails"
+	pyramidGroup.add(contactDetails)
 }
 
 // Show contact label with slide-up animation (when pyramid is centered)
@@ -380,8 +400,15 @@ export function showContactLabelCentered() {
 	if (!contactLabel || contactVisible) return
 	contactVisible = true
 
+	// Ensure both are attached to pyramidGroup
+	if (contactLabel.parent !== pyramidGroup) pyramidGroup.add(contactLabel)
+	if (contactDetails.parent !== pyramidGroup) pyramidGroup.add(contactDetails)
+
 	const cfg = contactConfig
 	contactLabel.visible = true
+	contactDetails.visible = true
+	contactLabel.scale.set(1, 1, 1)
+	contactDetails.scale.set(1, 1, 1)
 
 	// Animate from hidden to revealed position
 	const startY = cfg.hiddenPosition.y
@@ -401,6 +428,11 @@ export function showContactLabelCentered() {
 		contactLabel.position.z = startZ + (endZ - startZ) * eased
 		contactLabel.material.opacity = eased
 
+		// Details follow relative to label
+		contactDetails.position.copy(contactLabel.position)
+		contactDetails.position.y -= 0.7 // Offset below label
+		contactDetails.material.opacity = eased
+
 		if (t < 1) {
 			requestAnimationFrame(animateSlideUp)
 		}
@@ -410,27 +442,24 @@ export function showContactLabelCentered() {
 
 // Calculate position for contact label on the left side
 function getContactLeftPosition() {
-	const cfg = contactConfig
-	const width = cfg.leftSize[0]
-
-	// Position: Left aligned with margin, Vertically centered
-	const marginX =
-		cfg.leftPositionOffset && cfg.leftPositionOffset.x !== undefined
-			? cfg.leftPositionOffset.x
-			: 6
-
-	// Center vertically in the window
-	const screenY = window.innerHeight / 2
-
-	const z = 0
-	const worldPos = screenToWorld(marginX, screenY, z)
-
-	return new THREE.Vector3(worldPos.x + width / 2, worldPos.y, z)
+	// Use the uniform flattened position for Contact
+	const pos = flattenedLabelPositions.Contact
+	return new THREE.Vector3(pos.x, pos.y, pos.z)
 }
 
 // Move contact label to left side (when pyramid moves to top nav)
 export function moveContactLabelToLeft() {
-	if (!contactLabel || !contactVisible) return
+	if (!contactLabel) return
+
+	// Hide details initially when moving to nav
+	if (contactDetails) {
+		contactDetails.visible = false
+	}
+
+	// Ensure visible
+	contactLabel.visible = true
+	contactLabel.material.opacity = 1
+	contactVisible = true
 
 	const cfg = contactConfig
 
@@ -440,40 +469,21 @@ export function moveContactLabelToLeft() {
 	contactLabel.getWorldPosition(startPos)
 	const startQuat = new THREE.Quaternion()
 	contactLabel.getWorldQuaternion(startQuat)
+	const startScale = contactLabel.scale.clone()
 
 	// Detach from pyramid group and add to scene for fixed positioning
-	scene.add(contactLabel)
+	if (contactLabel.parent !== scene) {
+		scene.add(contactLabel)
+	}
 	contactLabel.position.copy(startPos)
 	contactLabel.quaternion.copy(startQuat)
-
-	// Update texture to left state
-	if (contactLabel.userData.updateTexture) {
-		const leftConfig = {
-			lines: cfg.lines,
-			textAlign: cfg.leftTextAlign,
-			titleFontSize: cfg.leftTitleFontSize,
-			bodyFontSize: cfg.leftBodyFontSize,
-		}
-		contactLabel.userData.updateTexture(leftConfig)
-	}
+	contactLabel.scale.copy(startScale)
 
 	const endPos = getContactLeftPosition()
+	const endQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0))
 
-	const endQuat = new THREE.Quaternion().setFromEuler(
-		new THREE.Euler(
-			cfg.leftRotation.x,
-			cfg.leftRotation.y,
-			cfg.leftRotation.z,
-			"YXZ"
-		)
-	)
-
-	const startScale = contactLabel.scale.clone()
-	const endScale = new THREE.Vector3(
-		cfg.leftSize[0] / cfg.revealedSize[0],
-		cfg.leftSize[1] / cfg.revealedSize[1],
-		1
-	)
+	// Standard label scale
+	const endScale = new THREE.Vector3(1, 1, 1)
 
 	const duration = 500
 	const startTime = performance.now()
@@ -494,6 +504,63 @@ export function moveContactLabelToLeft() {
 	requestAnimationFrame(animateToLeft)
 }
 
+// Animation state for contact expansion
+let contactExpandAnim = null
+
+// Toggle contact label expansion state (called on hover when in left position)
+export function setContactExpanded(expanded) {
+	if (!contactLabel || !contactDetails || contactLabel.parent !== scene) return
+
+	// Avoid redundant updates
+	if (contactLabel.userData.isExpanded === expanded) return
+	contactLabel.userData.isExpanded = expanded
+
+	if (contactExpandAnim) cancelAnimationFrame(contactExpandAnim)
+
+	// Ensure details are in the scene (not pyramidGroup) so they render with the label
+	if (expanded && contactDetails.parent !== scene) {
+		scene.add(contactDetails)
+		// Position details below the label
+		contactDetails.position.copy(contactLabel.position)
+		contactDetails.position.y -= 0.8
+		contactDetails.rotation.copy(contactLabel.rotation)
+		contactDetails.scale.set(1, 1, 1)
+		contactDetails.visible = true
+	}
+
+	const duration = 200
+	const startTime = performance.now()
+	const startAlpha = contactDetails.material.opacity
+	const endAlpha = expanded ? 1 : 0
+
+	function animateExpand(time) {
+		const elapsed = time - startTime
+		const t = Math.min(elapsed / duration, 1)
+		const eased = t // Linear is fine for short hover transitions
+
+		// Fade details in/out
+		contactDetails.material.opacity =
+			startAlpha + (endAlpha - startAlpha) * eased
+
+		// Slide details down slightly
+		const baseOffset = -0.6
+		const slideOffset = expanded ? -0.2 : 0
+		contactDetails.position.y =
+			contactLabel.position.y + baseOffset + slideOffset * eased
+
+		if (t < 1) {
+			contactExpandAnim = requestAnimationFrame(animateExpand)
+		} else {
+			contactExpandAnim = null
+			// Final state cleanup
+			if (!expanded) {
+				contactDetails.visible = false
+			}
+		}
+	}
+	contactExpandAnim = requestAnimationFrame(animateExpand)
+}
+
 // Hide contact label
 export function hideContactLabel() {
 	if (!contactLabel) return
@@ -508,6 +575,7 @@ export function hideContactLabel() {
 		const t = Math.min(elapsed / duration, 1)
 
 		contactLabel.material.opacity = startOpacity * (1 - t)
+		if (contactDetails) contactDetails.material.opacity = startOpacity * (1 - t)
 
 		if (t >= 1) {
 			contactLabel.visible = false
@@ -517,28 +585,25 @@ export function hideContactLabel() {
 				scene.remove(contactLabel)
 				pyramidGroup.add(contactLabel)
 			}
+			if (contactDetails && contactDetails.parent === scene) {
+				scene.remove(contactDetails)
+				pyramidGroup.add(contactDetails)
+			}
+
 			contactLabel.position.set(
 				cfg.hiddenPosition.x,
 				cfg.hiddenPosition.y,
 				cfg.hiddenPosition.z
 			)
-			contactLabel.rotation.set(
-				cfg.revealedRotation.x,
-				cfg.revealedRotation.y,
-				cfg.revealedRotation.z
-			)
 			contactLabel.scale.set(1, 1, 1)
 
-			// Reset texture to revealed state
-			if (contactLabel.userData.updateTexture) {
-				const revealedConfig = {
-					lines: cfg.lines,
-					textAlign: cfg.revealedTextAlign,
-					titleFontSize: cfg.revealedTitleFontSize,
-					bodyFontSize: cfg.revealedBodyFontSize,
-				}
-				contactLabel.userData.updateTexture(revealedConfig)
+			if (contactDetails) {
+				contactDetails.visible = false
+				contactDetails.position.copy(contactLabel.position)
+				contactDetails.rotation.copy(contactLabel.rotation)
 			}
+
+			contactLabel.userData.isExpanded = false
 		} else {
 			requestAnimationFrame(animateFadeOut)
 		}
@@ -792,8 +857,6 @@ export function flyHandOutOfOrcScene(onComplete) {
 
 export function initLabels(makeLabelPlane) {
 	for (const key in labelConfigs) {
-		// Skip Home here; Home is handled after creating the page labels
-		if (key === "Home") continue
 		const cfg = labelConfigs[key]
 		const mesh = makeLabelPlane(cfg.text, ...cfg.pyramidCenteredSize)
 		mesh.position.set(cfg.position.x, cfg.position.y, cfg.position.z)
@@ -827,6 +890,12 @@ export function initLabels(makeLabelPlane) {
 		scene.add(hover)
 		hoverTargets[key] = hover
 	}
+
+	// Hide Home label initially (only visible in top nav)
+	if (labels.Home) labels.Home.visible = false
+
+	// Initialize nav layout
+	updateNavLayout()
 }
 
 // === Pyramid State ===
@@ -859,16 +928,18 @@ const flattenedMenuState = {
 // These are WORLD positions (x/y/z) - fixed values that stay within camera view.
 // Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
 const flattenedLabelPositions = {
-	About: { x: -3.5, y: 2.5, z: 0 },
-	Blog: { x: -1.5, y: 2.5, z: 0 },
-	Portfolio: { x: 0.5, y: 2.5, z: 0 },
+	Home: { x: -5.0, y: 2.5, z: 0 },
+	Contact: { x: -3.0, y: 2.5, z: 0 },
+	About: { x: -1.0, y: 2.5, z: 0 },
+	Blog: { x: 1.0, y: 2.5, z: 0 },
+	Portfolio: { x: 3.0, y: 2.5, z: 0 },
 }
 
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
-	about: -3.5,
-	blog: -1.5,
-	portfolio: 0.5,
+	about: -1.0,
+	blog: 1.0,
+	portfolio: 3.0,
 }
 
 // Track current active section for rotation calculations
@@ -876,6 +947,52 @@ let currentSection = null
 
 // Clipping plane to prevent content from overlapping the top nav
 const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.1)
+
+let navLabelScale = 1.0
+
+// Update nav layout based on screen size to ensure labels are visible in top-left
+function updateNavLayout() {
+	const startPixelX = 30
+	const startPixelY = 30
+	const topLeft = screenToWorld(startPixelX, startPixelY, 0)
+
+	const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
+
+	const rightEdgePixel = window.innerWidth - 50 // 50px margin on the right
+	const worldRightEdge = screenToWorld(rightEdgePixel, startPixelY, 0)
+	const availableWorldWidth = worldRightEdge.x - topLeft.x
+
+	const labelWidth = 2.4
+	const spacing = 0.1
+	const totalStaticWidth =
+		keys.length * labelWidth + (keys.length - 1) * spacing
+
+	navLabelScale = 1.0
+	if (totalStaticWidth > availableWorldWidth) {
+		navLabelScale = availableWorldWidth / totalStaticWidth
+	}
+
+	const scaledLabelWidth = labelWidth * navLabelScale
+	const scaledSpacing = spacing * navLabelScale
+
+	keys.forEach((key, i) => {
+		if (flattenedLabelPositions[key]) {
+			flattenedLabelPositions[key].x =
+				topLeft.x +
+				scaledLabelWidth / 2 +
+				i * (scaledLabelWidth + scaledSpacing)
+			flattenedLabelPositions[key].y = topLeft.y
+		}
+	})
+
+	// Update pyramid positions to match new label positions
+	pyramidXPositions.about = flattenedLabelPositions.About.x
+	pyramidXPositions.blog = flattenedLabelPositions.Blog.x
+	pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
+
+	// Update flattened pyramid Y position to be just below labels
+	flattenedMenuState.positionY = topLeft.y - 0.3 * navLabelScale
+}
 
 export function getInitialPyramidState() {
 	return { ...initialPyramidState }
@@ -885,6 +1002,9 @@ export function animatePyramid(down = true, section = null) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = ++pyramidAnimToken
+
+	// Show Home label when animating to nav
+	if (down && labels.Home) labels.Home.visible = true
 	pyramidGroup.visible = true
 	const duration = 1000
 	const startRotY = pyramidGroup.rotation.y
@@ -965,7 +1085,7 @@ export function animatePyramid(down = true, section = null) {
 			labelTargetStates[key] = {
 				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
 				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
-				scale: new THREE.Vector3(1, 1, 1),
+				scale: new THREE.Vector3(navLabelScale, navLabelScale, 1),
 			}
 		} else {
 			// Existing logic for !down or fixed labels (local space)
@@ -1080,6 +1200,9 @@ export function animatePyramid(down = true, section = null) {
 			if (section === "about") showAboutPlane()
 			else if (section === "portfolio") showPortfolioPlane()
 			else if (section === "blog") showBlogPlane()
+
+			// Hide Home label if returning to centered state
+			if (!down && labels.Home) labels.Home.visible = false
 		}
 	}
 	requestAnimationFrame(step)
@@ -1166,7 +1289,6 @@ export function resetPyramidToHome() {
 	// Capture label start states so we can animate them back to original positions
 	const labelStartStates = {}
 	for (const key in labels) {
-		if (key === "Home") continue
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
 
@@ -1209,7 +1331,6 @@ export function resetPyramidToHome() {
 
 		// Animate labels back to their original positions (local space)
 		for (const key in labels) {
-			if (key === "Home") continue
 			const labelMesh = labels[key]
 			if (!labelMesh) continue
 			const startState = labelStartStates[key]
@@ -1248,7 +1369,6 @@ export function resetPyramidToHome() {
 
 			// Snap labels to exact original positions
 			for (const key in labels) {
-				if (key === "Home") continue
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 				const origPos = labelMesh.userData.origPosition
@@ -1258,10 +1378,10 @@ export function resetPyramidToHome() {
 				if (origRot) labelMesh.rotation.copy(origRot)
 				if (origScale) labelMesh.scale.copy(origScale)
 				labelMesh.userData.fixedNav = false
-			}
 
-			// After reset, hide the DOM Home button
-			hideHomeLabel()
+				// Ensure Home is hidden after reset
+				if (key === "Home") labelMesh.visible = false
+			}
 		}
 	}
 	requestAnimationFrame(step)
@@ -1686,7 +1806,6 @@ export function morphToOrcScene() {
 
 	// Move labels to flattened top nav positions
 	for (const key in labels) {
-		if (key === "Home") continue
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
 
@@ -1716,11 +1835,7 @@ export function morphToOrcScene() {
 
 	// Create the demo scene
 	createOrcDemo()
-	showOrcResetButton()
 	showAvailableSatellitesPane()
-
-	// Show home button
-	showHomeLabel()
 
 	// Keep main scene camera in place for top nav rendering
 	// The ORC demo has its own camera
@@ -1773,7 +1888,6 @@ export function morphFromOrcScene() {
 		infoPane.style.transition = `opacity ${fadeOutDuration}ms ease-out`
 		infoPane.style.opacity = "0"
 	}
-	hideOrcResetButton()
 
 	// After fade out completes, destroy ORC and show pyramid
 	setTimeout(() => {
@@ -1888,7 +2002,6 @@ export function morphFromOrcScene() {
 
 				// Final check - ensure labels are visible and in correct positions
 				for (const key in labels) {
-					if (key === "Home") continue
 					const labelMesh = labels[key]
 					if (!labelMesh) continue
 					if (labelMesh.material) labelMesh.material.opacity = 1
@@ -1913,8 +2026,6 @@ export function morphFromOrcScene() {
 				for (const key in hoverTargets) {
 					if (hoverTargets[key]) hoverTargets[key].visible = true
 				}
-
-				hideHomeLabel()
 			}
 		}
 
@@ -2476,30 +2587,17 @@ window.addEventListener("satelliteRemoved", (event) => {
 
 // Show/hide helpers for Home label
 export function showHomeLabel() {
-	// We no longer create a 3D Home mesh; ensure the DOM home button is shown.
-	try {
-		const btn = document.getElementById("home-button")
-		if (btn) btn.style.display = "block"
-	} catch {}
+	// No-op: Home is now a standard 3D label managed by the scene
 }
 
 export function hideHomeLabel() {
-	// Ensure the DOM home button is hidden.
-	try {
-		const btn = document.getElementById("home-button")
-		if (btn) btn.style.display = "none"
-	} catch {}
+	// No-op: Home is now a standard 3D label managed by the scene
 }
 
 // === Animate Loop ===
 export function animate() {
 	requestAnimationFrame(animate)
 	stars.rotation.y += 0.0008
-
-	// Animate ORC scene if active
-	if (orcSceneActive) {
-		animateOrcScene()
-	}
 
 	// Update roaming hand idle motion
 	updateHandIdleMotion()
@@ -2545,6 +2643,29 @@ window.addEventListener("resize", () => {
 	if (aboutPlane) scene.remove(aboutPlane)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) scene.remove(portfolioPlane)
+
+	// Update nav layout on resize
+	updateNavLayout()
+
+	// If in nav mode, update positions immediately
+	if (pyramidGroup.position.y > 1.0) {
+		for (const key in labels) {
+			const label = labels[key]
+			if (label && flattenedLabelPositions[key]) {
+				label.position.x = flattenedLabelPositions[key].x
+				label.position.y = flattenedLabelPositions[key].y
+				label.scale.set(navLabelScale, navLabelScale, 1)
+			}
+		}
+		if (contactLabel && contactLabel.parent === scene) {
+			const pos = flattenedLabelPositions.Contact
+			contactLabel.position.set(pos.x, pos.y, pos.z)
+		}
+		pyramidGroup.position.y = flattenedMenuState.positionY
+		if (currentSection && pyramidXPositions[currentSection] !== undefined) {
+			pyramidGroup.position.x = pyramidXPositions[currentSection]
+		}
+	}
 })
 
 // === Custom Scrollbar & Overlay ===
@@ -2554,6 +2675,7 @@ let scrollThumb = null
 let activeScrollPlane = null
 let scrollMinY = 0.0
 let scrollMaxY = 0.0
+const scrollBoundsBox = new THREE.Box3()
 
 function setupContentScrolling(plane) {
 	activeScrollPlane = plane
@@ -2668,8 +2790,8 @@ function hideContentScrolling() {
 function updateScrollBounds() {
 	if (!activeScrollPlane) return
 	// Re-calculate bounds every frame to handle async text loading
-	const box = new THREE.Box3().setFromObject(activeScrollPlane)
-	const h = box.max.y - box.min.y
+	scrollBoundsBox.setFromObject(activeScrollPlane)
+	const h = scrollBoundsBox.max.y - scrollBoundsBox.min.y
 	if (h === -Infinity || isNaN(h)) return
 
 	// Visible area is roughly from y=-2.8 to y=+2.8 (height ~5.6)

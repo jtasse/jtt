@@ -1950,13 +1950,11 @@ export function createOrcPreview(width = 300, height = 200) {
 	const satGeo = new THREE.SphereGeometry(0.04, 8, 8)
 	const sat1Mat = new THREE.MeshBasicMaterial({
 		color: 0xff00ff,
-		emissive: 0xff00ff,
 	})
 	const sat1 = new THREE.Mesh(satGeo, sat1Mat)
 
 	const sat2Mat = new THREE.MeshBasicMaterial({
 		color: 0x00ffaa,
-		emissive: 0x00ffaa,
 	})
 	const sat2 = new THREE.Mesh(satGeo.clone(), sat2Mat)
 	miniGroup.add(sat2)

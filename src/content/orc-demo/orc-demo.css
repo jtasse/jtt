@@ -16,7 +16,7 @@
 	--orc-nav-height: 85px; /* Height reserved for top navigation bar */
 	--orc-container-width: calc(66.67vw - 30px); /* Account for left sidebar */
 	--orc-container-left: 30px;
-	--orc-info-pane-width: 33.33%;
+	--orc-info-pane-width: 280px;
 }
 
 /* ============================================
@@ -517,6 +517,33 @@
 	50% {
 		box-shadow: 0 0 25px rgba(0, 170, 255, 0.7);
 	}
+}
+
+/* Custom style for the Reset Scene button to make it generic/bluish */
+#orc-reset-button {
+	background: linear-gradient(
+		180deg,
+		rgba(0, 60, 100, 0.6) 0%,
+		rgba(0, 40, 80, 0.7) 100%
+	);
+	border: 1px solid rgba(0, 170, 255, 0.3);
+	color: #00ffff;
+	box-shadow: 0 4px 0 rgba(0, 30, 50, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+#orc-reset-button:hover {
+	background: linear-gradient(
+		180deg,
+		rgba(0, 80, 130, 0.7) 0%,
+		rgba(0, 50, 90, 0.8) 100%
+	);
+	box-shadow: 0 4px 0 rgba(0, 40, 60, 0.9), 0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+#orc-reset-button:active {
+	top: 4px;
+	box-shadow: 0 2px 0 rgba(0, 30, 50, 0.8);
 }
 
 /* ============================================
