@@ -1,0 +1,119 @@
+/* Scope styles to the content container when blog is active */
+#content.blog-active {
+	background-color: #2e2e2e;
+	color: #ffffff;
+	font-family: "Nunito", sans-serif;
+	font-weight: 500;
+	padding: 2rem;
+}
+#content.blog-active a {
+	color: #296deb;
+	text-decoration: none;
+}
+#content.blog-active a:hover {
+	color: #d1d5db;
+}
+#content.blog-active .container {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+#content.blog-active header {
+	display: flex;
+	flex-direction: column;
+	border-bottom: 2px solid white;
+	padding-bottom: 2rem;
+	margin-bottom: 3rem;
+}
+@media (min-width: 768px) {
+	#content.blog-active header {
+		flex-direction: row;
+		justify-content: space-between;
+	}
+}
+#content.blog-active .site-branding h1 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 3rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	margin: 0 0 1rem 0;
+}
+#content.blog-active .site-branding h2 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 2rem;
+	font-weight: 800;
+	margin: 0 0 1rem 0;
+}
+#content.blog-active .back-link {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.25rem;
+	display: block;
+	margin-top: 1rem;
+}
+#content.blog-active .contact-info {
+	text-align: left;
+	margin-top: 2rem;
+}
+@media (min-width: 768px) {
+	#content.blog-active .contact-info {
+		text-align: right;
+		margin-top: 0;
+	}
+}
+#content.blog-active .contact-info h2 {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.5rem;
+	font-weight: 800;
+	margin: 0 0 1rem 0;
+}
+#content.blog-active .contact-info p {
+	font-family: "Orbitron", sans-serif;
+	margin: 0 0 0.5rem 0;
+}
+#content.blog-active main {
+	max-width: 900px;
+	margin: 0 auto;
+}
+#content.blog-active .posts-heading {
+	font-family: "Orbitron", sans-serif;
+	font-size: 1.5rem;
+	font-weight: 800;
+	border-left: 2px solid white;
+	padding-left: 1rem;
+	margin-bottom: 2rem;
+}
+#content.blog-active article {
+	margin-bottom: 4rem;
+}
+#content.blog-active article h3 {
+	font-size: 1.875rem;
+	font-weight: 800;
+	margin: 0 0 0.5rem 0;
+}
+#content.blog-active .post-meta {
+	color: #9ca3af;
+	font-size: 0.875rem;
+	margin-bottom: 1rem;
+}
+#content.blog-active .post-image {
+	width: 100%;
+	aspect-ratio: 3/2;
+	background-color: #374151;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #9ca3af;
+	border: 1px solid #4b5563;
+	margin-bottom: 1rem;
+	overflow: hidden;
+}
+
+#content.blog-active .post-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+#content.blog-active hr {
+	border: 0;
+	border-top: 1px solid #4b5563;
+	margin-top: 2rem;
+}

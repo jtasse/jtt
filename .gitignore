@@ -6,3 +6,12 @@ temp/
 .env
 .eslintcache
 coverage/
+
+# Editor and Local Settings
+.vscode/
+.idea/
+.claude/
+
+# OS Metadata
+Thumbs.db
+Desktop.ini
