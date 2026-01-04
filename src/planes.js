@@ -88,9 +88,8 @@ export function makeContactLabelPlane(config) {
 	let currentConfig = null
 	let animationId = null
 	let toastTimeout = null
-	let tooltipVisible = false
-	let emailHovered = false
-	let currentPopupType = null // 'tooltip' or 'toast'
+	let activePopup = null // { index: number, type: 'tooltip'|'toast', progress: 0-1 }
+	let hoveredIndex = -1
 
 	// Copy icon SVG path (from Material Icons)
 	const copyIconPath = new Path2D(
@@ -124,10 +123,10 @@ export function makeContactLabelPlane(config) {
 		ctx.closePath()
 	}
 
-	// popupState: { type: 'tooltip'|'toast', slideOffset: 0-1, opacity: 0-1 } or null
-	function updateTexture(appearanceConfig, popupState = null) {
+	// popupOverride: optional { type, progress } to override current animation state for a frame
+	function updateTexture(appearanceConfig, popupOverride = null) {
 		currentConfig = appearanceConfig
-		const { lines, textAlign, titleFontSize, bodyFontSize } = appearanceConfig
+		const { lines, textAlign, bodyFontSize } = appearanceConfig
 
 		const ctx = canvas.getContext("2d")
 		ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -141,6 +140,8 @@ export function makeContactLabelPlane(config) {
 
 		ctx.beginPath()
 		ctx.rect(margin, margin, w - 2 * margin, h - 2 * margin)
+		ctx.fillStyle = "rgba(0, 0, 0, 0.9)"
+		ctx.fill()
 		ctx.stroke()
 
 		// Draw text lines
@@ -148,126 +149,123 @@ export function makeContactLabelPlane(config) {
 		ctx.textAlign = textAlign || "left"
 		ctx.textBaseline = "middle"
 		const leftMargin = 40
-		const rightMargin = canvas.width - 40
 
-		const lineHeight = canvas.height / (lines.length + 1)
+		// Calculate layout
+		// We need space at the top for tooltips, so we push content down
+		const contentStartY = 140
+		const lineHeight = 120
+
+		// Clear previous click regions
+		mesh.userData.clickRegions = []
+
 		lines.forEach((line, i) => {
-			let xPos = leftMargin
+			const y = contentStartY + i * lineHeight
+
+			ctx.font = `${bodyFontSize || 60}px sans-serif`
+			const iconSize = 60
+			const gap = 20
+
+			// Calculate width to center content if needed
+			const textWidth = ctx.measureText(line).width
+			const totalWidth = iconSize + gap + textWidth
+
+			let startX = leftMargin
 			if (textAlign === "center") {
-				xPos = canvas.width / 2
-			} else if (textAlign === "right") {
-				xPos = rightMargin
+				startX = (canvas.width - totalWidth) / 2
 			}
 
-			if (i === 0) {
-				ctx.font = `bold ${titleFontSize || 80}px sans-serif`
-				ctx.fillText(line, xPos, lineHeight * (i + 1))
+			const iconX = startX
+			const iconY = y - iconSize / 2
+			const textX = startX + iconSize + gap
 
-				// Draw popup (tooltip or toast) if active
-				if (popupState && popupState.opacity > 0) {
-					// Select config based on popup type
-					const cfg = popupState.type === 'tooltip' ? tooltipConfig : toastConfig
-					const titleY = lineHeight * (i + 1)
+			// Draw the clipboard icon (always white)
+			drawClipboardIcon(ctx, iconX, iconY, iconSize, "white")
 
-					// Calculate popup position with slide offset
-					const slideOffset =
-						(1 - popupState.slideOffset) * cfg.slideDistance
+			// Draw text (use hover color if this line is hovered)
+			const isHovered = i === hoveredIndex
+			ctx.fillStyle = isHovered ? emailHoverColor : "white"
+			ctx.textAlign = "left" // Always draw left-aligned relative to startX
+			ctx.fillText(line, textX, y)
 
-					// Get title width to position popup
-					ctx.font = `bold ${titleFontSize || 80}px sans-serif`
-					const titleWidth = ctx.measureText(line).width
-
-					// Calculate popup text dimensions
-					ctx.font = `${cfg.fontSize}px sans-serif`
-					const textMetrics = ctx.measureText(cfg.text)
-					const popupTextWidth = textMetrics.width
-					const popupTextHeight = cfg.fontSize
-
-					// Popup box dimensions
-					const boxPadding = cfg.padding
-					const boxWidth = popupTextWidth + boxPadding * 2
-					const boxHeight = popupTextHeight + boxPadding * 2
-
-					// Popup position
-					let popupX
-					if (textAlign === "center") {
-						popupX = xPos + titleWidth / 2 + cfg.offsetX
-					} else {
-						popupX = xPos + titleWidth + cfg.offsetX
-					}
-					const popupY = titleY + cfg.offsetY + slideOffset
-
-					// Save context for opacity
-					ctx.save()
-					ctx.globalAlpha = popupState.opacity
-
-					// Draw background
-					ctx.fillStyle = cfg.bgColor
-					drawRoundedRect(
-						ctx,
-						popupX - boxPadding,
-						popupY - popupTextHeight / 2 - boxPadding,
-						boxWidth,
-						boxHeight,
-						cfg.borderRadius
-					)
-					ctx.fill()
-
-					// Draw text
-					ctx.font = `${cfg.fontSize}px sans-serif`
-					ctx.fillStyle = cfg.color
-					ctx.textAlign = "left"
-					ctx.textBaseline = "middle"
-					ctx.fillText(cfg.text, popupX, popupY)
-
-					ctx.restore()
-
-					// Reset for remaining content
-					ctx.textAlign = textAlign || "left"
-					ctx.fillStyle = "white"
-				}
-			} else if (i === 1) {
-				ctx.font = `${bodyFontSize || 60}px sans-serif`
-
-				const iconSize = 60
-				const gap = 15
-				let startX = xPos
-				if (textAlign === "center") {
-					const textWidth = ctx.measureText(line).width
-					const totalWidth = iconSize + gap + textWidth
-					startX = (canvas.width - totalWidth) / 2
-				}
-				const y = lineHeight * (i + 1)
-				const iconX = startX
-				const iconY = y - iconSize / 2
-
-				// Draw the clipboard icon (always white)
-				drawClipboardIcon(ctx, iconX, iconY, iconSize, "white")
-
-				// Draw email text (use hover color if hovered)
-				const originalAlign = ctx.textAlign
-				ctx.textAlign = "left"
-				ctx.fillStyle = emailHovered ? emailHoverColor : "white"
-				ctx.fillText(line, startX + iconSize + gap, y)
-
-				// Store email click region in canvas coordinates (normalized 0-1)
-				const emailTextWidth = ctx.measureText(line).width
-				mesh.userData.emailClickRegion = {
-					x1: startX / canvas.width,
-					y1: (y - iconSize / 2) / canvas.height,
-					x2: (startX + iconSize + gap + emailTextWidth) / canvas.width,
-					y2: (y + iconSize / 2) / canvas.height,
-					email: line,
-				}
-
-				ctx.textAlign = originalAlign
-			} else {
-				// Phone number and other lines - apply offset to align with email text
-				ctx.font = `${bodyFontSize || 60}px sans-serif`
-				ctx.fillStyle = "white"
-				ctx.fillText(line, xPos + phoneOffsetX, lineHeight * (i + 1))
-			}
+			// Store click region for this line
+			mesh.userData.clickRegions.push({
+				index: i,
+				text: line,
+				x1: startX / canvas.width,
+				y1: (y - iconSize / 2) / canvas.height,
+				x2: (textX + textWidth) / canvas.width,
+				y2: (y + iconSize / 2) / canvas.height,
+			})
 		})
+
+		// Draw popup (tooltip or toast) on top of everything
+		const popup = popupOverride || activePopup
+		if (popup && popup.progress > 0) {
+			const { index, type, progress } = popup
+			const cfg = type === "tooltip" ? tooltipConfig : toastConfig
+
+			// Fixed Y position for tooltips (below phone number area)
+			const fixedPopupY = 400
+
+			// Calculate popup position with slide offset
+			const slideOffset = (1 - progress) * cfg.slideDistance
+			const popupY = fixedPopupY + slideOffset
+
+			// Prepare text first to get dimensions
+			let displayText = cfg.text
+			if (type === "tooltip") {
+				// Customize tooltip text based on content
+				displayText = `Click to copy ${lines[index]}`
+			}
+
+			ctx.font = `${cfg.fontSize}px sans-serif`
+			const textMetrics = ctx.measureText(displayText)
+			const boxPadding = cfg.padding
+			const boxWidth = textMetrics.width + boxPadding * 2
+			const boxHeight = cfg.fontSize + boxPadding * 2
+
+			// Determine X position (left edge)
+			let popupLeftX = (canvas.width - boxWidth) / 2 // Default center fallback
+
+			// If we have region data, center on the text
+			if (mesh.userData.clickRegions[index]) {
+				const r = mesh.userData.clickRegions[index]
+				// Align left edge of tooltip with start of text for both email and phone
+				const startX = r.x1 * canvas.width
+				const iconSize = 60
+				const gap = 20
+				const textX = startX + iconSize + gap
+				popupLeftX = textX
+			}
+
+			// Apply offset from config
+			popupLeftX += cfg.offsetX
+
+			// Save context for opacity
+			ctx.save()
+			ctx.globalAlpha = progress
+
+			// Draw background
+			ctx.fillStyle = cfg.bgColor
+			drawRoundedRect(
+				ctx,
+				popupLeftX,
+				popupY - boxHeight / 2,
+				boxWidth,
+				boxHeight,
+				cfg.borderRadius
+			)
+			ctx.fill()
+
+			// Draw text
+			ctx.fillStyle = cfg.color
+			ctx.textAlign = "left"
+			ctx.textBaseline = "middle"
+			ctx.fillText(displayText, popupLeftX + boxPadding, popupY)
+
+			ctx.restore()
+		}
+
 		tex.needsUpdate = true
 	}
 
@@ -292,17 +290,37 @@ export function makeContactLabelPlane(config) {
 		}
 	}
 
+	// Set hovered index (called from main.js)
+	function setHoveredIndex(index) {
+		if (hoveredIndex !== index) {
+			hoveredIndex = index
+			// If we are just changing hover and no toast is active, update texture
+			if (!activePopup || activePopup.type === "tooltip") {
+				// If we have a tooltip, let showTooltip/hideTooltip handle the redraw
+				// Otherwise just redraw for hover color
+				if (!activePopup) updateTexture(currentConfig)
+			} else {
+				// Toast is active, just update hover color in background
+				updateTexture(currentConfig)
+			}
+		}
+	}
+
 	// Show tooltip on hover
-	function showTooltip() {
+	function showTooltip(index) {
 		// Don't show tooltip if toast is active
-		if (currentPopupType === 'toast') return
-		// Don't re-animate if already showing
-		if (tooltipVisible && currentPopupType === 'tooltip') return
+		if (activePopup && activePopup.type === "toast") return
+		// Don't re-animate if already showing for same index
+		if (
+			activePopup &&
+			activePopup.type === "tooltip" &&
+			activePopup.index === index &&
+			activePopup.progress === 1
+		)
+			return
 
 		cancelAnimation()
-		tooltipVisible = true
-		emailHovered = true
-		currentPopupType = 'tooltip'
+		activePopup = { index, type: "tooltip", progress: 0 }
 
 		const animDuration = tooltipConfig.animationDuration
 		let startTime = null
@@ -313,7 +331,8 @@ export function makeContactLabelPlane(config) {
 			const progress = Math.min(elapsed / animDuration, 1)
 			const eased = easeOutCubic(progress)
 
-			updateTexture(currentConfig, { type: 'tooltip', slideOffset: eased, opacity: eased })
+			activePopup.progress = eased
+			updateTexture(currentConfig)
 
 			if (progress < 1) {
 				animationId = requestAnimationFrame(animateIn)
@@ -328,12 +347,10 @@ export function makeContactLabelPlane(config) {
 	// Hide tooltip when mouse leaves
 	function hideTooltip() {
 		// Don't hide if toast is showing (toast takes priority)
-		if (currentPopupType === 'toast') return
-		if (!tooltipVisible && !emailHovered) return
+		if (activePopup && activePopup.type === "toast") return
+		if (!activePopup) return
 
 		cancelAnimation()
-		tooltipVisible = false
-		emailHovered = false
 
 		const animDuration = tooltipConfig.animationDuration
 		let startTime = null
@@ -344,18 +361,15 @@ export function makeContactLabelPlane(config) {
 			const progress = Math.min(elapsed / animDuration, 1)
 			const eased = easeInCubic(progress)
 
-			updateTexture(currentConfig, {
-				type: 'tooltip',
-				slideOffset: 1 - eased,
-				opacity: 1 - eased,
-			})
+			activePopup.progress = 1 - eased
+			updateTexture(currentConfig)
 
 			if (progress < 1) {
 				animationId = requestAnimationFrame(animateOut)
 			} else {
 				animationId = null
-				currentPopupType = null
-				updateTexture(currentConfig, null)
+				activePopup = null
+				updateTexture(currentConfig)
 			}
 		}
 
@@ -363,11 +377,9 @@ export function makeContactLabelPlane(config) {
 	}
 
 	// Show "Copied!" toast with slide up animation (replaces tooltip)
-	function showCopiedMessage() {
+	function showCopiedMessage(index) {
 		cancelAnimation()
-		tooltipVisible = false
-		emailHovered = false
-		currentPopupType = 'toast'
+		activePopup = { index, type: "toast", progress: 0 }
 
 		const animDuration = toastConfig.animationDuration
 		const showDuration = toastConfig.duration
@@ -380,7 +392,8 @@ export function makeContactLabelPlane(config) {
 			const progress = Math.min(elapsed / animDuration, 1)
 			const eased = easeOutCubic(progress)
 
-			updateTexture(currentConfig, { type: 'toast', slideOffset: eased, opacity: eased })
+			activePopup.progress = eased
+			updateTexture(currentConfig)
 
 			if (progress < 1) {
 				animationId = requestAnimationFrame(animateIn)
@@ -401,19 +414,16 @@ export function makeContactLabelPlane(config) {
 			const progress = Math.min(elapsed / animDuration, 1)
 			const eased = easeInCubic(progress)
 
-			updateTexture(currentConfig, {
-				type: 'toast',
-				slideOffset: 1 - eased,
-				opacity: 1 - eased,
-			})
+			activePopup.progress = 1 - eased
+			updateTexture(currentConfig)
 
 			if (progress < 1) {
 				animationId = requestAnimationFrame(animateOut)
 			} else {
 				// Animation complete, clear popup
 				animationId = null
-				currentPopupType = null
-				updateTexture(currentConfig, null)
+				activePopup = null
+				updateTexture(currentConfig)
 			}
 		}
 
@@ -422,6 +432,7 @@ export function makeContactLabelPlane(config) {
 	}
 
 	mesh.userData.updateTexture = updateTexture
+	mesh.userData.setHoveredIndex = setHoveredIndex
 	mesh.userData.showTooltip = showTooltip
 	mesh.userData.hideTooltip = hideTooltip
 	mesh.userData.showCopiedMessage = showCopiedMessage
@@ -430,7 +441,6 @@ export function makeContactLabelPlane(config) {
 	const revealedConfig = {
 		lines: config.lines,
 		textAlign: config.revealedTextAlign,
-		titleFontSize: config.revealedTitleFontSize,
 		bodyFontSize: config.revealedBodyFontSize,
 	}
 	mesh.userData.updateTexture(revealedConfig)

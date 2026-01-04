@@ -318,9 +318,9 @@ export const contactConfig = {
 	// Starting position (hidden below pyramid)
 	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
 	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: 0.0, z: 0.85 }, // Centered on pyramid face
+	revealedPosition: { x: 0, y: -0.28, z: 0.9 }, // Centered on pyramid face
 	revealedRotation: { x: -0.3, y: 0, z: 0 },
-	revealedSize: [2.15, 0.8], // Smaller height for just details
+	revealedSize: [2.26, 1.15], // Taller height to accommodate tooltips
 	// Phone number offset (aligns with email text, after icon+gap)
 	phoneOffsetX: 75,
 	// Tooltip configuration (hover state)
@@ -330,7 +330,7 @@ export const contactConfig = {
 	tooltipBgColor: "rgba(0, 0, 0, 0.85)",
 	tooltipPadding: 0,
 	tooltipBorderRadius: 2,
-	tooltipOffsetX: 30,
+	tooltipOffsetX: -5,
 	tooltipOffsetY: -1,
 	tooltipSlideDistance: 50,
 	tooltipAnimationDuration: 200,
@@ -343,7 +343,7 @@ export const contactConfig = {
 	toastBgColor: "rgba(0, 0, 0, 0.85)",
 	toastPadding: 0,
 	toastBorderRadius: 2,
-	toastOffsetX: 30,
+	toastOffsetX: 0.5,
 	toastOffsetY: -1,
 	toastSlideDistance: 50,
 	toastDuration: 2000,
@@ -506,9 +506,10 @@ export function moveContactLabelToLeft() {
 
 // Animation state for contact expansion
 let contactExpandAnim = null
+let contactHideTimer = null
 
-// Toggle contact label expansion state (called on hover when in left position)
-export function setContactExpanded(expanded) {
+// Helper to perform the actual expansion animation
+function performContactExpansion(expanded) {
 	if (!contactLabel || !contactDetails || contactLabel.parent !== scene) return
 
 	// Avoid redundant updates
@@ -517,14 +518,20 @@ export function setContactExpanded(expanded) {
 
 	if (contactExpandAnim) cancelAnimationFrame(contactExpandAnim)
 
+	// New offsets for tighter positioning
+	const baseOffset = -0.2
+	const slideOffset = -0.5
+
 	// Ensure details are in the scene (not pyramidGroup) so they render with the label
-	if (expanded && contactDetails.parent !== scene) {
-		scene.add(contactDetails)
-		// Position details below the label
-		contactDetails.position.copy(contactLabel.position)
-		contactDetails.position.y -= 0.8
-		contactDetails.rotation.copy(contactLabel.rotation)
-		contactDetails.scale.set(1, 1, 1)
+	if (expanded) {
+		if (contactDetails.parent !== scene) {
+			scene.add(contactDetails)
+			// Position details below the label
+			contactDetails.position.copy(contactLabel.position)
+			contactDetails.position.y += baseOffset
+			contactDetails.rotation.copy(contactLabel.rotation)
+			contactDetails.scale.set(1, 1, 1)
+		}
 		contactDetails.visible = true
 	}
 
@@ -543,10 +550,9 @@ export function setContactExpanded(expanded) {
 			startAlpha + (endAlpha - startAlpha) * eased
 
 		// Slide details down slightly
-		const baseOffset = -0.6
-		const slideOffset = expanded ? -0.2 : 0
+		const currentSlide = expanded ? slideOffset : 0
 		contactDetails.position.y =
-			contactLabel.position.y + baseOffset + slideOffset * eased
+			contactLabel.position.y + baseOffset + currentSlide * eased
 
 		if (t < 1) {
 			contactExpandAnim = requestAnimationFrame(animateExpand)
@@ -561,9 +567,39 @@ export function setContactExpanded(expanded) {
 	contactExpandAnim = requestAnimationFrame(animateExpand)
 }
 
+// Toggle contact label expansion state (called on hover when in left position)
+export function setContactExpanded(expanded) {
+	if (!contactLabel || !contactDetails || contactLabel.parent !== scene) return
+
+	if (expanded) {
+		// User is hovering: cancel any pending hide timer and expand immediately
+		if (contactHideTimer) {
+			clearTimeout(contactHideTimer)
+			contactHideTimer = null
+		}
+		if (!contactLabel.userData.isExpanded) {
+			performContactExpansion(true)
+		}
+	} else {
+		// User left hover: start timer to hide
+		// If already collapsed or timer running, do nothing
+		if (!contactLabel.userData.isExpanded || contactHideTimer) return
+
+		contactHideTimer = setTimeout(() => {
+			performContactExpansion(false)
+			contactHideTimer = null
+		}, 2000)
+	}
+}
+
 // Hide contact label
 export function hideContactLabel() {
 	if (!contactLabel) return
+
+	if (contactHideTimer) {
+		clearTimeout(contactHideTimer)
+		contactHideTimer = null
+	}
 
 	const cfg = contactConfig
 	const duration = 400
@@ -952,7 +988,7 @@ let navLabelScale = 1.0
 
 // Update nav layout based on screen size to ensure labels are visible in top-left
 function updateNavLayout() {
-	const startPixelX = 30
+	const startPixelX = 10
 	const startPixelY = 30
 	const topLeft = screenToWorld(startPixelX, startPixelY, 0)
 

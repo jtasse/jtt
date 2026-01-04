@@ -57,14 +57,13 @@ animate()
 window.addEventListener("resize", () => {})
 
 // Copy email to clipboard when contact label is clicked
-function handleContactClick() {
-	const email = contactConfig.lines[0] // Email is the first line in details
+function handleContactClick(text, index) {
 	navigator.clipboard
-		.writeText(email)
+		.writeText(text)
 		.then(() => {
 			// Show "Copied to clipboard!" message on the contact label
 			if (contactDetails && contactDetails.userData.showCopiedMessage) {
-				contactDetails.userData.showCopiedMessage()
+				contactDetails.userData.showCopiedMessage(index)
 			}
 		})
 		.catch((err) => {
@@ -231,30 +230,36 @@ function onMouseMove(event) {
 			if (contactHits.length > 0) {
 				isOverContactDetails = true
 				const hit = contactHits[0]
-				// Check if hovering over email region using UV coordinates
-				const emailRegion = contactDetails.userData.emailClickRegion
-				if (emailRegion && hit.uv) {
+
+				// Check if hovering over any interactive region using UV coordinates
+				const regions = contactDetails.userData.clickRegions || []
+				let foundIndex = -1
+
+				if (hit.uv) {
 					const u = hit.uv.x
 					const v = hit.uv.y
 					const canvasY = 1 - v
-					const isOverEmail =
-						u >= emailRegion.x1 &&
-						u <= emailRegion.x2 &&
-						canvasY >= emailRegion.y1 &&
-						canvasY <= emailRegion.y2
 
-					if (isOverEmail) {
-						if (contactDetails.userData.showTooltip) {
-							contactDetails.userData.showTooltip()
+					for (const region of regions) {
+						if (
+							u >= region.x1 &&
+							u <= region.x2 &&
+							canvasY >= region.y1 &&
+							canvasY <= region.y2
+						) {
+							foundIndex = region.index
+							break
 						}
-						renderer.domElement.style.cursor = "pointer"
-					} else {
-						if (contactDetails.userData.hideTooltip) {
-							contactDetails.userData.hideTooltip()
-						}
-						renderer.domElement.style.cursor = "default"
 					}
+				}
+
+				if (foundIndex !== -1) {
+					contactDetails.userData.setHoveredIndex(foundIndex)
+					contactDetails.userData.showTooltip(foundIndex)
+					renderer.domElement.style.cursor = "pointer"
 				} else {
+					contactDetails.userData.setHoveredIndex(-1)
+					contactDetails.userData.hideTooltip()
 					renderer.domElement.style.cursor = "default"
 				}
 			} else {
@@ -445,7 +450,26 @@ function onSceneMouseDown(event) {
 	if (contactDetails && contactDetails.visible) {
 		const contactHits = raycaster.intersectObject(contactDetails, false)
 		if (contactHits.length > 0) {
-			handleContactClick()
+			const hit = contactHits[0]
+			const regions = contactDetails.userData.clickRegions || []
+
+			if (hit.uv) {
+				const u = hit.uv.x
+				const v = hit.uv.y
+				const canvasY = 1 - v
+
+				for (const region of regions) {
+					if (
+						u >= region.x1 &&
+						u <= region.x2 &&
+						canvasY >= region.y1 &&
+						canvasY <= region.y2
+					) {
+						handleContactClick(region.text, region.index)
+						return
+					}
+				}
+			}
 			return
 		}
 	}
