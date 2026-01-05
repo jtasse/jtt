@@ -265,6 +265,35 @@
 	margin: 0;
 }
 
+/* Embed viewer styles */
+.embed-wrapper {
+	width: 100%;
+}
+
+.embed-back-btn {
+	display: inline-block;
+	margin-bottom: 1rem;
+	padding: 0.5rem 1rem;
+	background: transparent;
+	color: #00ffff;
+	border: 1px solid #00ffff;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.95rem;
+	transition: all 0.3s ease;
+}
+
+.embed-back-btn:hover {
+	background: #00ffff;
+	color: #000;
+}
+
+/* Portfolio content wrapper */
+.portfolio-content {
+	max-width: 900px;
+	margin: 0 auto;
+}
+
 /* Mobile adjustments for showcase */
 @media (max-width: 768px) {
 	.orc-showcase {

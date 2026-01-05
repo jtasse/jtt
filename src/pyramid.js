@@ -1466,85 +1466,156 @@ export function showAboutPlane() {
 }
 
 export function showPortfolioPlane() {
-	// Always remove any existing content before showing a new plane to avoid overlap
+	// Always remove any existing content before showing new content
 	hideAllPlanes()
 	controls.enableZoom = false
 
-	// Ensure DOM content is hidden when presenting the 3D portfolio plane.
-	const contentEl = document.getElementById("content")
-	if (contentEl) {
-		contentEl.style.display = "none"
-		// Ensure DOM does not block pointer events when hidden
-		contentEl.style.pointerEvents = "none"
-	}
-	// Show navigation bar positioned between content and home label
-	// ensure DOM separator is not shown here; we use the 3D separator instead
+	// Hide navigation bar separator
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	const portfolioPlane = scene.getObjectByName("portfolioPlane")
-	if (!portfolioPlane) {
-		const myToken = pyramidAnimToken
-		// Load portfolio HTML and extract items (title, description, link)
-		loadContentHTML("portfolio").then((html) => {
-			if (myToken !== pyramidAnimToken) return
-			// Do not populate the DOM content pane for portfolio to avoid
-			// duplicating the portfolio items. The 3D plane will be used.
-			const parser = new DOMParser()
-			const doc = parser.parseFromString(html, "text/html")
-			const items = []
-			doc.querySelectorAll(".portfolio-item").forEach((el) => {
-				const titleEl = el.querySelector("h2")
-				const pEl = el.querySelector("p")
-				const aEl = el.querySelector("a")
-				// Get link from data-link attribute first, then fallback to anchor tag
-				const link = el.dataset.link || (aEl ? aEl.href : null)
-				const imgEl = el.querySelector("img")
-				let imageSrc = null
-				if (imgEl && imgEl.src) imageSrc = imgEl.src
-				// If no explicit img, attempt to infer an image from the link (favicon)
-				if (!imageSrc && link) {
-					try {
-						const url = new URL(link)
-						imageSrc = `${url.origin}/favicon.ico`
-					} catch {
-						imageSrc = null
-					}
-				}
-				items.push({
-					title: titleEl ? titleEl.textContent.trim() : "Untitled",
-					description: pEl ? pEl.textContent.trim() : "",
-					image: imageSrc,
-					link: link,
-				})
-			})
-			const plane = makePortfolioPlane(items)
-			plane.name = "portfolioPlane"
-			plane.frustumCulled = false
-			plane.traverse((child) => {
-				if (child.material) {
-					const mats = Array.isArray(child.material)
-						? child.material
-						: [child.material]
-					mats.forEach((m) => {
-						m.clippingPlanes = [contentClippingPlane]
-						m.needsUpdate = true
-					})
-				}
-			})
-			// Position content plane lower to make room for ORC preview overlay
-			plane.position.y = -0.8
-			scene.add(plane)
-			setupContentScrolling(plane)
-			// Hide separators since flattened menu serves as navigation
-			const navBar = document.getElementById("content-floor")
-			if (navBar) navBar.classList.remove("show")
 
-			// Show the live ORC preview overlay at the top
-			showOrcPreviewOverlay()
+	// Use DOM overlay instead of 3D canvas texture (hybrid architecture)
+	const contentEl = document.getElementById("content")
+	if (!contentEl) return
+
+	const myToken = pyramidAnimToken
+
+	// Load portfolio HTML and display in DOM overlay
+	loadContentHTML("portfolio").then((html) => {
+		if (myToken !== pyramidAnimToken) return
+
+		// Parse HTML and remove script tag (we'll handle interactions separately)
+		const parser = new DOMParser()
+		const doc = parser.parseFromString(html, "text/html")
+		const scriptEl = doc.querySelector("script")
+		if (scriptEl) scriptEl.remove()
+
+		// Inject content into DOM overlay
+		contentEl.innerHTML = `<div class="portfolio-content">${doc.body.innerHTML}</div>`
+
+		// Show the content overlay
+		contentEl.style.display = ""
+		contentEl.classList.add("show")
+		contentEl.style.pointerEvents = "auto"
+
+		// Set up click handlers for portfolio items
+		setupPortfolioClickHandlers(contentEl)
+	})
+}
+
+// Helper to extract YouTube video ID from URL
+function extractYouTubeID(url) {
+	try {
+		const u = new URL(url)
+		if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
+		if (u.hostname === "youtu.be") return u.pathname.slice(1)
+	} catch {
+		return null
+	}
+	return null
+}
+
+// Helper to extract Google Docs ID from URL
+function extractGoogleDocsID(url) {
+	try {
+		const u = new URL(url)
+		if (u.hostname.includes("docs.google.com")) {
+			const match = u.pathname.match(/\/document\/d\/([^/]+)/)
+			return match ? match[1] : null
+		}
+	} catch {
+		return null
+	}
+	return null
+}
+
+// Check if URL points to an image
+function isImageURL(url) {
+	try {
+		const u = new URL(url)
+		const path = u.pathname.toLowerCase()
+		return /\.(png|jpg|jpeg|gif|webp|svg)$/.test(path)
+	} catch {
+		return false
+	}
+}
+
+// Set up click handlers for portfolio items (YouTube/Google Docs/images embedding)
+function setupPortfolioClickHandlers(contentEl) {
+	contentEl.querySelectorAll(".portfolio-item").forEach((item) => {
+		item.style.cursor = "pointer"
+		item.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			const link = item.dataset.link
+			if (!link) return
+
+			// Check for YouTube
+			const ytId = extractYouTubeID(link)
+			if (ytId) {
+				const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+				showEmbedViewer(contentEl, embedUrl)
+				return
+			}
+
+			// Check for Google Docs
+			const docId = extractGoogleDocsID(link)
+			if (docId) {
+				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
+				showEmbedViewer(contentEl, embedUrl)
+				return
+			}
+
+			// Check for images
+			if (isImageURL(link)) {
+				showImageViewer(contentEl, link)
+				return
+			}
+
+			// For other links, open in new tab
+			window.open(link, "_blank")
 		})
-	} else {
-		// Portfolio plane already exists, just show the ORC preview
-		showOrcPreviewOverlay()
+	})
+}
+
+// Show embedded content (YouTube, Google Docs) in the content overlay
+function showEmbedViewer(contentEl, embedUrl) {
+	contentEl.innerHTML = `
+		<div class="embed-wrapper">
+			<button class="embed-back-btn">← Back to Portfolio</button>
+			<iframe
+				src="${embedUrl}"
+				width="100%"
+				height="600"
+				style="border: 1px solid #00ffff; border-radius: 8px;"
+				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+				allowfullscreen
+			></iframe>
+		</div>
+	`
+	// Add back button handler
+	const backBtn = contentEl.querySelector(".embed-back-btn")
+	if (backBtn) {
+		backBtn.addEventListener("click", () => showPortfolioPlane())
+	}
+}
+
+// Show image in the content overlay
+function showImageViewer(contentEl, imageUrl) {
+	contentEl.innerHTML = `
+		<div class="embed-wrapper image-viewer">
+			<button class="embed-back-btn">← Back to Portfolio</button>
+			<img
+				src="${imageUrl}"
+				alt="Portfolio image"
+				style="max-width: 100%; max-height: 80vh; border: 1px solid #00ffff; border-radius: 8px; display: block; margin: 0 auto;"
+			/>
+		</div>
+	`
+	// Add back button handler
+	const backBtn = contentEl.querySelector(".embed-back-btn")
+	if (backBtn) {
+		backBtn.addEventListener("click", () => showPortfolioPlane())
 	}
 }
 
@@ -1611,8 +1682,16 @@ function hideAbout() {
 }
 
 function hidePortfolio() {
+	// Remove legacy 3D plane if it exists
 	const plane = scene.getObjectByName("portfolioPlane")
 	if (plane) scene.remove(plane)
+
+	// Hide DOM overlay content
+	const contentEl = document.getElementById("content")
+	if (contentEl && (contentEl.querySelector(".portfolio-content") || contentEl.querySelector(".embed-wrapper"))) {
+		contentEl.classList.remove("show")
+		contentEl.innerHTML = ""
+	}
 }
 
 function hideBlog() {
