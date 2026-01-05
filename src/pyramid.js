@@ -2675,6 +2675,14 @@ window.addEventListener("resize", () => {
 	camera.updateProjectionMatrix()
 	renderer.setSize(window.innerWidth, window.innerHeight)
 
+	// Update ORC demo renderer and camera if active
+	if (orcDemoRenderer && orcDemoCamera && orcDemoContainer) {
+		const rect = orcDemoContainer.getBoundingClientRect()
+		orcDemoCamera.aspect = rect.width / rect.height
+		orcDemoCamera.updateProjectionMatrix()
+		orcDemoRenderer.setSize(rect.width, rect.height)
+	}
+
 	const aboutPlane = scene.getObjectByName("aboutPlane")
 	if (aboutPlane) scene.remove(aboutPlane)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
