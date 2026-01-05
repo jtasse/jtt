@@ -31,6 +31,7 @@ import {
 	releaseOrcHand,
 } from "./content/orc-demo/orc-demo.js"
 import { createOrcHand } from "./content/orc-demo/orc-hand.js"
+import { LayoutManager } from "./core/LayoutManager.js"
 import "./content/home/home.css"
 import "./content/about/about.css"
 import "./content/blog/blog.css"
@@ -54,6 +55,9 @@ export const camera = new THREE.PerspectiveCamera(
 )
 camera.position.set(0, 0, 6)
 camera.lookAt(0, 0, 0)
+
+// Layout manager for responsive 3D positioning
+export const layoutManager = new LayoutManager(camera)
 
 // Store initial camera state for reset
 const initialCameraState = {
@@ -986,38 +990,45 @@ const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.1)
 
 let navLabelScale = 1.0
 
-// Update nav layout based on screen size to ensure labels are visible in top-left
+// Update nav layout based on screen size using LayoutManager for responsive positioning
 function updateNavLayout() {
-	const startPixelX = 10
-	const startPixelY = 30
-	const topLeft = screenToWorld(startPixelX, startPixelY, 0)
-
 	const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
+	const { width, height } = layoutManager.getFrustumDimensions()
 
-	const rightEdgePixel = window.innerWidth - 50 // 50px margin on the right
-	const worldRightEdge = screenToWorld(rightEdgePixel, startPixelY, 0)
-	const availableWorldWidth = worldRightEdge.x - topLeft.x
+	// Calculate Y position: 85% up from center (near top of viewport)
+	const navY = height * 0.35  // 0.35 from center = 85% up from bottom
 
-	const labelWidth = 2.4
-	const spacing = 0.1
-	const totalStaticWidth =
-		keys.length * labelWidth + (keys.length - 1) * spacing
+	// Calculate available width with margins (5% on each side)
+	const marginPercent = 0.05
+	const availableWidth = width * (1 - 2 * marginPercent)
+	const startX = -width / 2 + width * marginPercent
 
+	// Label sizing
+	const baseLabelWidth = 2.4
+	const baseSpacing = 0.1
+	const totalStaticWidth = keys.length * baseLabelWidth + (keys.length - 1) * baseSpacing
+
+	// Scale down if labels don't fit
 	navLabelScale = 1.0
-	if (totalStaticWidth > availableWorldWidth) {
-		navLabelScale = availableWorldWidth / totalStaticWidth
+	if (totalStaticWidth > availableWidth) {
+		navLabelScale = availableWidth / totalStaticWidth
 	}
 
-	const scaledLabelWidth = labelWidth * navLabelScale
-	const scaledSpacing = spacing * navLabelScale
+	// Apply additional scaling for portrait orientations
+	if (layoutManager.isPortrait()) {
+		navLabelScale *= 0.85
+	}
 
+	const scaledLabelWidth = baseLabelWidth * navLabelScale
+	const scaledSpacing = baseSpacing * navLabelScale
+
+	// Position each label from left to right
 	keys.forEach((key, i) => {
 		if (flattenedLabelPositions[key]) {
 			flattenedLabelPositions[key].x =
-				topLeft.x +
-				scaledLabelWidth / 2 +
-				i * (scaledLabelWidth + scaledSpacing)
-			flattenedLabelPositions[key].y = topLeft.y
+				startX + scaledLabelWidth / 2 + i * (scaledLabelWidth + scaledSpacing)
+			flattenedLabelPositions[key].y = navY
+			flattenedLabelPositions[key].z = 0
 		}
 	})
 
@@ -1027,7 +1038,7 @@ function updateNavLayout() {
 	pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
 
 	// Update flattened pyramid Y position to be just below labels
-	flattenedMenuState.positionY = topLeft.y - 0.3 * navLabelScale
+	flattenedMenuState.positionY = navY - 0.3 * navLabelScale
 }
 
 export function getInitialPyramidState() {
@@ -2662,6 +2673,9 @@ window.addEventListener("resize", () => {
 	camera.aspect = window.innerWidth / window.innerHeight
 	camera.updateProjectionMatrix()
 	renderer.setSize(window.innerWidth, window.innerHeight)
+
+	// Update layout manager with new frustum dimensions
+	layoutManager.onResize()
 
 	// Update ORC demo renderer and camera if active
 	if (orcDemoRenderer && orcDemoCamera && orcDemoContainer) {
