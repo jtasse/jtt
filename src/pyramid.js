@@ -1,12 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import {
-	makeAboutPlane,
-	makePortfolioPlane,
-	makeBlogPlane,
-	makeContactLabelPlane,
-	makeLabelPlane,
-} from "./planes.js"
+import { makeContactLabelPlane, makeLabelPlane } from "./planes.js"
 import {
 	loadContentHTML,
 	parseAboutContent,
@@ -37,6 +31,7 @@ import "./content/about/about.css"
 import "./content/blog/blog.css"
 import "./content/portfolio/portfolio.css"
 import "./content/orc-demo/orc-demo.css"
+import "./content/overlay.css"
 
 export const pyramidGroup = new THREE.Group()
 pyramidGroup.rotation.order = "YXZ"
@@ -996,17 +991,18 @@ function updateNavLayout() {
 	const { width, height } = layoutManager.getFrustumDimensions()
 
 	// Calculate Y position: 85% up from center (near top of viewport)
-	const navY = height * 0.35  // 0.35 from center = 85% up from bottom
+	const navY = height * 0.35 // 0.35 from center = 85% up from bottom
 
 	// Calculate available width with margins (5% on each side)
-	const marginPercent = 0.05
+	const marginPercent = 0.12
 	const availableWidth = width * (1 - 2 * marginPercent)
 	const startX = -width / 2 + width * marginPercent
 
 	// Label sizing
 	const baseLabelWidth = 2.4
-	const baseSpacing = 0.1
-	const totalStaticWidth = keys.length * baseLabelWidth + (keys.length - 1) * baseSpacing
+	const baseSpacing = 0.2
+	const totalStaticWidth =
+		keys.length * baseLabelWidth + (keys.length - 1) * baseSpacing
 
 	// Scale down if labels don't fit
 	navLabelScale = 1.0
@@ -1438,7 +1434,6 @@ export function showAboutPlane() {
 	// Always remove any existing content before showing new content
 	hideAllPlanes()
 	controls.enableZoom = false
-
 	// Hide navigation bar separator
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
@@ -1623,49 +1618,45 @@ export function showBlogPlane() {
 	// Always remove any existing content before showing a new plane to avoid overlap
 	hideAllPlanes()
 	controls.enableZoom = false
+
 	// Show navigation bar positioned between content and home label
 	// ensure DOM separator is not shown here; we use the 3D separator instead
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	const blogPlane = scene.getObjectByName("blogPlane")
-	if (!blogPlane) {
-		const myToken = pyramidAnimToken
-		// load HTML content and parse blog posts
-		loadContentHTML("blog").then((html) => {
-			if (myToken !== pyramidAnimToken) return
-			// Populate DOM content
-			const contentEl = document.getElementById("content")
-			if (contentEl) {
-				contentEl.innerHTML = html
-				contentEl.classList.add("blog-active")
-				contentEl.style.display = "block"
-				// Ensure content accepts pointer events when visible
-				contentEl.style.pointerEvents = "auto"
-				// Push content down to clear nav and add scrollbar
-				contentEl.style.top = "25%"
-				contentEl.style.bottom = "5%"
-				contentEl.style.height = "auto"
-				contentEl.style.overflowY = "auto"
-			}
-			const posts = parseBlogPosts(html)
-			const plane = makeBlogPlane(posts)
-			// Position content plane below the top menu
-			plane.position.y = -0.5
-			scene.add(plane)
-			// Hide separators since flattened menu serves as navigation
-			setupContentScrolling(plane)
-			const navBar = document.getElementById("content-floor")
-			if (navBar) navBar.classList.remove("show")
-		})
-	} else {
-		blogPlane.visible = true
-		setupContentScrolling(blogPlane)
-		// Ensure DOM content is also shown/active if returning to cached plane
-		const contentEl = document.getElementById("content")
-		if (contentEl) {
-			contentEl.classList.add("blog-active")
+
+	const contentEl = document.getElementById("content")
+	if (!contentEl) return
+
+	const myToken = pyramidAnimToken
+
+	// load HTML content and parse blog posts
+	loadContentHTML("blog").then((html) => {
+		if (myToken !== pyramidAnimToken) return
+
+		const posts = parseBlogPosts(html)
+		let contentHtml = ""
+
+		if (posts && posts.length > 0) {
+			contentHtml = posts
+				.map(
+					(post) => `
+				<div class="blog-post">
+					<h2>${post.title}</h2>
+					<div class="blog-meta">${post.date} | ${post.author}</div>
+					${post.image ? `<img src="${post.image}" alt="${post.title}">` : ""}
+					<p>${post.summary}</p>
+				</div>
+			`
+				)
+				.join("")
+		} else {
+			contentHtml = html
 		}
-	}
+		contentEl.innerHTML = `<div class="blog-content">${contentHtml}</div>`
+		contentEl.style.display = ""
+		contentEl.classList.add("show")
+		contentEl.style.pointerEvents = "auto"
+	})
 }
 
 function hideAbout() {
@@ -1688,7 +1679,11 @@ function hidePortfolio() {
 
 	// Hide DOM overlay content
 	const contentEl = document.getElementById("content")
-	if (contentEl && (contentEl.querySelector(".portfolio-content") || contentEl.querySelector(".embed-wrapper"))) {
+	if (
+		contentEl &&
+		(contentEl.querySelector(".portfolio-content") ||
+			contentEl.querySelector(".embed-wrapper"))
+	) {
 		contentEl.classList.remove("show")
 		contentEl.innerHTML = ""
 	}
@@ -1697,6 +1692,12 @@ function hidePortfolio() {
 function hideBlog() {
 	const blogPlane = scene.getObjectByName("blogPlane")
 	if (blogPlane) scene.remove(blogPlane)
+
+	const contentEl = document.getElementById("content")
+	if (contentEl && contentEl.querySelector(".blog-content")) {
+		contentEl.classList.remove("show")
+		contentEl.innerHTML = ""
+	}
 }
 
 // === ORC Preview Overlay for Portfolio ===
@@ -1880,6 +1881,27 @@ export function hideAllPlanes() {
 	hideAbout()
 	hidePortfolio()
 	hideBlog()
+	// Hide new content overlay
+	const overlayEl = document.getElementById("content-overlay")
+	if (overlayEl) {
+		overlayEl.classList.remove("visible")
+		// Deactivate all panes after transition
+		setTimeout(() => {
+			overlayEl.querySelectorAll(".content-pane").forEach((pane) => {
+				pane.classList.remove("active")
+				pane.innerHTML = ""
+			})
+		}, 300) // Match CSS transition
+	}
+
+	// Remove legacy 3D planes
+	const aboutPlane = scene.getObjectByName("aboutPlane")
+	if (aboutPlane) scene.remove(aboutPlane)
+	const portfolioPlane = scene.getObjectByName("portfolioPlane")
+	if (portfolioPlane) scene.remove(portfolioPlane)
+	const blogPlane = scene.getObjectByName("blogPlane")
+	if (blogPlane) scene.remove(blogPlane)
+
 	// Hide ORC preview overlay and info pane
 	hideOrcPreviewOverlay()
 	hideOrcInfoPane()
@@ -1888,10 +1910,12 @@ export function hideAllPlanes() {
 	if (contentFloor) contentFloor.classList.remove("show")
 
 	// Also hide the DOM content pane to avoid lingering DOM content
+	// Also hide the LEGACY content pane to avoid lingering DOM content
 	const contentEl = document.getElementById("content")
 	if (contentEl) {
 		contentEl.style.display = "none"
 		contentEl.classList.remove("blog-active")
+		contentEl.innerHTML = ""
 	}
 	hideContentScrolling()
 	controls.enableZoom = true

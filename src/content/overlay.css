@@ -1,0 +1,27 @@
+#content {
+	position: fixed;
+	top: 35vh;
+	left: 50%;
+	transform: translateX(-50%);
+	width: min(800px, 90vw);
+	max-height: 70vh;
+	overflow-y: auto;
+	z-index: 10;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	pointer-events: none; /* Allow clicks to pass through when hidden */
+}
+
+#content.show {
+	opacity: 1;
+	pointer-events: auto; /* Capture clicks when visible */
+}
+
+/* Responsive adjustments */
+@media (max-aspect-ratio: 1/1) {
+	/* Portrait */
+	#content.show {
+		top: 30vh;
+		width: 95vw;
+	}
+}

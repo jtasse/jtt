@@ -5,11 +5,6 @@
 	color: white;
 }
 
-.blog-content p {
-	line-height: 1.6;
-	margin-bottom: 1.5rem;
-}
-
 .blog-post {
 	background: rgba(0, 0, 0, 0.6);
 	border: 1px solid #00ffff;
