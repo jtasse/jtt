@@ -1424,54 +1424,34 @@ export function resetPyramidToHome() {
 }
 
 export function showAboutPlane() {
-	// Always remove any existing content before showing a new plane to avoid overlap
+	// Always remove any existing content before showing new content
 	hideAllPlanes()
 	controls.enableZoom = false
 
-	// Ensure the DOM content pane is hidden when using a 3D about plane so
-	// we don't show duplicate/overlapping DOM text over the pyramid.
-	const contentEl = document.getElementById("content")
-	if (contentEl) {
-		contentEl.style.display = "none"
-		// Ensure DOM does not block pointer events when hidden
-		contentEl.style.pointerEvents = "none"
-	}
-	// Show navigation bar positioned between content and home label
-	// ensure DOM separator is not shown here; we use the 3D separator instead
+	// Hide navigation bar separator
 	const navBar = document.getElementById("content-floor")
 	if (navBar) navBar.classList.remove("show")
-	const aboutPlane = scene.getObjectByName("aboutPlane")
-	if (!aboutPlane) {
-		// Capture current animation token so we can abort if a reset occurs
-		const myToken = pyramidAnimToken
-		// Load HTML content and parse about structure (heading + paragraphs)
-		loadContentHTML("about").then((html) => {
-			// If a newer pyramid animation/reset occurred, abort adding content
-			if (myToken !== pyramidAnimToken) return
-			const aboutContent = parseAboutContent(html)
-			const plane = makeAboutPlane(aboutContent)
-			plane.name = "aboutPlane"
-			plane.frustumCulled = false // Prevent culling when scrolling out of initial bounds
-			plane.traverse((child) => {
-				if (child.material) {
-					const mats = Array.isArray(child.material)
-						? child.material
-						: [child.material]
-					mats.forEach((m) => {
-						m.clippingPlanes = [contentClippingPlane]
-						m.needsUpdate = true
-					})
-				}
-			})
-			// Position content plane below the top menu
-			plane.position.y = 0.0
-			scene.add(plane)
-			setupContentScrolling(plane)
-			// Hide separators since flattened menu serves as navigation
-			const navBar = document.getElementById("content-floor")
-			if (navBar) navBar.classList.remove("show")
-		})
-	}
+
+	// Use DOM overlay instead of 3D canvas texture (hybrid architecture)
+	const contentEl = document.getElementById("content")
+	if (!contentEl) return
+
+	// Capture current animation token so we can abort if a reset occurs
+	const myToken = pyramidAnimToken
+
+	// Load HTML content and display in DOM overlay
+	loadContentHTML("about").then((html) => {
+		// If a newer pyramid animation/reset occurred, abort adding content
+		if (myToken !== pyramidAnimToken) return
+
+		// Wrap content in about-content class for styling
+		contentEl.innerHTML = `<div class="about-content">${html}</div>`
+
+		// Show the content overlay (clear inline display style that hideAllPlanes sets)
+		contentEl.style.display = ""
+		contentEl.classList.add("show")
+		contentEl.style.pointerEvents = "auto"
+	})
 }
 
 export function showPortfolioPlane() {
@@ -1607,8 +1587,16 @@ export function showBlogPlane() {
 }
 
 function hideAbout() {
+	// Remove legacy 3D plane if it exists
 	const aboutPlane = scene.getObjectByName("aboutPlane")
 	if (aboutPlane) scene.remove(aboutPlane)
+
+	// Hide DOM overlay content
+	const contentEl = document.getElementById("content")
+	if (contentEl && contentEl.querySelector(".about-content")) {
+		contentEl.classList.remove("show")
+		contentEl.innerHTML = ""
+	}
 }
 
 function hidePortfolio() {
