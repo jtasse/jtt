@@ -993,10 +993,12 @@ function updateNavLayout() {
 	// Calculate Y position: 85% up from center (near top of viewport)
 	const navY = height * 0.35 // 0.35 from center = 85% up from bottom
 
-	// Calculate available width with margins (5% on each side)
-	const marginPercent = 0.12
-	const availableWidth = width * (1 - 2 * marginPercent)
-	const startX = -width / 2 + width * marginPercent
+	// Calculate available width with margins
+	const leftMarginPercent = 0.12
+	// If ORC scene is active, reserve space on the right for the info pane (approx 35%)
+	const rightMarginPercent = orcSceneActive ? 0.35 : 0.12
+	const availableWidth = width * (1 - leftMarginPercent - rightMarginPercent)
+	const startX = -width / 2 + width * leftMarginPercent
 
 	// Label sizing
 	const baseLabelWidth = 2.4
@@ -1931,6 +1933,10 @@ export function morphToOrcScene() {
 	++pyramidAnimToken
 	hideAllPlanes()
 
+	// Set active flag early to influence layout calculations
+	orcSceneActive = true
+	updateNavLayout()
+
 	// Show pyramid in flattened state under Portfolio label (ORC demo is part of Portfolio)
 	pyramidGroup.visible = true
 	pyramidGroup.position.x = pyramidXPositions.portfolio // x: 0
@@ -2090,6 +2096,7 @@ export function morphFromOrcScene() {
 		controls.update()
 
 		orcSceneActive = false
+		updateNavLayout() // Reset layout to full width
 		currentSection = null
 		morphSphere.visible = false
 
