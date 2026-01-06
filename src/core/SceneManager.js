@@ -19,6 +19,9 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.localClippingEnabled = true
 
+// Add renderer canvas to the DOM
+document.body.appendChild(renderer.domElement)
+
 export const controls = new OrbitControls(camera, renderer.domElement)
 // Enable OrbitControls so user can click+drag to inspect the scene.
 // Programmatic animations still run, but the user can rotate/zoom manually.

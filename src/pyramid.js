@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import { makeContactLabelPlane, makeLabelPlane } from "./planes.js"
 import {
 	loadContentHTML,
 	parseAboutContent,
@@ -25,7 +24,7 @@ import {
 	releaseOrcHand,
 } from "./content/orc-demo/orc-demo.js"
 import { createOrcHand } from "./content/orc-demo/orc-hand.js"
-import { LayoutManager } from "./core/LayoutManager.js"
+import { LayoutManager } from "./layout/LayoutManager.js"
 import {
 	scene,
 	camera,
@@ -35,6 +34,7 @@ import {
 	screenToWorld,
 } from "./core/SceneManager.js"
 import { createPyramid, pyramidDimensions } from "./pyramid/PyramidMesh.js"
+import * as Contact from "./contact/ContactLabel.js"
 import "./content/home/home.css"
 import "./content/about/about.css"
 import "./content/blog/blog.css"
@@ -45,9 +45,15 @@ import "./content/overlay.css"
 // Re-export core scene elements for main.js
 export { scene, camera, renderer, controls, screenToWorld }
 
+Contact.initContactLabel()
+
+let activeLabelManager = null
+export function setLabelManager(lm) {
+	activeLabelManager = lm
+	setupPyramidLabels()
+}
+
 export const pyramidGroup = createPyramid()
-export const labels = {}
-export const hoverTargets = {}
 
 // Layout manager for responsive 3D positioning
 export const layoutManager = new LayoutManager(camera)
@@ -59,6 +65,48 @@ const initialCameraState = {
 }
 
 scene.add(pyramidGroup)
+
+// Initial setup to attach labels to pyramid faces
+function setupPyramidLabels() {
+	if (!activeLabelManager || !pyramidGroup) return
+
+	const labels = activeLabelManager.getLabels()
+
+	// Configuration for placing labels on pyramid faces (3-sided)
+	const placements = [
+		{ id: "bio", angle: 0 }, // Front
+		{ id: "portfolio", angle: (Math.PI * 2) / 3 }, // Left (120 deg)
+		{ id: "blog", angle: -(Math.PI * 2) / 3 }, // Right (-120 deg)
+	]
+
+	placements.forEach((p) => {
+		const label = labels[p.id]
+		if (label) {
+			// Attach to pyramid group so they rotate with it
+			pyramidGroup.add(label)
+
+			// Calculate position on face
+			const radius = 1.1 // Distance from center
+			const y = -0.2 // Vertical position
+
+			label.position.set(
+				Math.sin(p.angle) * radius,
+				y,
+				Math.cos(p.angle) * radius
+			)
+
+			// Rotation: Face outward + tilt back to match pyramid slope
+			label.rotation.set(-0.35, p.angle, 0, "YXZ")
+
+			// Save original state for resets
+			label.userData.origPosition = label.position.clone()
+			label.userData.origRotation = label.rotation.clone()
+			label.userData.originalScale = label.scale.clone()
+		}
+	})
+
+	// Home and Contact remain in the scene/LabelManager group for now
+}
 
 // === Morph Sphere (for ORC demo transition) ===
 // Create a sphere that the pyramid will morph into
@@ -127,383 +175,6 @@ function updatePyramidEnvMap() {
 // Generate the env map once during init. If you add dynamic objects later you
 // can call updatePyramidEnvMap() again to refresh reflections.
 updatePyramidEnvMap()
-
-// === Labels ===
-export const labelConfigs = {
-	About: {
-		text: "About",
-		position: { x: -1.0, y: 0.04, z: 0.53 },
-		rotation: { x: -0.1, y: 0.438, z: 1 },
-		pyramidCenteredSize: [2.4, 0.6],
-		pyramidUncenteredSize: [2.4, 0.6],
-	},
-	Portfolio: {
-		text: "Portfolio",
-		position: { x: 1.02, y: 0, z: 0.6 },
-		rotation: { x: 0.1, y: -0.6, z: -0.95 },
-		pyramidCenteredSize: [2.4, 0.6],
-		pyramidUncenteredSize: [2.4, 0.6],
-	},
-	Blog: {
-		text: "Blog",
-		position: { x: 0, y: -1.7, z: 1.0 },
-		rotation: { x: 0, y: 0, z: 0 },
-		pyramidCenteredSize: [2.4, 0.6],
-		pyramidUncenteredSize: [2.4, 0.6],
-	},
-	// Home config can be customized externally before calling initLabels
-	Home: {
-		text: "Home",
-		// position is relative to pyramidGroup; default sits above apex
-		position: { x: 0, y: pyramidDimensions.height / 2 + 0.2, z: 0 },
-		rotation: { x: 0, y: 0, z: 0 },
-		pyramidCenteredSize: [2.4, 0.6],
-		pyramidUncenteredSize: [2.4, 0.6],
-	},
-}
-
-// Contact label configuration - configurable position/rotation
-export const contactConfig = {
-	lines: ["james.tasse@gmail.com", "(216)-219-1538"],
-	revealedTextAlign: "left",
-	revealedTitleFontSize: 80,
-	revealedBodyFontSize: 60,
-	// Starting position (hidden below pyramid)
-	hiddenPosition: { x: 0, y: -1.8, z: 0.8 },
-	// Revealed position (front & center of pyramid face)
-	revealedPosition: { x: 0, y: -0.28, z: 0.9 }, // Centered on pyramid face
-	revealedRotation: { x: -0.3, y: 0, z: 0 },
-	revealedSize: [2.26, 1.15], // Taller height to accommodate tooltips
-	// Phone number offset (aligns with email text, after icon+gap)
-	phoneOffsetX: 75,
-	// Tooltip configuration (hover state)
-	tooltipText: "Click to copy email address",
-	tooltipFontSize: 48,
-	tooltipColor: "#4da6ff",
-	tooltipBgColor: "rgba(0, 0, 0, 0.85)",
-	tooltipPadding: 0,
-	tooltipBorderRadius: 2,
-	tooltipOffsetX: -5,
-	tooltipOffsetY: -1,
-	tooltipSlideDistance: 50,
-	tooltipAnimationDuration: 200,
-	// Email hover color (matches tooltip by default)
-	emailHoverColor: "#4da6ff",
-	// Toast configuration (after click)
-	toastText: "Copied!",
-	toastFontSize: 48,
-	toastColor: "#08a13b",
-	toastBgColor: "rgba(0, 0, 0, 0.85)",
-	toastPadding: 0,
-	toastBorderRadius: 2,
-	toastOffsetX: 0.5,
-	toastOffsetY: -1,
-	toastSlideDistance: 50,
-	toastDuration: 2000,
-	toastAnimationDuration: 200,
-	// Collapsed state (when moved to left)
-	collapsedSize: [2.4, 0.6],
-	// Expanded state (when moved to left)
-	leftExpandedSize: [2.4, 1.4],
-}
-
-// Contact label mesh (created in initContactLabel)
-export let contactLabel = null
-export let contactDetails = null
-let contactVisible = false
-
-// Initialize contact label
-export function initContactLabel() {
-	if (contactLabel) return // Already initialized
-
-	const cfg = contactConfig
-
-	// 1. Create the main "Contact" label using the standard label generator
-	// This ensures it looks exactly like About/Blog/Portfolio
-	contactLabel = makeLabelPlane("Contact", 2.4, 0.6)
-	contactLabel.position.set(
-		cfg.hiddenPosition.x,
-		cfg.hiddenPosition.y,
-		cfg.hiddenPosition.z
-	)
-	contactLabel.rotation.set(
-		cfg.revealedRotation.x,
-		cfg.revealedRotation.y,
-		cfg.revealedRotation.z
-	)
-	contactLabel.material.opacity = 0
-	contactLabel.visible = false
-	contactLabel.userData.name = "Contact"
-	pyramidGroup.add(contactLabel)
-
-	// 2. Create the details pane (Email/Phone) separately
-	contactDetails = makeContactLabelPlane(cfg)
-	contactDetails.position.copy(contactLabel.position)
-	contactDetails.rotation.copy(contactLabel.rotation)
-	// Position details below the label
-	contactDetails.position.y -= 0.6
-	contactDetails.material.opacity = 0
-	contactDetails.visible = false
-	contactDetails.userData.name = "ContactDetails"
-	pyramidGroup.add(contactDetails)
-}
-
-// Show contact label with slide-up animation (when pyramid is centered)
-export function showContactLabelCentered() {
-	if (!contactLabel || contactVisible) return
-	contactVisible = true
-
-	// Ensure both are attached to pyramidGroup
-	if (contactLabel.parent !== pyramidGroup) pyramidGroup.add(contactLabel)
-	if (contactDetails.parent !== pyramidGroup) pyramidGroup.add(contactDetails)
-
-	const cfg = contactConfig
-	contactLabel.visible = true
-	contactDetails.visible = true
-	contactLabel.scale.set(1, 1, 1)
-	contactDetails.scale.set(1, 1, 1)
-
-	// Animate from hidden to revealed position
-	const startY = cfg.hiddenPosition.y
-	const endY = cfg.revealedPosition.y
-	const startZ = cfg.hiddenPosition.z
-	const endZ = cfg.revealedPosition.z
-	const duration = 600
-	const startTime = performance.now()
-
-	function animateSlideUp(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-		// Ease out cubic
-		const eased = 1 - Math.pow(1 - t, 3)
-
-		contactLabel.position.y = startY + (endY - startY) * eased
-		contactLabel.position.z = startZ + (endZ - startZ) * eased
-		contactLabel.material.opacity = eased
-
-		// Details follow relative to label
-		contactDetails.position.copy(contactLabel.position)
-		contactDetails.position.y -= 0.7 // Offset below label
-		contactDetails.material.opacity = eased
-
-		if (t < 1) {
-			requestAnimationFrame(animateSlideUp)
-		}
-	}
-	requestAnimationFrame(animateSlideUp)
-}
-
-// Calculate position for contact label on the left side
-function getContactLeftPosition() {
-	// Use the uniform flattened position for Contact
-	const pos = flattenedLabelPositions.Contact
-	return new THREE.Vector3(pos.x, pos.y, pos.z)
-}
-
-// Move contact label to left side (when pyramid moves to top nav)
-export function moveContactLabelToLeft() {
-	if (!contactLabel) return
-
-	// Hide details initially when moving to nav
-	if (contactDetails) {
-		contactDetails.visible = false
-	}
-
-	// Ensure visible
-	contactLabel.visible = true
-	contactLabel.material.opacity = 1
-	contactVisible = true
-
-	const cfg = contactConfig
-
-	// Get world position before re-parenting
-	contactLabel.updateMatrixWorld()
-	const startPos = new THREE.Vector3()
-	contactLabel.getWorldPosition(startPos)
-	const startQuat = new THREE.Quaternion()
-	contactLabel.getWorldQuaternion(startQuat)
-	const startScale = contactLabel.scale.clone()
-
-	// Detach from pyramid group and add to scene for fixed positioning
-	if (contactLabel.parent !== scene) {
-		scene.add(contactLabel)
-	}
-	contactLabel.position.copy(startPos)
-	contactLabel.quaternion.copy(startQuat)
-	contactLabel.scale.copy(startScale)
-
-	const endPos = getContactLeftPosition()
-	const endQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0))
-
-	// Standard label scale
-	const endScale = new THREE.Vector3(1, 1, 1)
-
-	const duration = 500
-	const startTime = performance.now()
-
-	function animateToLeft(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-		const eased = 1 - Math.pow(1 - t, 3)
-
-		contactLabel.position.lerpVectors(startPos, endPos, eased)
-		contactLabel.quaternion.slerpQuaternions(startQuat, endQuat, eased)
-		contactLabel.scale.lerpVectors(startScale, endScale, eased)
-
-		if (t < 1) {
-			requestAnimationFrame(animateToLeft)
-		}
-	}
-	requestAnimationFrame(animateToLeft)
-}
-
-// Animation state for contact expansion
-let contactExpandAnim = null
-let contactHideTimer = null
-
-// Helper to perform the actual expansion animation
-function performContactExpansion(expanded) {
-	if (!contactLabel || !contactDetails || contactLabel.parent !== scene) return
-
-	// Avoid redundant updates
-	if (contactLabel.userData.isExpanded === expanded) return
-	contactLabel.userData.isExpanded = expanded
-
-	if (contactExpandAnim) cancelAnimationFrame(contactExpandAnim)
-
-	// New offsets for tighter positioning
-	const baseOffset = -0.2
-	const slideOffset = -0.5
-
-	// Ensure details are in the scene (not pyramidGroup) so they render with the label
-	if (expanded) {
-		if (contactDetails.parent !== scene) {
-			scene.add(contactDetails)
-			// Position details below the label
-			contactDetails.position.copy(contactLabel.position)
-			contactDetails.position.y += baseOffset
-			contactDetails.rotation.copy(contactLabel.rotation)
-			contactDetails.scale.set(1, 1, 1)
-		}
-		contactDetails.visible = true
-	}
-
-	const duration = 200
-	const startTime = performance.now()
-	const startAlpha = contactDetails.material.opacity
-	const endAlpha = expanded ? 1 : 0
-
-	function animateExpand(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-		const eased = t // Linear is fine for short hover transitions
-
-		// Fade details in/out
-		contactDetails.material.opacity =
-			startAlpha + (endAlpha - startAlpha) * eased
-
-		// Slide details down slightly
-		const currentSlide = expanded ? slideOffset : 0
-		contactDetails.position.y =
-			contactLabel.position.y + baseOffset + currentSlide * eased
-
-		if (t < 1) {
-			contactExpandAnim = requestAnimationFrame(animateExpand)
-		} else {
-			contactExpandAnim = null
-			// Final state cleanup
-			if (!expanded) {
-				contactDetails.visible = false
-			}
-		}
-	}
-	contactExpandAnim = requestAnimationFrame(animateExpand)
-}
-
-// Toggle contact label expansion state (called on hover when in left position)
-export function setContactExpanded(expanded) {
-	if (!contactLabel || !contactDetails || contactLabel.parent !== scene) return
-
-	if (expanded) {
-		// User is hovering: cancel any pending hide timer and expand immediately
-		if (contactHideTimer) {
-			clearTimeout(contactHideTimer)
-			contactHideTimer = null
-		}
-		if (!contactLabel.userData.isExpanded) {
-			performContactExpansion(true)
-		}
-	} else {
-		// User left hover: start timer to hide
-		// If already collapsed or timer running, do nothing
-		if (!contactLabel.userData.isExpanded || contactHideTimer) return
-
-		contactHideTimer = setTimeout(() => {
-			performContactExpansion(false)
-			contactHideTimer = null
-		}, 2000)
-	}
-}
-
-// Hide contact label
-export function hideContactLabel() {
-	if (!contactLabel) return
-
-	if (contactHideTimer) {
-		clearTimeout(contactHideTimer)
-		contactHideTimer = null
-	}
-
-	const cfg = contactConfig
-	const duration = 400
-	const startTime = performance.now()
-	const startOpacity = contactLabel.material.opacity
-
-	function animateFadeOut(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-
-		contactLabel.material.opacity = startOpacity * (1 - t)
-		if (contactDetails) contactDetails.material.opacity = startOpacity * (1 - t)
-
-		if (t >= 1) {
-			contactLabel.visible = false
-			contactVisible = false
-			// Reset to pyramid group and hidden position
-			if (contactLabel.parent === scene) {
-				scene.remove(contactLabel)
-				pyramidGroup.add(contactLabel)
-			}
-			if (contactDetails && contactDetails.parent === scene) {
-				scene.remove(contactDetails)
-				pyramidGroup.add(contactDetails)
-			}
-
-			contactLabel.position.set(
-				cfg.hiddenPosition.x,
-				cfg.hiddenPosition.y,
-				cfg.hiddenPosition.z
-			)
-			contactLabel.scale.set(1, 1, 1)
-
-			if (contactDetails) {
-				contactDetails.visible = false
-				contactDetails.position.copy(contactLabel.position)
-				contactDetails.rotation.copy(contactLabel.rotation)
-			}
-
-			contactLabel.userData.isExpanded = false
-		} else {
-			requestAnimationFrame(animateFadeOut)
-		}
-	}
-	requestAnimationFrame(animateFadeOut)
-}
-
-// Check if contact is currently visible
-export function isContactVisible() {
-	return contactVisible
-}
 
 // === Roaming Hand of ORC ===
 // The website is one continuous horizontal scene. Pages exist at different x-coordinates.
@@ -744,49 +415,6 @@ export function flyHandOutOfOrcScene(onComplete) {
 	requestAnimationFrame(animateExit)
 }
 
-export function initLabels(makeLabelPlane) {
-	for (const key in labelConfigs) {
-		const cfg = labelConfigs[key]
-		const mesh = makeLabelPlane(cfg.text, ...cfg.pyramidCenteredSize)
-		mesh.position.set(cfg.position.x, cfg.position.y, cfg.position.z)
-		mesh.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z)
-		// Store original position/rotation for return animation
-		mesh.userData.origPosition = mesh.position.clone()
-		mesh.userData.origRotation = mesh.rotation.clone()
-		mesh.userData.originalScale = mesh.scale.clone()
-		// Store centered and uncentered sizes for label sizing during animation
-		mesh.userData.pyramidCenteredSize = cfg.pyramidCenteredSize
-		mesh.userData.pyramidUncenteredSize = cfg.pyramidUncenteredSize
-		pyramidGroup.add(mesh)
-		labels[key] = mesh
-		mesh.userData.name = key
-		mesh.cursor = "pointer"
-
-		// Create a larger invisible hover target placed slightly in front of the label
-		const hoverWidth = cfg.pyramidCenteredSize[0] * 0.8
-		const hoverHeight = cfg.pyramidCenteredSize[1] * 1.0
-		const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
-		const hoverMat = new THREE.MeshBasicMaterial({
-			transparent: true,
-			opacity: 0,
-		})
-		const hover = new THREE.Mesh(hoverGeo, hoverMat)
-		// Offset slightly up (0.05) to expose the pyramid underline for clicking
-		hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0.05, 0.08))
-		hover.rotation.copy(mesh.rotation)
-		hover.userData.labelKey = key
-		hover.name = `${key}_hover`
-		scene.add(hover)
-		hoverTargets[key] = hover
-	}
-
-	// Hide Home label initially (only visible in top nav)
-	if (labels.Home) labels.Home.visible = false
-
-	// Initialize nav layout
-	updateNavLayout()
-}
-
 // === Pyramid State ===
 
 // Token to invalidate in-progress pyramid animations. Incrementing this
@@ -813,20 +441,10 @@ const flattenedMenuState = {
 	rotationX: -1.4, // Tilt forward to show inverted triangle, hide bottom completely
 }
 
-// Flattened label positions for horizontal menu at top.
-// These are WORLD positions (x/y/z) - fixed values that stay within camera view.
-// Camera is at z=6, FOV 50, so visible Y range at z=0 is roughly ±2.8
-const flattenedLabelPositions = {
-	Home: { x: -5.0, y: 2.5, z: 0 },
-	Contact: { x: -3.0, y: 2.5, z: 0 },
-	About: { x: -1.0, y: 2.5, z: 0 },
-	Blog: { x: 1.0, y: 2.5, z: 0 },
-	Portfolio: { x: 3.0, y: 2.5, z: 0 },
-}
-
 // Pyramid X positions when centered under each label (match flattenedLabelPositions)
 const pyramidXPositions = {
 	about: -1.0,
+	bio: -1.0, // Alias for about
 	blog: 1.0,
 	portfolio: 3.0,
 }
@@ -838,6 +456,9 @@ let currentSection = null
 const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.1)
 
 let navLabelScale = 1.0
+
+// Placeholder for legacy positions if needed, though LabelManager handles this now
+const flattenedLabelPositions = {}
 
 // Update nav layout based on screen size using LayoutManager for responsive positioning
 function updateNavLayout() {
@@ -876,18 +497,24 @@ function updateNavLayout() {
 
 	// Position each label from left to right
 	keys.forEach((key, i) => {
-		if (flattenedLabelPositions[key]) {
-			flattenedLabelPositions[key].x =
-				startX + scaledLabelWidth / 2 + i * (scaledLabelWidth + scaledSpacing)
-			flattenedLabelPositions[key].y = navY
-			flattenedLabelPositions[key].z = 0
-		}
+		// If we were managing positions here, we'd update them.
+		// Now LabelManager handles it. We just need to sync pyramid positions.
+		// For now, we'll approximate pyramid positions based on the calculated layout
+		// so the pyramid slides to the correct place.
+		const x =
+			startX + scaledLabelWidth / 2 + i * (scaledLabelWidth + scaledSpacing)
+
+		if (key === "About") pyramidXPositions.about = x
+		if (key === "About") pyramidXPositions.bio = x
+		if (key === "Blog") pyramidXPositions.blog = x
+		if (key === "Portfolio") pyramidXPositions.portfolio = x
 	})
 
-	// Update pyramid positions to match new label positions
-	pyramidXPositions.about = flattenedLabelPositions.About.x
-	pyramidXPositions.blog = flattenedLabelPositions.Blog.x
-	pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
+	// Sync with LabelManager if available
+	if (activeLabelManager) {
+		// Force an update in label manager to ensure it matches
+		activeLabelManager.updateNavLayout()
+	}
 
 	// Update flattened pyramid Y position to be just below labels
 	flattenedMenuState.positionY = navY - 0.3 * navLabelScale
@@ -897,13 +524,16 @@ export function getInitialPyramidState() {
 	return { ...initialPyramidState }
 }
 
-export function animatePyramid(down = true, section = null) {
+export function animatePyramid(labelManager, down = true, section = null) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = ++pyramidAnimToken
 
 	// Show Home label when animating to nav
-	if (down && labels.Home) labels.Home.visible = true
+	if (down && labelManager.getLabel("home")) {
+		labelManager.getLabel("home").visible = true
+	}
+
 	pyramidGroup.visible = true
 	const duration = 1000
 	const startRotY = pyramidGroup.rotation.y
@@ -946,6 +576,7 @@ export function animatePyramid(down = true, section = null) {
 	// Store starting label positions and rotations for animation
 	// Also pre-compute target positions based on FINAL pyramid state
 	const labelStartStates = {}
+	const labels = labelManager.getLabels()
 	const labelTargetStates = {}
 	for (const key in labels) {
 		const labelMesh = labels[key]
@@ -955,7 +586,7 @@ export function animatePyramid(down = true, section = null) {
 		// Detach from pyramid and move in World Space for a clear path.
 		if (
 			down &&
-			flattenedLabelPositions[key] &&
+			labelManager.getNavPosition(key) &&
 			!(labelMesh.userData && labelMesh.userData.fixedNav)
 		) {
 			// Update world matrix to ensure accurate world transforms
@@ -979,10 +610,11 @@ export function animatePyramid(down = true, section = null) {
 				scale: worldScale.clone(),
 			}
 
-			const flatPos = flattenedLabelPositions[key]
+			const flatPos = labelManager.getNavPosition(key)
 			// Target: Flat position, Face camera (identity rotation), Scale 0.4
+			// Place labels at z=1 to ensure they're in front of the pyramid (which is at z=0)
 			labelTargetStates[key] = {
-				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
+				position: new THREE.Vector3(flatPos.x, flatPos.y, 1),
 				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
 				scale: new THREE.Vector3(navLabelScale, navLabelScale, 1),
 			}
@@ -1074,9 +706,9 @@ export function animatePyramid(down = true, section = null) {
 				if (down && labelTargetStates[key]) {
 					// Already in scene and animated to target.
 					// Just ensure exact final values.
-					const flatPos = flattenedLabelPositions[key]
+					const flatPos = labelManager.getNavPosition(key)
 					if (flatPos) {
-						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
+						labelMesh.position.set(flatPos.x, flatPos.y, 1) // z=1 keeps labels in front of pyramid
 						labelMesh.rotation.set(0, 0, 0)
 						labelMesh.scale.set(1, 1, 1)
 						// Mark as fixed nav so it never moves again
@@ -1096,12 +728,14 @@ export function animatePyramid(down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (section === "about") showAboutPlane()
+			if (section === "bio") showAboutPlane()
 			else if (section === "portfolio") showPortfolioPlane()
 			else if (section === "blog") showBlogPlane()
 
 			// Hide Home label if returning to centered state
-			if (!down && labels.Home) labels.Home.visible = false
+			if (!down && labelManager.getLabel("home")) {
+				labelManager.getLabel("home").visible = false
+			}
 		}
 	}
 	requestAnimationFrame(step)
@@ -1148,7 +782,7 @@ export function spinPyramidToSection(section, onComplete = null) {
 }
 
 // Reset pyramid to exact home state
-export function resetPyramidToHome() {
+export function resetPyramidToHome(labelManager) {
 	// Invalidate any in-progress pyramid animations so their completion
 	// handlers won't show content after we start resetting.
 	const myToken = ++pyramidAnimToken
@@ -1187,6 +821,7 @@ export function resetPyramidToHome() {
 
 	// Capture label start states so we can animate them back to original positions
 	const labelStartStates = {}
+	const labels = labelManager.getLabels()
 	for (const key in labels) {
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
@@ -1279,7 +914,9 @@ export function resetPyramidToHome() {
 				labelMesh.userData.fixedNav = false
 
 				// Ensure Home is hidden after reset
-				if (key === "Home") labelMesh.visible = false
+				if (key === "home") {
+					labelMesh.visible = false
+				}
 			}
 		}
 	}
@@ -1803,17 +1440,18 @@ export function morphToOrcScene() {
 	pyramidGroup.rotation.x = flattenedMenuState.rotationX
 
 	// Move labels to flattened top nav positions
+	const labels = activeLabelManager ? activeLabelManager.labels : {}
 	for (const key in labels) {
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
 
-		const flatPos = flattenedLabelPositions[key]
+		const flatPos = activeLabelManager.getNavPosition(key)
 		if (flatPos) {
 			// Detach from pyramid and add to scene for fixed positioning
 			if (labelMesh.parent !== scene) {
 				scene.add(labelMesh)
 			}
-			labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
+			labelMesh.position.set(flatPos.x, flatPos.y, 1) // z=1 keeps labels in front of pyramid
 			labelMesh.rotation.set(0, 0, 0)
 			labelMesh.scale.set(1, 1, 1)
 			labelMesh.userData.fixedNav = true
@@ -1918,10 +1556,7 @@ export function morphFromOrcScene() {
 			initialPyramidState.scale
 		)
 
-		// Show hover targets
-		for (const key in hoverTargets) {
-			if (hoverTargets[key]) hoverTargets[key].visible = true
-		}
+		const labels = activeLabelManager ? activeLabelManager.labels : {}
 
 		// Set pyramid face materials to transparent for fade in
 		pyramidGroup.children.forEach((child) => {
@@ -2000,8 +1635,9 @@ export function morphFromOrcScene() {
 				})
 
 				// Final check - ensure labels are visible and in correct positions
-				for (const key in labels) {
-					const labelMesh = labels[key]
+				const finalLabels = activeLabelManager ? activeLabelManager.labels : {}
+				for (const key in finalLabels) {
+					const labelMesh = finalLabels[key]
 					if (!labelMesh) continue
 					if (labelMesh.material) labelMesh.material.opacity = 1
 
@@ -2019,11 +1655,6 @@ export function morphFromOrcScene() {
 					if (origPos) labelMesh.position.copy(origPos)
 					if (origRot) labelMesh.rotation.copy(origRot)
 					if (origScale) labelMesh.scale.copy(origScale)
-				}
-
-				// Ensure hover targets visible
-				for (const key in hoverTargets) {
-					if (hoverTargets[key]) hoverTargets[key].visible = true
 				}
 			}
 		}
@@ -2584,15 +2215,6 @@ window.addEventListener("satelliteRemoved", (event) => {
 	updateAvailableSatellitesHighlight()
 })
 
-// Show/hide helpers for Home label
-export function showHomeLabel() {
-	// No-op: Home is now a standard 3D label managed by the scene
-}
-
-export function hideHomeLabel() {
-	// No-op: Home is now a standard 3D label managed by the scene
-}
-
 // === Animate Loop ===
 export function animate() {
 	requestAnimationFrame(animate)
@@ -2605,28 +2227,7 @@ export function animate() {
 	if (controls.enabled) {
 		controls.update()
 	}
-	// Keep hover targets synchronized with labels (they're in scene, not pyramidGroup children)
-	for (const key in labels) {
-		const label = labels[key]
-		const hover = hoverTargets[key]
-		if (label && hover) {
-			// Get label's world position (since labels are children of pyramidGroup)
-			const labelWorldPos = new THREE.Vector3()
-			label.getWorldPosition(labelWorldPos)
-			// Position hover target in front of label (0.08 units on label's Z-axis in world space)
-			const worldQuaternion = new THREE.Quaternion()
-			label.getWorldQuaternion(worldQuaternion)
-			const offset = new THREE.Vector3(0, 0, 0.08)
-			offset.applyQuaternion(worldQuaternion)
-			hover.position.copy(labelWorldPos).add(offset)
-			// Match label's world rotation
-			hover.quaternion.copy(worldQuaternion)
-			// Scale hover target based on pyramid scale to maintain appropriate hit area
-			const s = new THREE.Vector3()
-			label.getWorldScale(s)
-			hover.scale.copy(s)
-		}
-	}
+
 	// continuously update scroll bounds to handle async text loading/layout
 	if (activeScrollPlane) updateScrollBounds()
 	renderer.render(scene, camera)
@@ -2658,12 +2259,20 @@ window.addEventListener("resize", () => {
 	updateNavLayout()
 
 	// If in nav mode, update positions immediately
+	// Note: flattenedLabelPositions are updated in updateNavLayout
+	// We just need to apply them to the meshes
+
 	if (pyramidGroup.position.y > 1.0) {
+		const labels = activeLabelManager ? activeLabelManager.labels : {}
 		for (const key in labels) {
 			const label = labels[key]
-			if (label && flattenedLabelPositions[key]) {
-				label.position.x = flattenedLabelPositions[key].x
-				label.position.y = flattenedLabelPositions[key].y
+			const flatPos = activeLabelManager
+				? activeLabelManager.getNavPosition(key)
+				: null
+			if (label && flatPos) {
+				label.position.x = flatPos.x
+				label.position.y = flatPos.y
+				label.position.z = 1 // Keep labels in front of pyramid
 				label.scale.set(navLabelScale, navLabelScale, 1)
 			}
 		}

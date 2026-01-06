@@ -1,52 +1,37 @@
 import * as THREE from "three"
-import { makeLabelPlane } from "./planes.js"
+import "./content/overlay.css"
 import {
-	pyramidGroup,
-	labels,
-	hoverTargets,
-	initLabels,
 	animatePyramid,
-	spinPyramidToSection,
 	showAboutPlane,
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
-	showHomeLabel,
 	animate,
 	renderer,
 	camera,
 	scene,
-	controls,
 	resetPyramidToHome,
 	morphToOrcScene,
 	morphFromOrcScene,
 	isOrcSceneActive,
-	initContactLabel,
-	showContactLabelCentered,
-	hideContactLabel,
-	moveContactLabelToLeft,
-	setContactExpanded,
-	contactLabel,
-	contactDetails,
-	contactConfig,
+	spinPyramidToSection,
 	// Roaming hand functions
 	initRoamingHand,
 	scheduleHandEntry,
 	cancelHandEntry,
 	triggerHandPageTransition,
 	getCurrentHandPage,
+	setLabelManager,
+	pyramidGroup,
+	layoutManager,
 } from "./pyramid.js"
+import { LabelManager } from "./navigation/LabelManager.js"
 import { router } from "./router.js"
 
-// Expose router navigate for pyramid.js to use in overlays
-window.routerNavigate = (path) => router.navigate(path)
-
-// Attach renderer DOM element
-document.getElementById("scene-container").appendChild(renderer.domElement)
-
-// Initialize Labels and Contact
-initLabels(makeLabelPlane)
-initContactLabel()
+// === Managers ===
+const labelManager = new LabelManager(scene, layoutManager)
+labelManager.createLabels()
+setLabelManager(labelManager)
 
 // Initialize roaming hand
 initRoamingHand()
@@ -54,17 +39,19 @@ initRoamingHand()
 // Start animation loop
 animate()
 
+// Force initial layout calculation to ensure labels are positioned correctly
+layoutManager.onResize()
+
 window.addEventListener("resize", () => {})
 
-// Copy email to clipboard when contact label is clicked
-function handleContactClick(text, index) {
+function copyToClipboard(text, index) {
 	navigator.clipboard
 		.writeText(text)
 		.then(() => {
 			// Show "Copied to clipboard!" message on the contact label
-			if (contactDetails && contactDetails.userData.showCopiedMessage) {
-				contactDetails.userData.showCopiedMessage(index)
-			}
+			// if (contactDetails && contactDetails.userData.showCopiedMessage) {
+			// 	contactDetails.userData.showCopiedMessage(index)
+			// }
 		})
 		.catch((err) => {
 			console.error("Failed to copy email:", err)
@@ -174,10 +161,10 @@ function onMouseMove(event) {
 	}
 
 	// Check hover targets for pyramid labels
-	const hoverTargetIntersects = raycaster.intersectObjects(
-		Object.values(hoverTargets)
-	)
-
+	// const hoverTargetIntersects = raycaster.intersectObjects(
+	// 	Object.values(hoverTargets)
+	// )
+	const hoverTargetIntersects = [] // Disabled for refactor
 	// Clear previous hover if not still over its hover target
 	if (hoveredLabel) {
 		const stillOver = hoverTargetIntersects.some(
@@ -208,7 +195,7 @@ function onMouseMove(event) {
 		}
 		// Show contact section when hovering over any content label while pyramid is centered
 		if (isPyramidCentered && labelMesh && labelMesh.visible) {
-			showContactLabelCentered()
+			// showContactLabelCentered()
 		}
 		renderer.domElement.style.cursor = "pointer"
 	} else {
@@ -217,64 +204,65 @@ function onMouseMove(event) {
 		let isOverContactDetails = false
 
 		// 1. Check Contact Label (in nav mode)
-		if (contactLabel && contactLabel.visible && contactLabel.parent === scene) {
-			const contactHits = raycaster.intersectObject(contactLabel, false)
-			if (contactHits.length > 0) {
-				isOverContactLabel = true
-			}
-		}
+		// if (contactLabel && contactLabel.visible && contactLabel.parent === scene) {
+		// 	const contactHits = raycaster.intersectObject(contactLabel, false)
+		// 	if (contactHits.length > 0) {
+		// 		isOverContactLabel = true
+		// 	}
+		// }
 
 		// 2. Check Contact Details (if visible)
-		if (contactDetails && contactDetails.visible) {
-			const contactHits = raycaster.intersectObject(contactDetails, false)
-			if (contactHits.length > 0) {
-				isOverContactDetails = true
-				const hit = contactHits[0]
+		// if (contactDetails && contactDetails.visible) {
+		// 	const contactHits = raycaster.intersectObject(contactDetails, false)
+		// 	if (contactHits.length > 0) {
+		// 		isOverContactDetails = true
+		// 		const hit = contactHits[0]
 
-				// Check if hovering over any interactive region using UV coordinates
-				const regions = contactDetails.userData.clickRegions || []
-				let foundIndex = -1
+		// 		// Check if hovering over any interactive region using UV coordinates
+		// 		const regions = contactDetails.userData.clickRegions || []
+		// 		let foundIndex = -1
 
-				if (hit.uv) {
-					const u = hit.uv.x
-					const v = hit.uv.y
-					const canvasY = 1 - v
+		// 		if (hit.uv) {
+		// 			const u = hit.uv.x
+		// 			const v = hit.uv.y
+		// 			const canvasY = 1 - v
 
-					for (const region of regions) {
-						if (
-							u >= region.x1 &&
-							u <= region.x2 &&
-							canvasY >= region.y1 &&
-							canvasY <= region.y2
-						) {
-							foundIndex = region.index
-							break
-						}
-					}
-				}
+		// 			for (const region of regions) {
+		// 				if (
+		// 					u >= region.x1 &&
+		// 					u <= region.x2 &&
+		// 					canvasY >= region.y1 &&
+		// 					canvasY <= region.y2
+		// 				) {
+		// 					foundIndex = region.index
+		// 					break
+		// 				}
+		// 			}
+		// 		}
 
-				if (foundIndex !== -1) {
-					contactDetails.userData.setHoveredIndex(foundIndex)
-					contactDetails.userData.showTooltip(foundIndex)
-					renderer.domElement.style.cursor = "pointer"
-				} else {
-					contactDetails.userData.setHoveredIndex(-1)
-					contactDetails.userData.hideTooltip()
-					renderer.domElement.style.cursor = "default"
-				}
-			} else {
-				if (contactDetails.userData.hideTooltip) {
-					contactDetails.userData.hideTooltip()
-				}
-			}
-		}
+		// 		if (foundIndex !== -1) {
+		// 			contactDetails.userData.setHoveredIndex(foundIndex)
+		// 			contactDetails.userData.showTooltip(foundIndex)
+		// 			renderer.domElement.style.cursor = "pointer"
+		// 		} else {
+		// 			contactDetails.userData.setHoveredIndex(-1)
+		// 			contactDetails.userData.hideTooltip()
+		// 			renderer.domElement.style.cursor = "default"
+		// 		}
+		// 	} else {
+		// 		if (contactDetails.userData.hideTooltip) {
+		// 			contactDetails.userData.hideTooltip()
+		// 		}
+		// 	}
+		// }
 
 		// Handle Expansion State
 		if (isOverContactLabel || isOverContactDetails) {
-			setContactExpanded(true)
+			// setContactExpanded(true)
 			if (isOverContactLabel) renderer.domElement.style.cursor = "pointer"
-		} else if (contactLabel && contactLabel.parent === scene) {
-			setContactExpanded(false)
+		} else {
+			// if (contactLabel && contactLabel.parent === scene) {
+			// setContactExpanded(false)
 		}
 
 		// Check if hovering over the pyramid mesh itself (when centered)
@@ -284,7 +272,7 @@ function onMouseMove(event) {
 				true
 			)
 			if (pyramidIntersects.length > 0) {
-				showContactLabelCentered()
+				// showContactLabelCentered()
 			}
 		}
 		// No hover targets: ensure cursor is default and reset hoveredLabel
@@ -305,29 +293,30 @@ window.addEventListener("mousemove", onMouseMove)
 
 // Listen for route changes and show correct content
 // Helper to animate pyramid to top menu and show a section
-function centerAndOpenLabel(labelName) {
-	if (!labels || !labels[labelName]) return
+function centerAndOpenLabel(labelManager, labelName) {
+	if (!labelManager.getLabel(labelName.toLowerCase())) return
 	// Clicking a label should reveal the corner Home control
 	try {
-		showHomeLabel()
-	} catch (e) {}
+		labelManager.showHomeLabel()
+	} catch (e) {
+		/* showHomeLabel might not be available yet */
+	}
 	// Move contact label to left sidebar position instead of hiding it
-	moveContactLabelToLeft()
+	// moveContactLabelToLeft()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
 		// Already at top, just spin to new section
 		hideAllPlanes()
 		const sectionName = labelName.toLowerCase()
-		console.log("pyramidGroup at top nav state:", pyramidGroup)
 		spinPyramidToSection(sectionName, () => {
-			if (labelName === "About") showAboutPlane()
+			if (labelName === "Bio") showAboutPlane()
 			else if (labelName === "Portfolio") showPortfolioPlane()
 			else if (labelName === "Blog") showBlogPlane()
 		})
 	} else if (!isAtTop) {
 		// animate pyramid to top and flatten labels - content will be shown when animation completes
-		animatePyramid(true, labelName.toLowerCase())
+		animatePyramid(labelManager, true, labelName.toLowerCase())
 	}
 	// Track which section is active (for highlighting in menu if desired)
 	window.centeredLabelName = labelName
@@ -337,7 +326,7 @@ function centerAndOpenLabel(labelName) {
 function routeToPage(route) {
 	const routeMap = {
 		"/": "home",
-		"/about": "about",
+		"/bio": "bio",
 		"/blog": "blog",
 		"/portfolio": "portfolio",
 		"/orc-demo": "orc-demo",
@@ -363,31 +352,31 @@ router.onRouteChange((route) => {
 		}
 	}
 
-	if (route === "/about") {
+	if (route === "/bio" || route === "/about") {
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
 				// After ORC scene fade out, trigger hand entry from the right
 				// (ORC demo is rightmost, so leaving it means entering from right)
-				triggerHandPageTransition("orc-demo", "about")
-				centerAndOpenLabel("About")
-				currentContentVisible = "about"
+				triggerHandPageTransition("orc-demo", "bio")
+				centerAndOpenLabel(labelManager, "Bio")
+				currentContentVisible = "bio"
 			}, 1300)
 		} else {
-			centerAndOpenLabel("About")
-			currentContentVisible = "about"
+			centerAndOpenLabel(labelManager, "Bio")
+			currentContentVisible = "bio"
 		}
 	} else if (route === "/portfolio") {
 		if (isOrcSceneActive()) {
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "portfolio")
-				centerAndOpenLabel("Portfolio")
+				centerAndOpenLabel(labelManager, "Portfolio")
 				currentContentVisible = "portfolio"
 			}, 1300)
 		} else {
-			centerAndOpenLabel("Portfolio")
+			centerAndOpenLabel(labelManager, "Portfolio")
 			currentContentVisible = "portfolio"
 		}
 	} else if (route === "/blog") {
@@ -395,16 +384,16 @@ router.onRouteChange((route) => {
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "blog")
-				centerAndOpenLabel("Blog")
+				centerAndOpenLabel(labelManager, "Blog")
 				currentContentVisible = "blog"
 			}, 1300)
 		} else {
-			centerAndOpenLabel("Blog")
+			centerAndOpenLabel(labelManager, "Blog")
 			currentContentVisible = "blog"
 		}
 	} else if (route === "/orc-demo") {
 		// Move contact label to left sidebar position instead of hiding it
-		moveContactLabelToLeft()
+		// moveContactLabelToLeft()
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"
@@ -412,7 +401,7 @@ router.onRouteChange((route) => {
 	} else {
 		// For non-content routes (home), reset pyramid, hide all content, and hide contact
 		hideContactLabel()
-		if (isOrcSceneActive()) {
+		if (isOrcSceneActive && isOrcSceneActive()) {
 			// morphFromOrcScene handles its own cleanup with fade animation
 			// Don't call hideAllPlanes() here as it would remove elements before fade completes
 			morphFromOrcScene()
@@ -421,7 +410,7 @@ router.onRouteChange((route) => {
 				triggerHandPageTransition("orc-demo", "home")
 			}, 1300)
 		} else {
-			resetPyramidToHome()
+			resetPyramidToHome(labelManager)
 			hideAllPlanes()
 			// Schedule hand entry on home page (2 second delay) only if not coming from ORC
 			scheduleHandEntry(2000)
@@ -431,6 +420,10 @@ router.onRouteChange((route) => {
 	}
 })
 
+// Stub for hideContactLabel since it was removed
+function hideContactLabel() {
+	// TODO: Re-implement contact label hiding
+}
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
 router.notify()
 
@@ -447,32 +440,32 @@ function onSceneMouseDown(event) {
 	raycaster.setFromCamera(pointer, camera)
 
 	// Check if contact label was clicked
-	if (contactDetails && contactDetails.visible) {
-		const contactHits = raycaster.intersectObject(contactDetails, false)
-		if (contactHits.length > 0) {
-			const hit = contactHits[0]
-			const regions = contactDetails.userData.clickRegions || []
+	// if (contactDetails && contactDetails.visible) {
+	// 	const contactHits = raycaster.intersectObject(contactDetails, false)
+	// 	if (contactHits.length > 0) {
+	// 		const hit = contactHits[0]
+	// 		const regions = contactDetails.userData.clickRegions || []
 
-			if (hit.uv) {
-				const u = hit.uv.x
-				const v = hit.uv.y
-				const canvasY = 1 - v
+	// 		if (hit.uv) {
+	// 			const u = hit.uv.x
+	// 			const v = hit.uv.y
+	// 			const canvasY = 1 - v
 
-				for (const region of regions) {
-					if (
-						u >= region.x1 &&
-						u <= region.x2 &&
-						canvasY >= region.y1 &&
-						canvasY <= region.y2
-					) {
-						handleContactClick(region.text, region.index)
-						return
-					}
-				}
-			}
-			return
-		}
-	}
+	// 			for (const region of regions) {
+	// 				if (
+	// 					u >= region.x1 &&
+	// 					u <= region.x2 &&
+	// 					canvasY >= region.y1 &&
+	// 					canvasY <= region.y2
+	// 				) {
+	// 					handleContactClick(region.text, region.index)
+	// 					return
+	// 				}
+	// 			}
+	// 		}
+	// 		return
+	// 	}
+	// }
 
 	// Helper: extract YouTube video id from a URL
 	function extractYouTubeID(url) {
@@ -959,17 +952,18 @@ function onSceneMouseDown(event) {
 		// ignore early plane detection errors
 	}
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
-	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
+	// const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
 	let obj = null
-	if (hoverHits.length > 0) {
-		const hoverObj = hoverHits[0].object
-		const labelKey = hoverObj.userData.labelKey
-		obj = labels[labelKey]
-	} else {
-		// Fallback: check tight label meshes
-		const labelIntersects = raycaster.intersectObjects(Object.values(labels))
-		if (labelIntersects.length > 0) obj = labelIntersects[0].object
-	}
+	const labels = labelManager.getLabels() // This will now work
+	// if (hoverHits.length > 0) {
+	// 	const hoverObj = hoverHits[0].object
+	// 	const labelKey = hoverObj.userData.labelKey
+	// 	obj = labels[labelKey]
+	// } else {
+	// Fallback: check tight label meshes
+	const labelIntersects = raycaster.intersectObjects(Object.values(labels))
+	if (labelIntersects.length > 0) obj = labelIntersects[0].object
+	// }
 	if (obj) {
 		const labelName = obj.userData.name
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
@@ -993,13 +987,13 @@ function onSceneMouseDown(event) {
 			if (isAtTop) {
 				// Already in flattened state, spin pyramid to new face and switch content
 				hideAllPlanes()
-				const sectionName = labelName.toLowerCase()
+				const sectionName = obj.userData.id
 				console.log("pyramidGroup at top nav state:", pyramidGroup)
 				spinPyramidToSection(sectionName, () => {
 					// Show content after spin completes
-					if (labelName === "About") {
+					if (obj.userData.id === "bio") {
 						showAboutPlane()
-						currentContentVisible = "about"
+						currentContentVisible = "bio"
 					} else if (labelName === "Portfolio") {
 						showPortfolioPlane()
 						currentContentVisible = "portfolio"
@@ -1008,15 +1002,15 @@ function onSceneMouseDown(event) {
 						currentContentVisible = "blog"
 					}
 				})
-				window.centeredLabelName = labelName
+				window.centeredLabelName = obj.userData.id
 			} else {
 				// Animate pyramid to top and show content
-				animatePyramid(true, labelName.toLowerCase())
-				window.centeredLabelName = labelName
+				animatePyramid(labelManager, true, obj.userData.id)
+				window.centeredLabelName = obj.userData.id
 			}
 
 			// Update route
-			router.navigate("/" + labelName.toLowerCase())
+			router.navigate("/" + obj.userData.id)
 		}
 		return
 	}
@@ -1089,10 +1083,10 @@ function onSceneMouseDown(event) {
 			return
 		}
 		// Clicking the pyramid shows the contact info
-		showContactLabelCentered()
+		// showContactLabelCentered()
 		return
 	}
 
-	// If nothing else was hit (background click), show contact info
-	showContactLabelCentered()
+	// If nothing else was hit (background click), show contact info (disabled for refactor)
+	// showContactLabelCentered()
 }
