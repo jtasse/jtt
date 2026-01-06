@@ -1,18 +1,10 @@
 import * as THREE from "three"
 import { loadContentHTML, parseBlogPosts } from "../contentLoader.js"
-import {
-	createOrcPreview,
-	showGeoTether,
-	hideGeoTether,
-	satellites,
-	startDecommission,
-	cancelDecommission,
-	canCancelDecommission,
-	disposeOrcScene,
-} from "./orc-demo/orc-demo.js"
+import { createOrcPreview } from "./orc-demo/orc-demo.js"
 import { scene, controls } from "../core/SceneManager.js"
 import { getPyramidAnimToken } from "../pyramid/state.js"
 import { pyramidGroup } from "../pyramid/state.js"
+import { ScrollManager } from "./ScrollManager.js"
 
 // === Content Display Logic ===
 
@@ -42,9 +34,11 @@ export function hideAllPlanes() {
 	const blogPlane = scene.getObjectByName("blogPlane")
 	if (blogPlane) scene.remove(blogPlane)
 
-	// Hide ORC preview overlay and info pane
+	// Hide ORC preview overlay
 	hideOrcPreviewOverlay()
-	hideOrcInfoPane()
+
+	// Hide scroll UI
+	ScrollManager.hide()
 
 	// Hide navigation bar DOM element as a fallback
 	const contentFloor = document.getElementById("content-floor")
@@ -369,16 +363,6 @@ export function hideOrcPreviewOverlay() {
 	if (orcPreviewOverlay) {
 		orcPreviewOverlay.style.display = "none"
 	}
-}
-
-let orcInfoPane = null
-export function hideOrcInfoPane() {
-	if (orcInfoPane) {
-		orcInfoPane.remove()
-		orcInfoPane = null
-	}
-	const existingPane = document.getElementById("orc-info-pane")
-	if (existingPane) existingPane.remove()
 }
 
 // === Global Link Handling ===
