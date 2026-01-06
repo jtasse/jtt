@@ -16,22 +16,30 @@ import {
 	isOrcSceneActive,
 	spinPyramidToSection,
 	// Roaming hand functions
+	setLabelManager,
+	pyramidGroup,
+	layoutManager,
+	screenToWorld,
+} from "./pyramid.js"
+import { handleContentLink } from "./content/ContentManager.js"
+import { LabelManager } from "./navigation/LabelManager.js"
+import { InputManager } from "./core/InputManager.js"
+import {
 	initRoamingHand,
 	scheduleHandEntry,
 	cancelHandEntry,
 	triggerHandPageTransition,
 	getCurrentHandPage,
-	setLabelManager,
-	pyramidGroup,
-	layoutManager,
-} from "./pyramid.js"
-import { LabelManager } from "./navigation/LabelManager.js"
+} from "./hand/HandManager.js"
 import { router } from "./router.js"
 
 // === Managers ===
 const labelManager = new LabelManager(scene, layoutManager)
 labelManager.createLabels()
 setLabelManager(labelManager)
+
+// === Input Manager ===
+const inputManager = new InputManager(renderer, camera)
 
 // Initialize roaming hand
 initRoamingHand()
@@ -44,104 +52,11 @@ layoutManager.onResize()
 
 window.addEventListener("resize", () => {})
 
-function copyToClipboard(text, index) {
-	navigator.clipboard
-		.writeText(text)
-		.then(() => {
-			// Show "Copied to clipboard!" message on the contact label
-			// if (contactDetails && contactDetails.userData.showCopiedMessage) {
-			// 	contactDetails.userData.showCopiedMessage(index)
-			// }
-		})
-		.catch((err) => {
-			console.error("Failed to copy email:", err)
-		})
-}
-
-// === Click Handling ===
-const raycaster = new THREE.Raycaster()
-const pointer = new THREE.Vector2()
 let hoveredLabel = null
 let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
-const pointerDownPos = new THREE.Vector2() // Track pointer position on mousedown to detect true clicks vs drags
-let isPointerDown = false
-let isDragging = false
-const DRAG_THRESHOLD = 5 // pixels
-
-// Track mousedown to detect if click is a drag, and process scene interaction
-function onMouseDown(event) {
-	// Ignore mousedown on DOM elements (buttons, scrollbars, content pane)
-	// Only track clicks that originate on the canvas
-	if (event.target.tagName !== "CANVAS") {
-		return
-	}
-	isPointerDown = true
-	isDragging = false
-	pointerDownPos.x = event.clientX
-	pointerDownPos.y = event.clientY
-	// Don't process scene interaction on mousedown - wait for mouseup to confirm it's a real click
-}
-
-window.addEventListener("mousedown", onMouseDown)
-
-// Track mousemove to detect drag
-window.addEventListener("mousemove", (event) => {
-	if (isPointerDown) {
-		const dx = event.clientX - pointerDownPos.x
-		const dy = event.clientY - pointerDownPos.y
-		if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
-			isDragging = true
-		}
-	}
-})
-
-// Track mouseup to mark end of interaction AND trigger scene click
-window.addEventListener("mouseup", (event) => {
-	isPointerDown = false
-	// Only trigger scene interaction if this wasn't a drag
-	if (!isDragging) {
-		if (event.target.tagName !== "CANVAS") return
-		onSceneMouseDown(event)
-	}
-	isDragging = false
-})
-
-// Completely block click events at capture phase - we'll use mousedown instead
-// But allow clicks inside #content (for close button, etc.)
-window.addEventListener(
-	"click",
-	(event) => {
-		const content = document.getElementById("content")
-		const orcInfoPane = document.getElementById("orc-info-pane")
-		const orcOverlay = document.getElementById("orc-preview-overlay")
-		if (
-			(content && content.contains(event.target)) ||
-			(orcInfoPane && orcInfoPane.contains(event.target)) ||
-			(orcOverlay && orcOverlay.contains(event.target))
-		) {
-			// Allow clicks inside content area or home button to pass through
-			return
-		}
-		event.preventDefault()
-		event.stopPropagation()
-	},
-	true
-) // Use capture phase to prevent ALL clicks from reaching handlers
 
 // Hover detection
-function onMouseMove(event) {
-	// Compute normalized device coordinates (NDC) relative to renderer canvas
-	try {
-		const rect = renderer.domElement.getBoundingClientRect()
-		pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-		pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-	} catch (e) {
-		// Fallback to window-based coords
-		pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-		pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
-	}
-	raycaster.setFromCamera(pointer, camera)
-
+inputManager.addHoverHandler((raycaster) => {
 	// Check for portfolio item clickables FIRST (highest priority)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) {
@@ -154,7 +69,7 @@ function onMouseMove(event) {
 				false
 			)
 			if (portfolioHits.length > 0) {
-				renderer.domElement.style.cursor = "pointer"
+				inputManager.setCursor("pointer")
 				return
 			}
 		}
@@ -173,7 +88,7 @@ function onMouseMove(event) {
 		if (!stillOver) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
 			hoveredLabel = null
-			renderer.domElement.style.cursor = "default"
+			inputManager.setCursor("default")
 		}
 	}
 
@@ -197,7 +112,7 @@ function onMouseMove(event) {
 		if (isPyramidCentered && labelMesh && labelMesh.visible) {
 			// showContactLabelCentered()
 		}
-		renderer.domElement.style.cursor = "pointer"
+		inputManager.setCursor("pointer")
 	} else {
 		// Check contact label/details hover state for expansion logic
 		let isOverContactLabel = false
@@ -259,7 +174,7 @@ function onMouseMove(event) {
 		// Handle Expansion State
 		if (isOverContactLabel || isOverContactDetails) {
 			// setContactExpanded(true)
-			if (isOverContactLabel) renderer.domElement.style.cursor = "pointer"
+			if (isOverContactLabel) inputManager.setCursor("pointer")
 		} else {
 			// if (contactLabel && contactLabel.parent === scene) {
 			// setContactExpanded(false)
@@ -285,11 +200,9 @@ function onMouseMove(event) {
 			return
 		}
 
-		renderer.domElement.style.cursor = "default"
+		inputManager.setCursor("default")
 	}
-}
-
-window.addEventListener("mousemove", onMouseMove)
+})
 
 // Listen for route changes and show correct content
 // Helper to animate pyramid to top menu and show a section
@@ -427,18 +340,7 @@ function hideContactLabel() {
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
 router.notify()
 
-function onSceneMouseDown(event) {
-	// Only handle mousedown if it's a true click (not part of a drag)
-	// We detect this by waiting for mouseup to see if isDragging was set
-	// For now, just mark that we're ready to process a click
-	if (isDragging) {
-		return
-	}
-
-	pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-	pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
-	raycaster.setFromCamera(pointer, camera)
-
+inputManager.addClickHandler((raycaster) => {
 	// Check if contact label was clicked
 	// if (contactDetails && contactDetails.visible) {
 	// 	const contactHits = raycaster.intersectObject(contactDetails, false)
@@ -467,457 +369,6 @@ function onSceneMouseDown(event) {
 	// 	}
 	// }
 
-	// Helper: extract YouTube video id from a URL
-	function extractYouTubeID(url) {
-		try {
-			const u = new URL(url)
-			if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
-			if (u.hostname === "youtu.be") return u.pathname.slice(1)
-		} catch (e) {
-			return null
-		}
-		return null
-	}
-
-	// Helper: extract Google Docs document ID from a URL
-	function extractGoogleDocsID(url) {
-		try {
-			const u = new URL(url)
-			if (u.hostname.includes("docs.google.com")) {
-				const match = u.pathname.match(/\/document\/d\/([^\/]+)/)
-				return match ? match[1] : null
-			}
-		} catch (e) {
-			return null
-		}
-		return null
-	}
-
-	// Helper: check if URL points to an image
-	function isImageUrl(url) {
-		try {
-			const u = new URL(url)
-			const path = u.pathname.toLowerCase()
-			return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/.test(path)
-		} catch (e) {
-			return false
-		}
-	}
-
-	// Helper: handle a content link (embed YouTube if applicable, otherwise open)
-	function handleContentLink(link) {
-		if (!link) return false
-
-		// Check for internal routes (like /orc-demo)
-		if (link.startsWith("/")) {
-			router.navigate(link)
-			return true
-		}
-
-		const ytId = extractYouTubeID(link)
-		const content = document.getElementById("content")
-		// Use the exported function from pyramid module (imported above)
-		try {
-			hideAllPlanes()
-		} catch (e) {
-			// fallback to any global if available
-			if (window.hideAllPlanes) window.hideAllPlanes()
-		}
-		if (content) {
-			content.style.bottom = ""
-			content.style.maxHeight = ""
-		}
-		if (ytId) {
-			if (content) {
-				content.innerHTML = ""
-				try {
-					// Full page layout with margins
-					const sideMargin = 40
-					const topMargin = 85
-					const bottomMargin = 20
-					const availableHeight = window.innerHeight - topMargin - bottomMargin
-
-					// Override CSS and set full-page positioning
-					content.style.maxHeight = "none"
-					content.style.height = availableHeight + "px"
-					content.style.top = topMargin + "px"
-					content.style.left = sideMargin + "px"
-					content.style.right = sideMargin + "px"
-					content.style.width = "auto"
-					content.style.transform = "none"
-
-					// Create close button
-					const closeBtn = document.createElement("button")
-					closeBtn.innerHTML = "&times;"
-					closeBtn.style.cssText = `
-						position: absolute;
-						top: 10px;
-						right: 10px;
-						width: 36px;
-						height: 36px;
-						border: 2px solid #00ffff;
-						border-radius: 50%;
-						background: rgba(0, 0, 0, 0.8);
-						color: #00ffff;
-						font-size: 24px;
-						line-height: 1;
-						cursor: pointer;
-						z-index: 10;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-					`
-					closeBtn.onmouseover = () => {
-						closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
-					}
-					closeBtn.onmouseout = () => {
-						closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
-					}
-					closeBtn.onclick = (e) => {
-						e.preventDefault()
-						e.stopPropagation()
-						// Restore pyramid at bottom position
-						if (pyramidGroup) {
-							pyramidGroup.visible = true
-							animatePyramid(true, "portfolio")
-						}
-						// Clear content and hide
-						content.innerHTML = ""
-						content.style.display = "none"
-						// Reset content styles
-						content.style.height = ""
-						content.style.top = ""
-						content.style.left = ""
-						content.style.right = ""
-						content.style.width = ""
-						content.style.transform = ""
-						content.style.maxHeight = ""
-						content.style.overflow = ""
-						content.style.padding = ""
-						// Show portfolio plane again
-						showPortfolioPlane()
-						currentContentVisible = "portfolio"
-					}
-
-					const iframe = document.createElement("iframe")
-					iframe.setAttribute(
-						"src",
-						`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`
-					)
-					iframe.setAttribute("width", "100%")
-					iframe.style.height = "calc(100% - 20px)"
-					iframe.setAttribute(
-						"allow",
-						"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-					)
-					iframe.setAttribute("frameborder", "0")
-					iframe.setAttribute("allowfullscreen", "")
-					const wrapper = document.createElement("div")
-					wrapper.className = "video-wrapper"
-					wrapper.id = "embedded-video-wrapper"
-					wrapper.style.width = "100%"
-					wrapper.style.height = "100%"
-					wrapper.style.overflow = "hidden"
-					wrapper.style.position = "relative"
-					wrapper.appendChild(iframe)
-					wrapper.appendChild(closeBtn)
-					content.appendChild(wrapper)
-
-					content.style.display = "block"
-					content.style.overflow = "hidden"
-					content.style.padding = "0"
-					content.style.zIndex = String(2147483646)
-					content.style.position = "fixed"
-					content.style.pointerEvents = "auto"
-					currentContentVisible = "portfolio"
-					return true
-				} catch (e) {
-					// If creating the iframe failed for some reason, open the link instead
-					console.error("Failed to create YouTube iframe:", e)
-					window.open(link, "_blank")
-					return true
-				}
-			}
-		} else {
-			// Check for Google Docs
-			const docId = extractGoogleDocsID(link)
-			if (docId && content) {
-				content.innerHTML = ""
-
-				// Full page layout with margins
-				const sideMargin = 40
-				const topMargin = 85
-				const bottomMargin = 20
-				const availableHeight = window.innerHeight - topMargin - bottomMargin
-
-				// Override CSS and set full-page positioning
-				content.style.maxHeight = "none"
-				content.style.height = availableHeight + "px"
-				content.style.top = topMargin + "px"
-				content.style.left = sideMargin + "px"
-				content.style.right = sideMargin + "px"
-				content.style.width = "auto"
-				content.style.transform = "none"
-
-				// Create close button
-				const closeBtn = document.createElement("button")
-				closeBtn.innerHTML = "&times;"
-				closeBtn.style.cssText = `
-					position: absolute;
-					top: 10px;
-					right: 10px;
-					width: 36px;
-					height: 36px;
-					border: 2px solid #00ffff;
-					border-radius: 50%;
-					background: rgba(0, 0, 0, 0.8);
-					color: #00ffff;
-					font-size: 24px;
-					line-height: 1;
-					cursor: pointer;
-					z-index: 10;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-				`
-				closeBtn.onmouseover = () => {
-					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
-				}
-				closeBtn.onmouseout = () => {
-					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
-				}
-				closeBtn.onclick = (e) => {
-					e.preventDefault()
-					e.stopPropagation()
-					// Restore pyramid at bottom position
-					if (pyramidGroup) {
-						pyramidGroup.visible = true
-						animatePyramid(true, "portfolio")
-					}
-					// Clear content and hide
-					content.innerHTML = ""
-					content.style.display = "none"
-					// Reset content styles
-					content.style.height = ""
-					content.style.top = ""
-					content.style.left = ""
-					content.style.right = ""
-					content.style.width = ""
-					content.style.transform = ""
-					content.style.maxHeight = ""
-					content.style.overflow = ""
-					content.style.padding = ""
-					// Show portfolio plane again
-					showPortfolioPlane()
-					currentContentVisible = "portfolio"
-				}
-
-				const iframe = document.createElement("iframe")
-				iframe.src = `https://docs.google.com/document/d/${docId}/preview`
-				iframe.width = "100%"
-				iframe.style.height = "calc(100% - 20px)"
-				iframe.style.border = "1px solid #00ffff"
-				iframe.style.borderRadius = "8px"
-				iframe.style.display = "block"
-				const wrapper = document.createElement("div")
-				wrapper.className = "doc-wrapper"
-				wrapper.style.width = "100%"
-				wrapper.style.height = "100%"
-				wrapper.style.overflow = "hidden"
-				wrapper.style.position = "relative"
-				wrapper.appendChild(iframe)
-				wrapper.appendChild(closeBtn)
-				content.appendChild(wrapper)
-				content.style.display = "block"
-				content.style.overflow = "hidden"
-				content.style.padding = "0"
-				content.style.zIndex = String(2147483646)
-				content.style.position = "fixed"
-				content.style.pointerEvents = "auto"
-				currentContentVisible = "portfolio"
-				return true
-			}
-
-			// Check for image URL
-			if (isImageUrl(link)) {
-				content.innerHTML = ""
-
-				// Full page layout with margins
-				const sideMargin = 40
-				const topMargin = 85
-				const bottomMargin = 20
-				const availableHeight = window.innerHeight - topMargin - bottomMargin
-
-				// Override CSS and set full-page positioning
-				content.style.maxHeight = "none"
-				content.style.height = availableHeight + "px"
-				content.style.top = topMargin + "px"
-				content.style.left = sideMargin + "px"
-				content.style.right = sideMargin + "px"
-				content.style.width = "auto"
-				content.style.transform = "none"
-
-				// Create close button
-				const closeBtn = document.createElement("button")
-				closeBtn.innerHTML = "&times;"
-				closeBtn.style.cssText = `
-					position: absolute;
-					top: 10px;
-					right: 10px;
-					width: 36px;
-					height: 36px;
-					border: 2px solid #00ffff;
-					border-radius: 50%;
-					background: rgba(0, 0, 0, 0.8);
-					color: #00ffff;
-					font-size: 24px;
-					line-height: 1;
-					cursor: pointer;
-					z-index: 10;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-				`
-				closeBtn.onmouseover = () => {
-					closeBtn.style.background = "rgba(0, 255, 255, 0.3)"
-				}
-				closeBtn.onmouseout = () => {
-					closeBtn.style.background = "rgba(0, 0, 0, 0.8)"
-				}
-				closeBtn.onclick = (e) => {
-					e.preventDefault()
-					e.stopPropagation()
-					// Restore pyramid at bottom position
-					if (pyramidGroup) {
-						pyramidGroup.visible = true
-						animatePyramid(true, "portfolio")
-					}
-					// Clear content and hide
-					content.innerHTML = ""
-					content.style.display = "none"
-					// Reset content styles
-					content.style.height = ""
-					content.style.top = ""
-					content.style.left = ""
-					content.style.right = ""
-					content.style.width = ""
-					content.style.transform = ""
-					content.style.maxHeight = ""
-					content.style.overflow = ""
-					content.style.padding = ""
-					// Show portfolio plane again
-					showPortfolioPlane()
-					currentContentVisible = "portfolio"
-				}
-
-				const img = document.createElement("img")
-				img.src = link
-				img.alt = "Visual Resume"
-				img.style.width = "100%"
-				img.style.height = "auto"
-				img.style.display = "block"
-				img.style.margin = "0 auto"
-
-				const wrapper = document.createElement("div")
-				wrapper.className = "image-wrapper"
-				wrapper.style.width = "100%"
-				wrapper.style.height = "100%"
-				wrapper.style.overflow = "auto"
-				wrapper.style.position = "relative"
-				wrapper.appendChild(img)
-
-				// Zoom Controls
-				let zoom = 1.0
-				const updateZoom = (newZoom) => {
-					zoom = Math.max(0.25, newZoom)
-					img.style.width = `${zoom * 100}%`
-					img.style.maxWidth = "none"
-				}
-
-				const zoomContainer = document.createElement("div")
-				zoomContainer.style.cssText = `
-					position: absolute;
-					bottom: 20px;
-					right: 20px;
-					display: flex;
-					gap: 10px;
-					z-index: 11;
-				`
-				const btnStyle = `
-					width: 40px;
-					height: 40px;
-					border: 2px solid #00ffff;
-					border-radius: 50%;
-					background: rgba(0, 0, 0, 0.8);
-					color: #00ffff;
-					font-size: 24px;
-					line-height: 1;
-					cursor: pointer;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					user-select: none;
-				`
-				const zoomIn = document.createElement("div")
-				zoomIn.innerHTML = "+"
-				zoomIn.style.cssText = btnStyle
-				zoomIn.onclick = (e) => {
-					e.stopPropagation()
-					updateZoom(zoom + 0.25)
-				}
-
-				const zoomOut = document.createElement("div")
-				zoomOut.innerHTML = "&minus;"
-				zoomOut.style.cssText = btnStyle
-				zoomOut.onclick = (e) => {
-					e.stopPropagation()
-					updateZoom(zoom - 0.25)
-				}
-
-				const addHover = (btn) => {
-					btn.onmouseover = () =>
-						(btn.style.background = "rgba(0, 255, 255, 0.3)")
-					btn.onmouseout = () => (btn.style.background = "rgba(0, 0, 0, 0.8)")
-				}
-				addHover(zoomIn)
-				addHover(zoomOut)
-
-				zoomContainer.appendChild(zoomOut)
-				zoomContainer.appendChild(zoomIn)
-
-				// Scrollwheel zoom support
-				wrapper.addEventListener(
-					"wheel",
-					(e) => {
-						e.preventDefault()
-						e.stopPropagation()
-						const direction = e.deltaY > 0 ? -1 : 1
-						updateZoom(zoom + direction * 0.1)
-					},
-					{ passive: false }
-				)
-
-				content.appendChild(wrapper)
-				content.appendChild(closeBtn)
-				content.appendChild(zoomContainer)
-
-				content.style.display = "block"
-				content.style.overflow = "hidden"
-				content.style.padding = "0"
-				content.style.zIndex = String(2147483646)
-				content.style.position = "fixed"
-				content.style.pointerEvents = "auto"
-				currentContentVisible = "portfolio"
-				return true
-			}
-
-			// Fallback: open in new tab
-			window.open(link, "_blank")
-			return true
-		}
-		return false
-	}
-
 	// Track which label is centered
 	const centeredLabelName = window.centeredLabelName || null
 	// If a content plane is visible, prefer handling clickable overlays on it first
@@ -938,7 +389,7 @@ function onSceneMouseDown(event) {
 								node.userData.link
 							)
 							try {
-								if (handleContentLink(node.userData.link)) return
+								if (handleContentLink(node.userData.link, router)) return
 							} catch (e) {
 								console.error("Error handling content link (early)", e)
 							}
@@ -1036,7 +487,7 @@ function onSceneMouseDown(event) {
 							node.userData.link
 						)
 						try {
-							if (handleContentLink(node.userData.link)) return
+							if (handleContentLink(node.userData.link, router)) return
 						} catch (e) {
 							console.error("Error handling content link", e)
 						}
@@ -1057,7 +508,7 @@ function onSceneMouseDown(event) {
 							node.userData.link
 						)
 						try {
-							if (handleContentLink(node.userData.link)) return
+							if (handleContentLink(node.userData.link, router)) return
 						} catch (e) {
 							console.error("Error handling content link", e)
 						}
@@ -1089,4 +540,4 @@ function onSceneMouseDown(event) {
 
 	// If nothing else was hit (background click), show contact info (disabled for refactor)
 	// showContactLabelCentered()
-}
+})

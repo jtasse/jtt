@@ -1,11 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import {
-	loadContentHTML,
-	parseAboutContent,
-	parseBlogPosts,
-} from "./contentLoader.js"
-import {
 	createOrcScene,
 	animateOrcScene,
 	satellites,
@@ -23,8 +18,7 @@ import {
 	setOrcHand,
 	releaseOrcHand,
 } from "./content/orc-demo/orc-demo.js"
-import { createOrcHand } from "./content/orc-demo/orc-hand.js"
-import { LayoutManager } from "./layout/LayoutManager.js"
+import { LayoutManager } from "./core/LayoutManager.js"
 import {
 	scene,
 	camera,
@@ -33,7 +27,30 @@ import {
 	stars,
 	screenToWorld,
 } from "./core/SceneManager.js"
-import { createPyramid, pyramidDimensions } from "./pyramid/PyramidMesh.js"
+import {
+	pyramidGroup,
+	initialPyramidState,
+	flattenedMenuState,
+	pyramidXPositions,
+	getCurrentSection,
+	setCurrentSection,
+	getPyramidAnimToken,
+	incrementPyramidAnimToken,
+	initialCameraState,
+	setInitialCameraState,
+} from "./pyramid/state.js"
+import {
+	animatePyramid,
+	spinPyramidToSection,
+	resetPyramidToHome,
+} from "./pyramid/animations.js"
+import {
+	showAboutPlane,
+	showPortfolioPlane,
+	showBlogPlane,
+	hideAllPlanes,
+	hideOrcInfoPane,
+} from "./content/ContentManager.js"
 import * as Contact from "./contact/ContactLabel.js"
 import "./content/home/home.css"
 import "./content/about/about.css"
@@ -41,9 +58,41 @@ import "./content/blog/blog.css"
 import "./content/portfolio/portfolio.css"
 import "./content/orc-demo/orc-demo.css"
 import "./content/overlay.css"
+import {
+	initRoamingHand,
+	getRoamingHand,
+	updateHandIdleMotion,
+	scheduleHandEntry,
+	cancelHandEntry,
+	triggerHandPageTransition,
+	getCurrentHandPage,
+	setCurrentHandPage,
+} from "./hand/HandManager.js"
 
 // Re-export core scene elements for main.js
-export { scene, camera, renderer, controls, screenToWorld }
+export {
+	scene,
+	camera,
+	renderer,
+	controls,
+	screenToWorld,
+	animatePyramid,
+	spinPyramidToSection,
+	resetPyramidToHome,
+	showAboutPlane,
+	showPortfolioPlane,
+	showBlogPlane,
+	hideAllPlanes,
+	pyramidGroup,
+	isOrcSceneActive,
+	morphToOrcScene,
+	morphFromOrcScene,
+	initRoamingHand,
+	scheduleHandEntry,
+	cancelHandEntry,
+	triggerHandPageTransition,
+	getCurrentHandPage,
+}
 
 Contact.initContactLabel()
 
@@ -53,16 +102,10 @@ export function setLabelManager(lm) {
 	setupPyramidLabels()
 }
 
-export const pyramidGroup = createPyramid()
-
 // Layout manager for responsive 3D positioning
 export const layoutManager = new LayoutManager(camera)
 
-// Store initial camera state for reset
-const initialCameraState = {
-	position: camera.position.clone(),
-	target: new THREE.Vector3(0, 0, 0),
-}
+setInitialCameraState(camera.position, new THREE.Vector3(0, 0, 0))
 
 scene.add(pyramidGroup)
 
@@ -135,6 +178,7 @@ let orcDemoScene = null
 let orcDemoCamera = null
 let orcDemoRequestId = null
 let orcDemoControls = null
+let orcInfoPane = null
 let selectionIndicator = null
 let selectedSatellite = null
 
@@ -176,190 +220,12 @@ function updatePyramidEnvMap() {
 // can call updatePyramidEnvMap() again to refresh reflections.
 updatePyramidEnvMap()
 
-// === Roaming Hand of ORC ===
-// The website is one continuous horizontal scene. Pages exist at different x-coordinates.
-// The hand physically moves between pages when navigating.
-
-const pageOrder = ["home", "about", "blog", "portfolio", "orc-demo"]
-const pageXPositions = {
-	home: -4,
-	about: -2,
-	blog: 0,
-	portfolio: 2,
-	"orc-demo": 4,
-}
-
-let roamingHand = null
-let currentHandPage = "home"
-let isHandAnimating = false
-let handEntryTimeoutId = null
-let handHasEntered = false // Track if hand has done initial entry
-
-// Initialize the roaming hand
-export function initRoamingHand() {
-	if (roamingHand) return // Already initialized
-
-	roamingHand = createOrcHand(5) // Scale factor of 5
-	roamingHand.name = "roamingHand"
-	// Start off-screen to the right, behind content (z: -2)
-	roamingHand.position.set(10, 0, -2)
-	// Orient the hand so it looks like it's flying (palm facing down, fingers forward)
-	roamingHand.rotation.set(0, -Math.PI / 2, 0)
-	scene.add(roamingHand)
-}
-
-// Get the roaming hand for ORC demo to use
-export function getRoamingHand() {
-	return roamingHand
-}
-
-// Fly hand in from the right edge (initial home page entrance)
-export function flyHandIn() {
-	if (!roamingHand || handHasEntered) return
-
-	handHasEntered = true
-	isHandAnimating = true
-
-	const startX = 10 // Off-screen right
-	const endX = 5 // Visible on right edge, consistent with page transition rest position
-	const duration = 1500
-
-	roamingHand.position.x = startX
-	const startTime = performance.now()
-
-	function animateEntry(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-		// Ease out cubic for smooth deceleration
-		const eased = 1 - Math.pow(1 - t, 3)
-
-		roamingHand.position.x = startX + (endX - startX) * eased
-
-		if (t < 1) {
-			requestAnimationFrame(animateEntry)
-		} else {
-			isHandAnimating = false
-		}
-	}
-	requestAnimationFrame(animateEntry)
-}
-
-// Schedule hand entry after delay (called on home page load)
-export function scheduleHandEntry(delayMs = 2000) {
-	if (handEntryTimeoutId) {
-		clearTimeout(handEntryTimeoutId)
-	}
-	handEntryTimeoutId = setTimeout(() => {
-		flyHandIn()
-		handEntryTimeoutId = null
-	}, delayMs)
-}
-
-// Cancel scheduled hand entry (if user navigates away before it triggers)
-export function cancelHandEntry() {
-	if (handEntryTimeoutId) {
-		clearTimeout(handEntryTimeoutId)
-		handEntryTimeoutId = null
-	}
-}
-
-// Animate hand transition between pages
-export function triggerHandPageTransition(fromPage, toPage) {
-	if (!roamingHand) return
-
-	const fromIndex = pageOrder.indexOf(fromPage)
-	const toIndex = pageOrder.indexOf(toPage)
-
-	if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return
-
-	isHandAnimating = true
-	const movingRight = toIndex > fromIndex
-
-	// Animation timing to sync with pyramid animation (600ms total)
-	const exitDuration = 300
-	const entryDuration = 300
-
-	// Exit: fly off-screen in direction of travel
-	const exitX = movingRight ? 10 : -10
-
-	// Entry: appear on opposite side and fly into view
-	const entryStartX = movingRight ? -10 : 10
-	// Rest at a visible position on the side the hand entered from
-	// When entering from left (moving right), rest on left side (x: -5)
-	// When entering from right (moving left), rest on right side (x: 5)
-	const entryEndX = movingRight ? -5 : 5
-
-	const startX = roamingHand.position.x
-	const exitStartTime = performance.now()
-
-	function animateExit(time) {
-		const elapsed = time - exitStartTime
-		const t = Math.min(elapsed / exitDuration, 1)
-		const eased = t * t // Ease in (accelerate)
-
-		roamingHand.position.x = startX + (exitX - startX) * eased
-
-		if (t < 1) {
-			requestAnimationFrame(animateExit)
-		} else {
-			// Teleport to entry position
-			roamingHand.position.x = entryStartX
-			currentHandPage = toPage
-			// Start entry animation
-			const entryStartTime = performance.now()
-			animateEntryPhase(entryStartTime)
-		}
-	}
-
-	function animateEntryPhase(entryStartTime) {
-		function animateEntry(time) {
-			const elapsed = time - entryStartTime
-			const t = Math.min(elapsed / entryDuration, 1)
-			// Ease out cubic for smooth deceleration
-			const eased = 1 - Math.pow(1 - t, 3)
-
-			roamingHand.position.x = entryStartX + (entryEndX - entryStartX) * eased
-
-			if (t < 1) {
-				requestAnimationFrame(animateEntry)
-			} else {
-				isHandAnimating = false
-			}
-		}
-		requestAnimationFrame(animateEntry)
-	}
-
-	requestAnimationFrame(animateExit)
-}
-
-// Get current hand page
-export function getCurrentHandPage() {
-	return currentHandPage
-}
-
-// Check if hand is currently animating
-export function isHandInAnimation() {
-	return isHandAnimating
-}
-
-// Update idle hand motion (called from animate loop)
-function updateHandIdleMotion() {
-	if (!roamingHand || isHandAnimating) return
-	// Don't apply idle motion when ORC scene is active (state machine handles it)
-	if (orcSceneActive) return
-
-	const time = performance.now() * 0.001
-	// Gentle bobbing motion
-	roamingHand.position.y = Math.sin(time * 0.5) * 0.15
-	// Slight swaying
-	roamingHand.rotation.z = Math.sin(time * 0.3) * 0.08
-}
-
 // Fly hand into ORC scene from the left
 function flyHandIntoOrcScene() {
+	const roamingHand = getRoamingHand()
 	if (!roamingHand) return
 
-	isHandAnimating = true
+	// isHandAnimating = true // HandManager handles this internally if we used its methods, but here we animate manually
 	const startX = -10 // Off-screen left
 	const endX = 3 // Visible in ORC scene
 	const duration = 1200
@@ -378,82 +244,11 @@ function flyHandIntoOrcScene() {
 		if (t < 1) {
 			requestAnimationFrame(animateEntry)
 		} else {
-			isHandAnimating = false
+			// isHandAnimating = false
 		}
 	}
 	requestAnimationFrame(animateEntry)
 }
-
-// Fly hand out of ORC scene to the right (when leaving ORC demo)
-export function flyHandOutOfOrcScene(onComplete) {
-	if (!roamingHand) {
-		if (onComplete) onComplete()
-		return
-	}
-
-	isHandAnimating = true
-	const startX = roamingHand.position.x
-	const endX = 10 // Off-screen right
-	const duration = 500
-
-	const startTime = performance.now()
-
-	function animateExit(time) {
-		const elapsed = time - startTime
-		const t = Math.min(elapsed / duration, 1)
-		const eased = t * t // Ease in
-
-		roamingHand.position.x = startX + (endX - startX) * eased
-
-		if (t < 1) {
-			requestAnimationFrame(animateExit)
-		} else {
-			isHandAnimating = false
-			if (onComplete) onComplete()
-		}
-	}
-	requestAnimationFrame(animateExit)
-}
-
-// === Pyramid State ===
-
-// Token to invalidate in-progress pyramid animations. Incrementing this
-// prevents prior animation completions from executing side-effects
-// (like showing content) after a cancel/reset.
-let pyramidAnimToken = 0
-
-// Store initial pyramid state so we can always reset to it exactly
-const initialPyramidState = {
-	positionX: 0,
-	positionY: 0.35,
-	rotationY: 0,
-	scale: 1,
-}
-
-// Flattened menu state - pyramid positioned below labels as underline indicator
-const flattenedMenuState = {
-	// Position pyramid BELOW the labels so its base acts as an underline.
-	// The pyramid is squished vertically to be flat and unobtrusive.
-	positionY: 2.2, // Below labels (which are at y=2.5) so base underlines them
-	scale: 0.4,
-	scaleY: 0.08, // Very flat - squished vertically for subtle underline effect
-	scaleZ: 0.1, // Short height - squished Z for flatter triangle shape on screen
-	rotationX: -1.4, // Tilt forward to show inverted triangle, hide bottom completely
-}
-
-// Pyramid X positions when centered under each label (match flattenedLabelPositions)
-const pyramidXPositions = {
-	about: -1.0,
-	bio: -1.0, // Alias for about
-	blog: 1.0,
-	portfolio: 3.0,
-}
-
-// Track current active section for rotation calculations
-let currentSection = null
-
-// Clipping plane to prevent content from overlapping the top nav
-const contentClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.1)
 
 let navLabelScale = 1.0
 
@@ -518,783 +313,6 @@ function updateNavLayout() {
 
 	// Update flattened pyramid Y position to be just below labels
 	flattenedMenuState.positionY = navY - 0.3 * navLabelScale
-}
-
-export function getInitialPyramidState() {
-	return { ...initialPyramidState }
-}
-
-export function animatePyramid(labelManager, down = true, section = null) {
-	// capture a local token for this animation; incrementing global token
-	// elsewhere (e.g. reset) will invalidate this animation's completion
-	const myToken = ++pyramidAnimToken
-
-	// Show Home label when animating to nav
-	if (down && labelManager.getLabel("home")) {
-		labelManager.getLabel("home").visible = true
-	}
-
-	pyramidGroup.visible = true
-	const duration = 1000
-	const startRotY = pyramidGroup.rotation.y
-	const startRotX = pyramidGroup.rotation.x
-
-	// No Y rotation when going to flattened state - pyramid slides horizontally
-	// and always points straight down. Only reset Y rotation when returning home.
-	const endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
-	if (down && section) {
-		currentSection = section
-	}
-
-	// X rotation to tilt pyramid so apex points down (inverted triangle)
-	const endRotX = down ? flattenedMenuState.rotationX || 0 : 0
-
-	const startPosX = pyramidGroup.position.x
-	const startPosY = pyramidGroup.position.y
-	// Animate to TOP of screen
-	const endPosY = down
-		? flattenedMenuState.positionY
-		: initialPyramidState.positionY
-	// Animate X position to be behind the selected label
-	const endPosX =
-		down && section && pyramidXPositions[section] !== undefined
-			? pyramidXPositions[section]
-			: initialPyramidState.positionX || 0
-
-	// Scaling - use non-uniform scale for flattened state
-	const startScaleX = pyramidGroup.scale.x
-	const startScaleY = pyramidGroup.scale.y
-	const startScaleZ = pyramidGroup.scale.z
-	const endScaleX = down ? flattenedMenuState.scale : initialPyramidState.scale
-	const endScaleY = down
-		? flattenedMenuState.scaleY || flattenedMenuState.scale
-		: initialPyramidState.scale
-	const endScaleZ = down
-		? flattenedMenuState.scaleZ || flattenedMenuState.scale
-		: initialPyramidState.scale
-
-	// Store starting label positions and rotations for animation
-	// Also pre-compute target positions based on FINAL pyramid state
-	const labelStartStates = {}
-	const labels = labelManager.getLabels()
-	const labelTargetStates = {}
-	for (const key in labels) {
-		const labelMesh = labels[key]
-		if (!labelMesh) continue
-
-		// If going down (to menu) and label is not already fixed:
-		// Detach from pyramid and move in World Space for a clear path.
-		if (
-			down &&
-			labelManager.getNavPosition(key) &&
-			!(labelMesh.userData && labelMesh.userData.fixedNav)
-		) {
-			// Update world matrix to ensure accurate world transforms
-			labelMesh.updateMatrixWorld()
-			const worldPos = new THREE.Vector3()
-			labelMesh.getWorldPosition(worldPos)
-			const worldQuat = new THREE.Quaternion()
-			labelMesh.getWorldQuaternion(worldQuat)
-			const worldScale = new THREE.Vector3()
-			labelMesh.getWorldScale(worldScale)
-
-			// Reparent to scene to animate freely in world space
-			scene.add(labelMesh)
-			labelMesh.position.copy(worldPos)
-			labelMesh.quaternion.copy(worldQuat)
-			labelMesh.scale.copy(worldScale)
-
-			labelStartStates[key] = {
-				position: worldPos.clone(),
-				quaternion: worldQuat.clone(),
-				scale: worldScale.clone(),
-			}
-
-			const flatPos = labelManager.getNavPosition(key)
-			// Target: Flat position, Face camera (identity rotation), Scale 0.4
-			// Place labels at z=1 to ensure they're in front of the pyramid (which is at z=0)
-			labelTargetStates[key] = {
-				position: new THREE.Vector3(flatPos.x, flatPos.y, 1),
-				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
-				scale: new THREE.Vector3(navLabelScale, navLabelScale, 1),
-			}
-		} else {
-			// Existing logic for !down or fixed labels (local space)
-			labelStartStates[key] = {
-				position: labelMesh.position.clone(),
-				rotation: labelMesh.rotation.clone(),
-				scale: labelMesh.scale.clone(),
-				visible: labelMesh.visible,
-			}
-		}
-	}
-
-	const startTime = performance.now()
-	function step(time) {
-		// If this animation has been invalidated (a newer token exists), stop updating
-		if (myToken !== pyramidAnimToken) return
-		const t = Math.min((time - startTime) / duration, 1)
-		pyramidGroup.rotation.x = startRotX + (endRotX - startRotX) * t
-		pyramidGroup.rotation.y = startRotY + (endRotY - startRotY) * t
-		pyramidGroup.position.x = startPosX + (endPosX - startPosX) * t
-		pyramidGroup.position.y = startPosY + (endPosY - startPosY) * t
-		// Non-uniform scaling for flattened pyramid effect
-		const sx = startScaleX + (endScaleX - startScaleX) * t
-		const sy = startScaleY + (endScaleY - startScaleY) * t
-		const sz = startScaleZ + (endScaleZ - startScaleZ) * t
-		pyramidGroup.scale.set(sx, sy, sz)
-
-		// Animate labels to/from flattened horizontal positions
-		for (const key in labels) {
-			const labelMesh = labels[key]
-			if (!labelMesh) continue
-			const startState = labelStartStates[key]
-			if (!startState) continue
-
-			if (down && labelTargetStates[key]) {
-				// Animate in World Space
-				const targetState = labelTargetStates[key]
-				labelMesh.position.lerpVectors(
-					startState.position,
-					targetState.position,
-					t
-				)
-				if (startState.quaternion && targetState.quaternion) {
-					labelMesh.quaternion.slerpQuaternions(
-						startState.quaternion,
-						targetState.quaternion,
-						t
-					)
-				}
-				labelMesh.scale.lerpVectors(startState.scale, targetState.scale, t)
-			} else if (!down) {
-				// Animate back to original positions
-				const origPos = labelMesh.userData.origPosition
-				const origRot = labelMesh.userData.origRotation
-				const origScale = labelMesh.userData.originalScale
-				if (origPos) {
-					labelMesh.position.lerpVectors(startState.position, origPos, t)
-				}
-				if (origRot) {
-					labelMesh.rotation.x =
-						startState.rotation.x + (origRot.x - startState.rotation.x) * t
-					labelMesh.rotation.y =
-						startState.rotation.y + (origRot.y - startState.rotation.y) * t
-					labelMesh.rotation.z =
-						startState.rotation.z + (origRot.z - startState.rotation.z) * t
-				}
-				if (origScale) {
-					const sx = startState.scale.x + (origScale.x - startState.scale.x) * t
-					const sy = startState.scale.y + (origScale.y - startState.scale.y) * t
-					const sz = startState.scale.z + (origScale.z - startState.scale.z) * t
-					labelMesh.scale.set(sx, sy, sz)
-				}
-			}
-		}
-
-		if (t < 1) requestAnimationFrame(step)
-		else {
-			// If a newer animation has been started since this one began,
-			// abort executing completion side-effects.
-			if (myToken !== pyramidAnimToken) return
-
-			// Snap labels to final positions
-			for (const key in labels) {
-				const labelMesh = labels[key]
-				if (!labelMesh) continue
-
-				if (down && labelTargetStates[key]) {
-					// Already in scene and animated to target.
-					// Just ensure exact final values.
-					const flatPos = labelManager.getNavPosition(key)
-					if (flatPos) {
-						labelMesh.position.set(flatPos.x, flatPos.y, 1) // z=1 keeps labels in front of pyramid
-						labelMesh.rotation.set(0, 0, 0)
-						labelMesh.scale.set(1, 1, 1)
-						// Mark as fixed nav so it never moves again
-						labelMesh.userData.fixedNav = true
-					}
-				} else if (!down) {
-					// Snap to original
-					const origPos = labelMesh.userData.origPosition
-					const origRot = labelMesh.userData.origRotation
-					const origScale = labelMesh.userData.originalScale
-					// Ensure the label is a child of the pyramidGroup and restore local transforms
-					if (labelMesh.parent !== pyramidGroup) pyramidGroup.add(labelMesh)
-					if (origPos) labelMesh.position.copy(origPos)
-					if (origRot) labelMesh.rotation.copy(origRot)
-					if (origScale) labelMesh.scale.copy(origScale)
-				}
-			}
-
-			// Show section content only if requested and this animation is still valid
-			if (section === "bio") showAboutPlane()
-			else if (section === "portfolio") showPortfolioPlane()
-			else if (section === "blog") showBlogPlane()
-
-			// Hide Home label if returning to centered state
-			if (!down && labelManager.getLabel("home")) {
-				labelManager.getLabel("home").visible = false
-			}
-		}
-	}
-	requestAnimationFrame(step)
-}
-
-// Slide pyramid horizontally to position below a different label (when already at top)
-export function spinPyramidToSection(section, onComplete = null) {
-	console.log(`spinPyramidToSection(${section})`)
-	if (!section || pyramidXPositions[section] === undefined) return
-
-	const myToken = ++pyramidAnimToken
-	pyramidGroup.visible = true
-
-	const duration = 600
-
-	const startPosX = pyramidGroup.position.x
-	const endPosX = pyramidXPositions[section]
-
-	const startRotY = pyramidGroup.rotation.y
-	const endRotY = startRotY + Math.PI * 2
-
-	currentSection = section
-
-	const startTime = performance.now()
-	function step(time) {
-		if (myToken !== pyramidAnimToken) return
-		const t = Math.min((time - startTime) / duration, 1)
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-
-		// Animate X position
-		pyramidGroup.position.x = startPosX + (endPosX - startPosX) * eased
-		// Animate rotation around Y-axis
-		pyramidGroup.rotation.y = startRotY + (endRotY - startRotY) * eased
-
-		if (t < 1) requestAnimationFrame(step)
-		else {
-			if (myToken !== pyramidAnimToken) return
-			pyramidGroup.position.x = endPosX
-			pyramidGroup.rotation.y = endRotY
-			if (onComplete) onComplete()
-		}
-	}
-	requestAnimationFrame(step)
-}
-
-// Reset pyramid to exact home state
-export function resetPyramidToHome(labelManager) {
-	// Invalidate any in-progress pyramid animations so their completion
-	// handlers won't show content after we start resetting.
-	const myToken = ++pyramidAnimToken
-	// Clear current section
-	currentSection = null
-	// Immediately hide any content so nothing appears while we animate
-	hideAllPlanes()
-	pyramidGroup.visible = true
-	const duration = 1000
-	const startRotY = pyramidGroup.rotation.y
-	const startRotX = pyramidGroup.rotation.x
-	// Rotate back to initial rotation (Blog face forward, no tilt)
-	const targetRotY = initialPyramidState.rotationY
-	const targetRotX = 0 // Reset X rotation to 0 (no tilt)
-	// Normalize and find shortest path for Y rotation
-	const normalizedStart =
-		((startRotY % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
-	const normalizedTarget =
-		((targetRotY % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
-	let rotDiffY = normalizedTarget - normalizedStart
-	if (rotDiffY > Math.PI) rotDiffY -= 2 * Math.PI
-	if (rotDiffY < -Math.PI) rotDiffY += 2 * Math.PI
-	const startPosX = pyramidGroup.position.x
-	const endPosX = initialPyramidState.positionX // Reset X to center
-	const startPosY = pyramidGroup.position.y
-	const endPosY = initialPyramidState.positionY // Use stored initial position
-	// Uniform scaling
-	const startScaleX = pyramidGroup.scale.x
-	const startScaleY = pyramidGroup.scale.y
-	const startScaleZ = pyramidGroup.scale.z
-	const endScale = initialPyramidState.scale
-
-	// Camera reset - store starting camera position for animation
-	const startCamPos = camera.position.clone()
-	const endCamPos = initialCameraState.position.clone()
-
-	// Capture label start states so we can animate them back to original positions
-	const labelStartStates = {}
-	const labels = labelManager.getLabels()
-	for (const key in labels) {
-		const labelMesh = labels[key]
-		if (!labelMesh) continue
-
-		// Ensure attached to pyramidGroup to animate in local space
-		if (labelMesh.parent === scene) {
-			pyramidGroup.attach(labelMesh)
-		}
-
-		labelStartStates[key] = {
-			position: labelMesh.position.clone(),
-			quaternion: labelMesh.quaternion.clone(),
-			scale: labelMesh.scale.clone(),
-		}
-		// Clear fixedNav flag so labels can be animated again
-		labelMesh.userData.fixedNav = false
-	}
-
-	const startTime = performance.now()
-	function step(time) {
-		if (myToken !== pyramidAnimToken) return
-		const t = Math.min((time - startTime) / duration, 1)
-		// Use easeInOut for smoother animation
-		const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-
-		pyramidGroup.rotation.y = startRotY + rotDiffY * eased
-		pyramidGroup.rotation.x = startRotX + (targetRotX - startRotX) * eased
-		pyramidGroup.position.x = startPosX + (endPosX - startPosX) * eased
-		pyramidGroup.position.y = startPosY + (endPosY - startPosY) * eased
-		// Uniform scaling
-		const sx = startScaleX + (endScale - startScaleX) * eased
-		const sy = startScaleY + (endScale - startScaleY) * eased
-		const sz = startScaleZ + (endScale - startScaleZ) * eased
-		pyramidGroup.scale.set(sx, sy, sz)
-
-		// Animate camera back to initial position
-		camera.position.lerpVectors(startCamPos, endCamPos, eased)
-		camera.lookAt(initialCameraState.target)
-		controls.target.copy(initialCameraState.target)
-		controls.update()
-
-		// Animate labels back to their original positions (local space)
-		for (const key in labels) {
-			const labelMesh = labels[key]
-			if (!labelMesh) continue
-			const startState = labelStartStates[key]
-			const origPos = labelMesh.userData.origPosition
-			const origRot = labelMesh.userData.origRotation
-			const origScale = labelMesh.userData.originalScale
-
-			if (startState && origPos && origRot && origScale) {
-				labelMesh.position.lerpVectors(startState.position, origPos, eased)
-
-				const targetQuat = new THREE.Quaternion().setFromEuler(origRot)
-				labelMesh.quaternion.slerpQuaternions(
-					startState.quaternion,
-					targetQuat,
-					eased
-				)
-
-				labelMesh.scale.lerpVectors(startState.scale, origScale, eased)
-			}
-		}
-
-		if (t < 1) requestAnimationFrame(step)
-		else {
-			// Ensure exact values after animation
-			pyramidGroup.rotation.y = initialPyramidState.rotationY
-			pyramidGroup.rotation.x = 0
-			pyramidGroup.position.x = endPosX
-			pyramidGroup.position.y = endPosY
-			pyramidGroup.scale.set(endScale, endScale, endScale)
-
-			// Ensure camera is exactly at initial position
-			camera.position.copy(initialCameraState.position)
-			camera.lookAt(initialCameraState.target)
-			controls.target.copy(initialCameraState.target)
-			controls.update()
-
-			// Snap labels to exact original positions
-			for (const key in labels) {
-				const labelMesh = labels[key]
-				if (!labelMesh) continue
-				const origPos = labelMesh.userData.origPosition
-				const origRot = labelMesh.userData.origRotation
-				const origScale = labelMesh.userData.originalScale
-				if (origPos) labelMesh.position.copy(origPos)
-				if (origRot) labelMesh.rotation.copy(origRot)
-				if (origScale) labelMesh.scale.copy(origScale)
-				labelMesh.userData.fixedNav = false
-
-				// Ensure Home is hidden after reset
-				if (key === "home") {
-					labelMesh.visible = false
-				}
-			}
-		}
-	}
-	requestAnimationFrame(step)
-}
-
-export function showAboutPlane() {
-	// Always remove any existing content before showing new content
-	hideAllPlanes()
-	controls.enableZoom = false
-	// Hide navigation bar separator
-	const navBar = document.getElementById("content-floor")
-	if (navBar) navBar.classList.remove("show")
-
-	// Use DOM overlay instead of 3D canvas texture (hybrid architecture)
-	const contentEl = document.getElementById("content")
-	if (!contentEl) return
-
-	// Capture current animation token so we can abort if a reset occurs
-	const myToken = pyramidAnimToken
-
-	// Load HTML content and display in DOM overlay
-	loadContentHTML("about").then((html) => {
-		// If a newer pyramid animation/reset occurred, abort adding content
-		if (myToken !== pyramidAnimToken) return
-
-		// Wrap content in about-content class for styling
-		contentEl.innerHTML = `<div class="about-content">${html}</div>`
-
-		// Show the content overlay (clear inline display style that hideAllPlanes sets)
-		contentEl.style.display = ""
-		contentEl.classList.add("show")
-		contentEl.style.pointerEvents = "auto"
-	})
-}
-
-export function showPortfolioPlane() {
-	// Always remove any existing content before showing new content
-	hideAllPlanes()
-	controls.enableZoom = false
-
-	// Hide navigation bar separator
-	const navBar = document.getElementById("content-floor")
-	if (navBar) navBar.classList.remove("show")
-
-	// Use DOM overlay instead of 3D canvas texture (hybrid architecture)
-	const contentEl = document.getElementById("content")
-	if (!contentEl) return
-
-	const myToken = pyramidAnimToken
-
-	// Load portfolio HTML and display in DOM overlay
-	loadContentHTML("portfolio").then((html) => {
-		if (myToken !== pyramidAnimToken) return
-
-		// Parse HTML and remove script tag (we'll handle interactions separately)
-		const parser = new DOMParser()
-		const doc = parser.parseFromString(html, "text/html")
-		const scriptEl = doc.querySelector("script")
-		if (scriptEl) scriptEl.remove()
-
-		// Inject content into DOM overlay
-		contentEl.innerHTML = `<div class="portfolio-content">${doc.body.innerHTML}</div>`
-
-		// Show the content overlay
-		contentEl.style.display = ""
-		contentEl.classList.add("show")
-		contentEl.style.pointerEvents = "auto"
-
-		// Set up click handlers for portfolio items
-		setupPortfolioClickHandlers(contentEl)
-	})
-}
-
-// Helper to extract YouTube video ID from URL
-function extractYouTubeID(url) {
-	try {
-		const u = new URL(url)
-		if (u.hostname.includes("youtube.com")) return u.searchParams.get("v")
-		if (u.hostname === "youtu.be") return u.pathname.slice(1)
-	} catch {
-		return null
-	}
-	return null
-}
-
-// Helper to extract Google Docs ID from URL
-function extractGoogleDocsID(url) {
-	try {
-		const u = new URL(url)
-		if (u.hostname.includes("docs.google.com")) {
-			const match = u.pathname.match(/\/document\/d\/([^/]+)/)
-			return match ? match[1] : null
-		}
-	} catch {
-		return null
-	}
-	return null
-}
-
-// Check if URL points to an image
-function isImageURL(url) {
-	try {
-		const u = new URL(url)
-		const path = u.pathname.toLowerCase()
-		return /\.(png|jpg|jpeg|gif|webp|svg)$/.test(path)
-	} catch {
-		return false
-	}
-}
-
-// Set up click handlers for portfolio items (YouTube/Google Docs/images embedding)
-function setupPortfolioClickHandlers(contentEl) {
-	contentEl.querySelectorAll(".portfolio-item").forEach((item) => {
-		item.style.cursor = "pointer"
-		item.addEventListener("click", (ev) => {
-			ev.preventDefault()
-			ev.stopPropagation()
-			const link = item.dataset.link
-			if (!link) return
-
-			// Check for YouTube
-			const ytId = extractYouTubeID(link)
-			if (ytId) {
-				const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-				showEmbedViewer(contentEl, embedUrl)
-				return
-			}
-
-			// Check for Google Docs
-			const docId = extractGoogleDocsID(link)
-			if (docId) {
-				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-				showEmbedViewer(contentEl, embedUrl)
-				return
-			}
-
-			// Check for images
-			if (isImageURL(link)) {
-				showImageViewer(contentEl, link)
-				return
-			}
-
-			// For other links, open in new tab
-			window.open(link, "_blank")
-		})
-	})
-}
-
-// Show embedded content (YouTube, Google Docs) in the content overlay
-function showEmbedViewer(contentEl, embedUrl) {
-	contentEl.innerHTML = `
-		<div class="embed-wrapper">
-			<button class="embed-back-btn">← Back to Portfolio</button>
-			<iframe
-				src="${embedUrl}"
-				width="100%"
-				height="600"
-				style="border: 1px solid #00ffff; border-radius: 8px;"
-				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-				allowfullscreen
-			></iframe>
-		</div>
-	`
-	// Add back button handler
-	const backBtn = contentEl.querySelector(".embed-back-btn")
-	if (backBtn) {
-		backBtn.addEventListener("click", () => showPortfolioPlane())
-	}
-}
-
-// Show image in the content overlay
-function showImageViewer(contentEl, imageUrl) {
-	contentEl.innerHTML = `
-		<div class="embed-wrapper image-viewer">
-			<button class="embed-back-btn">← Back to Portfolio</button>
-			<img
-				src="${imageUrl}"
-				alt="Portfolio image"
-				style="max-width: 100%; max-height: 80vh; border: 1px solid #00ffff; border-radius: 8px; display: block; margin: 0 auto;"
-			/>
-		</div>
-	`
-	// Add back button handler
-	const backBtn = contentEl.querySelector(".embed-back-btn")
-	if (backBtn) {
-		backBtn.addEventListener("click", () => showPortfolioPlane())
-	}
-}
-
-export function showBlogPlane() {
-	// Always remove any existing content before showing a new plane to avoid overlap
-	hideAllPlanes()
-	controls.enableZoom = false
-
-	// Show navigation bar positioned between content and home label
-	// ensure DOM separator is not shown here; we use the 3D separator instead
-	const navBar = document.getElementById("content-floor")
-	if (navBar) navBar.classList.remove("show")
-
-	const contentEl = document.getElementById("content")
-	if (!contentEl) return
-
-	const myToken = pyramidAnimToken
-
-	// load HTML content and parse blog posts
-	loadContentHTML("blog").then((html) => {
-		if (myToken !== pyramidAnimToken) return
-
-		const posts = parseBlogPosts(html)
-		let contentHtml = ""
-
-		if (posts && posts.length > 0) {
-			contentHtml = posts
-				.map(
-					(post) => `
-				<div class="blog-post">
-					<h2>${post.title}</h2>
-					<div class="blog-meta">${post.date} | ${post.author}</div>
-					${post.image ? `<img src="${post.image}" alt="${post.title}">` : ""}
-					<p>${post.summary}</p>
-				</div>
-			`
-				)
-				.join("")
-		} else {
-			contentHtml = html
-		}
-		contentEl.innerHTML = `<div class="blog-content">${contentHtml}</div>`
-		contentEl.style.display = ""
-		contentEl.classList.add("show")
-		contentEl.style.pointerEvents = "auto"
-	})
-}
-
-function hideAbout() {
-	// Remove legacy 3D plane if it exists
-	const aboutPlane = scene.getObjectByName("aboutPlane")
-	if (aboutPlane) scene.remove(aboutPlane)
-
-	// Hide DOM overlay content
-	const contentEl = document.getElementById("content")
-	if (contentEl && contentEl.querySelector(".about-content")) {
-		contentEl.classList.remove("show")
-		contentEl.innerHTML = ""
-	}
-}
-
-function hidePortfolio() {
-	// Remove legacy 3D plane if it exists
-	const plane = scene.getObjectByName("portfolioPlane")
-	if (plane) scene.remove(plane)
-
-	// Hide DOM overlay content
-	const contentEl = document.getElementById("content")
-	if (
-		contentEl &&
-		(contentEl.querySelector(".portfolio-content") ||
-			contentEl.querySelector(".embed-wrapper"))
-	) {
-		contentEl.classList.remove("show")
-		contentEl.innerHTML = ""
-	}
-}
-
-function hideBlog() {
-	const blogPlane = scene.getObjectByName("blogPlane")
-	if (blogPlane) scene.remove(blogPlane)
-
-	const contentEl = document.getElementById("content")
-	if (contentEl && contentEl.querySelector(".blog-content")) {
-		contentEl.classList.remove("show")
-		contentEl.innerHTML = ""
-	}
-}
-
-// === ORC Preview Overlay for Portfolio ===
-let orcPreviewOverlay = null
-let orcPreviewElement = null
-
-function showOrcPreviewOverlay() {
-	// Create overlay if it doesn't exist
-	if (!orcPreviewOverlay) {
-		orcPreviewOverlay = document.createElement("div")
-		orcPreviewOverlay.id = "orc-preview-overlay"
-		Object.assign(orcPreviewOverlay.style, {
-			position: "fixed",
-			top: "22%",
-			left: "50%",
-			transform: "translateX(-50%)",
-			zIndex: "100",
-			display: "flex",
-			alignItems: "center",
-			gap: "20px",
-			background:
-				"linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(0, 40, 60, 0.95))",
-			border: "2px solid #00aaff",
-			borderRadius: "16px",
-			padding: "16px 20px",
-			cursor: "pointer",
-			boxShadow: "0 0 30px rgba(0, 170, 255, 0.3)",
-			maxWidth: "85%",
-			height: "120px",
-			boxSizing: "border-box",
-		})
-
-		// Create the live 3D preview (smaller to fit container)
-		orcPreviewElement = createOrcPreview(140, 90)
-		orcPreviewElement.style.borderRadius = "8px"
-		orcPreviewElement.style.pointerEvents = "none"
-		orcPreviewOverlay.appendChild(orcPreviewElement)
-
-		// Create text container
-		const textContainer = document.createElement("div")
-		textContainer.innerHTML = `
-			<h2 style="color: #00ffff; margin: 0 0 8px 0; font-size: 1.3rem; text-shadow: 0 0 10px rgba(0,255,255,0.3);">
-				Click here to view ORC demo with inline docs!
-			</h2>
-			<p style="color: #aaddff; margin: 0; font-size: 0.95rem; line-height: 1.4;">
-				Orbital Refuse Collector - Interactive API documentation demo featuring satellite orbit visualization.
-			</p>
-		`
-		textContainer.style.pointerEvents = "none"
-		orcPreviewOverlay.appendChild(textContainer)
-
-		// Add hover effect
-		orcPreviewOverlay.addEventListener("mouseenter", () => {
-			orcPreviewOverlay.style.borderColor = "#00ffff"
-			orcPreviewOverlay.style.boxShadow = "0 0 40px rgba(0, 255, 255, 0.4)"
-			orcPreviewOverlay.style.transform = "translateX(-50%) scale(1.02)"
-		})
-		orcPreviewOverlay.addEventListener("mouseleave", () => {
-			orcPreviewOverlay.style.borderColor = "#00aaff"
-			orcPreviewOverlay.style.boxShadow = "0 0 30px rgba(0, 170, 255, 0.3)"
-			orcPreviewOverlay.style.transform = "translateX(-50%) scale(1)"
-		})
-
-		// Click handler to navigate to ORC demo
-		orcPreviewOverlay.addEventListener("click", (e) => {
-			e.stopPropagation()
-			// Use the globally exposed router navigation
-			window.routerNavigate("/orc-demo")
-		})
-
-		document.body.appendChild(orcPreviewOverlay)
-	}
-
-	orcPreviewOverlay.style.display = "flex"
-}
-
-function hideOrcPreviewOverlay() {
-	if (orcPreviewOverlay) {
-		orcPreviewOverlay.style.display = "none"
-	}
-}
-
-function cleanupOrcPreviewOverlay() {
-	if (orcPreviewOverlay && orcPreviewOverlay.parentNode) {
-		orcPreviewOverlay.parentNode.removeChild(orcPreviewOverlay)
-	}
-	orcPreviewOverlay = null
-	orcPreviewElement = null
-}
-
-// === ORC Info Pane (right 1/3 of screen during ORC demo) ===
-let orcInfoPane = null
-
-function hideOrcInfoPane() {
-	// Remove the module-level reference if it exists
-	if (orcInfoPane) {
-		orcInfoPane.remove()
-		orcInfoPane = null
-	}
-	// Also check for any DOM element with this ID (in case it was created elsewhere)
-	const existingPane = document.getElementById("orc-info-pane")
-	if (existingPane) {
-		existingPane.remove()
-	}
 }
 
 // Create a 2D sprite to indicate the selected satellite
@@ -1369,59 +387,11 @@ function updateSelectedSatelliteInfo(satelliteId) {
 	}
 }
 
-// Exported helper to hide all content planes
-export function hideAllPlanes() {
-	hideAbout()
-	hidePortfolio()
-	hideBlog()
-	// Hide new content overlay
-	const overlayEl = document.getElementById("content-overlay")
-	if (overlayEl) {
-		overlayEl.classList.remove("visible")
-		// Deactivate all panes after transition
-		setTimeout(() => {
-			overlayEl.querySelectorAll(".content-pane").forEach((pane) => {
-				pane.classList.remove("active")
-				pane.innerHTML = ""
-			})
-		}, 300) // Match CSS transition
-	}
-
-	// Remove legacy 3D planes
-	const aboutPlane = scene.getObjectByName("aboutPlane")
-	if (aboutPlane) scene.remove(aboutPlane)
-	const portfolioPlane = scene.getObjectByName("portfolioPlane")
-	if (portfolioPlane) scene.remove(portfolioPlane)
-	const blogPlane = scene.getObjectByName("blogPlane")
-	if (blogPlane) scene.remove(blogPlane)
-
-	// Hide ORC preview overlay and info pane
-	hideOrcPreviewOverlay()
-	hideOrcInfoPane()
-	// Hide navigation bar DOM element as a fallback
-	const contentFloor = document.getElementById("content-floor")
-	if (contentFloor) contentFloor.classList.remove("show")
-
-	// Also hide the DOM content pane to avoid lingering DOM content
-	// Also hide the LEGACY content pane to avoid lingering DOM content
-	const contentEl = document.getElementById("content")
-	if (contentEl) {
-		contentEl.style.display = "none"
-		contentEl.classList.remove("blog-active")
-		contentEl.innerHTML = ""
-	}
-	hideContentScrolling()
-	controls.enableZoom = true
-
-	// Do not hide the Home label here — Home remains visible until the user
-	// explicitly returns to the original state by clicking the Home label.
-}
-
 // === ORC Scene / Morph Functions ===
 
 // Show ORC scene directly (no pyramid morph animation)
-export function morphToOrcScene() {
-	++pyramidAnimToken
+function morphToOrcScene() {
+	incrementPyramidAnimToken()
 	hideAllPlanes()
 
 	// Set active flag early to influence layout calculations
@@ -1464,6 +434,7 @@ export function morphToOrcScene() {
 	morphSphere.visible = false
 
 	// Remove hand from main scene before creating ORC demo
+	const roamingHand = getRoamingHand()
 	// The hand will be added to the ORC scene after creation
 	if (roamingHand && roamingHand.parent === scene) {
 		scene.remove(roamingHand)
@@ -1504,8 +475,8 @@ export function morphToOrcScene() {
 }
 
 // Return from ORC scene back to pyramid
-export function morphFromOrcScene() {
-	const myToken = ++pyramidAnimToken
+function morphFromOrcScene() {
+	const myToken = incrementPyramidAnimToken()
 
 	// Capture camera/controls state BEFORE fading out
 	const endCamPos = initialCameraState.position.clone()
@@ -1527,7 +498,7 @@ export function morphFromOrcScene() {
 
 	// After fade out completes, destroy ORC and show pyramid
 	setTimeout(() => {
-		if (myToken !== pyramidAnimToken) return
+		if (myToken !== getPyramidAnimToken()) return
 
 		// Release hand from ORC demo before destroying
 		const hand = releaseOrcHand()
@@ -1536,7 +507,7 @@ export function morphFromOrcScene() {
 			// (it will animate in from the right when entering new page)
 			hand.position.set(10, 0, -2) // Off-screen right, behind content
 			scene.add(hand)
-			currentHandPage = "orc-demo" // Will be updated by next page transition
+			setCurrentHandPage("orc-demo") // Will be updated by next page transition
 		}
 
 		// Now destroy the ORC elements
@@ -1586,14 +557,14 @@ export function morphFromOrcScene() {
 
 		orcSceneActive = false
 		updateNavLayout() // Reset layout to full width
-		currentSection = null
+		setCurrentSection(null)
 		morphSphere.visible = false
 
 		// Phase 2: Fade in pyramid and labels
 		const startTime = performance.now()
 
 		function fadeInStep(time) {
-			if (myToken !== pyramidAnimToken) return
+			if (myToken !== getPyramidAnimToken()) return
 
 			const t = Math.min((time - startTime) / fadeInDuration, 1)
 			const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
@@ -1620,7 +591,7 @@ export function morphFromOrcScene() {
 				requestAnimationFrame(fadeInStep)
 			} else {
 				// Animation complete
-				if (myToken !== pyramidAnimToken) return
+				if (myToken !== getPyramidAnimToken()) return
 
 				// Restore pyramid face materials to full opacity
 				pyramidGroup.children.forEach((child) => {
@@ -1664,7 +635,7 @@ export function morphFromOrcScene() {
 }
 
 // Check if ORC scene is currently active
-export function isOrcSceneActive() {
+function isOrcSceneActive() {
 	return orcSceneActive
 }
 
@@ -2097,6 +1068,11 @@ function updateCancelDecommissionActionState() {
 
 // === Available Satellites Pane (loads HTML from file) ===
 async function showAvailableSatellitesPane() {
+	// If we have the pane but it was removed from DOM (e.g. by ContentManager), put it back
+	if (orcInfoPane && !document.body.contains(orcInfoPane)) {
+		document.body.appendChild(orcInfoPane)
+	}
+
 	if (!orcInfoPane) {
 		// Fetch the HTML template
 		const response = await fetch("/src/content/orc-demo/orc-demo.html")
@@ -2221,7 +1197,7 @@ export function animate() {
 	stars.rotation.y += 0.0008
 
 	// Update roaming hand idle motion
-	updateHandIdleMotion()
+	updateHandIdleMotion(orcSceneActive)
 
 	// Only update controls when they are explicitly enabled (during label animations)
 	if (controls.enabled) {
@@ -2276,13 +1252,12 @@ window.addEventListener("resize", () => {
 				label.scale.set(navLabelScale, navLabelScale, 1)
 			}
 		}
-		if (contactLabel && contactLabel.parent === scene) {
-			const pos = flattenedLabelPositions.Contact
-			contactLabel.position.set(pos.x, pos.y, pos.z)
-		}
 		pyramidGroup.position.y = flattenedMenuState.positionY
-		if (currentSection && pyramidXPositions[currentSection] !== undefined) {
-			pyramidGroup.position.x = pyramidXPositions[currentSection]
+		if (
+			getCurrentSection() &&
+			pyramidXPositions[getCurrentSection()] !== undefined
+		) {
+			pyramidGroup.position.x = pyramidXPositions[getCurrentSection()]
 		}
 	}
 })
@@ -2466,7 +1441,7 @@ function updateScrollThumb() {
 window.addEventListener(
 	"wheel",
 	(e) => {
-		if (currentSection && activeScrollPlane) {
+		if (getCurrentSection() && activeScrollPlane) {
 			handleScrollWheel(e)
 		}
 	},

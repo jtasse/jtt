@@ -125,11 +125,9 @@ src/
 
 ### Files to Delete (Duplicates)
 
-These files were created during refactoring but are duplicates:
+These files were created during refactoring but are duplicates (some deleted):
 
-- `src/layout/LayoutManager.js` - Use `src/core/LayoutManager.js` instead
-- `src/contact/LayoutManager.js` - Accidentally created, delete
-- `src/core/PyramidMesh.js` - Use `src/pyramid/PyramidMesh.js` instead
+- `src/core/PyramidMesh.js` - ✅ DELETED
 - `LayoutManager.js` (root) - Stray file, delete
 - `config.js` (root) - Stray file, delete
 
@@ -154,15 +152,16 @@ DOM overlays now used for content instead of canvas textures.
 
 ### Phase 2: Code Extraction 🔄 IN PROGRESS
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| SceneManager | ✅ Done | Scene, camera, renderer, lighting |
-| LayoutManager | ✅ Done | Frustum calculations, responsive scaling |
-| PyramidMesh | ✅ Done | Geometry only, no animation |
-| LabelManager | ✅ Done | Label creation, nav positions |
-| ContactLabel | ✅ Done | Contact info display |
-| pyramid.js | ⚠️ Bloated | Still ~2400 lines, needs splitting |
-| main.js | ⚠️ Large | ~1000 lines, handles too much |
+| Module        | Status     | Notes                                    |
+| ------------- | ---------- | ---------------------------------------- |
+| SceneManager  | ✅ Done    | Scene, camera, renderer, lighting        |
+| InputManager  | ✅ Done    | Raycasting, click/drag detection         |
+| LayoutManager | ✅ Done    | Frustum calculations, responsive scaling |
+| PyramidMesh   | ✅ Done    | Geometry only, no animation              |
+| LabelManager  | ✅ Done    | Label creation, nav positions            |
+| ContactLabel  | ✅ Done    | Contact info display                     |
+| pyramid.js    | ⚠️ Bloated | Still ~2400 lines, needs splitting       |
+| main.js       | ✅ Clean   | Reduced to wiring and initialization     |
 
 ### Phase 3: ORC Demo Fixes ❌ NOT STARTED
 
@@ -178,12 +177,12 @@ DOM overlays now used for content instead of canvas textures.
 
 ## Known Issues (as of 1/6/26)
 
-| Issue | Severity | Status |
-|-------|----------|--------|
-| ORC demo nav labels shifted right by sidebar | Medium | Deferred |
-| Camera controls disabled on home page | Low | By design? |
-| `pyramid.js` still too large | Medium | Needs splitting |
-| Duplicate LayoutManager files | Low | Cleanup needed |
+| Issue                                        | Severity | Status          |
+| -------------------------------------------- | -------- | --------------- |
+| ORC demo nav labels shifted right by sidebar | Medium   | Deferred        |
+| Camera controls disabled on home page        | Low      | By design?      |
+| `pyramid.js` still too large                 | Medium   | Needs splitting |
+| Duplicate LayoutManager files                | Low      | Cleanup needed  |
 
 ---
 
@@ -197,19 +196,23 @@ DOM overlays now used for content instead of canvas textures.
 ### Continue Extraction
 
 3. Extract from `pyramid.js`:
+
    - `src/pyramid/animations.js` - animatePyramid, spinPyramidToSection, resetPyramidToHome
    - `src/pyramid/state.js` - pyramidGroup, position states, current section tracking
    - `src/content/ContentManager.js` - showAboutPlane, showPortfolioPlane, showBlogPlane
 
-4. Extract from `main.js`:
+4. Extract from `main.js`: (DONE)
+
    - `src/core/InputManager.js` - Raycasting, click/drag detection, hover states
 
-### ORC Demo
+5. Extract Hand to separate module: (DONE)
 
-5. Extract Hand to separate module:
    - `src/hand/HandMesh.js`
+   - `src/hand/HandManager.js` (Created)
    - `src/hand/HandBehaviors.js`
    - `src/hand/HandStateMachine.js`
+
+### ORC Demo
 
 6. Fix ORC demo layout for sidebar
 
@@ -257,10 +260,10 @@ src/
 
 ### Hybrid Rendering
 
-| Layer | Technology | Content |
-|-------|------------|---------|
-| WebGL (Three.js) | Canvas | Pyramid, starfield, Hand, nav labels |
-| DOM Overlay | HTML/CSS | Page content (About, Portfolio, Blog) |
+| Layer            | Technology | Content                               |
+| ---------------- | ---------- | ------------------------------------- |
+| WebGL (Three.js) | Canvas     | Pyramid, starfield, Hand, nav labels  |
+| DOM Overlay      | HTML/CSS   | Page content (About, Portfolio, Blog) |
 
 ### Key Rules
 
