@@ -11,13 +11,12 @@ import {
 	orcGroup,
 	showGeoTether,
 	hideGeoTether,
-	getDecommissionState,
-	getDecommissionConfig,
 	orcHandStateMachine,
 	setOrcHand,
 	releaseOrcHand,
 } from "./orc-demo.js"
 import { getRoamingHand } from "../../hand/HandManager.js"
+import { SmartCamera } from "./SmartCamera.js"
 
 // ORC scene state
 let orcDemoContainer = null
@@ -30,9 +29,8 @@ let orcInfoPane = null
 let selectionIndicator = null
 let selectedSatellite = null
 
-// Camera tracking state
-let originalCameraState = null
-let isCameraTracking = false
+// Smart Camera
+let smartCamera = null
 
 // Reset button
 let orcResetButton = null
@@ -180,6 +178,8 @@ function createOrcDemo() {
 	orcDemoControls.maxPolarAngle = Math.PI / 2
 	orcDemoControls.target.set(sceneOffsetX, 0, 0)
 
+	smartCamera = new SmartCamera(orcDemoCamera, orcDemoControls)
+
 	// 4. Add content
 	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
 	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
@@ -212,73 +212,10 @@ function animateOrcDemo() {
 		updateSelectedSatelliteInfo(selectedSatellite.userData.id)
 	}
 
-	updateCameraTracking()
+	if (smartCamera) smartCamera.update()
 
 	orcDemoControls.update()
 	orcDemoRenderer.render(orcDemoScene, orcDemoCamera)
-}
-
-function updateCameraTracking() {
-	const decommState = getDecommissionState()
-	if (decommState) {
-		if (!isCameraTracking) {
-			isCameraTracking = true
-			originalCameraState = {
-				position: orcDemoCamera.position.clone(),
-				target: orcDemoControls.target.clone(),
-			}
-		}
-
-		const satPos = decommState.position.clone()
-		const planetCenter = new THREE.Vector3(orcGroup.position.x, 0, 0)
-		satPos.x += orcGroup.position.x
-
-		const sidebarCompensation = 0.4
-		const adjustedTarget = satPos.clone()
-		adjustedTarget.x += sidebarCompensation
-
-		const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
-		const targetDistance = decommState.targetZoomDistance
-		const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
-		cameraOffset.y += targetDistance * 0.3
-
-		const targetCamPos = satPos.clone().add(cameraOffset)
-
-		// Occlusion check
-		const currentCamPos = orcDemoCamera.position.clone()
-		const camToSat = satPos.clone().sub(currentCamPos)
-		const camToPlanet = planetCenter.clone().sub(currentCamPos)
-		const camToSatLength = camToSat.length()
-		const projLength = camToPlanet.dot(camToSat.normalize())
-
-		let isOccluded = false
-		if (projLength > 0 && projLength < camToSatLength) {
-			const closestPointOnLine = currentCamPos
-				.clone()
-				.add(camToSat.normalize().multiplyScalar(projLength))
-			const perpDistance = planetCenter.distanceTo(closestPointOnLine)
-			isOccluded = perpDistance < 0.65 // Radius + margin
-		}
-
-		let cameraSpeed = decommState.cameraSpeed
-		if (isOccluded) cameraSpeed = 0.15
-
-		orcDemoCamera.position.lerp(targetCamPos, cameraSpeed)
-		orcDemoControls.target.lerp(adjustedTarget, cameraSpeed * 2)
-	} else if (isCameraTracking && originalCameraState) {
-		const resetSpeed = getDecommissionConfig().cameraResetSpeed
-		orcDemoCamera.position.lerp(originalCameraState.position, resetSpeed)
-		orcDemoControls.target.lerp(originalCameraState.target, resetSpeed)
-
-		if (
-			orcDemoCamera.position.distanceTo(originalCameraState.position) < 0.05
-		) {
-			orcDemoCamera.position.copy(originalCameraState.position)
-			orcDemoControls.target.copy(originalCameraState.target)
-			isCameraTracking = false
-			originalCameraState = null
-		}
-	}
 }
 
 function destroyOrcDemo() {
@@ -306,6 +243,7 @@ function destroyOrcDemo() {
 	orcDemoControls = null
 	selectionIndicator = null
 	selectedSatellite = null
+	smartCamera = null
 }
 
 function onContainerMouseDown(event) {
