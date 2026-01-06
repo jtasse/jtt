@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { createOrcHand } from "../content/orc-demo/orc-hand.js"
+import { createOrcHand } from "./HandMesh.js"
 import { scene } from "../core/SceneManager.js"
 
 // === Roaming Hand of ORC ===

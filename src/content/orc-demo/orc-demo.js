@@ -1,10 +1,6 @@
 import * as THREE from "three"
-import {
-	createOrcHand,
-	HandStateMachine,
-	HandState,
-	calculateIrregularOrbitPosition,
-} from "./orc-hand.js"
+import { HandState } from "../../hand/HandConfig.js"
+import { HandStateMachine } from "../../hand/HandStateMachine.js"
 
 // ORC Demo Scene - Orbital Refuse Collector visualization
 // Features:

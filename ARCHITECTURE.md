@@ -207,10 +207,10 @@ DOM overlays now used for content instead of canvas textures.
 
 5. Extract Hand to separate module: (DONE)
 
-   - `src/hand/HandMesh.js`
+   - `src/hand/HandMesh.js` (Created)
    - `src/hand/HandManager.js` (Created)
-   - `src/hand/HandBehaviors.js`
-   - `src/hand/HandStateMachine.js`
+   - `src/hand/HandBehaviors.js` (Created)
+   - `src/hand/HandStateMachine.js` (Created)
 
 ### ORC Demo
 
