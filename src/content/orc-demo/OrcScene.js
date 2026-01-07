@@ -354,6 +354,37 @@ function createPlanet() {
 	})
 	sphere.add(new THREE.Mesh(innerAtmosphereGeometry, innerAtmosphereMaterial))
 
+	// Add outer atmosphere glow
+	const outerAtmosphereGeometry = new THREE.SphereGeometry(
+		PLANET_RADIUS * 1.4,
+		32
+	)
+	const outerAtmosphereMaterial = new THREE.ShaderMaterial({
+		uniforms: {
+			glowColor: { value: new THREE.Color(0x3366cc) },
+		},
+		vertexShader: `
+			varying vec3 vNormal;
+			void main() {
+				vNormal = normalize(normalMatrix * normal);
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+		`,
+		fragmentShader: `
+			uniform vec3 glowColor;
+			varying vec3 vNormal;
+			void main() {
+				float intensity = pow(0.99 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+				gl_FragColor = vec4(glowColor, intensity * 0.15);
+			}
+		`,
+		side: THREE.BackSide,
+		blending: THREE.AdditiveBlending,
+		transparent: true,
+		depthWrite: false,
+	})
+	sphere.add(new THREE.Mesh(outerAtmosphereGeometry, outerAtmosphereMaterial))
+
 	const exosphereGeometry = new THREE.SphereGeometry(EXOSPHERE_RADIUS, 32, 32)
 	const exosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: { glowColor: { value: new THREE.Color(0x2255aa) } },
@@ -1060,76 +1091,198 @@ export function createOrcPreview(width = 300, height = 200) {
 	return container
 }
 
-// Continent drawing helper (kept here as it's used by both scene and preview)
-function drawAccurateContinents(ctx, width, height) {
-	const w = width
-	const h = height
+// Convert lat/lon to canvas x/y coordinates (equirectangular projection)
+function latLonToCanvas(lat, lon, width, height) {
+	const x = ((lon + 180) / 360) * width
+	const y = ((90 - lat) / 180) * height
+	return { x, y }
+}
 
-	// North America
+// Draw a continent outline from coordinate array
+function drawContinentPath(
+	ctx,
+	coords,
+	width,
+	height,
+	closePath = true,
+	fillColor = "#5A5840"
+) {
+	if (coords.length < 2) return
+
 	ctx.beginPath()
-	ctx.moveTo(w * 0.15, h * 0.15)
-	ctx.bezierCurveTo(w * 0.2, h * 0.1, w * 0.3, h * 0.1, w * 0.35, h * 0.15) // Arctic
-	ctx.lineTo(w * 0.32, h * 0.3) // East coast
-	ctx.lineTo(w * 0.25, h * 0.45) // Florida/Mexico
-	ctx.lineTo(w * 0.15, h * 0.35) // West coast
-	ctx.lineTo(w * 0.1, h * 0.2) // Alaska
-	ctx.closePath()
+
+	const start = latLonToCanvas(coords[0][1], coords[0][0], width, height)
+	ctx.moveTo(start.x, start.y)
+
+	for (let i = 1; i < coords.length; i++) {
+		const point = latLonToCanvas(coords[i][1], coords[i][0], width, height)
+		const prevPoint = latLonToCanvas(
+			coords[i - 1][1],
+			coords[i - 1][0],
+			width,
+			height
+		)
+
+		// Handle longitude wraparound
+		if (Math.abs(point.x - prevPoint.x) > width / 2) {
+			if (closePath) ctx.closePath()
+			ctx.fillStyle = fillColor
+			ctx.strokeStyle = fillColor
+			ctx.fill()
+			ctx.stroke()
+
+			ctx.beginPath()
+			ctx.moveTo(point.x, point.y)
+		} else {
+			ctx.lineTo(point.x, point.y)
+		}
+	}
+
+	if (closePath) {
+		ctx.closePath()
+	}
+
+	ctx.fillStyle = fillColor
+	ctx.strokeStyle = fillColor
 	ctx.fill()
 	ctx.stroke()
+}
+
+// Continent drawing helper with accurate geographic coordinates
+function drawAccurateContinents(ctx, width, height) {
+	// North America
+	const northAmerica = [
+		[-168, 65], [-165, 62], [-160, 60], [-150, 61], [-140, 60],
+		[-135, 57], [-130, 55], [-125, 50], [-124, 45], [-123, 40],
+		[-117, 33], [-110, 30], [-105, 25], [-100, 22], [-95, 18],
+		[-90, 20], [-88, 22], [-85, 22], [-83, 18], [-80, 10],
+		[-78, 8], [-82, 10], [-85, 12], [-88, 18], [-92, 20],
+		[-95, 25], [-97, 28], [-95, 30], [-90, 30], [-85, 30],
+		[-82, 32], [-78, 35], [-75, 38], [-72, 42], [-70, 43],
+		[-68, 45], [-66, 45], [-64, 47], [-67, 48], [-70, 47],
+		[-72, 45], [-75, 45], [-78, 43], [-80, 42], [-82, 45],
+		[-85, 47], [-88, 48], [-92, 49], [-95, 49], [-100, 49],
+		[-105, 49], [-115, 49], [-120, 49], [-125, 50], [-130, 55],
+		[-135, 58], [-140, 60], [-145, 62], [-150, 64], [-155, 68],
+		[-160, 70], [-165, 70], [-170, 68], [-168, 65],
+	]
 
 	// South America
-	ctx.beginPath()
-	ctx.moveTo(w * 0.26, h * 0.46)
-	ctx.lineTo(w * 0.35, h * 0.55) // Brazil
-	ctx.lineTo(w * 0.32, h * 0.8) // Argentina
-	ctx.lineTo(w * 0.28, h * 0.85) // Chile tip
-	ctx.lineTo(w * 0.24, h * 0.6) // Peru/Andes
-	ctx.closePath()
-	ctx.fill()
-	ctx.stroke()
+	const southAmerica = [
+		[-80, 10], [-75, 10], [-70, 12], [-65, 10], [-60, 5],
+		[-55, 5], [-50, 0], [-48, -2], [-45, -5], [-42, -8],
+		[-38, -12], [-35, -8], [-38, -15], [-42, -22], [-45, -24],
+		[-48, -26], [-52, -30], [-55, -35], [-58, -38], [-65, -42],
+		[-68, -50], [-72, -52], [-75, -50], [-73, -45], [-72, -40],
+		[-70, -35], [-70, -30], [-70, -25], [-70, -20], [-72, -15],
+		[-78, -5], [-80, 0], [-80, 5], [-80, 10],
+	]
 
-	// Europe & Asia
-	ctx.beginPath()
-	ctx.moveTo(w * 0.45, h * 0.25) // Spain
-	ctx.lineTo(w * 0.5, h * 0.15) // Scandinavia
-	ctx.lineTo(w * 0.7, h * 0.12) // Russia
-	ctx.lineTo(w * 0.85, h * 0.15) // Siberia
-	ctx.lineTo(w * 0.9, h * 0.3) // China/Japan
-	ctx.lineTo(w * 0.8, h * 0.45) // SE Asia
-	ctx.lineTo(w * 0.7, h * 0.4) // India
-	ctx.lineTo(w * 0.6, h * 0.42) // Middle East
-	ctx.lineTo(w * 0.55, h * 0.35) // Turkey
-	ctx.closePath()
-	ctx.fill()
-	ctx.stroke()
+	// Europe
+	const europe = [
+		[-10, 36], [-8, 38], [-9, 40], [-8, 42], [-5, 44],
+		[-2, 44], [0, 43], [3, 43], [5, 44], [8, 45],
+		[12, 45], [14, 42], [18, 40], [20, 40], [24, 38],
+		[26, 40], [28, 42], [30, 44], [32, 46], [35, 48],
+		[38, 50], [42, 55], [38, 60], [30, 62], [25, 65],
+		[20, 68], [15, 70], [10, 70], [5, 62], [8, 58],
+		[10, 55], [8, 52], [5, 52], [0, 50], [-5, 50],
+		[-8, 48], [-10, 44], [-10, 40], [-10, 36],
+	]
 
 	// Africa
-	ctx.beginPath()
-	ctx.moveTo(w * 0.48, h * 0.35) // North Africa
-	ctx.lineTo(w * 0.6, h * 0.38) // Horn of Africa
-	ctx.lineTo(w * 0.55, h * 0.7) // South Africa
-	ctx.lineTo(w * 0.48, h * 0.5) // West Africa
-	ctx.closePath()
-	ctx.fill()
-	ctx.stroke()
+	const africa = [
+		[-17, 15], [-15, 20], [-12, 25], [-8, 30], [-5, 35],
+		[0, 36], [10, 37], [15, 32], [25, 32], [30, 30],
+		[35, 28], [38, 22], [42, 15], [45, 12], [50, 10],
+		[50, 5], [45, 0], [42, -5], [40, -12], [38, -18],
+		[35, -22], [30, -28], [28, -32], [25, -34], [20, -35],
+		[18, -32], [15, -28], [12, -18], [15, -10], [12, -5],
+		[10, 0], [8, 5], [5, 5], [0, 5], [-5, 5],
+		[-10, 8], [-15, 12], [-17, 15],
+	]
+
+	// Asia (mainland)
+	const asia = [
+		[26, 40], [30, 42], [35, 42], [40, 42], [45, 40],
+		[50, 38], [55, 38], [60, 40], [65, 42], [70, 45],
+		[75, 42], [80, 35], [85, 28], [88, 22], [92, 20],
+		[98, 18], [100, 15], [102, 12], [105, 10], [108, 12],
+		[110, 15], [115, 20], [118, 25], [120, 30], [125, 35],
+		[130, 40], [135, 45], [140, 45], [145, 48], [150, 52],
+		[155, 58], [160, 62], [170, 65], [180, 68],
+	]
+
+	// Asia continuation (Siberia wraps around)
+	const asiaContinuation = [
+		[-180, 68], [-175, 65], [-170, 62], [-168, 65],
+	]
+
+	// India subcontinent
+	const india = [
+		[68, 24], [72, 22], [75, 18], [78, 12], [80, 8],
+		[82, 10], [85, 15], [88, 22], [90, 24], [92, 22],
+		[88, 22], [85, 25], [80, 28], [75, 30], [72, 28], [68, 24],
+	]
+
+	// Southeast Asia / Indonesia
+	const seAsia = [
+		[100, 5], [102, 2], [105, 0], [108, -2], [112, -5],
+		[115, -8], [120, -8], [125, -5], [130, -3], [135, -5],
+		[140, -6], [142, -8], [145, -6], [148, -8], [150, -10],
+		[145, -15], [140, -12], [135, -8], [130, -5], [125, -8],
+		[120, -10], [115, -8], [110, -6], [105, -5], [102, -3],
+		[100, 0], [100, 5],
+	]
 
 	// Australia
-	ctx.beginPath()
-	ctx.moveTo(w * 0.8, h * 0.65)
-	ctx.lineTo(w * 0.9, h * 0.65)
-	ctx.lineTo(w * 0.92, h * 0.75)
-	ctx.lineTo(w * 0.82, h * 0.78)
-	ctx.closePath()
-	ctx.fill()
-	ctx.stroke()
+	const australia = [
+		[115, -22], [118, -20], [122, -18], [128, -15], [132, -12],
+		[136, -12], [140, -15], [145, -15], [150, -18], [153, -22],
+		[153, -28], [150, -32], [147, -38], [145, -40], [140, -38],
+		[135, -35], [130, -32], [125, -32], [120, -30], [115, -28],
+		[113, -25], [115, -22],
+	]
 
-	// Antarctica
-	ctx.beginPath()
-	ctx.moveTo(w * 0.1, h * 0.92)
-	ctx.bezierCurveTo(w * 0.3, h * 0.88, w * 0.7, h * 0.88, w * 0.9, h * 0.92)
-	ctx.lineTo(w * 0.9, h * 0.98)
-	ctx.lineTo(w * 0.1, h * 0.98)
-	ctx.closePath()
-	ctx.fill()
-	ctx.stroke()
+	// Japan
+	const japan = [
+		[130, 32], [132, 34], [135, 35], [138, 36], [140, 38],
+		[142, 40], [144, 43], [145, 45], [143, 44], [140, 42],
+		[138, 40], [135, 38], [132, 36], [130, 34], [130, 32],
+	]
+
+	// UK/Ireland
+	const uk = [
+		[-10, 52], [-8, 54], [-6, 55], [-4, 58], [-3, 59],
+		[-2, 58], [0, 55], [2, 52], [0, 50], [-2, 50],
+		[-5, 50], [-6, 52], [-8, 52], [-10, 52],
+	]
+
+	// Greenland
+	const greenland = [
+		[-45, 60], [-42, 62], [-38, 65], [-35, 70], [-30, 75],
+		[-25, 78], [-20, 80], [-25, 82], [-35, 83], [-45, 82],
+		[-55, 78], [-60, 72], [-55, 68], [-50, 64], [-45, 60],
+	]
+
+	// New Zealand
+	const newZealand = [
+		[172, -35], [175, -37], [178, -40], [177, -42], [174, -45],
+		[170, -46], [168, -44], [170, -42], [172, -40], [172, -35],
+	]
+
+	// Draw all continents
+	drawContinentPath(ctx, northAmerica, width, height)
+	drawContinentPath(ctx, southAmerica, width, height)
+	drawContinentPath(ctx, europe, width, height)
+	drawContinentPath(ctx, africa, width, height)
+	drawContinentPath(ctx, asia, width, height, false) // Don't close - wraps
+	drawContinentPath(ctx, asiaContinuation, width, height, false)
+	drawContinentPath(ctx, india, width, height)
+	drawContinentPath(ctx, seAsia, width, height)
+	drawContinentPath(ctx, australia, width, height)
+	drawContinentPath(ctx, japan, width, height)
+	drawContinentPath(ctx, uk, width, height)
+	drawContinentPath(ctx, greenland, width, height)
+	drawContinentPath(ctx, newZealand, width, height)
 }
