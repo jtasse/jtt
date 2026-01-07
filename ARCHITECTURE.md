@@ -184,7 +184,12 @@ DOM overlays now used for content instead of canvas textures.
 
 ## Known Issues (as of 1/6/26)
 
-None critical.
+- Pyramid and some nav labels not showing on home page
+- Labels that do appear are not in the right positions
+- About, portfolio, & blog pages:
+  - Nav labels are too high, don't show a hover icon, and don't navigate when clicked
+  - Contact pane is missing
+  - There should not be a "contact" page
 
 ## Next Steps (Priority Order)
 
