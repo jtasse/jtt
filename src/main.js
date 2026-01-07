@@ -15,6 +15,7 @@ import {
 	morphFromOrcScene,
 	isOrcSceneActive,
 	spinPyramidToSection,
+	controls,
 	// Roaming hand functions
 	setLabelManager,
 	pyramidGroup,
@@ -35,6 +36,9 @@ import {
 import { router } from "./router.js"
 
 // === Managers ===
+// Force initial layout calculation BEFORE creating labels to ensure they are positioned correctly
+layoutManager.onResize()
+
 const labelManager = new LabelManager(scene, layoutManager, pyramidGroup)
 labelManager.createLabels()
 setLabelManager(labelManager)
@@ -47,9 +51,6 @@ initRoamingHand()
 
 // Start animation loop
 animate()
-
-// Force initial layout calculation to ensure labels are positioned correctly
-layoutManager.onResize()
 window.dispatchEvent(new Event("resize"))
 
 window.addEventListener("resize", () => {})
@@ -129,57 +130,59 @@ inputManager.addHoverHandler((raycaster) => {
 		let isOverContactDetails = false
 
 		// 1. Check Contact Label (in nav mode)
-		// if (contactLabel && contactLabel.visible && contactLabel.parent === scene) {
-		// 	const contactHits = raycaster.intersectObject(contactLabel, false)
-		// 	if (contactHits.length > 0) {
-		// 		isOverContactLabel = true
-		// 	}
-		// }
+		const contactLabel = scene.getObjectByName("contactLabel")
+		if (contactLabel && contactLabel.visible) {
+			const contactHits = raycaster.intersectObject(contactLabel, false)
+			if (contactHits.length > 0) {
+				isOverContactLabel = true
+			}
+		}
 
 		// 2. Check Contact Details (if visible)
-		// if (contactDetails && contactDetails.visible) {
-		// 	const contactHits = raycaster.intersectObject(contactDetails, false)
-		// 	if (contactHits.length > 0) {
-		// 		isOverContactDetails = true
-		// 		const hit = contactHits[0]
+		const contactDetails = scene.getObjectByName("contactDetails")
+		if (contactDetails && contactDetails.visible) {
+			const contactHits = raycaster.intersectObject(contactDetails, false)
+			if (contactHits.length > 0) {
+				isOverContactDetails = true
+				const hit = contactHits[0]
 
-		// 		// Check if hovering over any interactive region using UV coordinates
-		// 		const regions = contactDetails.userData.clickRegions || []
-		// 		let foundIndex = -1
+				// Check if hovering over any interactive region using UV coordinates
+				const regions = contactDetails.userData.clickRegions || []
+				let foundIndex = -1
 
-		// 		if (hit.uv) {
-		// 			const u = hit.uv.x
-		// 			const v = hit.uv.y
-		// 			const canvasY = 1 - v
+				if (hit.uv) {
+					const u = hit.uv.x
+					const v = hit.uv.y
+					const canvasY = 1 - v
 
-		// 			for (const region of regions) {
-		// 				if (
-		// 					u >= region.x1 &&
-		// 					u <= region.x2 &&
-		// 					canvasY >= region.y1 &&
-		// 					canvasY <= region.y2
-		// 				) {
-		// 					foundIndex = region.index
-		// 					break
-		// 				}
-		// 			}
-		// 		}
+					for (const region of regions) {
+						if (
+							u >= region.x1 &&
+							u <= region.x2 &&
+							canvasY >= region.y1 &&
+							canvasY <= region.y2
+						) {
+							foundIndex = region.index
+							break
+						}
+					}
+				}
 
-		// 		if (foundIndex !== -1) {
-		// 			contactDetails.userData.setHoveredIndex(foundIndex)
-		// 			contactDetails.userData.showTooltip(foundIndex)
-		// 			renderer.domElement.style.cursor = "pointer"
-		// 		} else {
-		// 			contactDetails.userData.setHoveredIndex(-1)
-		// 			contactDetails.userData.hideTooltip()
-		// 			renderer.domElement.style.cursor = "default"
-		// 		}
-		// 	} else {
-		// 		if (contactDetails.userData.hideTooltip) {
-		// 			contactDetails.userData.hideTooltip()
-		// 		}
-		// 	}
-		// }
+				if (foundIndex !== -1) {
+					contactDetails.userData.setHoveredIndex?.(foundIndex)
+					contactDetails.userData.showTooltip?.(foundIndex)
+					renderer.domElement.style.cursor = "pointer"
+				} else {
+					contactDetails.userData.setHoveredIndex?.(-1)
+					contactDetails.userData.hideTooltip?.()
+					renderer.domElement.style.cursor = "default"
+				}
+			} else {
+				if (contactDetails.userData.hideTooltip) {
+					contactDetails.userData.hideTooltip()
+				}
+			}
+		}
 
 		// Handle Expansion State
 		if (isOverContactLabel || isOverContactDetails) {
@@ -338,6 +341,32 @@ router.onRouteChange((route) => {
 			hideAllPlanes()
 			// Schedule hand entry on home page (2 second delay) only if not coming from ORC
 			scheduleHandEntry(2000)
+
+			// Ensure controls are enabled
+			if (controls) controls.enabled = true
+
+			// Ensure pyramid is visible and opaque (fix for home page regression)
+			pyramidGroup.visible = true
+
+			// Force reset position/scale if it looks wrong (e.g. stuck in nav state)
+			if (pyramidGroup.position.y > 0.5) {
+				pyramidGroup.position.set(0, -0.3, 0)
+				pyramidGroup.rotation.set(0, 0, 0)
+				pyramidGroup.scale.set(1, 1, 1)
+			}
+
+			const labels = labelManager.getLabels()
+			const labelMeshes = Object.values(labels)
+
+			pyramidGroup.children.forEach((c) => {
+				if (labelMeshes.includes(c)) return
+				c.visible = true
+				if (c.material) {
+					c.material.opacity = 1
+					c.material.transparent = false
+					c.material.needsUpdate = true
+				}
+			})
 		}
 		currentContentVisible = null
 		window.centeredLabelName = null
@@ -353,32 +382,34 @@ router.notify()
 
 inputManager.addClickHandler((raycaster) => {
 	// Check if contact label was clicked
-	// if (contactDetails && contactDetails.visible) {
-	// 	const contactHits = raycaster.intersectObject(contactDetails, false)
-	// 	if (contactHits.length > 0) {
-	// 		const hit = contactHits[0]
-	// 		const regions = contactDetails.userData.clickRegions || []
+	const contactDetails = scene.getObjectByName("contactDetails")
+	if (contactDetails && contactDetails.visible) {
+		const contactHits = raycaster.intersectObject(contactDetails, false)
+		if (contactHits.length > 0) {
+			const hit = contactHits[0]
+			const regions = contactDetails.userData.clickRegions || []
 
-	// 		if (hit.uv) {
-	// 			const u = hit.uv.x
-	// 			const v = hit.uv.y
-	// 			const canvasY = 1 - v
+			if (hit.uv) {
+				const u = hit.uv.x
+				const v = hit.uv.y
+				const canvasY = 1 - v
 
-	// 			for (const region of regions) {
-	// 				if (
-	// 					u >= region.x1 &&
-	// 					u <= region.x2 &&
-	// 					canvasY >= region.y1 &&
-	// 					canvasY <= region.y2
-	// 				) {
-	// 					handleContactClick(region.text, region.index)
-	// 					return
-	// 				}
-	// 			}
-	// 		}
-	// 		return
-	// 	}
-	// }
+				for (const region of regions) {
+					if (
+						u >= region.x1 &&
+						u <= region.x2 &&
+						canvasY >= region.y1 &&
+						canvasY <= region.y2
+					) {
+						// handleContactClick(region.text, region.index)
+						// For now just prevent other clicks
+						return
+					}
+				}
+			}
+			return
+		}
+	}
 
 	// Track which label is centered
 	const centeredLabelName = window.centeredLabelName || null
@@ -435,6 +466,12 @@ inputManager.addClickHandler((raycaster) => {
 			router.navigate("/")
 			return
 		}
+		// If Contact was clicked, show the pane instead of navigating
+		if (labelName === "Contact") {
+			if (Contact.showContactLabelCentered) Contact.showContactLabelCentered()
+			return
+		}
+
 		console.debug(
 			"[onClick] clicked object labelName=",
 			labelName,

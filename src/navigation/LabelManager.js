@@ -82,11 +82,10 @@ export class LabelManager {
 				opacity: 0,
 			})
 			const hover = new THREE.Mesh(hoverGeo, hoverMat)
-			hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0.05, 0.08))
-			hover.rotation.copy(mesh.rotation)
+			hover.position.set(0, 0.05, 0.01) // Local offset
 			hover.userData.labelKey = key
 			hover.name = `${key}_hover`
-			this.scene.add(hover)
+			mesh.add(hover) // Parent to label so it moves with it
 			this.hoverTargets[key] = hover
 		}
 
@@ -99,16 +98,13 @@ export class LabelManager {
 	}
 
 	updateNavLayout() {
-		// Use screenToWorld to position labels based on screen pixels
-		const startPixelX = 30
-		const startPixelY = 30
-		const topLeft = screenToWorld(startPixelX, startPixelY, 0)
+		const { width, height } = this.layoutManager.getFrustumDimensions()
+
+		// Position Y: 35% of height (approx 70% up from center)
+		const navY = height * 0.35
+		const availableWorldWidth = width * 0.9 // 90% of width
 
 		const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
-
-		const rightEdgePixel = window.innerWidth - 50
-		const worldRightEdge = screenToWorld(rightEdgePixel, startPixelY, 0)
-		const availableWorldWidth = worldRightEdge.x - topLeft.x
 
 		const labelWidth = 2.4
 		const spacing = 0.1
@@ -124,23 +120,34 @@ export class LabelManager {
 		const scaledSpacing = spacing * this.navLabelScale
 
 		keys.forEach((key, i) => {
-			if (flattenedLabelPositions[key]) {
-				flattenedLabelPositions[key].x =
-					topLeft.x +
-					scaledLabelWidth / 2 +
-					i * (scaledLabelWidth + scaledSpacing)
-				flattenedLabelPositions[key].y = topLeft.y
+			// Ensure position object exists
+			if (!flattenedLabelPositions[key]) {
+				flattenedLabelPositions[key] = new THREE.Vector3()
 			}
+
+			// Center the group of labels
+			const totalGroupWidth =
+				keys.length * scaledLabelWidth + (keys.length - 1) * scaledSpacing
+			const startX = -totalGroupWidth / 2 + scaledLabelWidth / 2
+
+			flattenedLabelPositions[key].x =
+				startX + i * (scaledLabelWidth + scaledSpacing)
+			flattenedLabelPositions[key].y = navY
+			flattenedLabelPositions[key].z = 1.0
 		})
 
 		// Update pyramid positions to match new label positions
-		pyramidXPositions.about = flattenedLabelPositions.About.x
-		pyramidXPositions.bio = flattenedLabelPositions.About.x
-		pyramidXPositions.blog = flattenedLabelPositions.Blog.x
-		pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
+		if (flattenedLabelPositions.About)
+			pyramidXPositions.about = flattenedLabelPositions.About.x
+		if (flattenedLabelPositions.About)
+			pyramidXPositions.bio = flattenedLabelPositions.About.x
+		if (flattenedLabelPositions.Blog)
+			pyramidXPositions.blog = flattenedLabelPositions.Blog.x
+		if (flattenedLabelPositions.Portfolio)
+			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
 
 		// Update flattened pyramid Y position to be just below labels
-		flattenedMenuState.positionY = topLeft.y - 0.3 * this.navLabelScale
+		flattenedMenuState.positionY = navY - 0.3 * this.navLabelScale
 	}
 
 	handleLayoutChange() {
@@ -163,7 +170,8 @@ export class LabelManager {
 
 	getNavPosition(id) {
 		const normalizedId = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase()
-		const pos = flattenedLabelPositions[normalizedId] || flattenedLabelPositions[id]
+		const pos =
+			flattenedLabelPositions[normalizedId] || flattenedLabelPositions[id]
 		if (pos) {
 			return new THREE.Vector3(pos.x, pos.y, pos.z)
 		}
@@ -178,11 +186,17 @@ export class LabelManager {
 		if (this.labels.Home) {
 			this.labels.Home.visible = true
 		}
+		if (this.labels.Contact) {
+			this.labels.Contact.visible = true
+		}
 	}
 
 	hideHomeLabel() {
 		if (this.labels.Home) {
 			this.labels.Home.visible = false
+		}
+		if (this.labels.Contact) {
+			this.labels.Contact.visible = false
 		}
 	}
 
@@ -200,7 +214,6 @@ export class LabelManager {
 
 		// Clean up hover targets
 		Object.values(this.hoverTargets).forEach((mesh) => {
-			this.scene.remove(mesh)
 			if (mesh.geometry) mesh.geometry.dispose()
 			if (mesh.material) mesh.material.dispose()
 		})
