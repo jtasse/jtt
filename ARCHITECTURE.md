@@ -82,7 +82,7 @@ The separation is maintained by:
 
 # Refactor
 
-> **Status**: In Progress (as of 1/7/26)
+> **Status**: Phase 3 Complete (as of 1/7/26)
 > Remove this section once the refactor is complete.
 
 ## Background
@@ -106,30 +106,35 @@ src/
 │   └── LabelManager.js      # ✅ DONE - Label creation and nav positioning
 ├── contact/
 │   └── ContactLabel.js      # ✅ DONE - Contact info system (extracted)
-├── layout/
-│   └── LayoutManager.js     # ⚠️ DUPLICATE - Delete this (use core/LayoutManager.js)
 ├── content/
 │   ├── overlay.css          # ✅ DONE - Content overlay styles
 │   ├── home/                # Home page content & styles
 │   ├── about/               # About/Bio page content & styles
 │   ├── blog/                # Blog content & styles
 │   ├── portfolio/           # Portfolio content & styles
-│   └── orc-demo/            # ORC demo (orc-demo.js, orc-hand.js, styles)
-├── config.js                # Placeholder for constants (not yet populated)
+│   ├── orc-demo/            # ORC demo
+│   │   ├── orc-demo.js      # ✅ DONE - Barrel file
+│   │   ├── OrcScene.js      # ✅ DONE - Scene setup
+│   │   ├── Decommission.js  # ✅ DONE - Decommission logic
+│   │   ├── SmartCamera.js   # ✅ DONE - Camera tracking
+│   │   ├── OrcDemoManager.js # ✅ DONE - Manager logic
+│   │   └── ...
+│   ├── ContentManager.js    # ✅ DONE - Content display logic
+│   └── ScrollManager.js     # ✅ DONE - Scroll UI logic
 ├── contentLoader.js         # HTML content loading utilities
-├── planes.js                # Canvas texture rendering (legacy, being phased out)
-├── pyramid.js               # ⚠️ BLOATED (~2400 lines) - Main scene orchestration
+├── planes.js                # ✅ CLEANED - Canvas texture rendering (Label helper only)
+├── pyramid.js               # ✅ CLEANED - Main scene orchestration
 ├── router.js                # Simple client-side router
-└── main.js                  # Entry point, event handling (~1000 lines)
+└── main.js                  # Entry point, event handling
 ```
 
 ### Files to Delete (Duplicates)
 
 These files were created during refactoring but are duplicates (some deleted):
 
-- `src/core/PyramidMesh.js` - ✅ DELETED
-- `LayoutManager.js` (root) - Stray file, delete
-- `config.js` (root) - Stray file, delete
+- `src/layout/LayoutManager.js` - Duplicate of `src/core/LayoutManager.js`
+- `LayoutManager.js` (root) - Stray file
+- `config.js` (root) - Stray file
 
 ---
 
@@ -163,10 +168,12 @@ DOM overlays now used for content instead of canvas textures.
 | pyramid.js    | ⚠️ Bloated | Still ~2400 lines, needs splitting       |
 | main.js       | ✅ Clean   | Reduced to wiring and initialization     |
 
-### Phase 3: ORC Demo Fixes ❌ NOT STARTED
+### Phase 3: ORC Demo Fixes ✅ COMPLETE
 
-- SmartCamera not implemented
-- Hand behaviors not extracted to separate module
+- SmartCamera implemented (`src/content/orc-demo/SmartCamera.js`)
+- Hand behaviors extracted to separate module (`src/hand/`)
+- ORC Demo logic split into `OrcScene.js` and `Decommission.js`
+- Sidebar layout issues fixed via CSS
 
 ### Phase 4: Testing ❌ NOT STARTED
 
@@ -177,46 +184,18 @@ DOM overlays now used for content instead of canvas textures.
 
 ## Known Issues (as of 1/6/26)
 
-| Issue                                        | Severity | Status          |
-| -------------------------------------------- | -------- | --------------- |
-| ORC demo nav labels shifted right by sidebar | Medium   | Deferred        |
-| Camera controls disabled on home page        | Low      | By design?      |
-| `pyramid.js` still too large                 | Medium   | Needs splitting |
-| Duplicate LayoutManager files                | Low      | Cleanup needed  |
-
----
+None critical.
 
 ## Next Steps (Priority Order)
 
 ### Immediate Cleanup
 
 1. Delete duplicate files listed above
-2. Consolidate imports to use canonical paths
 
-### Continue Extraction
+### Testing
 
-3. Extract from `pyramid.js`:
-
-   - `src/pyramid/animations.js` - animatePyramid, spinPyramidToSection, resetPyramidToHome
-   - `src/pyramid/state.js` - pyramidGroup, position states, current section tracking
-   - `src/content/ContentManager.js` - showAboutPlane, showPortfolioPlane, showBlogPlane
-
-4. Extract from `main.js`: (DONE)
-
-   - `src/core/InputManager.js` - Raycasting, click/drag detection, hover states
-
-5. Extract Hand to separate module: (DONE)
-
-   - `src/hand/HandMesh.js` (Created)
-   - `src/hand/HandManager.js` (Created)
-   - `src/hand/HandBehaviors.js` (Created)
-   - `src/hand/HandStateMachine.js` (Created)
-
-### ORC Demo
-
-6. Fix ORC demo layout for sidebar
-
----
+2. Add unit tests for `LayoutManager`
+3. Add unit tests for `HandStateMachine`
 
 ## Target File Structure
 
