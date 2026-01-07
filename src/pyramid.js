@@ -161,9 +161,11 @@ function morphToOrcScene() {
 	incrementPyramidAnimToken()
 	hideAllPlanes()
 
-	// Set active flag early to influence layout calculations
-	// OrcDemoManager.isActive will be set in start(), but we need to update layout first
-	// Actually we can just start it, then update layout
+	// Start ORC Demo first so isActive is true for layout calculations
+	OrcDemoManager.start()
+
+	// Update layout now that ORC is active (affects margins for sidebar)
+	updateNavLayout()
 
 	// Show pyramid in flattened state under Portfolio label
 	pyramidGroup.visible = true
@@ -176,6 +178,7 @@ function morphToOrcScene() {
 	)
 	pyramidGroup.rotation.x = flattenedMenuState.rotationX
 
+	// Position labels AFTER layout update so they use ORC-adjusted positions
 	const labels = activeLabelManager ? activeLabelManager.labels : {}
 	for (const key in labels) {
 		const labelMesh = labels[key]
@@ -188,7 +191,7 @@ function morphToOrcScene() {
 			}
 			labelMesh.position.set(flatPos.x, flatPos.y, 1)
 			labelMesh.rotation.set(0, 0, 0)
-			labelMesh.scale.set(1, 1, 1)
+			labelMesh.scale.set(navLabelScale, navLabelScale, 1)
 			labelMesh.visible = true // Make visible (including Home label)
 			labelMesh.userData.fixedNav = true
 			if (labelMesh.material) {
@@ -204,12 +207,6 @@ function morphToOrcScene() {
 	if (roamingHand && roamingHand.parent === scene) {
 		scene.remove(roamingHand)
 	}
-
-	// Start ORC Demo
-	OrcDemoManager.start()
-
-	// Update layout now that ORC is active (affects margins)
-	updateNavLayout()
 
 	controls.enabled = false
 }

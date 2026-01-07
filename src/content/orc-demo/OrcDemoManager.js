@@ -34,9 +34,6 @@ let selectedSatellite = null
 let originalCameraState = null
 let isCameraTracking = false
 
-// Reset button
-let orcResetButton = null
-
 export const OrcDemoManager = {
 	isActive: false,
 
@@ -46,7 +43,6 @@ export const OrcDemoManager = {
 
 		createOrcDemo()
 		showAvailableSatellitesPane()
-		showOrcResetButton()
 
 		// Fade in
 		if (orcDemoContainer) {
@@ -73,9 +69,6 @@ export const OrcDemoManager = {
 
 	stop() {
 		if (!this.isActive) return
-
-		// Fade out handled by caller (pyramid.js) usually, but we can ensure cleanup
-		hideOrcResetButton()
 
 		// Release hand
 		const hand = releaseOrcHand()
@@ -534,53 +527,6 @@ function updateAvailableSatellitesHighlight() {
 
 	const helpText = document.getElementById("satellite-help-text")
 	if (helpText) helpText.style.display = showHelp ? "block" : "none"
-}
-
-function createOrcResetButton() {
-	if (orcResetButton) return
-
-	orcResetButton = document.createElement("button")
-	orcResetButton.id = "orc-reset-button"
-	orcResetButton.textContent = "Reset"
-	Object.assign(orcResetButton.style, {
-		position: "fixed",
-		left: "6px",
-		top: "50px",
-		zIndex: "10000",
-		padding: "8px 14px",
-		background: "rgba(0,0,0,0.6)",
-		color: "white",
-		border: "1px solid rgba(255,255,255,0.08)",
-		borderRadius: "4px",
-		font: "600 14px sans-serif",
-		cursor: "pointer",
-		backdropFilter: "blur(4px)",
-		transition: "background 0.2s ease, box-shadow 0.2s ease",
-		display: "none",
-	})
-
-	orcResetButton.addEventListener("mouseenter", () => {
-		orcResetButton.style.background = "rgba(0,100,150,0.7)"
-		orcResetButton.style.boxShadow = "0 0 12px rgba(0,200,255,0.4)"
-	})
-	orcResetButton.addEventListener("mouseleave", () => {
-		orcResetButton.style.background = "rgba(0,0,0,0.6)"
-		orcResetButton.style.boxShadow = "none"
-	})
-
-	orcResetButton.addEventListener("click", () => {
-		window.location.reload()
-	})
-	document.body.appendChild(orcResetButton)
-}
-
-function showOrcResetButton() {
-	if (!orcResetButton) createOrcResetButton()
-	if (orcResetButton) orcResetButton.style.display = "block"
-}
-
-function hideOrcResetButton() {
-	if (orcResetButton) orcResetButton.style.display = "none"
 }
 
 // Global handlers

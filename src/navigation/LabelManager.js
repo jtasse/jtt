@@ -1,11 +1,11 @@
 import * as THREE from "three"
 import { makeLabelPlane } from "../planes.js"
-import { screenToWorld } from "../core/SceneManager.js"
 import {
 	flattenedLabelPositions,
 	flattenedMenuState,
 	pyramidXPositions,
 } from "../pyramid/state.js"
+import { OrcDemoManager } from "../content/orc-demo/OrcDemoManager.js"
 
 // Label configurations with positions on pyramid faces
 const labelConfigs = {
@@ -102,7 +102,13 @@ export class LabelManager {
 
 		// Position Y: 35% of height (approx 70% up from center)
 		const navY = height * 0.35
-		const availableWorldWidth = width * 0.9 // 90% of width
+
+		// When ORC demo is active, reduce available width to avoid sidebar occlusion
+		// The sidebar takes about 35% of the right side
+		const leftMargin = 0.08 // 8% margin on left
+		const rightMargin = OrcDemoManager.isActive ? 0.40 : 0.08 // 40% when ORC active, 8% otherwise
+		const availableWorldWidth = width * (1 - leftMargin - rightMargin)
+		const startOffset = -width / 2 + width * leftMargin
 
 		const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
 
@@ -125,13 +131,9 @@ export class LabelManager {
 				flattenedLabelPositions[key] = new THREE.Vector3()
 			}
 
-			// Center the group of labels
-			const totalGroupWidth =
-				keys.length * scaledLabelWidth + (keys.length - 1) * scaledSpacing
-			const startX = -totalGroupWidth / 2 + scaledLabelWidth / 2
-
+			// Position labels starting from left margin
 			flattenedLabelPositions[key].x =
-				startX + i * (scaledLabelWidth + scaledSpacing)
+				startOffset + scaledLabelWidth / 2 + i * (scaledLabelWidth + scaledSpacing)
 			flattenedLabelPositions[key].y = navY
 			flattenedLabelPositions[key].z = 1.0
 		})
