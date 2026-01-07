@@ -45,7 +45,16 @@ export function initContactLabel() {
 export function showContactLabelCentered() {
 	if (contactDetails) {
 		contactDetails.visible = true
-		// Add logic to position it centered if needed
+		// Position centered below the pyramid on home page
+		contactDetails.position.set(0, -1.5, 0)
+	}
+}
+
+export function showContactLabelLeft() {
+	if (contactDetails) {
+		contactDetails.visible = true
+		// Position on the left side for content pages (sidebar position)
+		contactDetails.position.set(-4.5, 0, 0)
 	}
 }
 

@@ -35,7 +35,7 @@ import {
 import { router } from "./router.js"
 
 // === Managers ===
-const labelManager = new LabelManager(scene, layoutManager)
+const labelManager = new LabelManager(scene, layoutManager, pyramidGroup)
 labelManager.createLabels()
 setLabelManager(labelManager)
 
@@ -77,18 +77,21 @@ inputManager.addHoverHandler((raycaster) => {
 		}
 	}
 
-	// Check hover targets for pyramid labels
+	// Check hover targets for pyramid labels (use hoverTargets for larger hit areas)
 	const labels = labelManager.getLabels()
+	const hoverTargets = labelManager.getHoverTargets()
 	const hoverTargetIntersects = raycaster.intersectObjects(
-		Object.values(labels)
+		Object.values(hoverTargets)
 	)
 	// Clear previous hover if not still over its hover target
 	if (hoveredLabel) {
 		const stillOver = hoverTargetIntersects.some(
-			(h) => h.object === hoveredLabel
+			(h) => h.object.userData.labelKey === hoveredLabel.userData.name
 		)
 		if (!stillOver) {
-			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			if (hoveredLabel.userData.originalScale) {
+				hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			}
 			hoveredLabel = null
 			inputManager.setCursor("default")
 		}
@@ -99,7 +102,8 @@ inputManager.addHoverHandler((raycaster) => {
 
 	if (hoverTargetIntersects.length > 0) {
 		const hoverObj = hoverTargetIntersects[0].object
-		const labelMesh = hoverObj
+		const labelKey = hoverObj.userData.labelKey
+		const labelMesh = labels[labelKey]
 		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
 			// Only scale if the label is visible
 			if (labelMesh.userData.originalScale) {
@@ -213,15 +217,15 @@ inputManager.addHoverHandler((raycaster) => {
 // Listen for route changes and show correct content
 // Helper to animate pyramid to top menu and show a section
 function centerAndOpenLabel(labelManager, labelName) {
-	if (!labelManager.getLabel(labelName.toLowerCase())) return
+	if (!labelManager.getLabel(labelName)) return
 	// Clicking a label should reveal the corner Home control
 	try {
 		labelManager.showHomeLabel()
 	} catch (e) {
 		/* showHomeLabel might not be available yet */
 	}
-	// Move contact label to left sidebar position instead of hiding it
-	// moveContactLabelToLeft()
+	// Contact label is now part of the nav row via LabelManager
+	// It gets animated with other labels by animatePyramid()
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -245,7 +249,8 @@ function centerAndOpenLabel(labelManager, labelName) {
 function routeToPage(route) {
 	const routeMap = {
 		"/": "home",
-		"/bio": "bio",
+		"/about": "about",
+		"/bio": "about", // Alias
 		"/blog": "blog",
 		"/portfolio": "portfolio",
 		"/orc-demo": "orc-demo",
@@ -278,13 +283,13 @@ router.onRouteChange((route) => {
 			setTimeout(() => {
 				// After ORC scene fade out, trigger hand entry from the right
 				// (ORC demo is rightmost, so leaving it means entering from right)
-				triggerHandPageTransition("orc-demo", "bio")
-				centerAndOpenLabel(labelManager, "Bio")
-				currentContentVisible = "bio"
+				triggerHandPageTransition("orc-demo", "about")
+				centerAndOpenLabel(labelManager, "About")
+				currentContentVisible = "about"
 			}, 1300)
 		} else {
-			centerAndOpenLabel(labelManager, "Bio")
-			currentContentVisible = "bio"
+			centerAndOpenLabel(labelManager, "About")
+			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
 		if (isOrcSceneActive()) {
@@ -409,18 +414,19 @@ inputManager.addClickHandler((raycaster) => {
 		// ignore early plane detection errors
 	}
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
-	// const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
+	const hoverTargets = labelManager.getHoverTargets()
+	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
 	let obj = null
 	const labels = labelManager.getLabels()
-	// if (hoverHits.length > 0) {
-	// 	const hoverObj = hoverHits[0].object
-	// 	const labelKey = hoverObj.userData.labelKey
-	// 	obj = labels[labelKey]
-	// } else {
-	// Fallback: check tight label meshes
-	const labelIntersects = raycaster.intersectObjects(Object.values(labels))
-	if (labelIntersects.length > 0) obj = labelIntersects[0].object
-	// }
+	if (hoverHits.length > 0) {
+		const hoverObj = hoverHits[0].object
+		const labelKey = hoverObj.userData.labelKey
+		obj = labels[labelKey]
+	} else {
+		// Fallback: check tight label meshes
+		const labelIntersects = raycaster.intersectObjects(Object.values(labels))
+		if (labelIntersects.length > 0) obj = labelIntersects[0].object
+	}
 	if (obj) {
 		const labelName = obj.userData.name
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
@@ -436,6 +442,9 @@ inputManager.addClickHandler((raycaster) => {
 			window.centeredLabelName
 		)
 
+		// Map label names to section names for routing
+		const sectionName = labelName.toLowerCase()
+
 		// With flattened menu, all labels are visible at the top
 		// Clicking a label navigates to that section
 		if (window.centeredLabelName !== labelName) {
@@ -444,13 +453,12 @@ inputManager.addClickHandler((raycaster) => {
 			if (isAtTop) {
 				// Already in flattened state, spin pyramid to new face and switch content
 				hideAllPlanes()
-				const sectionName = obj.userData.id
 				console.log("pyramidGroup at top nav state:", pyramidGroup)
 				spinPyramidToSection(sectionName, () => {
 					// Show content after spin completes
-					if (obj.userData.id === "bio") {
+					if (labelName === "About") {
 						showAboutPlane()
-						currentContentVisible = "bio"
+						currentContentVisible = "about"
 					} else if (labelName === "Portfolio") {
 						showPortfolioPlane()
 						currentContentVisible = "portfolio"
@@ -459,15 +467,15 @@ inputManager.addClickHandler((raycaster) => {
 						currentContentVisible = "blog"
 					}
 				})
-				window.centeredLabelName = obj.userData.id
+				window.centeredLabelName = labelName
 			} else {
 				// Animate pyramid to top and show content
-				animatePyramid(labelManager, true, obj.userData.id)
-				window.centeredLabelName = obj.userData.id
+				animatePyramid(labelManager, true, sectionName)
+				window.centeredLabelName = labelName
 			}
 
 			// Update route
-			router.navigate("/" + obj.userData.id)
+			router.navigate("/" + sectionName)
 		}
 		return
 	}

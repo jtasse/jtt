@@ -83,7 +83,11 @@ Contact.initContactLabel()
 let activeLabelManager = null
 export function setLabelManager(lm) {
 	activeLabelManager = lm
-	setupPyramidLabels()
+	// Labels are already attached to pyramidGroup by LabelManager.createLabels()
+	// Just trigger initial layout update
+	if (activeLabelManager) {
+		activeLabelManager.updateNavLayout()
+	}
 }
 
 // Layout manager for responsive 3D positioning
@@ -92,46 +96,6 @@ export const layoutManager = new LayoutManager(camera)
 setInitialCameraState(camera.position, new THREE.Vector3(0, 0, 0))
 
 scene.add(pyramidGroup)
-
-// Initial setup to attach labels to pyramid faces
-function setupPyramidLabels() {
-	if (!activeLabelManager || !pyramidGroup) return
-
-	const labels = activeLabelManager.getLabels()
-
-	// Configuration for placing labels on pyramid faces (3-sided)
-	const placements = [
-		{ id: "bio", angle: 0 }, // Front
-		{ id: "portfolio", angle: (Math.PI * 2) / 3 }, // Left (120 deg)
-		{ id: "blog", angle: -(Math.PI * 2) / 3 }, // Right (-120 deg)
-	]
-
-	placements.forEach((p) => {
-		const label = labels[p.id]
-		if (label) {
-			// Attach to pyramid group so they rotate with it
-			pyramidGroup.add(label)
-
-			// Calculate position on face
-			const radius = 1.1 // Distance from center
-			const y = -0.2 // Vertical position
-
-			label.position.set(
-				Math.sin(p.angle) * radius,
-				y,
-				Math.cos(p.angle) * radius
-			)
-
-			// Rotation: Face outward + tilt back to match pyramid slope
-			label.rotation.set(-0.35, p.angle, 0, "YXZ")
-
-			// Save original state for resets
-			label.userData.origPosition = label.position.clone()
-			label.userData.origRotation = label.rotation.clone()
-			label.userData.originalScale = label.scale.clone()
-		}
-	})
-}
 
 // === Morph Sphere (for ORC demo transition) ===
 const morphSphereGeometry = new THREE.SphereGeometry(1.5, 32, 32)
@@ -183,50 +147,12 @@ updatePyramidEnvMap()
 
 let navLabelScale = 1.0
 
-// Update nav layout based on screen size using LayoutManager for responsive positioning
+// Update nav layout based on screen size - delegates to LabelManager
 function updateNavLayout() {
-	const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
-	const { width, height } = layoutManager.getFrustumDimensions()
-
-	const navY = height * 0.25
-
-	const leftMarginPercent = 0.12
-	const rightMarginPercent = OrcDemoManager.isActive ? 0.35 : 0.12
-	const availableWidth = width * (1 - leftMarginPercent - rightMarginPercent)
-	const startX = -width / 2 + width * leftMarginPercent
-
-	const baseLabelWidth = 2.4
-	const baseSpacing = 0.2
-	const totalStaticWidth =
-		keys.length * baseLabelWidth + (keys.length - 1) * baseSpacing
-
-	navLabelScale = 1.0
-	if (totalStaticWidth > availableWidth) {
-		navLabelScale = availableWidth / totalStaticWidth
-	}
-
-	if (layoutManager.isPortrait()) {
-		navLabelScale *= 0.85
-	}
-
-	const scaledLabelWidth = baseLabelWidth * navLabelScale
-	const scaledSpacing = baseSpacing * navLabelScale
-
-	keys.forEach((key, i) => {
-		const x =
-			startX + scaledLabelWidth / 2 + i * (scaledLabelWidth + scaledSpacing)
-
-		if (key === "About") pyramidXPositions.about = x
-		if (key === "About") pyramidXPositions.bio = x
-		if (key === "Blog") pyramidXPositions.blog = x
-		if (key === "Portfolio") pyramidXPositions.portfolio = x
-	})
-
 	if (activeLabelManager) {
 		activeLabelManager.updateNavLayout()
+		navLabelScale = activeLabelManager.getNavLabelScale()
 	}
-
-	flattenedMenuState.positionY = navY - 0.3 * navLabelScale
 }
 
 // === ORC Scene / Morph Functions ===
@@ -263,6 +189,7 @@ function morphToOrcScene() {
 			labelMesh.position.set(flatPos.x, flatPos.y, 1)
 			labelMesh.rotation.set(0, 0, 0)
 			labelMesh.scale.set(1, 1, 1)
+			labelMesh.visible = true // Make visible (including Home label)
 			labelMesh.userData.fixedNav = true
 			if (labelMesh.material) {
 				labelMesh.material.opacity = 1

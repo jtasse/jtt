@@ -28,6 +28,16 @@ export const pyramidXPositions = {
 	portfolio: 3.0,
 }
 
+// Flattened label positions for horizontal menu at top.
+// These are WORLD positions - values that stay within camera view.
+export const flattenedLabelPositions = {
+	Home: { x: -5.0, y: 2.5, z: 0 },
+	Contact: { x: -3.0, y: 2.5, z: 0 },
+	About: { x: -1.0, y: 2.5, z: 0 },
+	Blog: { x: 1.0, y: 2.5, z: 0 },
+	Portfolio: { x: 3.0, y: 2.5, z: 0 },
+}
+
 // Mutable State
 let currentSection = null
 export const getCurrentSection = () => currentSection
