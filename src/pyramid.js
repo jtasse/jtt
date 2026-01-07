@@ -75,6 +75,7 @@ export {
 	cancelHandEntry,
 	triggerHandPageTransition,
 	getCurrentHandPage,
+	Contact,
 }
 
 Contact.initContactLabel()
@@ -187,7 +188,7 @@ function updateNavLayout() {
 	const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
 	const { width, height } = layoutManager.getFrustumDimensions()
 
-	const navY = height * 0.35
+	const navY = height * 0.25
 
 	const leftMarginPercent = 0.12
 	const rightMarginPercent = OrcDemoManager.isActive ? 0.35 : 0.12

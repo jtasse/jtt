@@ -20,6 +20,7 @@ import {
 	pyramidGroup,
 	layoutManager,
 	screenToWorld,
+	Contact,
 } from "./pyramid.js"
 import { handleContentLink } from "./content/ContentManager.js"
 import { LabelManager } from "./navigation/LabelManager.js"
@@ -49,6 +50,7 @@ animate()
 
 // Force initial layout calculation to ensure labels are positioned correctly
 layoutManager.onResize()
+window.dispatchEvent(new Event("resize"))
 
 window.addEventListener("resize", () => {})
 
@@ -76,14 +78,14 @@ inputManager.addHoverHandler((raycaster) => {
 	}
 
 	// Check hover targets for pyramid labels
-	// const hoverTargetIntersects = raycaster.intersectObjects(
-	// 	Object.values(hoverTargets)
-	// )
-	const hoverTargetIntersects = [] // Disabled for refactor
+	const labels = labelManager.getLabels()
+	const hoverTargetIntersects = raycaster.intersectObjects(
+		Object.values(labels)
+	)
 	// Clear previous hover if not still over its hover target
 	if (hoveredLabel) {
 		const stillOver = hoverTargetIntersects.some(
-			(h) => h.object.userData.labelKey === hoveredLabel.userData.name
+			(h) => h.object === hoveredLabel
 		)
 		if (!stillOver) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
@@ -97,8 +99,7 @@ inputManager.addHoverHandler((raycaster) => {
 
 	if (hoverTargetIntersects.length > 0) {
 		const hoverObj = hoverTargetIntersects[0].object
-		const labelKey = hoverObj.userData.labelKey
-		const labelMesh = labels[labelKey]
+		const labelMesh = hoverObj
 		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
 			// Only scale if the label is visible
 			if (labelMesh.userData.originalScale) {
@@ -109,8 +110,13 @@ inputManager.addHoverHandler((raycaster) => {
 			}
 		}
 		// Show contact section when hovering over any content label while pyramid is centered
-		if (isPyramidCentered && labelMesh && labelMesh.visible) {
-			// showContactLabelCentered()
+		if (
+			isPyramidCentered &&
+			labelMesh &&
+			labelMesh.visible &&
+			Contact.showContactLabelCentered
+		) {
+			Contact.showContactLabelCentered()
 		}
 		inputManager.setCursor("pointer")
 	} else {
@@ -173,11 +179,11 @@ inputManager.addHoverHandler((raycaster) => {
 
 		// Handle Expansion State
 		if (isOverContactLabel || isOverContactDetails) {
-			// setContactExpanded(true)
+			if (Contact.setContactExpanded) Contact.setContactExpanded(true)
 			if (isOverContactLabel) inputManager.setCursor("pointer")
 		} else {
 			// if (contactLabel && contactLabel.parent === scene) {
-			// setContactExpanded(false)
+			if (Contact.setContactExpanded) Contact.setContactExpanded(false)
 		}
 
 		// Check if hovering over the pyramid mesh itself (when centered)
@@ -186,8 +192,8 @@ inputManager.addHoverHandler((raycaster) => {
 				pyramidGroup.children,
 				true
 			)
-			if (pyramidIntersects.length > 0) {
-				// showContactLabelCentered()
+			if (pyramidIntersects.length > 0 && Contact.showContactLabelCentered) {
+				Contact.showContactLabelCentered()
 			}
 		}
 		// No hover targets: ensure cursor is default and reset hoveredLabel
@@ -335,7 +341,7 @@ router.onRouteChange((route) => {
 
 // Stub for hideContactLabel since it was removed
 function hideContactLabel() {
-	// TODO: Re-implement contact label hiding
+	if (Contact.hideContactLabel) Contact.hideContactLabel()
 }
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
 router.notify()
@@ -405,7 +411,7 @@ inputManager.addClickHandler((raycaster) => {
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
 	// const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
 	let obj = null
-	const labels = labelManager.getLabels() // This will now work
+	const labels = labelManager.getLabels()
 	// if (hoverHits.length > 0) {
 	// 	const hoverObj = hoverHits[0].object
 	// 	const labelKey = hoverObj.userData.labelKey
@@ -534,7 +540,7 @@ inputManager.addClickHandler((raycaster) => {
 			return
 		}
 		// Clicking the pyramid shows the contact info
-		// showContactLabelCentered()
+		if (Contact.showContactLabelCentered) Contact.showContactLabelCentered()
 		return
 	}
 
