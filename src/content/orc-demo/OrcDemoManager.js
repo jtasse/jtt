@@ -610,10 +610,30 @@ window.orcCancelDecommission = function () {
 	}
 }
 
-window.addEventListener("satelliteRemoved", (event) => {
-	const { satelliteId } = event.detail
+// Handle satellite removal from both possible event sources
+function handleSatelliteRemoved(satelliteId) {
 	if (selectedSatellite && selectedSatellite.userData.id === satelliteId) {
 		deselectSatellite()
 	}
+
+	// Remove the satellite from the available satellites list
+	if (orcInfoPane) {
+		const listItem = orcInfoPane.querySelector(
+			`.satellite-list-item[data-satellite-id="${satelliteId}"]`
+		)
+		if (listItem) {
+			listItem.remove()
+		}
+	}
+
 	updateAvailableSatellitesHighlight()
+}
+
+// Listen to both events since satellites can be removed via different code paths
+window.addEventListener("satelliteDecommissioned", (event) => {
+	handleSatelliteRemoved(event.detail.satelliteId)
+})
+
+window.addEventListener("satelliteRemoved", (event) => {
+	handleSatelliteRemoved(event.detail.satelliteId)
 })
