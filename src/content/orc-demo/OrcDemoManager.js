@@ -14,6 +14,8 @@ import {
 	orcHandStateMachine,
 	setOrcHand,
 	releaseOrcHand,
+	getDecommissionState,
+	getDecommissionConfig,
 } from "./orc-demo.js"
 import { getRoamingHand } from "../../hand/HandManager.js"
 
