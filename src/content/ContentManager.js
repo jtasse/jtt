@@ -351,7 +351,7 @@ export function showOrcPreviewOverlay() {
 
 		orcPreviewOverlay.addEventListener("click", (e) => {
 			e.stopPropagation()
-			if (window.routerNavigate) window.routerNavigate("/orc-demo")
+			if (window.routerNavigate) window.routerNavigate("/portfolio/orc-demo")
 		})
 
 		document.body.appendChild(orcPreviewOverlay)

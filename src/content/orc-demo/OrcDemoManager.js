@@ -493,6 +493,65 @@ async function showAvailableSatellitesPane() {
 
 		updateAvailableSatellitesHighlight()
 		document.body.appendChild(orcInfoPane)
+
+		// Also extract and add the user guide overlay
+		const userGuideOverlay = temp.querySelector("#user-guide-overlay")
+		if (userGuideOverlay) {
+			document.body.appendChild(userGuideOverlay)
+
+			// Set up user guide link click handler
+			const userGuideLink = orcInfoPane.querySelector("#user-guide-link")
+			const closeBtn = userGuideOverlay.querySelector("#user-guide-close")
+			const contentContainer = userGuideOverlay.querySelector("#user-guide-content")
+
+			if (userGuideLink && contentContainer) {
+				userGuideLink.addEventListener("click", async (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+
+					try {
+						const response = await fetch("/src/content/portfolio/docs/orc/user-guide.html")
+						const html = await response.text()
+
+						const parser = new DOMParser()
+						const doc = parser.parseFromString(html, "text/html")
+						const mainContent = doc.querySelector(".main-content")
+
+						if (mainContent) {
+							contentContainer.innerHTML = mainContent.innerHTML
+						} else {
+							contentContainer.innerHTML = doc.body.innerHTML
+						}
+
+						userGuideOverlay.classList.add("visible")
+					} catch (err) {
+						console.error("Failed to load user guide:", err)
+					}
+				})
+			}
+
+			if (closeBtn) {
+				closeBtn.addEventListener("click", (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					userGuideOverlay.classList.remove("visible")
+				})
+			}
+
+			// Close on escape key
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape" && userGuideOverlay.classList.contains("visible")) {
+					userGuideOverlay.classList.remove("visible")
+				}
+			})
+
+			// Close when clicking outside content
+			userGuideOverlay.addEventListener("click", (e) => {
+				if (e.target === userGuideOverlay) {
+					userGuideOverlay.classList.remove("visible")
+				}
+			})
+		}
 	}
 
 	orcInfoPane.style.display = "block"

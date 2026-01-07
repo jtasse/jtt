@@ -256,7 +256,7 @@ function routeToPage(route) {
 		"/bio": "about", // Alias
 		"/blog": "blog",
 		"/portfolio": "portfolio",
-		"/orc-demo": "orc-demo",
+		"/portfolio/orc-demo": "orc-demo",
 	}
 	return routeMap[route] || "home"
 }
@@ -318,7 +318,7 @@ router.onRouteChange((route) => {
 			centerAndOpenLabel(labelManager, "Blog")
 			currentContentVisible = "blog"
 		}
-	} else if (route === "/orc-demo") {
+	} else if (route === "/portfolio/orc-demo") {
 		// Move contact label to left sidebar position instead of hiding it
 		// moveContactLabelToLeft()
 		// Morph pyramid into ORC demo scene
