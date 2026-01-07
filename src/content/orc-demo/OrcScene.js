@@ -1062,16 +1062,74 @@ export function createOrcPreview(width = 300, height = 200) {
 
 // Continent drawing helper (kept here as it's used by both scene and preview)
 function drawAccurateContinents(ctx, width, height) {
-	// Simplified continent drawing for brevity
-	// (Full implementation would be same as original file)
-	// For now, just drawing some shapes to represent continents
+	const w = width
+	const h = height
+
+	// North America
 	ctx.beginPath()
-	ctx.arc(width * 0.2, height * 0.3, width * 0.1, 0, Math.PI * 2) // NA
-	ctx.arc(width * 0.3, height * 0.7, width * 0.08, 0, Math.PI * 2) // SA
-	ctx.arc(width * 0.5, height * 0.3, width * 0.08, 0, Math.PI * 2) // Europe
-	ctx.arc(width * 0.55, height * 0.5, width * 0.1, 0, Math.PI * 2) // Africa
-	ctx.arc(width * 0.75, height * 0.3, width * 0.15, 0, Math.PI * 2) // Asia
-	ctx.arc(width * 0.85, height * 0.7, width * 0.08, 0, Math.PI * 2) // Australia
+	ctx.moveTo(w * 0.15, h * 0.15)
+	ctx.bezierCurveTo(w * 0.2, h * 0.1, w * 0.3, h * 0.1, w * 0.35, h * 0.15) // Arctic
+	ctx.lineTo(w * 0.32, h * 0.3) // East coast
+	ctx.lineTo(w * 0.25, h * 0.45) // Florida/Mexico
+	ctx.lineTo(w * 0.15, h * 0.35) // West coast
+	ctx.lineTo(w * 0.1, h * 0.2) // Alaska
+	ctx.closePath()
+	ctx.fill()
+	ctx.stroke()
+
+	// South America
+	ctx.beginPath()
+	ctx.moveTo(w * 0.26, h * 0.46)
+	ctx.lineTo(w * 0.35, h * 0.55) // Brazil
+	ctx.lineTo(w * 0.32, h * 0.8) // Argentina
+	ctx.lineTo(w * 0.28, h * 0.85) // Chile tip
+	ctx.lineTo(w * 0.24, h * 0.6) // Peru/Andes
+	ctx.closePath()
+	ctx.fill()
+	ctx.stroke()
+
+	// Europe & Asia
+	ctx.beginPath()
+	ctx.moveTo(w * 0.45, h * 0.25) // Spain
+	ctx.lineTo(w * 0.5, h * 0.15) // Scandinavia
+	ctx.lineTo(w * 0.7, h * 0.12) // Russia
+	ctx.lineTo(w * 0.85, h * 0.15) // Siberia
+	ctx.lineTo(w * 0.9, h * 0.3) // China/Japan
+	ctx.lineTo(w * 0.8, h * 0.45) // SE Asia
+	ctx.lineTo(w * 0.7, h * 0.4) // India
+	ctx.lineTo(w * 0.6, h * 0.42) // Middle East
+	ctx.lineTo(w * 0.55, h * 0.35) // Turkey
+	ctx.closePath()
+	ctx.fill()
+	ctx.stroke()
+
+	// Africa
+	ctx.beginPath()
+	ctx.moveTo(w * 0.48, h * 0.35) // North Africa
+	ctx.lineTo(w * 0.6, h * 0.38) // Horn of Africa
+	ctx.lineTo(w * 0.55, h * 0.7) // South Africa
+	ctx.lineTo(w * 0.48, h * 0.5) // West Africa
+	ctx.closePath()
+	ctx.fill()
+	ctx.stroke()
+
+	// Australia
+	ctx.beginPath()
+	ctx.moveTo(w * 0.8, h * 0.65)
+	ctx.lineTo(w * 0.9, h * 0.65)
+	ctx.lineTo(w * 0.92, h * 0.75)
+	ctx.lineTo(w * 0.82, h * 0.78)
+	ctx.closePath()
+	ctx.fill()
+	ctx.stroke()
+
+	// Antarctica
+	ctx.beginPath()
+	ctx.moveTo(w * 0.1, h * 0.92)
+	ctx.bezierCurveTo(w * 0.3, h * 0.88, w * 0.7, h * 0.88, w * 0.9, h * 0.92)
+	ctx.lineTo(w * 0.9, h * 0.98)
+	ctx.lineTo(w * 0.1, h * 0.98)
+	ctx.closePath()
 	ctx.fill()
 	ctx.stroke()
 }

@@ -14,9 +14,9 @@
 
 	/* Container layout */
 	--orc-nav-height: 85px; /* Height reserved for top navigation bar */
-	--orc-container-width: calc(66.67vw - 30px); /* Account for left sidebar */
-	--orc-container-left: 30px;
-	--orc-info-pane-width: 280px;
+	--orc-info-pane-width: 300px;
+	--orc-container-left: 0px;
+	--orc-container-width: calc(100vw - var(--orc-info-pane-width));
 }
 
 /* ============================================
