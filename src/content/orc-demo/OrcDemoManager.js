@@ -524,6 +524,8 @@ async function showAvailableSatellitesPane() {
 					} else if (link.id === "decommission-tutorial-link") {
 						fetchUrl =
 							"/src/content/portfolio/docs/orc/decommission-tutorial.html"
+					} else if (link.id === "api-docs-link") {
+						fetchUrl = "/src/content/portfolio/docs/orc/api-docs.html"
 					} else if (link.id === "whitepaper-link") {
 						fetchUrl = "/src/content/portfolio/docs/orc/whitepaper.html"
 					} else {

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ORC API Reference | Pyramid Docs</title>
+	</head>
+	<body>
+		<div class="layout">
+			<!-- Sidebar -->
+			<aside class="sidebar">
+				<div class="sidebar-logo">
+					<svg viewBox="0 0 24 24" fill="currentColor">
+						<polygon points="12,2 22,20 2,20" />
+					</svg>
+					Pyramid Docs
+				</div>
+
+				<nav>
+					<div class="nav-section">
+						<div class="nav-section-title">Getting Started</div>
+						<a href="#" class="nav-link">Introduction</a>
+						<a href="#" class="nav-link">Quick Start</a>
+						<a href="#" class="nav-link">Core Concepts</a>
+					</div>
+
+					<div class="nav-section">
+						<div class="nav-section-title">Guides</div>
+						<a href="#" class="nav-link">Navigation</a>
+						<a href="#" class="nav-link">ORC Demo</a>
+						<a href="#" class="nav-link">Portfolio</a>
+						<a href="#" class="nav-link">Blog</a>
+					</div>
+
+					<div class="nav-section">
+						<div class="nav-section-title">Reference</div>
+						<a href="#" class="nav-link active">API Documentation</a>
+						<a href="#" class="nav-link">Configuration</a>
+					</div>
+				</nav>
+			</aside>
+
+			<!-- Main Content -->
+			<main class="main-content">
+				<div class="breadcrumb">
+					<a href="#">Docs</a> / <a href="#">Reference</a> / API
+				</div>
+
+				<h1>ORC API Reference</h1>
+				<p class="subtitle">
+					Programmatic control of the Orbital Refuse Collector system.
+				</p>
+
+				<div class="callout callout-warning">
+					<div class="callout-title">Demo Environment</div>
+					<p>
+						This API documentation refers to the simulation environment. Rate
+						limits are stricter than production: 100 requests/minute.
+					</p>
+				</div>
+
+				<h2 id="satellites">Satellites</h2>
+
+				<h3 id="list-satellites">List All Satellites</h3>
+				<p>Returns a list of all trackable objects in the current sector.</p>
+
+				<pre><code>GET /api/satellites</code></pre>
+
+				<h4>Response</h4>
+				<pre><code>[
+  {
+    "id": "leo-001",
+    "name": "Leona",
+    "type": "LEO",
+    "status": "operational"
+  },
+  {
+    "id": "geo-001",
+    "name": "George",
+    "type": "GEO",
+    "status": "operational"
+  }
+]</code></pre>
+
+				<h3 id="get-satellite">Get Satellite Details</h3>
+				<p>Returns telemetry for a specific satellite.</p>
+
+				<pre><code>GET /api/satellites/{id}</code></pre>
+
+				<h4>Parameters</h4>
+				<ul>
+					<li>
+						<code>id</code> (string) - The unique identifier of the satellite.
+					</li>
+				</ul>
+
+				<h4>Response</h4>
+				<pre><code>{
+  "id": "leo-001",
+  "name": "Leona",
+  "altitude": 650,
+  "velocity": 27000,
+  "integrity": 0.98
+}</code></pre>
+
+				<h2 id="operations">Operations</h2>
+
+				<h3 id="decommission">Decommission Satellite</h3>
+				<p>
+					Initiates the autonomous capture and deorbit sequence for a target.
+				</p>
+
+				<pre><code>POST /api/satellites/{id}/decommission</code></pre>
+
+				<div class="callout callout-note">
+					<div class="callout-title">Async Operation</div>
+					<p>
+						This endpoint returns immediately. The decommission process is
+						asynchronous and may take several minutes to complete.
+					</p>
+				</div>
+
+				<h4>Response</h4>
+				<pre><code>{
+  "jobId": "job-12345",
+  "status": "initiated",
+  "estimatedCompletion": "120s"
+}</code></pre>
+
+				<h2 id="errors">Error Codes</h2>
+				<ul>
+					<li><code>404</code> - Satellite not found</li>
+					<li><code>409</code> - Satellite already being decommissioned</li>
+					<li><code>429</code> - Rate limit exceeded</li>
+				</ul>
+			</main>
+
+			<!-- Table of Contents -->
+			<aside class="toc">
+				<div class="toc-title">On this page</div>
+				<a href="#satellites" class="toc-link">Satellites</a>
+				<a href="#list-satellites" class="toc-link">List All</a>
+				<a href="#get-satellite" class="toc-link">Get Details</a>
+				<a href="#operations" class="toc-link">Operations</a>
+				<a href="#decommission" class="toc-link">Decommission</a>
+				<a href="#errors" class="toc-link">Error Codes</a>
+			</aside>
+		</div>
+	</body>
+</html>
