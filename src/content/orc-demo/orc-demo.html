@@ -59,18 +59,25 @@
 		<div class="orc-pane-section">
 			<h3>Documentation</h3>
 			<a
+				id="decommission-tutorial-link"
+				href="../portfolio/docs/orc/decommission-tutorial.html"
+				class="docs-link"
+			>
+				Learn: Decommissioning
+			</a>
+			<a
 				id="user-guide-link"
 				href="../portfolio/docs/orc/user-guide.html"
 				class="docs-link"
 			>
-				User Guide
+				Do: User Guide
 			</a>
 			<a
 				href="https://jtj-inc.github.io/docusaurus-openapi-docs/"
 				target="_blank"
 				class="docs-link"
 			>
-				API Reference
+				Reference: API Docs
 			</a>
 		</div>
 	</div>
@@ -89,62 +96,3 @@
 		<!-- User guide content loaded here -->
 	</div>
 </div>
-
-<script>
-	;(function () {
-		const userGuideLink = document.getElementById("user-guide-link")
-		const overlay = document.getElementById("user-guide-overlay")
-		const closeBtn = document.getElementById("user-guide-close")
-		const contentContainer = document.getElementById("user-guide-content")
-
-		if (!userGuideLink || !overlay || !closeBtn || !contentContainer) return
-
-		// Load and show user guide
-		userGuideLink.addEventListener("click", async (e) => {
-			e.preventDefault()
-			e.stopPropagation()
-
-			try {
-				const response = await fetch(
-					"/src/content/portfolio/docs/orc/user-guide.html"
-				)
-				const html = await response.text()
-
-				// Parse the HTML and extract just the main content
-				const parser = new DOMParser()
-				const doc = parser.parseFromString(html, "text/html")
-				const mainContent = doc.querySelector(".main-content")
-
-				if (mainContent) {
-					contentContainer.innerHTML = mainContent.innerHTML
-				} else {
-					// Fallback: use the body content
-					contentContainer.innerHTML = doc.body.innerHTML
-				}
-
-				overlay.classList.add("visible")
-			} catch (err) {
-				console.error("Failed to load user guide:", err)
-			}
-		})
-
-		// Close user guide
-		closeBtn.addEventListener("click", () => {
-			overlay.classList.remove("visible")
-		})
-
-		// Close on escape key
-		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && overlay.classList.contains("visible")) {
-				overlay.classList.remove("visible")
-			}
-		})
-
-		// Close when clicking outside content
-		overlay.addEventListener("click", (e) => {
-			if (e.target === overlay) {
-				overlay.classList.remove("visible")
-			}
-		})
-	})()
-</script>

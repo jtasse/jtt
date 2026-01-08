@@ -499,18 +499,36 @@ async function showAvailableSatellitesPane() {
 		if (userGuideOverlay) {
 			document.body.appendChild(userGuideOverlay)
 
-			// Set up user guide link click handler
-			const userGuideLink = orcInfoPane.querySelector("#user-guide-link")
+			// Set up docs link handlers
 			const closeBtn = userGuideOverlay.querySelector("#user-guide-close")
-			const contentContainer = userGuideOverlay.querySelector("#user-guide-content")
+			const contentContainer = userGuideOverlay.querySelector(
+				"#user-guide-content"
+			)
 
-			if (userGuideLink && contentContainer) {
-				userGuideLink.addEventListener("click", async (e) => {
+			if (contentContainer) {
+				// Use event delegation on the info pane for all docs links
+				orcInfoPane.addEventListener("click", async (e) => {
+					const link = e.target.closest(".docs-link")
+					if (!link) return
+
+					// Ignore external links
+					if (link.getAttribute("target") === "_blank") return
+
 					e.preventDefault()
 					e.stopPropagation()
 
+					let fetchUrl = ""
+					if (link.id === "user-guide-link") {
+						fetchUrl = "/src/content/portfolio/docs/orc/user-guide.html"
+					} else if (link.id === "decommission-tutorial-link") {
+						fetchUrl =
+							"/src/content/portfolio/docs/orc/decommission-tutorial.html"
+					} else {
+						return
+					}
+
 					try {
-						const response = await fetch("/src/content/portfolio/docs/orc/user-guide.html")
+						const response = await fetch(fetchUrl)
 						const html = await response.text()
 
 						const parser = new DOMParser()
@@ -525,7 +543,7 @@ async function showAvailableSatellitesPane() {
 
 						userGuideOverlay.classList.add("visible")
 					} catch (err) {
-						console.error("Failed to load user guide:", err)
+						console.error("Failed to load doc:", err)
 					}
 				})
 			}
@@ -540,7 +558,10 @@ async function showAvailableSatellitesPane() {
 
 			// Close on escape key
 			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape" && userGuideOverlay.classList.contains("visible")) {
+				if (
+					e.key === "Escape" &&
+					userGuideOverlay.classList.contains("visible")
+				) {
 					userGuideOverlay.classList.remove("visible")
 				}
 			})
