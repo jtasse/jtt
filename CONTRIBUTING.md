@@ -328,8 +328,8 @@ Priority areas for testing:
 Before making any change, verify:
 
 - [ ] New files go in `/src` (not project root)
-- [ ] No inline styles in JavaScript (use CSS classes)
-- [ ] No inline scripts in JavaScript (use separate js files)
+- [ ] No inline styles in HTML (use CSS classes)
+- [ ] No inline scripts in HTML (use separate js files)
 - [ ] Content uses DOM overlays (not canvas textures)
 - [ ] 3D positions use frustum calculations (not hardcoded)
 - [ ] Hand changes use high-level APIs (not direct mesh manipulation)

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ORC System Whitepaper | Pyramid Docs</title>
+		<style>
+			/* Astro-inspired documentation styling */
+			:root {
+				--accent-color: #4f39fa;
+				--accent-light: #8b7eff;
+				--text-primary: #e2e8f0;
+				--text-secondary: #cbd5e1;
+				--text-muted: #94a3b8;
+				--bg-main: #0f172a;
+				--bg-sidebar: #1e293b;
+				--bg-code: #334155;
+				--border-color: #334155;
+				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+					Roboto, sans-serif;
+				--font-mono: "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+			}
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				font-family: var(--font-sans);
+				font-size: 16px;
+				line-height: 1.7;
+				color: var(--text-primary);
+				background: var(--bg-main);
+			}
+
+			.layout {
+				display: grid;
+				grid-template-columns: 260px 1fr 200px;
+				max-width: 1400px;
+				margin: 0 auto;
+			}
+
+			/* Sidebar Navigation */
+			.sidebar {
+				position: sticky;
+				top: 0;
+				height: 100vh;
+				padding: 2rem 1.5rem;
+				background: var(--bg-sidebar);
+				border-right: 1px solid var(--border-color);
+				overflow-y: auto;
+			}
+
+			.sidebar-logo {
+				font-size: 1.25rem;
+				font-weight: 700;
+				color: var(--accent-color);
+				margin-bottom: 2rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+
+			.sidebar-logo svg {
+				width: 24px;
+				height: 24px;
+			}
+
+			.nav-section {
+				margin-bottom: 1.5rem;
+			}
+
+			.nav-section-title {
+				font-size: 0.75rem;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				color: var(--text-muted);
+				margin-bottom: 0.5rem;
+			}
+
+			.nav-link {
+				display: block;
+				padding: 0.375rem 0.75rem;
+				margin: 0.125rem 0;
+				color: var(--text-secondary);
+				text-decoration: none;
+				font-size: 0.9rem;
+				border-radius: 4px;
+				transition: all 0.15s;
+			}
+
+			.nav-link:hover {
+				color: var(--accent-color);
+				background: rgba(79, 57, 250, 0.05);
+			}
+
+			.nav-link.active {
+				color: var(--accent-color);
+				background: rgba(79, 57, 250, 0.1);
+				font-weight: 500;
+			}
+
+			/* Main Content */
+			.main-content {
+				padding: 3rem 4rem;
+				max-width: 800px;
+			}
+
+			.breadcrumb {
+				font-size: 0.875rem;
+				color: var(--text-muted);
+				margin-bottom: 1rem;
+			}
+
+			.breadcrumb a {
+				color: var(--text-muted);
+				text-decoration: none;
+			}
+
+			.breadcrumb a:hover {
+				color: var(--accent-color);
+			}
+
+			h1 {
+				font-size: 2.5rem;
+				font-weight: 700;
+				line-height: 1.2;
+				margin-bottom: 1rem;
+				color: var(--text-primary);
+			}
+
+			.subtitle {
+				font-size: 1.25rem;
+				color: var(--text-muted);
+				margin-bottom: 2rem;
+			}
+
+			h2 {
+				font-size: 1.5rem;
+				font-weight: 600;
+				margin: 2.5rem 0 1rem;
+				padding-top: 1.5rem;
+				border-top: 1px solid var(--border-color);
+			}
+
+			h3 {
+				font-size: 1.125rem;
+				font-weight: 600;
+				margin: 1.5rem 0 0.75rem;
+			}
+
+			p {
+				margin-bottom: 1rem;
+			}
+
+			ul,
+			ol {
+				margin: 1rem 0;
+				padding-left: 1.5rem;
+			}
+
+			li {
+				margin-bottom: 0.5rem;
+			}
+
+			code {
+				font-family: var(--font-mono);
+				font-size: 0.875em;
+				background: var(--bg-code);
+				padding: 0.125rem 0.375rem;
+				border-radius: 4px;
+			}
+
+			/* Callout boxes */
+			.callout {
+				padding: 1rem 1.25rem;
+				border-radius: 8px;
+				margin: 1.5rem 0;
+				border-left: 4px solid;
+			}
+
+			.callout-note {
+				background: rgba(59, 130, 246, 0.1);
+				border-color: #3b82f6;
+			}
+
+			.callout-title {
+				font-weight: 600;
+				margin-bottom: 0.25rem;
+				font-size: 0.9rem;
+			}
+
+			/* Table of Contents */
+			.toc {
+				position: sticky;
+				top: 2rem;
+				padding: 1.5rem;
+				font-size: 0.875rem;
+			}
+
+			.toc-title {
+				font-size: 0.75rem;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				color: var(--text-muted);
+				margin-bottom: 0.75rem;
+			}
+
+			.toc-link {
+				display: block;
+				color: var(--text-muted);
+				text-decoration: none;
+				padding: 0.25rem 0;
+				border-left: 2px solid transparent;
+				padding-left: 0.75rem;
+				margin-left: -0.75rem;
+			}
+
+			.toc-link:hover {
+				color: var(--accent-color);
+				border-color: var(--accent-light);
+			}
+
+			/* Responsive */
+			@media (max-width: 1200px) {
+				.layout {
+					grid-template-columns: 240px 1fr;
+				}
+				.toc {
+					display: none;
+				}
+			}
+
+			@media (max-width: 768px) {
+				.layout {
+					grid-template-columns: 1fr;
+				}
+				.sidebar {
+					display: none;
+				}
+				.main-content {
+					padding: 2rem 1.5rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="layout">
+			<!-- Sidebar -->
+			<aside class="sidebar">
+				<div class="sidebar-logo">
+					<svg viewBox="0 0 24 24" fill="currentColor">
+						<polygon points="12,2 22,20 2,20" />
+					</svg>
+					Pyramid Docs
+				</div>
+
+				<nav>
+					<div class="nav-section">
+						<div class="nav-section-title">Getting Started</div>
+						<a href="#" class="nav-link">Introduction</a>
+						<a href="#" class="nav-link">Quick Start</a>
+						<a href="#" class="nav-link active">Core Concepts</a>
+					</div>
+
+					<div class="nav-section">
+						<div class="nav-section-title">Guides</div>
+						<a href="#" class="nav-link">Navigation</a>
+						<a href="#" class="nav-link">ORC Demo</a>
+						<a href="#" class="nav-link">Portfolio</a>
+						<a href="#" class="nav-link">Blog</a>
+					</div>
+
+					<div class="nav-section">
+						<div class="nav-section-title">Reference</div>
+						<a href="#" class="nav-link">API Documentation</a>
+						<a href="#" class="nav-link">Configuration</a>
+					</div>
+				</nav>
+			</aside>
+
+			<!-- Main Content -->
+			<main class="main-content">
+				<div class="breadcrumb">
+					<a href="#">Docs</a> / <a href="#">Reference</a> / Whitepaper
+				</div>
+
+				<h1>ORC System Architecture</h1>
+				<p class="subtitle">
+					Autonomous Debris Mitigation for Low Earth Orbit and Beyond
+				</p>
+
+				<div class="callout callout-note">
+					<div class="callout-title">Abstract</div>
+					<p>
+						The Orbital Refuse Collector (ORC) is a proposed autonomous
+						spacecraft designed to address the growing threat of Kessler
+						Syndrome. By utilizing a high-dexterity robotic actuator ("The
+						Hand") and advanced computer vision, ORC can identify, capture, and
+						deorbit defunct satellites and debris without creating additional
+						fragments.
+					</p>
+				</div>
+
+				<h2 id="introduction">1. Introduction</h2>
+				<p>
+					Space debris poses a critical threat to the sustainability of orbital
+					operations. With thousands of satellites launched annually, the
+					density of objects in Low Earth Orbit (LEO) is approaching a tipping
+					point. Traditional deorbiting methods rely on the satellite's own
+					propulsion, which is ineffective for defunct hardware.
+				</p>
+				<p>
+					The ORC system provides an active removal solution, capable of
+					servicing multiple targets in a single mission profile.
+				</p>
+
+				<h2 id="system-overview">2. System Overview</h2>
+				<p>
+					The ORC unit is a semi-autonomous spacecraft built on a modular bus.
+					Its primary payload is the Debris Capture System (DCS), colloquially
+					known as "The Hand."
+				</p>
+
+				<h3 id="core-components">Core Components</h3>
+				<ul>
+					<li>
+						<strong>The Actuator:</strong> A multi-jointed robotic manipulator
+						with adaptive grip technology. It can conform to irregular shapes,
+						allowing it to grasp solar panels, antennas, or main bodies of
+						debris.
+					</li>
+					<li>
+						<strong>Sensor Suite:</strong> A combination of Lidar, optical
+						cameras, and infrared sensors provides real-time telemetry and 3D
+						mapping of the target object.
+					</li>
+					<li>
+						<strong>Propulsion:</strong> High-efficiency ion drives allow for
+						extended mission duration and significant orbital plane changes.
+					</li>
+				</ul>
+
+				<h2 id="operational-workflow">3. Operational Workflow</h2>
+				<p>
+					The decommissioning process follows a strict four-phase protocol to
+					ensure safety and mission success.
+				</p>
+
+				<h3 id="phase-1">Phase 1: Identification & Tracking</h3>
+				<p>
+					Ground stations upload target vectors to the ORC unit. The onboard AI
+					verifies the target using visual recognition to confirm identity and
+					assess structural integrity.
+				</p>
+
+				<h3 id="phase-2">Phase 2: Approach & Synchronization</h3>
+				<p>
+					The ORC matches the orbit and rotation of the target debris. This
+					"tumble matching" is critical for non-cooperative targets that may be
+					spinning uncontrollably.
+				</p>
+
+				<h3 id="phase-3">Phase 3: Capture</h3>
+				<p>
+					Once synchronized, the actuator extends to grapple the target. The
+					adaptive grip secures the object, and the ORC unit rigidizes its
+					connection to form a single compound mass.
+				</p>
+
+				<h3 id="phase-4">Phase 4: Deorbit Burn</h3>
+				<p>
+					The ORC uses its main thrusters to lower the perigee of the compound
+					mass into the upper atmosphere. At the critical interface altitude,
+					the ORC releases the debris to burn up upon reentry, then performs a
+					separation maneuver to return to a parking orbit.
+				</p>
+
+				<h2 id="technical-specs">4. Technical Specifications</h2>
+				<p>
+					<em
+						>Note: Specifications are for the Mark IV prototype currently in
+						simulation.</em
+					>
+				</p>
+				<ul>
+					<li><strong>Mass:</strong> 450 kg (dry)</li>
+					<li><strong>Delta-V Budget:</strong> 3,200 m/s</li>
+					<li><strong>Actuator Reach:</strong> 4.5 meters</li>
+					<li><strong>Grip Force:</strong> Variable, 5N to 500N</li>
+					<li><strong>Power Generation:</strong> 2.5 kW (Solar)</li>
+				</ul>
+
+				<h2 id="future-roadmap">5. Future Roadmap</h2>
+				<p>
+					Future iterations of the ORC system will include in-orbit recycling
+					capabilities, allowing captured materials to be processed into raw
+					feedstock for orbital manufacturing, rather than being destroyed in
+					the atmosphere.
+				</p>
+			</main>
+
+			<!-- Table of Contents -->
+			<aside class="toc">
+				<div class="toc-title">On this page</div>
+				<a href="#introduction" class="toc-link">Introduction</a>
+				<a href="#system-overview" class="toc-link">System Overview</a>
+				<a href="#core-components" class="toc-link">Core Components</a>
+				<a href="#operational-workflow" class="toc-link"
+					>Operational Workflow</a
+				>
+				<a href="#technical-specs" class="toc-link">Technical Specs</a>
+				<a href="#future-roadmap" class="toc-link">Future Roadmap</a>
+			</aside>
+		</div>
+	</body>
+</html>

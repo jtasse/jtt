@@ -212,16 +212,45 @@
 .docs-link {
 	color: #00ffff;
 	text-decoration: none;
-	display: inline-block;
-	padding: 6px 12px;
-	border: 1px solid #00ffff;
-	border-radius: 4px;
-	transition: all 0.3s ease;
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 10px 15px;
+	border: 1px solid rgba(0, 170, 255, 0.4);
+	background: rgba(0, 40, 60, 0.3);
+	border-radius: 6px;
+	transition: all 0.2s ease;
 	font-size: 0.95em;
+	text-align: left;
 }
 
-.api-docs-link:hover {
-	background: rgba(0, 255, 255, 0.1);
+ul:has(.docs-link) {
+	list-style: none;
+	padding: 0;
+	margin: 15px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.docs-link:hover {
+	background: rgba(0, 60, 90, 0.6);
+	border-color: #00ffff;
+	color: #ffffff;
+	transform: translateX(4px);
+	box-shadow: -2px 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.docs-action {
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.docs-subject {
+	font-size: 1.1em;
+	color: #ffffff;
+	margin-bottom: 4px;
 }
 
 /* ============================================
@@ -680,7 +709,8 @@
 	margin: 0 auto;
 	padding: 3rem 4rem;
 	color: #e2e8f0;
-	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		sans-serif;
 	line-height: 1.7;
 }
 
