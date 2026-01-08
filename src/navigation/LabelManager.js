@@ -266,27 +266,4 @@ export class LabelManager {
 			}
 		}
 	}
-
-	dispose() {
-		window.removeEventListener("layoutChange", this.handleLayoutChange)
-
-		// Clean up label meshes
-		Object.values(this.labels).forEach((mesh) => {
-			if (mesh.geometry) mesh.geometry.dispose()
-			if (mesh.material) {
-				if (mesh.material.map) mesh.material.map.dispose()
-				mesh.material.dispose()
-			}
-		})
-
-		// Clean up hover targets (remove from scene since they're added there directly)
-		Object.values(this.hoverTargets).forEach((mesh) => {
-			if (mesh.parent) mesh.parent.remove(mesh)
-			if (mesh.geometry) mesh.geometry.dispose()
-			if (mesh.material) mesh.material.dispose()
-		})
-
-		this.labels = {}
-		this.hoverTargets = {}
-	}
 }

@@ -15,7 +15,6 @@ import {
 	showAboutPlane,
 	showPortfolioPlane,
 	showBlogPlane,
-	hideAllPlanes,
 } from "../content/ContentManager.js"
 
 // Nav label scale (matches pyramid.js)

@@ -86,14 +86,6 @@ export function showContactLabelCentered() {
 	requestAnimationFrame(animateSlideUp)
 }
 
-export function showContactLabelLeft() {
-	if (contactDetails) {
-		contactDetails.visible = true
-		// Position on the left side for content pages (sidebar position)
-		contactDetails.position.set(-4.5, 0, 0)
-	}
-}
-
 export function hideContactLabel() {
 	if (!contactDetails) return
 	contactVisible = false
@@ -105,10 +97,6 @@ export function hideContactLabel() {
 		contactConfig.hiddenPosition.y,
 		contactConfig.hiddenPosition.z
 	)
-}
-
-export function moveContactLabelToLeft() {
-	// Stub for future implementation
 }
 
 export function setContactExpanded(expanded) {

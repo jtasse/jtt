@@ -54,8 +54,6 @@ initRoamingHand()
 animate()
 window.dispatchEvent(new Event("resize"))
 
-window.addEventListener("resize", () => {})
-
 let hoveredLabel = null
 let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
 

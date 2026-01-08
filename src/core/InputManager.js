@@ -32,16 +32,6 @@ export class InputManager {
 		window.addEventListener("click", this.onClick, true)
 	}
 
-	disable() {
-		this.renderer.domElement.removeEventListener(
-			"pointerdown",
-			this.onPointerDown
-		)
-		window.removeEventListener("pointermove", this.onPointerMove)
-		window.removeEventListener("pointerup", this.onPointerUp)
-		window.removeEventListener("click", this.onClick, true)
-	}
-
 	onPointerDown(event) {
 		this.isPointerDown = true
 		this.isDragging = false

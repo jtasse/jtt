@@ -40,13 +40,8 @@ import "./content/portfolio/portfolio.css"
 import "./content/orc-demo/orc-demo.css"
 import "./content/overlay.css"
 import {
-	initRoamingHand,
 	getRoamingHand,
 	updateHandIdleMotion,
-	scheduleHandEntry,
-	cancelHandEntry,
-	triggerHandPageTransition,
-	getCurrentHandPage,
 	setCurrentHandPage,
 } from "./hand/HandManager.js"
 import { OrcDemoManager } from "./content/orc-demo/OrcDemoManager.js"
@@ -71,11 +66,6 @@ export {
 	isOrcSceneActive,
 	morphToOrcScene,
 	morphFromOrcScene,
-	initRoamingHand,
-	scheduleHandEntry,
-	cancelHandEntry,
-	triggerHandPageTransition,
-	getCurrentHandPage,
 	Contact,
 }
 
@@ -111,10 +101,7 @@ const morphSphereMaterial = new THREE.MeshStandardMaterial({
 	transparent: true,
 	opacity: 0,
 })
-export const morphSphere = new THREE.Mesh(
-	morphSphereGeometry,
-	morphSphereMaterial
-)
+const morphSphere = new THREE.Mesh(morphSphereGeometry, morphSphereMaterial)
 morphSphere.visible = false
 morphSphere.name = "morphSphere"
 scene.add(morphSphere)

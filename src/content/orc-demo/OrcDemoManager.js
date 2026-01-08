@@ -91,11 +91,6 @@ export const OrcDemoManager = {
 		return hand
 	},
 
-	// Expose for external checks
-	getSelectedSatellite() {
-		return selectedSatellite
-	},
-
 	onResize() {
 		if (orcDemoRenderer && orcDemoCamera && orcDemoContainer) {
 			const rect = orcDemoContainer.getBoundingClientRect()
