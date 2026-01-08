@@ -880,3 +880,60 @@ ul:has(.docs-link) {
 		padding: 2rem 1.5rem;
 	}
 }
+
+/* ============================================
+   Extracted Inline Styles
+   ============================================ */
+
+.reset-button-container {
+	margin-bottom: 15px;
+}
+
+#satellite-info-content {
+	display: none;
+}
+
+#orc-preview-overlay {
+	position: fixed;
+	top: 22%;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	background: linear-gradient(
+		135deg,
+		rgba(0, 20, 40, 0.98),
+		rgba(0, 40, 60, 0.95)
+	);
+	border: 2px solid #00aaff;
+	border-radius: 16px;
+	padding: 16px 20px;
+	cursor: pointer;
+	box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+	max-width: 85%;
+	height: 120px;
+	box-sizing: border-box;
+	transition: all 0.3s ease;
+}
+
+#orc-preview-overlay:hover {
+	border-color: #00ffff;
+	box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+	transform: translateX(-50%) scale(1.02);
+}
+
+#orc-preview-overlay h2 {
+	color: #00ffff;
+	margin: 0 0 8px 0;
+	font-size: 1.3rem;
+	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+#orc-preview-overlay p {
+	color: #aaddff;
+	margin: 0;
+	font-size: 0.95rem;
+	line-height: 1.4;
+}
