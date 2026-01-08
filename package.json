@@ -18,6 +18,7 @@
   "dependencies": {
     "gsap": "^3.13.0",
     "lil-gui": "^0.21.0",
+    "path2d-polyfill": "^3.2.1",
     "three": "^0.180.0",
     "three.regular.helvetiker": "^1.0.0"
   },

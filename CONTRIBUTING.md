@@ -25,7 +25,7 @@ Files may exist outside `/src` ONLY if they are:
 - Project configuration files (e.g., `package.json`, `vite.config.js`)
 - Tooling configuration (e.g., `.eslintrc`, `.prettierrc`)
 - Documentation files (e.g., `README.md`, `ARCHITECTURE.md`)
-- Test files (under `/test`)
+- Test files (under `/tests`)
 
 ### Prohibited Behavior
 
@@ -46,11 +46,11 @@ Files may exist outside `/src` ONLY if they are:
 
 This project uses a **hybrid architecture**:
 
-| What | Where | Technology |
-|------|-------|------------|
-| 3D elements (pyramid, hand, starfield) | WebGL canvas | Three.js |
-| Page content (About, Portfolio, Blog) | DOM overlays | HTML/CSS |
-| Navigation labels | WebGL (may move to CSS3D) | Three.js |
+| What                                   | Where                     | Technology |
+| -------------------------------------- | ------------------------- | ---------- |
+| 3D elements (pyramid, hand, starfield) | WebGL canvas              | Three.js   |
+| Page content (About, Portfolio, Blog)  | DOM overlays              | HTML/CSS   |
+| Navigation labels                      | WebGL (may move to CSS3D) | Three.js   |
 
 **Important:** Do NOT render text content to canvas textures. Use DOM elements for any readable text content.
 
@@ -58,12 +58,15 @@ This project uses a **hybrid architecture**:
 
 ```javascript
 // WRONG - Do not create canvas textures for content:
-const texture = createCanvasTexture(htmlContent);
-const plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: texture }));
+const texture = createCanvasTexture(htmlContent)
+const plane = new THREE.Mesh(
+	geometry,
+	new THREE.MeshBasicMaterial({ map: texture })
+)
 
 // CORRECT - Use DOM overlays:
-document.getElementById('content-overlay').innerHTML = htmlContent;
-document.getElementById('content-overlay').classList.add('visible');
+document.getElementById("content-overlay").innerHTML = htmlContent
+document.getElementById("content-overlay").classList.add("visible")
 ```
 
 ---
@@ -75,6 +78,7 @@ document.getElementById('content-overlay').classList.add('visible');
 **All visual styling MUST be defined in CSS files**, not JavaScript.
 
 #### CSS is REQUIRED for:
+
 - Colors, fonts, sizes
 - Layout and positioning of DOM elements
 - Responsive breakpoints (`@media` queries)
@@ -82,6 +86,7 @@ document.getElementById('content-overlay').classList.add('visible');
 - Transitions and animations (when possible)
 
 #### JavaScript is ONLY for:
+
 - Three.js object properties (positions, rotations, scales in 3D space)
 - GSAP animations on Three.js objects
 - Calculations that depend on runtime values (camera frustum, etc.)
@@ -90,18 +95,18 @@ document.getElementById('content-overlay').classList.add('visible');
 
 ```javascript
 // NEVER do this - inline styles in JavaScript:
-element.style.color = 'white';
-element.style.fontSize = '16px';
-element.style.top = '100px';
-element.style.left = '50px';
-element.style.display = 'none';
-element.style.opacity = '0';
+element.style.color = "white"
+element.style.fontSize = "16px"
+element.style.top = "100px"
+element.style.left = "50px"
+element.style.display = "none"
+element.style.opacity = "0"
 
 // ALWAYS do this - use CSS classes:
-element.classList.add('text-white');
-element.classList.add('text-large');
-element.classList.add('position-top');
-element.classList.remove('visible');
+element.classList.add("text-white")
+element.classList.add("text-large")
+element.classList.add("position-top")
+element.classList.remove("visible")
 ```
 
 ### Adding New Styles
@@ -114,11 +119,13 @@ element.classList.remove('visible');
 ### Exception: GSAP Animations
 
 GSAP may animate transform properties directly when animating DOM elements, but only for:
+
 - `x`, `y` (translation)
 - `scale`, `rotation`
 - `opacity` (for fade animations)
 
 GSAP should NOT be used to set:
+
 - `fontSize`, `color`, `backgroundColor`
 - `top`, `left`, `right`, `bottom`
 - `width`, `height`, `padding`, `margin`
@@ -130,6 +137,7 @@ GSAP should NOT be used to set:
 ### DOM Content
 
 Use CSS for responsive DOM layouts:
+
 - Viewport units (`vw`, `vh`, `vmin`, `vmax`)
 - `clamp()`, `min()`, `max()` functions
 - Media queries for breakpoints
@@ -141,22 +149,22 @@ Use **frustum-based calculations** for responsive 3D positioning:
 
 ```javascript
 // WRONG - hardcoded positions:
-label.position.set(3.0, 2.5, 0);
+label.position.set(3.0, 2.5, 0)
 
 // CORRECT - calculate from viewport:
 function getViewportPosition(percentX, percentY, camera) {
-    const vFov = (camera.fov * Math.PI) / 180;
-    const height = 2 * Math.tan(vFov / 2) * camera.position.z;
-    const width = height * camera.aspect;
-    return new THREE.Vector3(
-        (percentX - 0.5) * width,
-        (percentY - 0.5) * height,
-        0
-    );
+	const vFov = (camera.fov * Math.PI) / 180
+	const height = 2 * Math.tan(vFov / 2) * camera.position.z
+	const width = height * camera.aspect
+	return new THREE.Vector3(
+		(percentX - 0.5) * width,
+		(percentY - 0.5) * height,
+		0
+	)
 }
 
 // Position at 80% from left, 90% from bottom:
-label.position.copy(getViewportPosition(0.8, 0.9, camera));
+label.position.copy(getViewportPosition(0.8, 0.9, camera))
 ```
 
 ### Window Resize
@@ -164,20 +172,20 @@ label.position.copy(getViewportPosition(0.8, 0.9, camera));
 All renderers and cameras must respond to window resize:
 
 ```javascript
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+window.addEventListener("resize", () => {
+	camera.aspect = window.innerWidth / window.innerHeight
+	camera.updateProjectionMatrix()
+	renderer.setSize(window.innerWidth, window.innerHeight)
 
-    // Also update any secondary renderers (e.g., ORC demo)
-    if (secondaryRenderer && secondaryCamera) {
-        const container = secondaryRenderer.domElement.parentElement;
-        const rect = container.getBoundingClientRect();
-        secondaryCamera.aspect = rect.width / rect.height;
-        secondaryCamera.updateProjectionMatrix();
-        secondaryRenderer.setSize(rect.width, rect.height);
-    }
-});
+	// Also update any secondary renderers (e.g., ORC demo)
+	if (secondaryRenderer && secondaryCamera) {
+		const container = secondaryRenderer.domElement.parentElement
+		const rect = container.getBoundingClientRect()
+		secondaryCamera.aspect = rect.width / rect.height
+		secondaryCamera.updateProjectionMatrix()
+		secondaryRenderer.setSize(rect.width, rect.height)
+	}
+})
 ```
 
 ---
@@ -192,13 +200,13 @@ When available, use behavior methods instead of direct manipulation:
 
 ```javascript
 // PREFERRED - high-level behavior:
-hand.pointAt(targetObject);
-hand.travelTo(destination);
-hand.gesture('thumbsUp');
+hand.pointAt(targetObject)
+hand.travelTo(destination)
+hand.gesture("thumbsUp")
 
 // AVOID - direct mesh manipulation:
-hand.mesh.position.lerp(target, 0.1);
-hand.fingers.index.rotation.z = -0.5;
+hand.mesh.position.lerp(target, 0.1)
+hand.fingers.index.rotation.z = -0.5
 ```
 
 ### Critical Constraints
@@ -226,6 +234,7 @@ To add a new hand behavior:
 No single source file should exceed 500 lines of code.
 
 **Current exceptions (technical debt):**
+
 - `src/pyramid.js` (~2,800 lines) - needs refactoring
 - `src/content/orc-demo/orc-demo.js` (~2,400 lines) - needs refactoring
 - `src/content/orc-demo/orc-hand.js` (~1,600 lines) - needs refactoring
@@ -283,10 +292,10 @@ When `src/config.js` exists, add constants there:
 ```javascript
 // src/config.js
 export const CONFIG = {
-    camera: { fov: 50, homeZ: 6 },
-    hand: { scale: 7, minFrontZ: 0.5 },
-    navigation: { labelY: 2.5 }
-};
+	camera: { fov: 50, homeZ: 6 },
+	hand: { scale: 7, minFrontZ: 0.5 },
+	navigation: { labelY: 2.5 },
+}
 ```
 
 ---
@@ -295,18 +304,19 @@ export const CONFIG = {
 
 ### Test Location
 
-All tests go in the `/test` directory.
+All tests go in the `/tests` directory.
 
 ### Running Tests
 
 ```bash
-npm test        # Run tests in watch mode
-npm run test:run  # Run tests once
+npm run test:test   # Run tests once
+npm run test        # Run tests in watch mode
 ```
 
 ### What to Test
 
 Priority areas for testing:
+
 1. Layout calculations (frustum math, responsive positioning)
 2. State machine transitions (hand states, navigation states)
 3. DOM visibility states (content overlay show/hide)
@@ -319,6 +329,7 @@ Before making any change, verify:
 
 - [ ] New files go in `/src` (not project root)
 - [ ] No inline styles in JavaScript (use CSS classes)
+- [ ] No inline scripts in JavaScript (use separate js files)
 - [ ] Content uses DOM overlays (not canvas textures)
 - [ ] 3D positions use frustum calculations (not hardcoded)
 - [ ] Hand changes use high-level APIs (not direct mesh manipulation)

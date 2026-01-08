@@ -1,6 +1,6 @@
 import * as THREE from "three"
-import { scene } from "../core/SceneManager.js"
 import { pyramidGroup } from "../pyramid/state.js"
+import "path2d-polyfill"
 
 export const contactConfig = {
 	revealedSize: [3.0, 1.5],
@@ -142,7 +142,6 @@ function makeContactLabelPlane(config) {
 	}
 
 	// Phone number offset to align with email text (after icon+gap)
-	const phoneOffsetX = config.phoneOffsetX || 0
 
 	// Email hover color
 	const emailHoverColor = config.emailHoverColor || tooltipConfig.color
@@ -165,8 +164,6 @@ function makeContactLabelPlane(config) {
 
 	// Store current appearance config for redraws
 	let currentConfig = null
-	let animationId = null
-	let toastTimeout = null
 	let activePopup = null // { index: number, type: 'tooltip'|'toast', progress: 0-1 }
 	let hoveredIndex = -1
 

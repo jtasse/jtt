@@ -24,7 +24,7 @@ export default [
 	},
 	// 4. Node.js scripts configuration
 	{
-		files: ["scripts/**", "src/scripts/**", "src/test/**", "test/**"],
+		files: ["scripts/**", "src/scripts/**", "tests/**"],
 		languageOptions: {
 			globals: { ...globals.node },
 		},

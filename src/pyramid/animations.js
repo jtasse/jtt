@@ -15,6 +15,7 @@ import {
 	showAboutPlane,
 	showPortfolioPlane,
 	showBlogPlane,
+	hideAllPlanes,
 } from "../content/ContentManager.js"
 
 // Nav label scale (matches pyramid.js)
@@ -223,9 +224,13 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (section === "about" || section === "bio") showAboutPlane()
-			else if (section === "portfolio") showPortfolioPlane()
-			else if (section === "blog") showBlogPlane()
+			if (down) {
+				if (section === "about" || section === "bio") showAboutPlane()
+				else if (section === "portfolio") showPortfolioPlane()
+				else if (section === "blog") showBlogPlane()
+			} else {
+				hideAllPlanes()
+			}
 
 			// Hide Home and Contact labels if returning to centered state (includes their hover targets)
 			if (!down) {
