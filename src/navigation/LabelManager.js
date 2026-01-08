@@ -111,57 +111,57 @@ export class LabelManager {
 	}
 
 	updateNavLayout() {
-		// Use screenToWorld for precise pixel-based positioning
-		// This ensures labels are always close to the top and edges regardless of aspect ratio
-		const topMarginPx = 50
-		const leftMarginPx = -80 // Negative margin to pull centered text to left edge
-		const rightMarginPx = OrcDemoManager.isActive ? 340 : 40 // 300px sidebar + 40px margin
-		const labelZ = 1.0
-
-		// Get world positions for corners
-		const topLeft = screenToWorld(leftMarginPx, topMarginPx, labelZ)
-		const topRight = screenToWorld(
-			window.innerWidth - rightMarginPx,
-			topMarginPx,
-			labelZ
-		)
+		// Match reference code positioning exactly
+		const startPixelX = 30
+		const startPixelY = 30
+		const topLeft = screenToWorld(startPixelX, startPixelY, 0)
 
 		// Fallback if screenToWorld fails (e.g. camera not ready)
-		if (!topLeft || !topRight) return
-
-		const navY = topLeft.y
-		const worldLeft = topLeft.x
-		const worldRight = topRight.x
-		const availableWidth = worldRight - worldLeft
+		if (!topLeft) return
 
 		const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
-		const labelWidth = 3.0
-		const labelGap = 0.05 // Fixed gap between labels
 
-		// Calculate scale to fit all labels if needed
-		// We want: availableWidth >= (keys.length * labelWidth + (keys.length - 1) * labelGap) * scale
-		const totalBaseWidth =
-			keys.length * labelWidth + (keys.length - 1) * labelGap
-		let scale = availableWidth / totalBaseWidth
-		this.navLabelScale = Math.min(1.0, scale)
+		// Calculate right edge, accounting for ORC demo sidebar
+		const rightMarginPx = OrcDemoManager.isActive ? 350 : 50
+		const rightEdgePixel = window.innerWidth - rightMarginPx
+		const worldRightEdge = screenToWorld(rightEdgePixel, startPixelY, 0)
+		if (!worldRightEdge) return
 
-		// Calculate centers for first and last label to align edges with margins
+		const availableWorldWidth = worldRightEdge.x - topLeft.x
+
+		// Use reference code values for label sizing
+		const labelWidth = 2.4
+		const spacing = 0.1
+		const totalStaticWidth =
+			keys.length * labelWidth + (keys.length - 1) * spacing
+
+		// Calculate scale if labels don't fit
+		this.navLabelScale = 1.0
+		if (totalStaticWidth > availableWorldWidth) {
+			this.navLabelScale = availableWorldWidth / totalStaticWidth
+		}
+
 		const scaledLabelWidth = labelWidth * this.navLabelScale
-		const scaledGap = labelGap * this.navLabelScale
-		const halfLabelW = scaledLabelWidth / 2
-		const firstCenter = worldLeft + halfLabelW
+		const scaledSpacing = spacing * this.navLabelScale
 
+		// Position each label
 		keys.forEach((key, i) => {
 			if (!flattenedLabelPositions[key]) {
-				flattenedLabelPositions[key] = new THREE.Vector3()
+				flattenedLabelPositions[key] = { x: 0, y: 0, z: 0 }
 			}
 			flattenedLabelPositions[key].x =
-				firstCenter + i * (scaledLabelWidth + scaledGap)
-			flattenedLabelPositions[key].y = navY
-			flattenedLabelPositions[key].z = labelZ
+				topLeft.x +
+				scaledLabelWidth / 2 +
+				i * (scaledLabelWidth + scaledSpacing)
+			flattenedLabelPositions[key].y = topLeft.y
+			flattenedLabelPositions[key].z = 0
 		})
 
-		// Update pyramid positions to match new label positions
+		// Update pyramid X positions to match label centers exactly
+		if (flattenedLabelPositions.Home)
+			pyramidXPositions.home = flattenedLabelPositions.Home.x
+		if (flattenedLabelPositions.Contact)
+			pyramidXPositions.contact = flattenedLabelPositions.Contact.x
 		if (flattenedLabelPositions.About)
 			pyramidXPositions.about = flattenedLabelPositions.About.x
 		if (flattenedLabelPositions.About)
@@ -172,7 +172,7 @@ export class LabelManager {
 			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
 
 		// Update flattened pyramid Y position to be just below labels
-		flattenedMenuState.positionY = navY - 0.5 * this.navLabelScale
+		flattenedMenuState.positionY = topLeft.y - 0.4 * this.navLabelScale
 	}
 
 	handleLayoutChange() {

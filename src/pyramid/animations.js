@@ -108,10 +108,9 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			}
 
 			const flatPos = labelManager.getNavPosition(key)
-			// Target: Flat position, Face camera (identity rotation), Scale 0.4
-			// Place labels at z=1 to ensure they're in front of the pyramid (which is at z=0)
+			// Target: Flat position, Face camera (identity rotation), Scale based on navLabelScale
 			labelTargetStates[key] = {
-				position: new THREE.Vector3(flatPos.x, flatPos.y, 1),
+				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
 				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
 				scale: new THREE.Vector3(navLabelScale, navLabelScale, 1),
 			}
@@ -205,7 +204,7 @@ export function animatePyramid(labelManager, down = true, section = null) {
 					// Just ensure exact final values.
 					const flatPos = labelManager.getNavPosition(key)
 					if (flatPos) {
-						labelMesh.position.set(flatPos.x, flatPos.y, 1) // z=1 keeps labels in front of pyramid
+						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
 						labelMesh.rotation.set(0, 0, 0)
 						labelMesh.scale.set(1, 1, 1)
 						// Mark as fixed nav so it never moves again

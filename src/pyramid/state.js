@@ -26,6 +26,8 @@ export const flattenedMenuState = {
 }
 
 export const pyramidXPositions = {
+	home: -5.0,
+	contact: -3.0,
 	about: -1.0,
 	bio: -1.0, // Alias for about
 	blog: 1.0,

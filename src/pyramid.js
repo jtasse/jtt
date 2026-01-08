@@ -193,9 +193,9 @@ function morphToOrcScene() {
 			if (labelMesh.parent !== scene) {
 				scene.add(labelMesh)
 			}
-			labelMesh.position.set(flatPos.x, flatPos.y, 1)
+			labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
 			labelMesh.rotation.set(0, 0, 0)
-			labelMesh.scale.set(navLabelScale, navLabelScale, 1)
+			labelMesh.scale.set(1, 1, 1)
 			labelMesh.visible = true // Make visible (including Home label)
 			labelMesh.userData.fixedNav = true
 			if (labelMesh.material) {
@@ -404,6 +404,7 @@ window.addEventListener("resize", () => {
 
 	updateNavLayout()
 
+	// If in nav mode, update positions immediately
 	if (pyramidGroup.position.y > 1.0) {
 		const labels = activeLabelManager ? activeLabelManager.labels : {}
 		for (const key in labels) {
@@ -414,11 +415,11 @@ window.addEventListener("resize", () => {
 			if (label && flatPos) {
 				label.position.x = flatPos.x
 				label.position.y = flatPos.y
-				label.position.z = 1
 				label.scale.set(navLabelScale, navLabelScale, 1)
 			}
 		}
-		pyramidGroup.position.y = flattenedMenuState.positionY
+		// Update pyramid position to match new layout
+		pyramidGroup.position.y = flattenedMenuState.positionY - 50
 		if (
 			getCurrentSection() &&
 			pyramidXPositions[getCurrentSection()] !== undefined
