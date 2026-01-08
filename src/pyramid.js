@@ -93,7 +93,10 @@ export function setLabelManager(lm) {
 // Layout manager for responsive 3D positioning
 export const layoutManager = new LayoutManager(camera)
 
-setInitialCameraState(camera.position, new THREE.Vector3(0, 0, 0))
+camera.position.set(0, -0.36, 6)
+controls.target.set(0, -0.36, 0)
+controls.update()
+setInitialCameraState(camera.position, new THREE.Vector3(0, -0.36, 0))
 
 scene.add(pyramidGroup)
 
@@ -365,6 +368,11 @@ export function animate() {
 
 	if (controls.enabled) {
 		controls.update()
+	}
+
+	// Keep hover targets synchronized with labels (they're in scene, not pyramidGroup children)
+	if (activeLabelManager) {
+		activeLabelManager.syncHoverTargets()
 	}
 
 	ScrollManager.update()

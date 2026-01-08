@@ -15,7 +15,15 @@ export function createPyramid() {
 
 	const mesh = new THREE.Mesh(geometry, material)
 	mesh.name = "PyramidMesh"
-	mesh.rotation.y = -Math.PI / 2
+	mesh.rotation.y = Math.PI / 2
+
+	// Add edges for visibility
+	const edges = new THREE.EdgesGeometry(geometry)
+	const line = new THREE.LineSegments(
+		edges,
+		new THREE.LineBasicMaterial({ color: 0x888888 })
+	)
+	mesh.add(line)
 
 	group.add(mesh)
 	return group

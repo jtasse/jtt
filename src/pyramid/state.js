@@ -4,10 +4,13 @@ import { createPyramid } from "./PyramidMesh.js"
 // Pyramid Group
 export const pyramidGroup = createPyramid()
 
+// Set initial pyramid position
+pyramidGroup.position.y = 0
+
 // State Constants
 export const initialPyramidState = {
 	positionX: 0,
-	positionY: 0.35,
+	positionY: 0,
 	rotationY: 0,
 	scale: 1,
 }
@@ -51,8 +54,8 @@ export const incrementPyramidAnimToken = () => ++pyramidAnimToken
 
 // Camera State (initialized later in pyramid.js)
 export const initialCameraState = {
-	position: new THREE.Vector3(0, 0, 6),
-	target: new THREE.Vector3(0, 0, 0),
+	position: new THREE.Vector3(0, -0.36, 6),
+	target: new THREE.Vector3(0, -0.36, 0),
 }
 
 export const setInitialCameraState = (pos, target) => {

@@ -75,24 +75,36 @@ export class LabelManager {
 			this.labels[key] = mesh
 
 			// Create larger invisible hover target for better click detection
+			// Added to SCENE directly (not as child of label) - synchronized in animate loop
 			const hoverWidth = cfg.size[0] * 0.8
 			const hoverHeight = cfg.size[1] * 1.0
 			const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 			const hoverMat = new THREE.MeshBasicMaterial({
 				transparent: true,
 				opacity: 0,
+				side: THREE.DoubleSide,
 			})
 			const hover = new THREE.Mesh(hoverGeo, hoverMat)
-			hover.position.set(0, 0.05, 0.01) // Local offset
+			// Initial position matches label (will be synced in animate loop)
+			hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0.05, 0.08))
+			hover.rotation.copy(mesh.rotation)
 			hover.userData.labelKey = key
 			hover.name = `${key}_hover`
-			mesh.add(hover) // Parent to label so it moves with it
+			this.scene.add(hover) // Add to scene, not as child of label
 			this.hoverTargets[key] = hover
+			hover.updateMatrixWorld()
 		}
 
 		// Hide Home and Contact labels initially (visible in top nav)
-		if (this.labels.Home) this.labels.Home.visible = false
-		if (this.labels.Contact) this.labels.Contact.visible = false
+		// Also hide their hover targets to prevent click interference
+		if (this.labels.Home) {
+			this.labels.Home.visible = false
+			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = false
+		}
+		if (this.labels.Contact) {
+			this.labels.Contact.visible = false
+			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = false
+		}
 
 		// Initialize nav layout
 		this.updateNavLayout()
@@ -198,18 +210,60 @@ export class LabelManager {
 	showHomeLabel() {
 		if (this.labels.Home) {
 			this.labels.Home.visible = true
+			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = true
 		}
 		if (this.labels.Contact) {
 			this.labels.Contact.visible = true
+			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = true
 		}
 	}
 
 	hideHomeLabel() {
 		if (this.labels.Home) {
 			this.labels.Home.visible = false
+			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = false
 		}
 		if (this.labels.Contact) {
 			this.labels.Contact.visible = false
+			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = false
+		}
+	}
+
+	// Synchronize hover targets with their labels (called from animate loop)
+	// Hover targets are in scene space, labels may be in pyramidGroup or scene
+	syncHoverTargets() {
+		for (const key in this.labels) {
+			const label = this.labels[key]
+			const hover = this.hoverTargets[key]
+			if (label && hover) {
+				// Ensure label's world matrix is up to date (works whether in pyramidGroup or scene)
+				label.updateWorldMatrix(true, true)
+
+				// Get label's world position
+				const labelWorldPos = new THREE.Vector3()
+				label.getWorldPosition(labelWorldPos)
+
+				// Position hover target in front of label (0.08 units on label's Z-axis in world space)
+				const worldQuaternion = new THREE.Quaternion()
+				label.getWorldQuaternion(worldQuaternion)
+				const offset = new THREE.Vector3(0, 0, 0.08)
+				offset.applyQuaternion(worldQuaternion)
+				hover.position.copy(labelWorldPos).add(offset)
+
+				// Match label's world rotation
+				hover.quaternion.copy(worldQuaternion)
+
+				// Scale hover target based on label's world scale
+				const s = new THREE.Vector3()
+				label.getWorldScale(s)
+				hover.scale.copy(s)
+
+				// Ensure hover target visibility matches label visibility
+				hover.visible = label.visible
+
+				// Update hover target's world matrix immediately so raycasting works
+				hover.updateMatrixWorld()
+			}
 		}
 	}
 
@@ -225,8 +279,9 @@ export class LabelManager {
 			}
 		})
 
-		// Clean up hover targets
+		// Clean up hover targets (remove from scene since they're added there directly)
 		Object.values(this.hoverTargets).forEach((mesh) => {
+			if (mesh.parent) mesh.parent.remove(mesh)
 			if (mesh.geometry) mesh.geometry.dispose()
 			if (mesh.material) mesh.material.dispose()
 		})

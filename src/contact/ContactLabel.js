@@ -1,5 +1,6 @@
 import * as THREE from "three"
-import { scene } from "../pyramid.js"
+import { scene } from "../core/SceneManager.js"
+import { pyramidGroup } from "../pyramid/state.js"
 
 export const contactConfig = {
 	revealedSize: [3.0, 1.5],
@@ -29,25 +30,60 @@ export const contactConfig = {
 	lines: ["johndoe@example.com", "123-456-7890"],
 	revealedTextAlign: "center",
 	revealedBodyFontSize: 60,
+	// Hidden position (below pyramid, out of view)
+	hiddenPosition: { x: 0, y: -2.5, z: 0.8 },
+	// Revealed position (in front of pyramid)
+	revealedPosition: { x: 0, y: -0.5, z: 0.85 },
 }
 
 export let contactLabel = null
 export let contactDetails = null
+let contactVisible = false
 
 export function initContactLabel() {
 	if (contactDetails) return // Already initialized
 	contactDetails = makeContactLabelPlane(contactConfig)
 	contactDetails.name = "contactDetails"
 	contactDetails.visible = false
-	scene.add(contactDetails)
+	contactDetails.material.opacity = 0
+	// Start at hidden position
+	contactDetails.position.set(
+		contactConfig.hiddenPosition.x,
+		contactConfig.hiddenPosition.y,
+		contactConfig.hiddenPosition.z
+	)
+	pyramidGroup.add(contactDetails)
 }
 
 export function showContactLabelCentered() {
-	if (contactDetails) {
-		contactDetails.visible = true
-		// Position centered below the pyramid on home page
-		contactDetails.position.set(0, -1.5, 0)
+	if (!contactDetails || contactVisible) return // Don't show if already visible
+	contactVisible = true
+
+	const cfg = contactConfig
+	contactDetails.visible = true
+
+	// Animate from hidden to revealed position
+	const startY = cfg.hiddenPosition.y
+	const endY = cfg.revealedPosition.y
+	const startZ = cfg.hiddenPosition.z
+	const endZ = cfg.revealedPosition.z
+	const duration = 600
+	const startTime = performance.now()
+
+	function animateSlideUp(time) {
+		const t = Math.min((time - startTime) / duration, 1)
+		// Ease out cubic
+		const eased = 1 - Math.pow(1 - t, 3)
+
+		contactDetails.position.y = startY + (endY - startY) * eased
+		contactDetails.position.z = startZ + (endZ - startZ) * eased
+		contactDetails.material.opacity = eased
+
+		if (t < 1) {
+			requestAnimationFrame(animateSlideUp)
+		}
 	}
+	requestAnimationFrame(animateSlideUp)
 }
 
 export function showContactLabelLeft() {
@@ -59,9 +95,16 @@ export function showContactLabelLeft() {
 }
 
 export function hideContactLabel() {
-	if (contactDetails) {
-		contactDetails.visible = false
-	}
+	if (!contactDetails) return
+	contactVisible = false
+	contactDetails.visible = false
+	contactDetails.material.opacity = 0
+	// Reset to hidden position
+	contactDetails.position.set(
+		contactConfig.hiddenPosition.x,
+		contactConfig.hiddenPosition.y,
+		contactConfig.hiddenPosition.z
+	)
 }
 
 export function moveContactLabelToLeft() {
@@ -73,7 +116,7 @@ export function setContactExpanded(expanded) {
 }
 
 export function isContactVisible() {
-	return contactDetails ? contactDetails.visible : false
+	return contactVisible
 }
 
 function makeContactLabelPlane(config) {

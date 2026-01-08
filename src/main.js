@@ -227,8 +227,9 @@ function centerAndOpenLabel(labelManager, labelName) {
 	} catch (e) {
 		/* showHomeLabel might not be available yet */
 	}
-	// Contact label is now part of the nav row via LabelManager
-	// It gets animated with other labels by animatePyramid()
+	// Hide contact pane when opening a section (prevents blocking clicks)
+	if (Contact.hideContactLabel) Contact.hideContactLabel()
+
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
 	if (isAtTop) {
@@ -236,7 +237,7 @@ function centerAndOpenLabel(labelManager, labelName) {
 		hideAllPlanes()
 		const sectionName = labelName.toLowerCase()
 		spinPyramidToSection(sectionName, () => {
-			if (labelName === "Bio") showAboutPlane()
+			if (labelName === "About") showAboutPlane()
 			else if (labelName === "Portfolio") showPortfolioPlane()
 			else if (labelName === "Blog") showBlogPlane()
 		})
@@ -349,8 +350,8 @@ router.onRouteChange((route) => {
 			pyramidGroup.visible = true
 
 			// Force reset position/scale if it looks wrong (e.g. stuck in nav state)
-			if (pyramidGroup.position.y > 0.5) {
-				pyramidGroup.position.set(0, -0.3, 0)
+			if (pyramidGroup.position.y > 1.0) {
+				pyramidGroup.position.set(0, 0, 0)
 				pyramidGroup.rotation.set(0, 0, 0)
 				pyramidGroup.scale.set(1, 1, 1)
 			}
@@ -381,9 +382,13 @@ function hideContactLabel() {
 router.notify()
 
 inputManager.addClickHandler((raycaster) => {
-	// Check if contact label was clicked
+	// Check if contact label was clicked - only block if a click region was actually hit
 	const contactDetails = scene.getObjectByName("contactDetails")
-	if (contactDetails && contactDetails.visible) {
+	if (
+		contactDetails &&
+		contactDetails.visible &&
+		contactDetails.material.opacity > 0.1
+	) {
 		const contactHits = raycaster.intersectObject(contactDetails, false)
 		if (contactHits.length > 0) {
 			const hit = contactHits[0]
@@ -402,12 +407,12 @@ inputManager.addClickHandler((raycaster) => {
 						canvasY <= region.y2
 					) {
 						// handleContactClick(region.text, region.index)
-						// For now just prevent other clicks
+						// Only block if a specific region was clicked
 						return
 					}
 				}
 			}
-			return
+			// Don't return here - allow click to pass through to labels if no region was hit
 		}
 	}
 
@@ -449,15 +454,28 @@ inputManager.addClickHandler((raycaster) => {
 	const hoverHits = raycaster.intersectObjects(Object.values(hoverTargets))
 	let obj = null
 	const labels = labelManager.getLabels()
+
 	if (hoverHits.length > 0) {
 		const hoverObj = hoverHits[0].object
 		const labelKey = hoverObj.userData.labelKey
 		obj = labels[labelKey]
-	} else {
-		// Fallback: check tight label meshes
-		const labelIntersects = raycaster.intersectObjects(Object.values(labels))
-		if (labelIntersects.length > 0) obj = labelIntersects[0].object
 	}
+	// Fallback: check tight label meshes if no hover target hit
+	if (!obj) {
+		const labelIntersects = raycaster.intersectObjects(
+			Object.values(labels),
+			true
+		)
+		if (labelIntersects.length > 0) {
+			// Find the root label object from the intersection
+			let hit = labelIntersects[0].object
+			while (hit && !hit.userData.name && hit.parent) {
+				hit = hit.parent
+			}
+			if (hit && hit.userData.name) obj = hit
+		}
+	}
+
 	if (obj) {
 		const labelName = obj.userData.name
 		// If Home was clicked, perform a complete reset: return pyramid to home state,
@@ -482,38 +500,32 @@ inputManager.addClickHandler((raycaster) => {
 		// Map label names to section names for routing
 		const sectionName = labelName.toLowerCase()
 
-		// With flattened menu, all labels are visible at the top
-		// Clicking a label navigates to that section
-		if (window.centeredLabelName !== labelName) {
-			// If already showing content, spin pyramid and switch sections
-			const isAtTop = pyramidGroup.position.y >= 0.75
-			if (isAtTop) {
-				// Already in flattened state, spin pyramid to new face and switch content
-				hideAllPlanes()
-				console.log("pyramidGroup at top nav state:", pyramidGroup)
-				spinPyramidToSection(sectionName, () => {
-					// Show content after spin completes
-					if (labelName === "About") {
-						showAboutPlane()
-						currentContentVisible = "about"
-					} else if (labelName === "Portfolio") {
-						showPortfolioPlane()
-						currentContentVisible = "portfolio"
-					} else if (labelName === "Blog") {
-						showBlogPlane()
-						currentContentVisible = "blog"
-					}
-				})
-				window.centeredLabelName = labelName
-			} else {
-				// Animate pyramid to top and show content
-				animatePyramid(labelManager, true, sectionName)
-				window.centeredLabelName = labelName
-			}
-
-			// Update route
-			router.navigate("/" + sectionName)
+		// Always navigate when a label is clicked, regardless of current state
+		// This fixes issues where navigation could get stuck
+		const isAtTop = pyramidGroup.position.y >= 0.75
+		if (isAtTop) {
+			// Already in flattened state, spin pyramid to new face and switch content
+			hideAllPlanes()
+			spinPyramidToSection(sectionName, () => {
+				// Show content after spin completes
+				if (labelName === "About") {
+					showAboutPlane()
+					currentContentVisible = "about"
+				} else if (labelName === "Portfolio") {
+					showPortfolioPlane()
+					currentContentVisible = "portfolio"
+				} else if (labelName === "Blog") {
+					showBlogPlane()
+					currentContentVisible = "blog"
+				}
+			})
+		} else {
+			// Animate pyramid to top and show content
+			animatePyramid(labelManager, true, sectionName)
 		}
+
+		window.centeredLabelName = labelName
+		router.navigate("/" + sectionName)
 		return
 	}
 

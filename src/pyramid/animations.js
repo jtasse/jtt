@@ -26,9 +26,9 @@ export function animatePyramid(labelManager, down = true, section = null) {
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = incrementPyramidAnimToken()
 
-	// Show Home label when animating to nav
-	if (down && labelManager.getLabel("home")) {
-		labelManager.getLabel("home").visible = true
+	// Show Home and Contact labels when animating to nav (includes their hover targets)
+	if (down) {
+		labelManager.showHomeLabel()
 	}
 
 	pyramidGroup.visible = true
@@ -225,13 +225,13 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (section === "bio") showAboutPlane()
+			if (section === "about" || section === "bio") showAboutPlane()
 			else if (section === "portfolio") showPortfolioPlane()
 			else if (section === "blog") showBlogPlane()
 
-			// Hide Home label if returning to centered state
-			if (!down && labelManager.getLabel("home")) {
-				labelManager.getLabel("home").visible = false
+			// Hide Home and Contact labels if returning to centered state (includes their hover targets)
+			if (!down) {
+				labelManager.hideHomeLabel()
 			}
 		}
 	}
@@ -407,12 +407,10 @@ export function resetPyramidToHome(labelManager) {
 				if (origRot) labelMesh.rotation.copy(origRot)
 				if (origScale) labelMesh.scale.copy(origScale)
 				labelMesh.userData.fixedNav = false
-
-				// Ensure Home is hidden after reset
-				if (key === "home") {
-					labelMesh.visible = false
-				}
 			}
+
+			// Hide Home and Contact labels after reset (includes their hover targets)
+			labelManager.hideHomeLabel()
 		}
 	}
 	requestAnimationFrame(step)

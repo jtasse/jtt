@@ -19,7 +19,11 @@
       "Bash(git rm:*)",
       "Bash(dir \"C:\\\\dev\\\\github\\\\pyramid\\\\src\")",
       "Bash(dir \"C:\\\\dev\\\\github\\\\pyramid\\\\test\")",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(grep:*)",
+      "Bash(git stash:*)",
+      "Bash(npm test)"
     ]
   }
 }

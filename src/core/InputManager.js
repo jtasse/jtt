@@ -16,36 +16,39 @@ export class InputManager {
 		this.hoverHandlers = []
 
 		// Bind methods
-		this.onMouseDown = this.onMouseDown.bind(this)
-		this.onMouseMove = this.onMouseMove.bind(this)
-		this.onMouseUp = this.onMouseUp.bind(this)
+		this.onPointerDown = this.onPointerDown.bind(this)
+		this.onPointerMove = this.onPointerMove.bind(this)
+		this.onPointerUp = this.onPointerUp.bind(this)
 		this.onClick = this.onClick.bind(this)
 
 		this.enable()
 	}
 
 	enable() {
-		window.addEventListener("mousedown", this.onMouseDown)
-		window.addEventListener("mousemove", this.onMouseMove)
-		window.addEventListener("mouseup", this.onMouseUp)
+		// Use pointer events on the canvas to match OrbitControls behavior
+		this.renderer.domElement.addEventListener("pointerdown", this.onPointerDown)
+		window.addEventListener("pointermove", this.onPointerMove)
+		window.addEventListener("pointerup", this.onPointerUp)
 		window.addEventListener("click", this.onClick, true)
 	}
 
 	disable() {
-		window.removeEventListener("mousedown", this.onMouseDown)
-		window.removeEventListener("mousemove", this.onMouseMove)
-		window.removeEventListener("mouseup", this.onMouseUp)
+		this.renderer.domElement.removeEventListener(
+			"pointerdown",
+			this.onPointerDown
+		)
+		window.removeEventListener("pointermove", this.onPointerMove)
+		window.removeEventListener("pointerup", this.onPointerUp)
 		window.removeEventListener("click", this.onClick, true)
 	}
 
-	onMouseDown(event) {
-		if (event.target.tagName !== "CANVAS") return
+	onPointerDown(event) {
 		this.isPointerDown = true
 		this.isDragging = false
 		this.pointerDownPos.set(event.clientX, event.clientY)
 	}
 
-	onMouseMove(event) {
+	onPointerMove(event) {
 		if (this.isPointerDown) {
 			const dx = event.clientX - this.pointerDownPos.x
 			const dy = event.clientY - this.pointerDownPos.y
@@ -67,12 +70,10 @@ export class InputManager {
 		this.processHover(event)
 	}
 
-	onMouseUp(event) {
+	onPointerUp(event) {
 		this.isPointerDown = false
-		if (!this.isDragging && event.target.tagName === "CANVAS") {
-			this.processClick(event)
-		}
-		this.isDragging = false
+		// Don't reset isDragging here; we need it for the click handler
+		// It will be reset on the next pointer down
 	}
 	onClick(event) {
 		// Block clicks on canvas to prevent default behavior, but allow UI clicks
@@ -88,8 +89,10 @@ export class InputManager {
 			return
 		}
 
-		event.preventDefault()
-		event.stopPropagation()
+		// If we dragged, ignore this click (OrbitControls handled the drag)
+		if (this.isDragging) return
+
+		this.processClick(event)
 	}
 
 	addClickHandler(handler) {
@@ -101,6 +104,16 @@ export class InputManager {
 	}
 
 	processClick(event) {
+		// Update pointer coordinates from click event (not relying on last mouseMove)
+		try {
+			const rect = this.renderer.domElement.getBoundingClientRect()
+			this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+			this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+		} catch (e) {
+			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+		}
+
 		this.raycaster.setFromCamera(this.pointer, this.camera)
 		for (const handler of this.clickHandlers) {
 			if (handler(this.raycaster, event)) return
@@ -108,6 +121,16 @@ export class InputManager {
 	}
 
 	processHover(event) {
+		// Update pointer coordinates from click event (not relying on last mouseMove)
+		try {
+			const rect = this.renderer.domElement.getBoundingClientRect()
+			this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+			this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+		} catch (e) {
+			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+		}
+
 		this.raycaster.setFromCamera(this.pointer, this.camera)
 		for (const handler of this.hoverHandlers) {
 			handler(this.raycaster, event)
