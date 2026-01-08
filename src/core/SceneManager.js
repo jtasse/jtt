@@ -19,8 +19,13 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.localClippingEnabled = true
 
-// Add renderer canvas to the DOM
-document.body.appendChild(renderer.domElement)
+// Add renderer canvas to the DOM (inside scene-container for proper z-index stacking)
+const sceneContainer = document.getElementById("scene-container")
+if (sceneContainer) {
+	sceneContainer.appendChild(renderer.domElement)
+} else {
+	document.body.appendChild(renderer.domElement)
+}
 
 export const controls = new OrbitControls(camera, renderer.domElement)
 // Enable OrbitControls so user can click+drag to inspect the scene.

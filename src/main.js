@@ -22,6 +22,7 @@ import {
 	layoutManager,
 	screenToWorld,
 	Contact,
+	initialPyramidState,
 } from "./pyramid.js"
 import { handleContentLink } from "./content/ContentManager.js"
 import { LabelManager } from "./navigation/LabelManager.js"
@@ -351,9 +352,17 @@ router.onRouteChange((route) => {
 
 			// Force reset position/scale if it looks wrong (e.g. stuck in nav state)
 			if (pyramidGroup.position.y > 1.0) {
-				pyramidGroup.position.set(0, 0, 0)
-				pyramidGroup.rotation.set(0, 0, 0)
-				pyramidGroup.scale.set(1, 1, 1)
+				pyramidGroup.position.set(
+					initialPyramidState.positionX,
+					initialPyramidState.positionY,
+					0
+				)
+				pyramidGroup.rotation.set(0, initialPyramidState.rotationY, 0)
+				pyramidGroup.scale.set(
+					initialPyramidState.scale,
+					initialPyramidState.scale,
+					initialPyramidState.scale
+				)
 			}
 
 			const labels = labelManager.getLabels()

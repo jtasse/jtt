@@ -67,6 +67,7 @@ export {
 	showBlogPlane,
 	hideAllPlanes,
 	pyramidGroup,
+	initialPyramidState,
 	isOrcSceneActive,
 	morphToOrcScene,
 	morphFromOrcScene,
