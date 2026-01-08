@@ -80,11 +80,13 @@ export class InputManager {
 		const content = document.getElementById("content")
 		const orcInfoPane = document.getElementById("orc-info-pane")
 		const orcOverlay = document.getElementById("orc-preview-overlay")
+		const userGuideOverlay = document.getElementById("user-guide-overlay")
 
 		if (
 			(content && content.contains(event.target)) ||
 			(orcInfoPane && orcInfoPane.contains(event.target)) ||
-			(orcOverlay && orcOverlay.contains(event.target))
+			(orcOverlay && orcOverlay.contains(event.target)) ||
+			(userGuideOverlay && userGuideOverlay.contains(event.target))
 		) {
 			return
 		}

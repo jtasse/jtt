@@ -81,6 +81,12 @@ export const OrcDemoManager = {
 			orcInfoPane = null
 		}
 
+		// Remove user guide overlay if it exists
+		const userGuideOverlay = document.getElementById("user-guide-overlay")
+		if (userGuideOverlay) {
+			userGuideOverlay.remove()
+		}
+
 		this.isActive = false
 		return hand
 	},
