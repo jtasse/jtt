@@ -3,8 +3,16 @@ import { pyramidGroup } from "../pyramid/state.js"
 import "path2d-polyfill"
 
 export const contactConfig = {
+	lines: ["james.tasse@gmail.com", "(216)-219-1538"],
+	revealedTextAlign: "center",
+	revealedBodyFontSize: 60,
 	revealedSize: [3.0, 1.5],
-	tooltipText: "Click to copy email address",
+	// Hidden position (below pyramid, out of view)
+	hiddenPosition: { x: 0, y: -2.5, z: 0.8 },
+	// Revealed position (in front of pyramid)
+	revealedPosition: { x: 0, y: -0.5, z: 0.85 },
+	// Tooltip configuration (hover state)
+	tooltipText: "Click to copy",
 	tooltipFontSize: 36,
 	tooltipColor: "#4da6ff",
 	tooltipBgColor: "rgba(0, 0, 0, 0.85)",
@@ -14,6 +22,9 @@ export const contactConfig = {
 	tooltipOffsetY: -50,
 	tooltipSlideDistance: 30,
 	tooltipAnimationDuration: 200,
+	// Email hover color
+	emailHoverColor: "#4da6ff",
+	// Toast configuration (after click)
 	toastText: "Copied!",
 	toastFontSize: 36,
 	toastColor: "#08a13b",
@@ -23,17 +34,8 @@ export const contactConfig = {
 	toastOffsetX: 20,
 	toastOffsetY: -50,
 	toastSlideDistance: 30,
-	duration: 2000,
-	animationDuration: 200,
-	phoneOffsetX: 0,
-	emailHoverColor: "#4da6ff",
-	lines: ["johndoe@example.com", "123-456-7890"],
-	revealedTextAlign: "center",
-	revealedBodyFontSize: 60,
-	// Hidden position (below pyramid, out of view)
-	hiddenPosition: { x: 0, y: -2.5, z: 0.8 },
-	// Revealed position (in front of pyramid)
-	revealedPosition: { x: 0, y: -0.5, z: 0.85 },
+	toastDuration: 2000,
+	toastAnimationDuration: 200,
 }
 
 export let contactLabel = null
@@ -345,7 +347,146 @@ function makeContactLabelPlane(config) {
 		tex.needsUpdate = true
 	}
 
+	// Animation state
+	let animationId = null
+	let toastTimeout = null
+
+	function easeOutCubic(t) {
+		return 1 - Math.pow(1 - t, 3)
+	}
+
+	function easeInCubic(t) {
+		return t * t * t
+	}
+
+	function cancelAnimation() {
+		if (animationId) {
+			cancelAnimationFrame(animationId)
+			animationId = null
+		}
+		if (toastTimeout) {
+			clearTimeout(toastTimeout)
+			toastTimeout = null
+		}
+	}
+
+	function setHoveredIndex(index) {
+		if (hoveredIndex !== index) {
+			hoveredIndex = index
+			updateTexture(currentConfig, activePopup)
+		}
+	}
+
+	function showTooltip(index) {
+		// Don't show tooltip if toast is active
+		if (activePopup && activePopup.type === "toast") return
+		// Don't re-animate if already showing this tooltip
+		if (activePopup && activePopup.type === "tooltip" && activePopup.index === index && activePopup.progress === 1) return
+
+		cancelAnimation()
+		activePopup = { index, type: "tooltip", progress: 0 }
+
+		const animDuration = tooltipConfig.animationDuration
+		let startTime = null
+
+		function animateIn(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			activePopup.progress = easeOutCubic(progress)
+			updateTexture(currentConfig, activePopup)
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateIn)
+			} else {
+				animationId = null
+			}
+		}
+
+		animationId = requestAnimationFrame(animateIn)
+	}
+
+	function hideTooltip() {
+		// Don't hide if toast is showing
+		if (activePopup && activePopup.type === "toast") return
+		if (!activePopup || activePopup.type !== "tooltip") return
+
+		cancelAnimation()
+		const startProgress = activePopup.progress
+
+		const animDuration = tooltipConfig.animationDuration
+		let startTime = null
+
+		function animateOut(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			activePopup.progress = startProgress * (1 - easeInCubic(progress))
+			updateTexture(currentConfig, activePopup)
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateOut)
+			} else {
+				animationId = null
+				activePopup = null
+				hoveredIndex = -1
+				updateTexture(currentConfig, null)
+			}
+		}
+
+		animationId = requestAnimationFrame(animateOut)
+	}
+
+	function showCopiedMessage(index) {
+		cancelAnimation()
+		activePopup = { index, type: "toast", progress: 0 }
+
+		const animDuration = toastConfig.animationDuration
+		const showDuration = toastConfig.duration
+		let startTime = null
+
+		function animateIn(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			activePopup.progress = easeOutCubic(progress)
+			updateTexture(currentConfig, activePopup)
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateIn)
+			} else {
+				animationId = null
+				toastTimeout = setTimeout(() => {
+					startTime = null
+					animationId = requestAnimationFrame(animateOut)
+				}, showDuration)
+			}
+		}
+
+		function animateOut(timestamp) {
+			if (!startTime) startTime = timestamp
+			const elapsed = timestamp - startTime
+			const progress = Math.min(elapsed / animDuration, 1)
+			activePopup.progress = 1 - easeInCubic(progress)
+			updateTexture(currentConfig, activePopup)
+
+			if (progress < 1) {
+				animationId = requestAnimationFrame(animateOut)
+			} else {
+				animationId = null
+				activePopup = null
+				updateTexture(currentConfig, null)
+			}
+		}
+
+		animationId = requestAnimationFrame(animateIn)
+	}
+
 	mesh.userData.updateTexture = updateTexture
+	mesh.userData.setHoveredIndex = setHoveredIndex
+	mesh.userData.showTooltip = showTooltip
+	mesh.userData.hideTooltip = hideTooltip
+	mesh.userData.showCopiedMessage = showCopiedMessage
 
 	// Initial draw with revealed settings
 	const revealedConfig = {
@@ -356,4 +497,21 @@ function makeContactLabelPlane(config) {
 	mesh.userData.updateTexture(revealedConfig)
 
 	return mesh
+}
+
+// Handle click on contact details - copy text to clipboard
+export function handleContactClick(text, index) {
+	if (!text) return
+
+	navigator.clipboard
+		.writeText(text)
+		.then(() => {
+			// Show "Copied!" toast
+			if (contactDetails && contactDetails.userData.showCopiedMessage) {
+				contactDetails.userData.showCopiedMessage(index)
+			}
+		})
+		.catch((err) => {
+			console.error("Failed to copy to clipboard:", err)
+		})
 }

@@ -413,7 +413,7 @@ inputManager.addClickHandler((raycaster) => {
 						canvasY >= region.y1 &&
 						canvasY <= region.y2
 					) {
-						// handleContactClick(region.text, region.index)
+						Contact.handleContactClick(region.text, region.index)
 						// Only block if a specific region was clicked
 						return
 					}
