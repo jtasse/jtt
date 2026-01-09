@@ -1,4 +1,4 @@
-# Pyramid Site - Architecture Guide
+# jamestasse.tech (jtt) - Architecture Guide
 
 ## File Organization
 
@@ -182,14 +182,39 @@ DOM overlays now used for content instead of canvas textures.
 
 ---
 
-## Known Issues (as of 1/6/26)
+## Known Issues (as of 1/9/26)
 
-- Pyramid and some nav labels not showing on home page
-- Labels that do appear are not in the right positions
-- About, portfolio, & blog pages:
-  - Nav labels are too high, don't show a hover icon, and don't navigate when clicked
-  - Contact pane is missing
-  - There should not be a "contact" page
+- All pages:
+
+  - top nav labels should _always_...
+    - ...be visible UNLESS the pyramid is centered on the home page
+    - ...face the user
+  - hovering over the contact label should show the contact pane
+
+- Home page:
+
+  - Contact pane:
+
+    - not showing when hovering over top nav 'contact' label
+    - present when hovering over centered triangle, but no text is visible
+    - 'Contact' header appears below centered contact pane (it should be at the top fo the pane)
+
+  - Home label:
+    - when the pyramid is centered but the user has moved the scene (e.g. - via click & drag), the 'Home' label should...
+      - ...be visible above the pyramid
+      - ...always face the user
+      - ...not be visible at the top nav
+    - when the pyramid is centered but the user has NOT moved the scene, the 'Home' label should NOT be visible
+    - when the pyramid is at the top of the screen and top nav labels are visible, the Home label should...
+      - ...appear on the left side of the top nav menu (near the top left corner of the screen)
+      - ...always face the user
+
+- orc-demo:
+
+  - after decommissioning a satellite, the hand of ORC should only give a thumbs up for 2 seconds before returning to idle mode
+
+- Docs:
+  - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)
 
 ## Next Steps (Priority Order)
 
