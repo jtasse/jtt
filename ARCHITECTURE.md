@@ -196,7 +196,7 @@ DOM overlays now used for content instead of canvas textures.
   - Contact pane:
 
     - not showing when hovering over top nav 'contact' label
-    - present when hovering over centered triangle, but no text is visible
+    - present when hovering over centered triangle as a transparent rectangle, but no text is visible
     - 'Contact' header appears below centered contact pane (it should be at the top fo the pane)
 
   - Home label:

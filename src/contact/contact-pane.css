@@ -1,0 +1,193 @@
+/* Contact pane - persistent floating element in bottom-right corner */
+
+.contact-pane {
+	position: fixed;
+	bottom: 32px;
+	right: 32px;
+	z-index: 10000;
+
+	/* Initial state: off-screen right */
+	transform: translateX(calc(100% + 50px));
+	opacity: 0;
+
+	/* Slide-in transition */
+	transition: transform 0.4s ease-out, opacity 0.3s ease-out;
+
+	/* Sharp edges to match pyramid aesthetic */
+	background: rgba(0, 0, 0, 0.75);
+	border: 2px solid white;
+	border-radius: 0;
+	padding: 0;
+	min-width: 200px;
+
+	/* Allow tooltips to overflow */
+	overflow: visible;
+
+	/* Prevent text selection on rapid clicks */
+	user-select: none;
+}
+
+/* Visible state (slid in) */
+.contact-pane.visible {
+	transform: translateX(0);
+	opacity: 1;
+}
+
+/* Header with triangle (left) and Contact label */
+.contact-pane-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 16px 20px;
+	cursor: pointer;
+	color: white;
+	font-size: 1.25rem;
+	font-weight: 600;
+	transition: background 0.2s ease;
+}
+
+.contact-pane-header:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+/* Triangle indicator (left side) */
+.contact-pane-triangle {
+	font-size: 0.8rem;
+	transition: transform 0.3s ease;
+	line-height: 1;
+}
+
+/* Rotate triangle when expanded */
+.contact-pane.expanded .contact-pane-triangle {
+	transform: rotate(180deg);
+}
+
+/* Title text */
+.contact-pane-title {
+	flex: 1;
+}
+
+/* Expandable content area */
+.contact-pane-content {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+	padding: 0 20px;
+}
+
+.contact-pane.expanded .contact-pane-content {
+	max-height: 160px;
+	padding: 0 20px 16px 20px;
+	overflow: visible;
+}
+
+/* Individual contact item row */
+.contact-item {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 12px 0;
+	cursor: pointer;
+	color: #e0e0e0;
+	font-size: 1.1rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	position: relative;
+	transition: color 0.2s ease;
+}
+
+.contact-item:last-child {
+	border-bottom: none;
+}
+
+.contact-item:hover {
+	color: #00ffff;
+}
+
+/* Copy icon (left side) */
+.contact-item-copy {
+	width: 22px;
+	height: 22px;
+	opacity: 0.6;
+	transition: opacity 0.2s ease;
+	fill: currentColor;
+	flex-shrink: 0;
+}
+
+.contact-item:hover .contact-item-copy {
+	opacity: 1;
+}
+
+/* Contact item text */
+.contact-item-text {
+	flex: 1;
+}
+
+/* Tooltip (appears on hover - positioned to the left) */
+.contact-item-tooltip {
+	position: absolute;
+	top: 50%;
+	right: 110%;
+	transform: translateY(-50%) translateX(-8px);
+	background: rgba(0, 0, 0, 0.95);
+	color: #4da6ff;
+	font-size: 0.9rem;
+	font-family: Arial, Helvetica, sans-serif;
+	padding: 8px 14px;
+	white-space: nowrap;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.2s ease, visibility 0.2s ease;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	z-index: 10001;
+}
+
+/* Show tooltip on hover */
+.contact-item:hover .contact-item-tooltip {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Copied confirmation state */
+.contact-item-tooltip.copied {
+	color: #08a13b;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+	.contact-pane {
+		bottom: 20px;
+		right: 20px;
+		min-width: 180px;
+	}
+
+	.contact-pane-header {
+		padding: 14px 16px;
+		font-size: 1.1rem;
+		gap: 10px;
+	}
+
+	.contact-pane-content {
+		padding: 0 16px;
+	}
+
+	.contact-pane.expanded .contact-pane-content {
+		padding: 0 16px 14px 16px;
+	}
+
+	.contact-item {
+		font-size: 1rem;
+		gap: 12px;
+		padding: 10px 0;
+	}
+
+	.contact-item-copy {
+		width: 20px;
+		height: 20px;
+	}
+
+	.contact-item-tooltip {
+		font-size: 0.85rem;
+		padding: 6px 12px;
+	}
+}

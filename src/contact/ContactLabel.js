@@ -102,7 +102,11 @@ export function hideContactLabel() {
 }
 
 export function setContactExpanded(expanded) {
-	// Stub for future implementation
+	if (expanded) {
+		showContactLabelCentered()
+	} else {
+		hideContactLabel()
+	}
 }
 
 export function isContactVisible() {
@@ -170,11 +174,17 @@ function makeContactLabelPlane(config) {
 	let hoveredIndex = -1
 
 	// Copy icon SVG path (from Material Icons)
-	const copyIconPath = new Path2D(
-		"M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"
-	)
+	let copyIconPath = null
+	try {
+		copyIconPath = new Path2D(
+			"M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"
+		)
+	} catch (e) {
+		console.warn("Path2D not supported or polyfill failed", e)
+	}
 
 	function drawClipboardIcon(ctx, x, y, size, color = "white") {
+		if (!copyIconPath) return
 		ctx.save()
 		// Transform from SVG viewBox (0 -960 960 960) to target position/size
 		ctx.translate(x, y + size)
@@ -222,6 +232,13 @@ function makeContactLabelPlane(config) {
 		ctx.fill()
 		ctx.stroke()
 
+		// Draw Header "Contact"
+		ctx.fillStyle = "white"
+		ctx.font = "bold 70px sans-serif"
+		ctx.textAlign = "center"
+		ctx.textBaseline = "top"
+		ctx.fillText("Contact", canvas.width / 2, margin + 20)
+
 		// Draw text lines
 		ctx.fillStyle = "white"
 		ctx.textAlign = textAlign || "left"
@@ -229,8 +246,8 @@ function makeContactLabelPlane(config) {
 		const leftMargin = 40
 
 		// Calculate layout
-		// We need space at the top for tooltips, so we push content down
-		const contentStartY = 140
+		// We need space at the top for tooltips and header, so we push content down
+		const contentStartY = 220
 		const lineHeight = 120
 
 		// Clear previous click regions
@@ -381,7 +398,13 @@ function makeContactLabelPlane(config) {
 		// Don't show tooltip if toast is active
 		if (activePopup && activePopup.type === "toast") return
 		// Don't re-animate if already showing this tooltip
-		if (activePopup && activePopup.type === "tooltip" && activePopup.index === index && activePopup.progress === 1) return
+		if (
+			activePopup &&
+			activePopup.type === "tooltip" &&
+			activePopup.index === index &&
+			activePopup.progress === 1
+		)
+			return
 
 		cancelAnimation()
 		activePopup = { index, type: "tooltip", progress: 0 }

@@ -1,5 +1,7 @@
 import * as THREE from "three"
 import "./content/overlay.css"
+import "./contact/contact-pane.css"
+import { initContactPane } from "./contact/ContactPane.js"
 import {
 	animatePyramid,
 	showAboutPlane,
@@ -53,6 +55,9 @@ initRoamingHand()
 // Start animation loop
 animate()
 window.dispatchEvent(new Event("resize"))
+
+// Initialize DOM-based contact pane (bottom-right corner)
+initContactPane()
 
 let hoveredLabel = null
 let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
@@ -113,6 +118,14 @@ inputManager.addHoverHandler((raycaster) => {
 					.multiplyScalar(1.12)
 			}
 		}
+
+		// Fix: Show contact pane when hovering Contact label in nav
+		if (labelKey === "Contact") {
+			if (Contact.setContactExpanded) Contact.setContactExpanded(true)
+		} else {
+			if (Contact.setContactExpanded) Contact.setContactExpanded(false)
+		}
+
 		// Show contact section when hovering over any content label while pyramid is centered
 		if (
 			isPyramidCentered &&
@@ -129,7 +142,7 @@ inputManager.addHoverHandler((raycaster) => {
 		let isOverContactDetails = false
 
 		// 1. Check Contact Label (in nav mode)
-		const contactLabel = scene.getObjectByName("contactLabel")
+		const contactLabel = scene.getObjectByName("label-Contact")
 		if (contactLabel && contactLabel.visible) {
 			const contactHits = raycaster.intersectObject(contactLabel, false)
 			if (contactHits.length > 0) {
