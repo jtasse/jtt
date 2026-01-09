@@ -32,7 +32,6 @@ import {
 	showBlogPlane,
 	hideAllPlanes,
 } from "./content/ContentManager.js"
-import * as Contact from "./contact/ContactLabel.js"
 import "./content/home/home.css"
 import "./content/about/about.css"
 import "./content/blog/blog.css"
@@ -66,10 +65,7 @@ export {
 	isOrcSceneActive,
 	morphToOrcScene,
 	morphFromOrcScene,
-	Contact,
 }
-
-Contact.initContactLabel()
 
 let activeLabelManager = null
 export function setLabelManager(lm) {

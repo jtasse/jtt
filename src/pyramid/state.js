@@ -27,7 +27,6 @@ export const flattenedMenuState = {
 
 export const pyramidXPositions = {
 	home: -5.0,
-	contact: -3.0,
 	about: -1.0,
 	bio: -1.0, // Alias for about
 	blog: 1.0,
@@ -38,7 +37,6 @@ export const pyramidXPositions = {
 // These are WORLD positions - values that stay within camera view.
 export const flattenedLabelPositions = {
 	Home: { x: -5.0, y: 2.5, z: 0 },
-	Contact: { x: -3.0, y: 2.5, z: 0 },
 	About: { x: -1.0, y: 2.5, z: 0 },
 	Blog: { x: 1.0, y: 2.5, z: 0 },
 	Portfolio: { x: 3.0, y: 2.5, z: 0 },

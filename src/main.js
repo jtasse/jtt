@@ -23,7 +23,6 @@ import {
 	pyramidGroup,
 	layoutManager,
 	screenToWorld,
-	Contact,
 	initialPyramidState,
 } from "./pyramid.js"
 import { handleContentLink } from "./content/ContentManager.js"
@@ -119,22 +118,6 @@ inputManager.addHoverHandler((raycaster) => {
 			}
 		}
 
-		// Fix: Show contact pane when hovering Contact label in nav
-		if (labelKey === "Contact") {
-			if (Contact.setContactExpanded) Contact.setContactExpanded(true)
-		} else {
-			if (Contact.setContactExpanded) Contact.setContactExpanded(false)
-		}
-
-		// Show contact section when hovering over any content label while pyramid is centered
-		if (
-			isPyramidCentered &&
-			labelMesh &&
-			labelMesh.visible &&
-			Contact.showContactLabelCentered
-		) {
-			Contact.showContactLabelCentered()
-		}
 		inputManager.setCursor("pointer")
 	} else {
 		// Check contact label/details hover state for expansion logic
@@ -142,79 +125,12 @@ inputManager.addHoverHandler((raycaster) => {
 		let isOverContactDetails = false
 
 		// 1. Check Contact Label (in nav mode)
-		const contactLabel = scene.getObjectByName("label-Contact")
-		if (contactLabel && contactLabel.visible) {
-			const contactHits = raycaster.intersectObject(contactLabel, false)
-			if (contactHits.length > 0) {
-				isOverContactLabel = true
-			}
-		}
 
 		// 2. Check Contact Details (if visible)
-		const contactDetails = scene.getObjectByName("contactDetails")
-		if (contactDetails && contactDetails.visible) {
-			const contactHits = raycaster.intersectObject(contactDetails, false)
-			if (contactHits.length > 0) {
-				isOverContactDetails = true
-				const hit = contactHits[0]
-
-				// Check if hovering over any interactive region using UV coordinates
-				const regions = contactDetails.userData.clickRegions || []
-				let foundIndex = -1
-
-				if (hit.uv) {
-					const u = hit.uv.x
-					const v = hit.uv.y
-					const canvasY = 1 - v
-
-					for (const region of regions) {
-						if (
-							u >= region.x1 &&
-							u <= region.x2 &&
-							canvasY >= region.y1 &&
-							canvasY <= region.y2
-						) {
-							foundIndex = region.index
-							break
-						}
-					}
-				}
-
-				if (foundIndex !== -1) {
-					contactDetails.userData.setHoveredIndex?.(foundIndex)
-					contactDetails.userData.showTooltip?.(foundIndex)
-					renderer.domElement.style.cursor = "pointer"
-				} else {
-					contactDetails.userData.setHoveredIndex?.(-1)
-					contactDetails.userData.hideTooltip?.()
-					renderer.domElement.style.cursor = "default"
-				}
-			} else {
-				if (contactDetails.userData.hideTooltip) {
-					contactDetails.userData.hideTooltip()
-				}
-			}
-		}
 
 		// Handle Expansion State
-		if (isOverContactLabel || isOverContactDetails) {
-			if (Contact.setContactExpanded) Contact.setContactExpanded(true)
-			if (isOverContactLabel) inputManager.setCursor("pointer")
-		} else {
-			// if (contactLabel && contactLabel.parent === scene) {
-			if (Contact.setContactExpanded) Contact.setContactExpanded(false)
-		}
 
 		// Check if hovering over the pyramid mesh itself (when centered)
-		if (isPyramidCentered && !isOverContactLabel && !isOverContactDetails) {
-			const pyramidIntersects = raycaster.intersectObjects(
-				pyramidGroup.children,
-				true
-			)
-			if (pyramidIntersects.length > 0 && Contact.showContactLabelCentered) {
-				Contact.showContactLabelCentered()
-			}
-		}
 		// No hover targets: ensure cursor is default and reset hoveredLabel
 		if (hoveredLabel) {
 			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
@@ -239,8 +155,6 @@ function centerAndOpenLabel(labelManager, labelName) {
 	} catch (e) {
 		/* showHomeLabel might not be available yet */
 	}
-	// Hide contact pane when opening a section (prevents blocking clicks)
-	if (Contact.hideContactLabel) Contact.hideContactLabel()
 
 	const isAtTop = pyramidGroup.position.y >= 1.5
 
@@ -340,7 +254,6 @@ router.onRouteChange((route) => {
 		window.centeredLabelName = null
 	} else {
 		// For non-content routes (home), reset pyramid, hide all content, and hide contact
-		hideContactLabel()
 		if (isOrcSceneActive && isOrcSceneActive()) {
 			// morphFromOrcScene handles its own cleanup with fade animation
 			// Don't call hideAllPlanes() here as it would remove elements before fade completes
@@ -394,47 +307,11 @@ router.onRouteChange((route) => {
 	}
 })
 
-// Stub for hideContactLabel since it was removed
-function hideContactLabel() {
-	if (Contact.hideContactLabel) Contact.hideContactLabel()
-}
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
 router.notify()
 
 inputManager.addClickHandler((raycaster) => {
 	// Check if contact label was clicked - only block if a click region was actually hit
-	const contactDetails = scene.getObjectByName("contactDetails")
-	if (
-		contactDetails &&
-		contactDetails.visible &&
-		contactDetails.material.opacity > 0.1
-	) {
-		const contactHits = raycaster.intersectObject(contactDetails, false)
-		if (contactHits.length > 0) {
-			const hit = contactHits[0]
-			const regions = contactDetails.userData.clickRegions || []
-
-			if (hit.uv) {
-				const u = hit.uv.x
-				const v = hit.uv.y
-				const canvasY = 1 - v
-
-				for (const region of regions) {
-					if (
-						u >= region.x1 &&
-						u <= region.x2 &&
-						canvasY >= region.y1 &&
-						canvasY <= region.y2
-					) {
-						Contact.handleContactClick(region.text, region.index)
-						// Only block if a specific region was clicked
-						return
-					}
-				}
-			}
-			// Don't return here - allow click to pass through to labels if no region was hit
-		}
-	}
 
 	// Track which label is centered
 	const centeredLabelName = window.centeredLabelName || null
@@ -502,11 +379,6 @@ inputManager.addClickHandler((raycaster) => {
 		// restore all labels to original positions, hide all content, and navigate home.
 		if (labelName === "Home") {
 			router.navigate("/")
-			return
-		}
-		// If Contact was clicked, show the pane instead of navigating
-		if (labelName === "Contact") {
-			if (Contact.showContactLabelCentered) Contact.showContactLabelCentered()
 			return
 		}
 
@@ -616,8 +488,6 @@ inputManager.addClickHandler((raycaster) => {
 		) {
 			return
 		}
-		// Clicking the pyramid shows the contact info
-		if (Contact.showContactLabelCentered) Contact.showContactLabelCentered()
 		return
 	}
 

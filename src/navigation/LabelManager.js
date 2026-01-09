@@ -34,12 +34,6 @@ const labelConfigs = {
 		rotation: { x: 0, y: 0, z: 0 },
 		size: [3.0, 0.75],
 	},
-	Contact: {
-		text: "Contact",
-		position: { x: 0, y: -1.8, z: 0.8 }, // Below pyramid (hidden initially)
-		rotation: { x: -0.3, y: 0, z: 0 },
-		size: [3.0, 0.75],
-	},
 }
 
 export class LabelManager {
@@ -101,10 +95,6 @@ export class LabelManager {
 			this.labels.Home.visible = false
 			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = false
 		}
-		if (this.labels.Contact) {
-			this.labels.Contact.visible = false
-			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = false
-		}
 
 		// Initialize nav layout
 		this.updateNavLayout()
@@ -119,7 +109,7 @@ export class LabelManager {
 		// Fallback if screenToWorld fails (e.g. camera not ready)
 		if (!topLeft) return
 
-		const keys = ["Home", "Contact", "About", "Blog", "Portfolio"]
+		const keys = ["Home", "About", "Blog", "Portfolio"]
 
 		// Calculate right edge, accounting for ORC demo sidebar
 		const rightMarginPx = OrcDemoManager.isActive ? 350 : 50
@@ -160,8 +150,6 @@ export class LabelManager {
 		// Update pyramid X positions to match label centers exactly
 		if (flattenedLabelPositions.Home)
 			pyramidXPositions.home = flattenedLabelPositions.Home.x
-		if (flattenedLabelPositions.Contact)
-			pyramidXPositions.contact = flattenedLabelPositions.Contact.x
 		if (flattenedLabelPositions.About)
 			pyramidXPositions.about = flattenedLabelPositions.About.x
 		if (flattenedLabelPositions.About)
@@ -212,20 +200,12 @@ export class LabelManager {
 			this.labels.Home.visible = true
 			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = true
 		}
-		if (this.labels.Contact) {
-			this.labels.Contact.visible = true
-			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = true
-		}
 	}
 
 	hideHomeLabel() {
 		if (this.labels.Home) {
 			this.labels.Home.visible = false
 			if (this.hoverTargets.Home) this.hoverTargets.Home.visible = false
-		}
-		if (this.labels.Contact) {
-			this.labels.Contact.visible = false
-			if (this.hoverTargets.Contact) this.hoverTargets.Contact.visible = false
 		}
 	}
 
