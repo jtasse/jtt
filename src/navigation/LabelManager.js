@@ -1,12 +1,13 @@
 import * as THREE from "three"
 import { makeLabelPlane } from "../planes.js"
-import { screenToWorld } from "../core/SceneManager.js"
+import { screenToWorld, camera } from "../core/SceneManager.js"
 import {
 	flattenedLabelPositions,
 	flattenedMenuState,
 	pyramidXPositions,
 } from "../pyramid/state.js"
 import { OrcDemoManager } from "../content/orc-demo/OrcDemoManager.js"
+import { initialCameraState } from "../pyramid/state.js"
 
 // Label configurations with positions on pyramid faces
 const labelConfigs = {
@@ -215,6 +216,56 @@ export class LabelManager {
 		}
 	}
 
+	updateHomeLabel() {
+		const homeLabel = this.labels.Home
+		if (!homeLabel) return
+
+		const isPyramidAtTop = this.pyramidGroup.position.y > 1.0
+		const dist = camera.position.distanceTo(initialCameraState.position)
+		const isUserMoved = dist > 0.1
+
+		if (isPyramidAtTop) {
+			// Scenario: Pyramid at Top (Nav Mode)
+			// Home label visible on left side of nav
+			homeLabel.visible = true
+			if (homeLabel.material) homeLabel.material.opacity = 1
+
+			// Ensure it's in scene to avoid pyramid transforms if needed,
+			// though usually nav mode handles positions via updateNavLayout/resize.
+			// We force rotation to face camera.
+			homeLabel.quaternion.copy(camera.quaternion)
+
+			// Ensure position is correct (in case it was moved by the other logic block)
+			const navPos = this.getNavPosition("Home")
+			if (navPos) {
+				homeLabel.position.copy(navPos)
+			}
+		} else {
+			// Scenario: Pyramid Centered
+			if (isUserMoved) {
+				// User moved scene: Show Home label above pyramid
+				homeLabel.visible = true
+				if (homeLabel.material) homeLabel.material.opacity = 1
+
+				// Move to scene to float independently of pyramid rotation
+				if (homeLabel.parent !== this.scene) {
+					this.scene.add(homeLabel)
+				}
+
+				// Position above pyramid apex
+				homeLabel.position.copy(this.pyramidGroup.position)
+				homeLabel.position.y += 1.8
+
+				// Always face user
+				homeLabel.quaternion.copy(camera.quaternion)
+				homeLabel.scale.set(1, 1, 1)
+			} else {
+				// User has NOT moved scene: Hide Home label
+				homeLabel.visible = false
+			}
+		}
+	}
+
 	// Synchronize hover targets with their labels (called from animate loop)
 	// Hover targets are in scene space, labels may be in pyramidGroup or scene
 	syncHoverTargets() {
@@ -251,5 +302,7 @@ export class LabelManager {
 				hover.updateMatrixWorld()
 			}
 		}
+
+		this.updateHomeLabel()
 	}
 }

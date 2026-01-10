@@ -191,25 +191,13 @@ DOM overlays now used for content instead of canvas textures.
     - ...face the user
   - hovering over the contact label should show the contact pane
 
-- Home page:
-
-  - Home label:
-    - when the window is not full screen, clicking the home label does not center the pyramid
-    - when the pyramid is centered but the user has moved the scene (e.g. - via click & drag), the 'Home' label should...
-      - ...be visible above the pyramid
-      - ...always face the user
-      - ...not be visible at the top nav
-    - when the pyramid is centered but the user has NOT moved the scene, the 'Home' label should NOT be visible
-    - when the pyramid is at the top of the screen and top nav labels are visible, the Home label should...
-      - ...appear on the left side of the top nav menu (near the top left corner of the screen)
-      - ...always face the user
-
 - orc-demo:
 
   - after decommissioning a satellite, the hand of ORC should only give a thumbs up for 2 seconds before returning to idle mode
 
 - Docs:
   - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)
+  - sidebar should not overlap with contact label
 
 ## Nice to have features
 
