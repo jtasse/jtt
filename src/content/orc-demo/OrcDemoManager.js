@@ -44,6 +44,13 @@ export const OrcDemoManager = {
 		createOrcDemo()
 		showAvailableSatellitesPane()
 
+		// Increase contact pane opacity
+		const contactPane = document.querySelector(".contact-pane, #contact-pane")
+		if (contactPane) {
+			contactPane.style.opacity = "1"
+			contactPane.style.backgroundColor = "black"
+		}
+
 		// Fade in
 		if (orcDemoContainer) {
 			orcDemoContainer.style.opacity = "0"
@@ -69,6 +76,13 @@ export const OrcDemoManager = {
 
 	stop() {
 		if (!this.isActive) return
+
+		// Restore contact pane opacity
+		const contactPane = document.querySelector(".contact-pane, #contact-pane")
+		if (contactPane) {
+			contactPane.style.opacity = ""
+			contactPane.style.backgroundColor = ""
+		}
 
 		// Release hand
 		const hand = releaseOrcHand()
@@ -465,6 +479,10 @@ async function showAvailableSatellitesPane() {
 			const container = docsLinks[0].parentElement
 			if (container) {
 				container.classList.add("docs-container-responsive")
+				// Force 2-column grid layout for all screen sizes
+				container.style.display = "grid"
+				container.style.gridTemplateColumns = "1fr 1fr"
+				container.style.gap = "10px"
 			}
 		}
 
