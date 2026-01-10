@@ -184,16 +184,10 @@ DOM overlays now used for content instead of canvas textures.
 
 ## Known Issues (as of 1/9/26)
 
-- All pages:
-
-  - top nav labels should _always_...
-    - ...be visible UNLESS the pyramid is centered on the home page
-    - ...face the user
-  - hovering over the contact label should show the contact pane
-
 - orc-demo:
 
   - after decommissioning a satellite, the hand of ORC should only give a thumbs up for 2 seconds before returning to idle mode
+  - going from orc-demo to the blog or other pages is bugged--the labels don't fill the screen and pyramid is off
 
 - Docs:
   - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)

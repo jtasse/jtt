@@ -71,8 +71,8 @@ export class LabelManager {
 
 			// Create larger invisible hover target for better click detection
 			// Added to SCENE directly (not as child of label) - synchronized in animate loop
-			const hoverWidth = cfg.size[0] * 0.8
-			const hoverHeight = cfg.size[1] * 1.0
+			const hoverWidth = cfg.size[0] * 0.75
+			const hoverHeight = cfg.size[1] * 2.5
 			const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 			const hoverMat = new THREE.MeshBasicMaterial({
 				transparent: true,
@@ -81,7 +81,7 @@ export class LabelManager {
 			})
 			const hover = new THREE.Mesh(hoverGeo, hoverMat)
 			// Initial position matches label (will be synced in animate loop)
-			hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0.05, 0.08))
+			hover.position.copy(mesh.position).add(new THREE.Vector3(0, 0, 0.2))
 			hover.rotation.copy(mesh.rotation)
 			hover.userData.labelKey = key
 			hover.name = `${key}_hover`
@@ -113,7 +113,8 @@ export class LabelManager {
 		const keys = ["Home", "About", "Blog", "Portfolio"]
 
 		// Calculate right edge, accounting for ORC demo sidebar
-		const rightMarginPx = OrcDemoManager.isActive ? 350 : 50
+		const isMobile = window.innerWidth <= 768
+		const rightMarginPx = OrcDemoManager.isActive ? (isMobile ? 310 : 350) : 50
 		const rightEdgePixel = window.innerWidth - rightMarginPx
 		const worldRightEdge = screenToWorld(rightEdgePixel, startPixelY, 0)
 		if (!worldRightEdge) return
@@ -158,11 +159,12 @@ export class LabelManager {
 		if (flattenedLabelPositions.Blog)
 			pyramidXPositions.blog = flattenedLabelPositions.Blog.x
 		if (flattenedLabelPositions.Portfolio)
-			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x - 0.08 // Manual offset to center pyramid
+			pyramidXPositions.portfolio =
+				flattenedLabelPositions.Portfolio.x - 0.05 * this.navLabelScale // Manual offset to center pyramid
 
 		// Update flattened pyramid Y position to be just below labels
 		// Use a flatter scaling function: closer at 100% scale (0.35 vs 0.4), further at small scales (0.25 vs 0.2)
-		flattenedMenuState.positionY = topLeft.y - (0.2 * this.navLabelScale + 0.15)
+		flattenedMenuState.positionY = topLeft.y - (0.25 * this.navLabelScale + 0.1)
 
 		// Scale pyramid with labels to maintain proportions
 		flattenedMenuState.scale = 0.4 * this.navLabelScale
@@ -283,7 +285,7 @@ export class LabelManager {
 				// Position hover target in front of label (0.08 units on label's Z-axis in world space)
 				const worldQuaternion = new THREE.Quaternion()
 				label.getWorldQuaternion(worldQuaternion)
-				const offset = new THREE.Vector3(0, 0, 0.08)
+				const offset = new THREE.Vector3(0, 0, 0.2)
 				offset.applyQuaternion(worldQuaternion)
 				hover.position.copy(labelWorldPos).add(offset)
 

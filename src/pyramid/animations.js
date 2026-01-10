@@ -18,9 +18,6 @@ import {
 	hideAllPlanes,
 } from "../content/ContentManager.js"
 
-// Nav label scale (matches pyramid.js)
-const navLabelScale = 1.0
-
 export function animatePyramid(labelManager, down = true, section = null) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
@@ -108,11 +105,12 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			}
 
 			const flatPos = labelManager.getNavPosition(key)
+			const currentNavScale = labelManager.getNavLabelScale()
 			// Target: Flat position, Face camera (identity rotation), Scale based on navLabelScale
 			labelTargetStates[key] = {
 				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
 				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
-				scale: new THREE.Vector3(navLabelScale, navLabelScale, 1),
+				scale: new THREE.Vector3(currentNavScale, currentNavScale, 1),
 			}
 		} else {
 			// Existing logic for !down or fixed labels (local space)
@@ -204,9 +202,10 @@ export function animatePyramid(labelManager, down = true, section = null) {
 					// Just ensure exact final values.
 					const flatPos = labelManager.getNavPosition(key)
 					if (flatPos) {
+						const currentNavScale = labelManager.getNavLabelScale()
 						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
 						labelMesh.rotation.set(0, 0, 0)
-						labelMesh.scale.set(1, 1, 1)
+						labelMesh.scale.set(currentNavScale, currentNavScale, 1)
 						// Mark as fixed nav so it never moves again
 						labelMesh.userData.fixedNav = true
 					}

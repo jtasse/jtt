@@ -178,7 +178,7 @@ function morphToOrcScene() {
 			}
 			labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
 			labelMesh.rotation.set(0, 0, 0)
-			labelMesh.scale.set(1, 1, 1)
+			labelMesh.scale.set(navLabelScale, navLabelScale, 1)
 			labelMesh.visible = true // Make visible (including Home label)
 			labelMesh.userData.fixedNav = true
 			if (labelMesh.material) {

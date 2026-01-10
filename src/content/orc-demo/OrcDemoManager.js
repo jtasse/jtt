@@ -459,6 +459,15 @@ async function showAvailableSatellitesPane() {
 
 		if (!orcInfoPane) return
 
+		// Add responsive class to docs container for mobile layout
+		const docsLinks = orcInfoPane.querySelectorAll(".docs-link")
+		if (docsLinks.length > 0) {
+			const container = docsLinks[0].parentElement
+			if (container) {
+				container.classList.add("docs-container-responsive")
+			}
+		}
+
 		const list = orcInfoPane.querySelector("#satellite-list")
 		if (list) {
 			const sortedSatellites = [...satellites].sort(

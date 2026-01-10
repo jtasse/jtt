@@ -190,4 +190,17 @@
 		font-size: 0.85rem;
 		padding: 6px 12px;
 	}
+
+	/* Fix for ORC demo docs overlap on mobile (injected via OrcDemoManager) */
+	.docs-container-responsive {
+		display: flex;
+		flex-direction: row !important;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.docs-container-responsive .docs-link {
+		width: calc(50% - 6px);
+		box-sizing: border-box;
+		margin: 0;
+	}
 }
