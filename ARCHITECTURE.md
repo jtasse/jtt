@@ -193,13 +193,8 @@ DOM overlays now used for content instead of canvas textures.
 
 - Home page:
 
-  - Contact pane:
-
-    - not showing when hovering over top nav 'contact' label
-    - present when hovering over centered triangle as a transparent rectangle, but no text is visible
-    - 'Contact' header appears below centered contact pane (it should be at the top fo the pane)
-
   - Home label:
+    - when the window is not full screen, clicking the home label does not center the pyramid
     - when the pyramid is centered but the user has moved the scene (e.g. - via click & drag), the 'Home' label should...
       - ...be visible above the pyramid
       - ...always face the user
