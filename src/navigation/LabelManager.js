@@ -157,7 +157,7 @@ export class LabelManager {
 		if (flattenedLabelPositions.Blog)
 			pyramidXPositions.blog = flattenedLabelPositions.Blog.x
 		if (flattenedLabelPositions.Portfolio)
-			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
+			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x - 0.08 // Manual offset to center pyramid
 
 		// Update flattened pyramid Y position to be just below labels
 		flattenedMenuState.positionY = topLeft.y - 0.35 * this.navLabelScale
