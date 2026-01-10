@@ -18,7 +18,7 @@ export const initialPyramidState = {
 
 export const flattenedMenuState = {
 	// Position pyramid BELOW the labels so its base acts as an underline.
-	positionY: 2.2,
+	positionY: 2.0,
 	scale: 0.4,
 	scaleY: 0.08, // Very flat - squished vertically for subtle underline effect
 	scaleZ: 0.1, // Short height - squished Z for flatter triangle shape on screen
@@ -27,6 +27,7 @@ export const flattenedMenuState = {
 
 export const pyramidXPositions = {
 	home: -5.0,
+	contact: -3.0,
 	about: -1.0,
 	bio: -1.0, // Alias for about
 	blog: 1.0,
@@ -37,6 +38,7 @@ export const pyramidXPositions = {
 // These are WORLD positions - values that stay within camera view.
 export const flattenedLabelPositions = {
 	Home: { x: -5.0, y: 2.5, z: 0 },
+	Contact: { x: -3.0, y: 2.5, z: 0 },
 	About: { x: -1.0, y: 2.5, z: 0 },
 	Blog: { x: 1.0, y: 2.5, z: 0 },
 	Portfolio: { x: 3.0, y: 2.5, z: 0 },

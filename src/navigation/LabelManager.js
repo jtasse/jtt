@@ -160,7 +160,7 @@ export class LabelManager {
 			pyramidXPositions.portfolio = flattenedLabelPositions.Portfolio.x
 
 		// Update flattened pyramid Y position to be just below labels
-		flattenedMenuState.positionY = topLeft.y - 0.5 * this.navLabelScale
+		flattenedMenuState.positionY = topLeft.y - 0.35 * this.navLabelScale
 	}
 
 	handleLayoutChange() {

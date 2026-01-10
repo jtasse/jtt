@@ -402,7 +402,7 @@ window.addEventListener("resize", () => {
 			}
 		}
 		// Update pyramid position to match new layout
-		pyramidGroup.position.y = flattenedMenuState.positionY - 50
+		pyramidGroup.position.y = flattenedMenuState.positionY
 		if (
 			getCurrentSection() &&
 			pyramidXPositions[getCurrentSection()] !== undefined

@@ -216,6 +216,12 @@ DOM overlays now used for content instead of canvas textures.
 - Docs:
   - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)
 
+## Nice to have features
+
+- Hand of ORC
+  - When the user clicks "decommission satellite", the hand's thruster should change from blue to red
+  - As the hand is giving a thumbs up after a successful decommission, the thruster color should switch back to blue
+
 ## Next Steps (Priority Order)
 
 ### Immediate Cleanup
