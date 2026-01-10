@@ -18,7 +18,7 @@ export const initialPyramidState = {
 
 export const flattenedMenuState = {
 	// Position pyramid BELOW the labels so its base acts as an underline.
-	positionY: 2.0,
+	positionY: 2.2,
 	scale: 0.4,
 	scaleY: 0.08, // Very flat - squished vertically for subtle underline effect
 	scaleZ: 0.1, // Short height - squished Z for flatter triangle shape on screen
