@@ -1,26 +1,9 @@
-/* Styles for the Home content pane (moved from root `home.css`) */
+/* Styles for the Home content pane
+   Note: Position/size handled by overlay.css for full-width scrollbar at screen edge */
 #content {
-	position: fixed;
-	/* place content a bit lower so there's breathing room above and below */
-	top: 14vh;
-	left: 12%;
-	/* Remove centering transform to align left with nav */
-	transform: none;
-	width: 84%;
-	max-width: 1600px;
-	/* reserve vertical space so content never overlaps the pyramid/home area */
-	/* increase reserved space so content ends higher (more breathing room) */
-	/* Increased subtraction so content bottom sits higher on screen */
-	max-height: calc(100vh - 180px);
-	overflow-y: auto;
 	display: none;
 	color: white;
-	padding: 1.25rem 1.5rem;
-	background: rgba(0, 0, 0, 0.55);
-	border-radius: 12px;
-	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-	z-index: 9999;
-	font-size: 18px; /* increase base font size for readability */
+	font-size: 18px;
 	line-height: 1.6;
 }
 

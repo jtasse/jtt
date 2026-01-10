@@ -1,11 +1,17 @@
 #content {
 	position: fixed;
-	top: 35vh;
-	left: 50%;
-	transform: translateX(-50%);
-	width: min(800px, 90vw);
-	max-height: 70vh;
+	top: 15vh;
+	left: 0;
+	right: 0px;
+	width: auto;
+	height: 85vh;
+	margin: 0;
+	padding-right: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	overflow-y: auto;
+	overflow-x: hidden;
 	z-index: 10;
 	opacity: 0;
 	transition: opacity 0.3s ease;
@@ -17,12 +23,37 @@
 	pointer-events: auto; /* Capture clicks when visible */
 }
 
+/* Constrain content width within the full-width overlay */
+#content > * {
+	width: min(800px, 90%);
+	padding-bottom: 100px; /* Ensure content clears bottom elements */
+}
+
+/* Custom Scrollbar (Blue Theme) */
+#content::-webkit-scrollbar {
+	width: 10px;
+}
+
+#content::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.3);
+}
+
+#content::-webkit-scrollbar-thumb {
+	background: rgba(0, 255, 255, 0.3);
+	border-radius: 5px;
+	border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+#content::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 255, 255, 0.8);
+}
+
 /* Responsive adjustments */
 @media (max-aspect-ratio: 1/1) {
 	/* Portrait */
 	#content.show {
-		top: 30vh;
-		width: 95vw;
+		top: 20vh;
+		height: 80vh;
 	}
 }
 
