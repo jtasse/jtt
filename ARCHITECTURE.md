@@ -182,7 +182,11 @@ DOM overlays now used for content instead of canvas textures.
 
 ---
 
-## Known Issues (as of 1/9/26)
+## Known Issues (as of 1/10/26)
+
+- navigation:
+
+  - pyramid under nav labels is still sometimes misaligned
 
 - orc-demo:
 
@@ -191,7 +195,7 @@ DOM overlays now used for content instead of canvas textures.
 
 - Docs:
   - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)
-  - sidebar should not overlap with contact label
+  - Portfolio doc viewer places content on the left side of the screen. It should be centered.
 
 ## Nice to have features
 
@@ -201,14 +205,9 @@ DOM overlays now used for content instead of canvas textures.
 
 ## Next Steps (Priority Order)
 
-### Immediate Cleanup
-
-1. Delete duplicate files listed above
-
 ### Testing
 
-2. Add unit tests for `LayoutManager`
-3. Add unit tests for `HandStateMachine`
+TBD
 
 ## Target File Structure
 
