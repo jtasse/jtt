@@ -6,6 +6,7 @@ temp/
 .env
 .eslintcache
 coverage/
+.astro/
 
 # Editor and Local Settings
 .vscode/

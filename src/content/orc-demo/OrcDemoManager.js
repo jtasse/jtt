@@ -547,14 +547,13 @@ async function showAvailableSatellitesPane() {
 
 					let fetchUrl = ""
 					if (link.id === "user-guide-link") {
-						fetchUrl = "/src/content/portfolio/docs/orc/user-guide.html"
+						fetchUrl = "/portfolio/docs/orc/user-guide/"
 					} else if (link.id === "decommission-tutorial-link") {
-						fetchUrl =
-							"/src/content/portfolio/docs/orc/decommission-tutorial.html"
+						fetchUrl = "/portfolio/docs/orc/getting-started-tutorial/"
 					} else if (link.id === "api-docs-link") {
-						fetchUrl = "/src/content/portfolio/docs/orc/api-docs.html"
+						fetchUrl = "/portfolio/docs/orc/api-reference/"
 					} else if (link.id === "whitepaper-link") {
-						fetchUrl = "/src/content/portfolio/docs/orc/whitepaper.html"
+						fetchUrl = "/portfolio/docs/orc/whitepaper/"
 					} else {
 						return
 					}
@@ -565,7 +564,9 @@ async function showAvailableSatellitesPane() {
 
 						const parser = new DOMParser()
 						const doc = parser.parseFromString(html, "text/html")
-						const mainContent = doc.querySelector(".main-content")
+						// Try to find main content (Starlight uses <main>, fallback to .main-content)
+						const mainContent =
+							doc.querySelector("main") || doc.querySelector(".main-content")
 
 						if (mainContent) {
 							contentContainer.innerHTML = mainContent.innerHTML
