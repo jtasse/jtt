@@ -64,7 +64,9 @@ function setupEventListeners() {
 	items.forEach((item) => {
 		item.addEventListener("click", (e) => {
 			e.stopPropagation() // Don't trigger header toggle
-			copyToClipboard(item)
+			if (item.dataset.value) {
+				copyToClipboard(item)
+			}
 		})
 	})
 }
