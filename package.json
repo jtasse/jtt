@@ -1,13 +1,20 @@
 {
   "name": "jtt",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
     "dev": "vite",
-    "build": "vite build",
+    "dev:docs": "npm run dev -w @jtt/docs",
+    "build": "npm run build:main && npm run build:docs && npm run build:combine",
+    "build:main": "vite build",
+    "build:docs": "npm run build -w @jtt/docs",
+    "build:combine": "node scripts/build-combine.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

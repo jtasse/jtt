@@ -9,8 +9,11 @@ A 3D interactive personal website built with Three.js featuring a rotating pyram
 ## Commands
 
 ```bash
-npm run dev    # Start Vite dev server (hot reload)
-npm run build  # Production build to dist/
+npm run dev        # Start Vite dev server (hot reload)
+npm run dev:docs   # Start Astro Starlight docs dev server
+npm run build      # Build both main site and docs
+npm run build:main # Build main site only
+npm run build:docs # Build docs only
 ```
 
 ## Architecture
@@ -215,3 +218,107 @@ hand.scale.setScalar(7);
 if (z < CONFIG.hand.minFrontZ) { ... }
 hand.scale.setScalar(CONFIG.hand.scaleFactor);
 ```
+
+---
+
+## Documentation System (Astro Starlight)
+
+The project uses **Astro Starlight** for technical documentation, organized in a monorepo structure with npm workspaces.
+
+### Structure
+
+```
+packages/docs/
+├── astro.config.mjs          # Starlight configuration
+├── src/
+│   ├── content/docs/         # Markdown/MDX content
+│   │   ├── index.mdx         # Docs landing page
+│   │   └── orc/              # ORC documentation
+│   │       ├── index.mdx     # ORC overview
+│   │       ├── tutorial.md   # Diataxis: Tutorial
+│   │       ├── user-guide.md # Diataxis: How-To
+│   │       ├── api-reference.md # Diataxis: Reference
+│   │       └── whitepaper.md # Diataxis: Explanation
+│   └── styles/
+│       └── custom-theme.css  # Theme customization
+```
+
+### Adding New Documentation
+
+1. **Create a Markdown file** in `packages/docs/src/content/docs/`
+2. **Add frontmatter** with title, description, and `head: []`:
+   ```markdown
+   ---
+   title: My New Page
+   description: A brief description
+   head: []
+   ---
+   ```
+   **Note:** The `head: []` is required due to a bug in Starlight v0.32.6 where undefined head config causes render errors.
+3. **Update the sidebar** in `packages/docs/astro.config.mjs`
+4. **Run locally** with `npm run dev:docs` to preview
+
+### Adding a New App Section
+
+To document a new application (e.g., "my-app"):
+
+1. Create folder: `packages/docs/src/content/docs/my-app/`
+2. Add an `index.mdx` overview page
+3. Add doc pages following Diataxis categories
+4. Update sidebar in `astro.config.mjs`:
+   ```javascript
+   sidebar: [
+     { label: 'ORC', items: [...] },
+     {
+       label: 'My App',
+       items: [
+         { label: 'Overview', slug: 'my-app' },
+         // ... more items
+       ],
+     },
+   ],
+   ```
+
+### Diataxis Categories
+
+Follow the [Diataxis framework](https://diataxis.fr/) for documentation:
+
+| Category | File Pattern | Purpose |
+|----------|--------------|---------|
+| Tutorial | `tutorial-*.md` | Learning-oriented, step-by-step |
+| How-To | `*-guide.md` | Task-oriented, practical |
+| Reference | `*-reference.md` | Information-oriented, specifications |
+| Explanation | `whitepaper.md`, `architecture.md` | Understanding-oriented, conceptual |
+
+### Starlight Components
+
+Use Starlight's built-in components for rich content:
+
+```mdx
+import { Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+
+<Steps>
+1. First step
+2. Second step
+</Steps>
+
+:::note[Title]
+A note callout
+:::
+
+:::tip
+A tip callout
+:::
+
+:::caution
+A warning callout
+:::
+```
+
+### Build Output
+
+The combined build places docs at `dist/portfolio/docs/`:
+
+- `jamestasse.tech/portfolio/docs/` - Docs landing
+- `jamestasse.tech/portfolio/docs/orc/` - ORC section
+- `jamestasse.tech/portfolio/docs/orc/tutorial/` - Individual pages

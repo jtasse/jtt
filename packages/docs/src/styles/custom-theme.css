@@ -1,0 +1,69 @@
+/* Custom Starlight theme to match JTT site aesthetic */
+
+:root {
+	/* Accent colors - cyan to match site */
+	--sl-color-accent-low: #002040;
+	--sl-color-accent: #00aaff;
+	--sl-color-accent-high: #00ffff;
+	--sl-color-text-accent: #00ffff;
+
+	/* Dark theme backgrounds */
+	--sl-color-bg: #0a0a0f;
+	--sl-color-bg-nav: #0f0f18;
+	--sl-color-bg-sidebar: #0a0a12;
+
+	/* White text */
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e0e0e0;
+	--sl-color-gray-2: #c0c0c0;
+	--sl-color-gray-3: #808080;
+	--sl-color-gray-4: #404040;
+	--sl-color-gray-5: #202020;
+	--sl-color-gray-6: #101010;
+	--sl-color-black: #000000;
+
+	/* Borders */
+	--sl-color-hairline: rgba(255, 255, 255, 0.1);
+	--sl-color-hairline-light: rgba(255, 255, 255, 0.05);
+}
+
+/* Code blocks styling */
+:root {
+	--sl-color-bg-inline-code: rgba(0, 255, 255, 0.1);
+}
+
+/* Links */
+a {
+	color: var(--sl-color-text-accent);
+}
+
+a:hover {
+	color: #ffffff;
+}
+
+/* Sidebar active item */
+[data-current="true"] {
+	background: rgba(0, 255, 255, 0.1);
+	border-left: 2px solid var(--sl-color-accent-high);
+}
+
+/* Callouts/Admonitions */
+.starlight-aside--note {
+	border-color: var(--sl-color-accent);
+	background: rgba(0, 170, 255, 0.1);
+}
+
+.starlight-aside--tip {
+	border-color: #00ff88;
+	background: rgba(0, 255, 136, 0.1);
+}
+
+.starlight-aside--caution {
+	border-color: #ffaa00;
+	background: rgba(255, 170, 0, 0.1);
+}
+
+.starlight-aside--danger {
+	border-color: #ff4444;
+	background: rgba(255, 68, 68, 0.1);
+}
