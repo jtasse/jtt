@@ -4,13 +4,9 @@ description: Learn how to safely remove a satellite from orbit and how to abort 
 head: []
 ---
 
-import { Steps } from '@astrojs/starlight/components';
-
 :::note[Learning Goal]
 By the end of this tutorial, you will be able to select a satellite, initiate a decommission sequence, and reset the operation.
 :::
-
-<Steps>
 
 1. **Select a Target Satellite**
 
@@ -18,7 +14,7 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Click on any satellite name (e.g., `Sat-Alpha` or `Sat-Beta`).
 
-   *Observe:* The camera automatically moves to focus on the selected satellite, and its details appear in the **Satellite Info** pane.
+   _Observe:_ The camera automatically moves to focus on the selected satellite, and its details appear in the **Satellite Info** pane.
 
 2. **Initiate Decommission**
 
@@ -26,7 +22,7 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Click the **Decommission Satellite** button.
 
-   *Observe:* The robotic hand activates and begins moving toward the target satellite to capture it.
+   _Observe:_ The robotic hand activates and begins moving toward the target satellite to capture it.
 
 3. **Cancel the Operation**
 
@@ -36,9 +32,7 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Click **Reset Scene**.
 
-   *Result:* The robotic hand retracts, the camera resets, and the satellite returns to its operational state.
-
-</Steps>
+   _Result:_ The robotic hand retracts, the camera resets, and the satellite returns to its operational state.
 
 ## Conclusion
 

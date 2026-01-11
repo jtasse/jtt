@@ -4,8 +4,6 @@ description: Complete guide to the Orbital Refuse Collector interface and featur
 head: []
 ---
 
-import { Steps } from '@astrojs/starlight/components';
-
 ## Overview
 
 The Orbital Refuse Collector (ORC) demo showcases a fictional 3D satellite management interface. You can select satellites orbiting Earth, view their telemetry data, and simulate decommissioning procedures.
@@ -46,8 +44,6 @@ Shows details about the selected satellite:
 
 Simulates the satellite decommissioning process:
 
-<Steps>
-
 1. **Select Target**
 
    Click a satellite from the list to select it as the decommission target.
@@ -59,8 +55,6 @@ Simulates the satellite decommissioning process:
 3. **Watch the Sequence**
 
    The robotic hand will travel to the satellite and perform the capture maneuver.
-
-</Steps>
 
 :::tip[Pro Tip]
 The camera automatically follows the hand during decommissioning. After completion, you can select another satellite to continue.
