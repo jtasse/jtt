@@ -331,3 +331,9 @@
 		font-size: 0.85rem;
 	}
 }
+
+.temp-portfolio-link {
+	display: block;
+	font-size: x-large;
+	margin-bottom: 10px;
+}
