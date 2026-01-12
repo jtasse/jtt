@@ -4,6 +4,9 @@ import starlight from "@astrojs/starlight"
 export default defineConfig({
 	site: "https://jamestasse.tech",
 	base: "/portfolio/docs",
+	devToolbar: {
+		enabled: false,
+	},
 	integrations: [
 		starlight({
 			title: "Portfolio Documentation",

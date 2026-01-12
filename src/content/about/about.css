@@ -2,7 +2,7 @@
 
 /* About content wrapper - centers content within the #content container */
 .about-content {
-	max-width: 720px;
+	max-width: 900px;
 	margin: 0 auto;
 	padding: 1rem;
 }
@@ -18,7 +18,7 @@
 
 /* About paragraphs */
 .about-content p {
-	font-size: clamp(1rem, 2.5vw, 1.125rem);
+	font-size: clamp(1.8rem, 5vw, 1.125rem);
 	line-height: 1.7;
 	margin-bottom: 1.25rem;
 	color: #e0e0e0;

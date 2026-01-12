@@ -40,6 +40,24 @@ export default defineConfig(({ mode }) => {
 					changeOrigin: true,
 					onError: handleProxyError,
 				},
+				// Proxy Astro/Starlight virtual modules
+				"^/@id/.*(astro|starlight).*": {
+					target: "http://127.0.0.1:4321",
+					changeOrigin: true,
+					onError: handleProxyError,
+				},
+				// Proxy Astro-specific dependencies in node_modules/.vite
+				"^/node_modules/\\.vite/deps/astro_.*": {
+					target: "http://127.0.0.1:4321",
+					changeOrigin: true,
+					onError: handleProxyError,
+				},
+				// Proxy docs styles (main app doesn't use src/styles)
+				"^/src/styles/.*": {
+					target: "http://127.0.0.1:4321",
+					changeOrigin: true,
+					onError: handleProxyError,
+				},
 			},
 		},
 		resolve: {
