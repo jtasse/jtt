@@ -575,7 +575,7 @@ async function showAvailableSatellitesPane() {
 					if (link.id === "user-guide-link") {
 						fetchUrl = "/portfolio/docs/orc/user-guide/"
 					} else if (link.id === "decommission-tutorial-link") {
-						fetchUrl = "/portfolio/docs/orc/getting-started-tutorial/"
+						fetchUrl = "/portfolio/docs/orc/tutorial/"
 					} else if (link.id === "api-docs-link") {
 						fetchUrl = "/portfolio/docs/orc/api-reference/"
 					} else if (link.id === "whitepaper-link") {

@@ -21,7 +21,7 @@ export default defineConfig({
 						{ label: "Overview", slug: "orc" },
 						{
 							label: "Getting Started Tutorial",
-							slug: "orc/getting-started-tutorial",
+							slug: "orc/tutorial",
 						},
 						{ label: "User Guide", slug: "orc/user-guide" },
 						{ label: "API Reference", slug: "orc/api-reference" },
