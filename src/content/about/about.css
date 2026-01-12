@@ -4,16 +4,21 @@
 .about-content {
 	max-width: 1300px;
 	margin: 0 auto;
-	padding: 1rem;
+	padding: 2rem;
+	background: rgba(0, 0, 0, 0.85);
+	border-radius: 12px;
 }
 
 /* About heading */
 .about-content h1 {
-	text-align: center;
+	text-align: left;
 	color: #00ffff;
 	font-size: clamp(1.5rem, 4vw, 2.5rem);
+	color: #00aaff;
+	font-size: clamp(1.5rem, 4vw, 2.2rem);
 	margin-bottom: 1.5rem;
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+	text-shadow: 0 0 5px rgba(0, 170, 255, 0.3);
 }
 
 /* About paragraphs */
@@ -28,10 +33,20 @@
 	margin-bottom: 0;
 }
 
+/* About subheadings */
+.about-content h2 {
+	color: #04dddd;
+	font-size: 1.5rem;
+	margin-top: 2.5rem;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+	padding-bottom: 0.5rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
 	.about-content {
-		padding: 0.5rem;
+		padding: 1.5rem;
 	}
 }
 
@@ -55,4 +70,40 @@
 	.about-content p {
 		font-size: 1.25rem;
 	}
+}
+
+/* Tech stack table */
+.tech-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.5rem 0;
+	font-size: 1.1rem;
+	color: #e0e0e0;
+}
+
+.tech-table th,
+.tech-table td {
+	text-align: left;
+	padding: 12px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tech-table th {
+	color: #04dddd;
+	font-weight: bold;
+	border-bottom: 2px solid #00aaff;
+}
+
+.tech-table tr:hover {
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.tech-table a {
+	color: #00aaff;
+	text-decoration: none;
+}
+
+.tech-table a:hover {
+	color: #04dddd;
+	text-decoration: underline;
 }

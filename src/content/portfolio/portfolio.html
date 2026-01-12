@@ -100,10 +100,20 @@
 
 			const wrapper = document.createElement("div")
 			wrapper.className = "embed-wrapper"
-			wrapper.style.width = "100%"
-			wrapper.style.maxHeight = "80vh"
-			wrapper.style.overflow = "auto"
-			wrapper.appendChild(iframe)
+
+			// Create controls
+			const controls = document.createElement("div")
+			controls.className = "embed-controls"
+			// Note: This is a simplified version for the inline script fallback.
+			// The main logic is handled in ContentManager.js which has the full implementation.
+			// We'll just append the iframe here for the basic fallback.
+
+			const contentContainer = document.createElement("div")
+			contentContainer.className = "embed-content-container"
+			contentContainer.appendChild(iframe)
+
+			wrapper.appendChild(controls)
+			wrapper.appendChild(contentContainer)
 
 			content.appendChild(wrapper)
 			content.style.display = "block"
