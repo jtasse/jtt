@@ -19,6 +19,19 @@ export default defineConfig(({ mode }) => {
 	}
 
 	return {
+		plugins: [
+			{
+				name: "watch-content",
+				handleHotUpdate({ file, server }) {
+					if (
+						file.replace(/\\/g, "/").includes("/src/content/") &&
+						file.endsWith(".html")
+					) {
+						server.ws.send({ type: "full-reload", path: "*" })
+					}
+				},
+			},
+		],
 		server: {
 			port: 5173,
 			proxy: {

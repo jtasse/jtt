@@ -292,6 +292,14 @@
 .portfolio-content {
 	max-width: 1300px;
 	margin: 0 auto;
+	box-sizing: border-box;
+}
+
+/* Ensure content doesn't overlap with contact pane on right side */
+@media (min-width: 769px) {
+	.portfolio-content {
+		padding-right: 340px;
+	}
 }
 
 /* Mobile adjustments for showcase */
