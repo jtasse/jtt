@@ -63,7 +63,6 @@
 					id="decommission-tutorial-link"
 					href="/portfolio/docs/orc/getting-started-tutorial/"
 					class="docs-link"
-					target="_blank"
 				>
 					<span class="docs-action">Learn</span
 					><span class="docs-subject">: Getting Started Tutorial</span>
@@ -72,7 +71,6 @@
 					id="user-guide-link"
 					href="/portfolio/docs/orc/user-guide/"
 					class="docs-link"
-					target="_blank"
 				>
 					<span class="docs-action">Do</span
 					><span class="docs-subject">: User Guide</span>
@@ -81,7 +79,6 @@
 					id="whitepaper-link"
 					href="/portfolio/docs/orc/whitepaper/"
 					class="docs-link"
-					target="_blank"
 				>
 					<span class="docs-action">Understand</span
 					><span class="docs-subject">: Whitepaper</span>
@@ -90,7 +87,6 @@
 					id="api-docs-link"
 					href="/portfolio/docs/orc/api-reference/"
 					class="docs-link"
-					target="_blank"
 				>
 					<span class="docs-action">Reference</span
 					><span class="docs-subject">: API Docs</span>
@@ -100,16 +96,47 @@
 	</div>
 </div>
 
-<!-- User Guide Overlay -->
-<div id="user-guide-overlay" class="user-guide-overlay">
-	<button
-		id="user-guide-close"
-		class="user-guide-close"
-		aria-label="Close user guide"
-	>
-		&times;
-	</button>
-	<div id="user-guide-content" class="user-guide-content">
-		<!-- User guide content loaded here -->
+<!-- Doc Viewer (Iframe) -->
+<div id="orc-doc-viewer" class="orc-doc-viewer">
+	<div class="orc-doc-controls">
+		<a
+			id="orc-doc-new-tab"
+			href="#"
+			target="_blank"
+			class="orc-doc-control-btn"
+			title="Open in new tab"
+		>
+			<span id="orc-doc-new-tab-text">Open in new tab</span>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				height="24px"
+				viewBox="0 -960 960 960"
+				width="24px"
+				fill="#FFFFFF"
+			>
+				<path
+					d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+				/>
+			</svg>
+		</a>
+		<button
+			id="orc-doc-close"
+			type="button"
+			class="orc-doc-control-btn"
+			title="Close"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				height="24px"
+				viewBox="0 -960 960 960"
+				width="24px"
+				fill="#FFFFFF"
+			>
+				<path
+					d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"
+				/>
+			</svg>
+		</button>
 	</div>
+	<iframe id="orc-doc-iframe" class="orc-doc-iframe"></iframe>
 </div>

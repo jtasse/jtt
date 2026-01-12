@@ -63,6 +63,11 @@ let currentContentVisible = null // Track which content plane is showing (about/
 
 // Hover detection
 inputManager.addHoverHandler((raycaster) => {
+	if (document.body.classList.contains("orc-doc-active")) {
+		inputManager.setCursor("default")
+		return
+	}
+
 	// Check for portfolio item clickables FIRST (highest priority)
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) {
@@ -311,6 +316,8 @@ router.onRouteChange((route) => {
 router.notify()
 
 inputManager.addClickHandler((raycaster) => {
+	if (document.body.classList.contains("orc-doc-active")) return
+
 	// Check if contact label was clicked - only block if a click region was actually hit
 
 	// Track which label is centered

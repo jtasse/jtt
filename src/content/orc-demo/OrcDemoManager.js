@@ -36,6 +36,7 @@ let isCameraTracking = false
 
 export const OrcDemoManager = {
 	isActive: false,
+	escapeListener: null,
 
 	start() {
 		if (this.isActive) return
@@ -84,6 +85,8 @@ export const OrcDemoManager = {
 			contactPane.style.backgroundColor = ""
 		}
 
+		document.body.classList.remove("orc-doc-active")
+
 		// Release hand
 		const hand = releaseOrcHand()
 
@@ -95,10 +98,15 @@ export const OrcDemoManager = {
 			orcInfoPane = null
 		}
 
-		// Remove user guide overlay if it exists
-		const userGuideOverlay = document.getElementById("user-guide-overlay")
-		if (userGuideOverlay) {
-			userGuideOverlay.remove()
+		// Remove doc viewer if it exists
+		const docViewer = document.getElementById("orc-doc-viewer")
+		if (docViewer) {
+			docViewer.remove()
+		}
+
+		if (this.escapeListener) {
+			document.removeEventListener("keydown", this.escapeListener)
+			this.escapeListener = null
 		}
 
 		this.isActive = false
@@ -522,18 +530,36 @@ async function showAvailableSatellitesPane() {
 		updateAvailableSatellitesHighlight()
 		document.body.appendChild(orcInfoPane)
 
-		// Also extract and add the user guide overlay
-		const userGuideOverlay = temp.querySelector("#user-guide-overlay")
-		if (userGuideOverlay) {
-			document.body.appendChild(userGuideOverlay)
+		// Also extract and add the doc viewer
+		const docViewer = temp.querySelector("#orc-doc-viewer")
+		if (docViewer) {
+			document.body.appendChild(docViewer)
 
-			// Set up docs link handlers
-			const closeBtn = userGuideOverlay.querySelector("#user-guide-close")
-			const contentContainer = userGuideOverlay.querySelector(
-				"#user-guide-content"
-			)
+			// Block all interaction with the scene while hovering/clicking the doc viewer
+			// This prevents clicks from passing through to the "Portfolio" label behind it
+			const blockEvent = (e) => e.stopPropagation()
+			const eventsToBlock = [
+				"mousedown",
+				"mouseup",
+				"click",
+				"dblclick",
+				"pointerdown",
+				"pointerup",
+				"pointermove",
+				"wheel",
+				"touchstart",
+				"touchend",
+				"touchmove",
+			]
+			eventsToBlock.forEach((evt) => {
+				docViewer.addEventListener(evt, blockEvent)
+			})
 
-			if (contentContainer) {
+			const iframe = docViewer.querySelector("#orc-doc-iframe")
+			const closeBtn = docViewer.querySelector("#orc-doc-close")
+			const newTabBtn = docViewer.querySelector("#orc-doc-new-tab")
+
+			if (iframe && closeBtn && newTabBtn) {
 				// Use event delegation on the info pane for all docs links
 				orcInfoPane.addEventListener("click", async (e) => {
 					const link = e.target.closest(".docs-link")
@@ -558,53 +584,54 @@ async function showAvailableSatellitesPane() {
 						return
 					}
 
-					try {
-						const response = await fetch(fetchUrl)
-						const html = await response.text()
-
-						const parser = new DOMParser()
-						const doc = parser.parseFromString(html, "text/html")
-						// Try to find main content (Starlight uses <main>, fallback to .main-content)
-						const mainContent =
-							doc.querySelector("main") || doc.querySelector(".main-content")
-
-						if (mainContent) {
-							contentContainer.innerHTML = mainContent.innerHTML
-						} else {
-							contentContainer.innerHTML = doc.body.innerHTML
-						}
-
-						userGuideOverlay.classList.add("visible")
-					} catch (err) {
-						console.error("Failed to load doc:", err)
-					}
+					iframe.src = fetchUrl
+					newTabBtn.href = fetchUrl
+					docViewer.classList.add("visible")
+					document.body.classList.add("orc-doc-active")
 				})
-			}
 
-			if (closeBtn) {
-				closeBtn.addEventListener("click", (e) => {
+				const handleClose = (e) => {
 					e.preventDefault()
-					e.stopPropagation()
-					userGuideOverlay.classList.remove("visible")
-				})
+					e.stopImmediatePropagation() // Ensure this stops everything
+					closeDocViewer()
+				}
+
+				closeBtn.addEventListener("click", handleClose)
 			}
 
-			// Close on escape key
-			document.addEventListener("keydown", (e) => {
-				if (
-					e.key === "Escape" &&
-					userGuideOverlay.classList.contains("visible")
-				) {
-					userGuideOverlay.classList.remove("visible")
+			// Close on escape key (Global)
+			OrcDemoManager.escapeListener = (e) => {
+				if (e.key === "Escape" && docViewer.classList.contains("visible")) {
+					closeDocViewer()
+				}
+			}
+			document.addEventListener("keydown", OrcDemoManager.escapeListener)
+
+			// Close on escape key (Inside Iframe)
+			iframe.addEventListener("load", () => {
+				try {
+					const iframeDoc =
+						iframe.contentDocument || iframe.contentWindow.document
+					iframeDoc.addEventListener("keydown", (e) => {
+						if (e.key === "Escape") {
+							// Dispatch to main window handler
+							document.dispatchEvent(
+								new KeyboardEvent("keydown", { key: "Escape" })
+							)
+						}
+					})
+				} catch (err) {
+					// Ignore cross-origin errors in dev if they occur
 				}
 			})
 
-			// Close when clicking outside content
-			userGuideOverlay.addEventListener("click", (e) => {
-				if (e.target === userGuideOverlay) {
-					userGuideOverlay.classList.remove("visible")
-				}
-			})
+			function closeDocViewer() {
+				docViewer.classList.remove("visible")
+				iframe.src = ""
+				setTimeout(() => {
+					document.body.classList.remove("orc-doc-active")
+				}, 100)
+			}
 		}
 	}
 

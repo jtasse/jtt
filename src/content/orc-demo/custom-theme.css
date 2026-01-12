@@ -1,0 +1,33 @@
+:root {
+	/* Match ORC Demo / Main Site Theme */
+	--sl-color-bg-nav: #0f172a;
+	--sl-color-bg-sidebar: #0f172a;
+	--sl-color-bg-main: #0f172a;
+	--sl-color-hairline-light: #334155;
+	--sl-color-accent-high: #00ffff;
+	--sl-color-accent: #00aaff;
+	--sl-color-text-accent: #00ffff;
+
+	/* Sidebar specific overrides */
+	--sl-sidebar-width: 18rem;
+}
+
+/* Scrollbar styling to match main site */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(0, 255, 255, 0.3);
+	border-radius: 5px;
+	border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 255, 255, 0.8);
+}
