@@ -51,6 +51,16 @@
 	margin-bottom: 15px;
 }
 
+/* Blog list view images - constrained for consistent cover look */
+.blog-content:not(.single-post) article img {
+	width: 100%;
+	height: 250px;
+	object-fit: cover;
+	border: 1px solid #335555;
+	border-radius: 4px;
+	margin-bottom: 15px;
+}
+
 .blog-post p {
 	line-height: 1.6;
 	margin-bottom: 0;
