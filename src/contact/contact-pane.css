@@ -2,8 +2,8 @@
 
 .contact-pane {
 	position: fixed;
-	bottom: 32px;
-	right: 32px;
+	bottom: 22px;
+	right: 22px;
 	z-index: 10000;
 
 	/* Initial state: off-screen right */

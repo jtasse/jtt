@@ -5,7 +5,6 @@ import {
 	initialPyramidState,
 	flattenedMenuState,
 	pyramidXPositions,
-	getCurrentSection,
 	setCurrentSection,
 	getPyramidAnimToken,
 	incrementPyramidAnimToken,
@@ -25,7 +24,7 @@ export function animatePyramid(labelManager, down = true, section = null) {
 
 	// Show Home and Contact labels when animating to nav (includes their hover targets)
 	if (down) {
-		labelManager.showHomeLabel()
+		// Home label visibility is handled in the loop below
 	}
 
 	pyramidGroup.visible = true
@@ -67,6 +66,19 @@ export function animatePyramid(labelManager, down = true, section = null) {
 		? flattenedMenuState.scaleZ || flattenedMenuState.scale
 		: initialPyramidState.scale
 
+	// Camera animation setup (only when going down to nav)
+	let startCamPos, endCamPos, startCamTarget, endCamTarget, targetCamQuat
+	if (down) {
+		startCamPos = camera.position.clone()
+		endCamPos = initialCameraState.position.clone()
+		startCamTarget = controls.target.clone()
+		endCamTarget = initialCameraState.target.clone()
+
+		const m = new THREE.Matrix4()
+		m.lookAt(endCamPos, endCamTarget, camera.up)
+		targetCamQuat = new THREE.Quaternion().setFromRotationMatrix(m)
+	}
+
 	// Store starting label positions and rotations for animation
 	// Also pre-compute target positions based on FINAL pyramid state
 	const labelStartStates = {}
@@ -75,6 +87,23 @@ export function animatePyramid(labelManager, down = true, section = null) {
 	for (const key in labels) {
 		const labelMesh = labels[key]
 		if (!labelMesh) continue
+
+		if (down) {
+			labelMesh.userData.isAnimating = true
+			if (key === "Home") {
+				// If invisible OR opacity is low, trigger fade in
+				if (
+					!labelMesh.visible ||
+					(labelMesh.material && labelMesh.material.opacity < 0.1)
+				) {
+					labelMesh.visible = true
+					if (labelMesh.material) labelMesh.material.opacity = 0
+					labelMesh.userData.needsFadeIn = true
+				} else {
+					labelMesh.userData.needsFadeIn = false
+				}
+			}
+		}
 
 		// If going down (to menu) and label is not already fixed:
 		// Detach from pyramid and move in World Space for a clear path.
@@ -109,7 +138,9 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			// Target: Flat position, Face camera (identity rotation), Scale based on navLabelScale
 			labelTargetStates[key] = {
 				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
-				quaternion: new THREE.Quaternion(), // Identity (0,0,0) faces camera
+				quaternion: targetCamQuat
+					? targetCamQuat.clone()
+					: camera.quaternion.clone(), // Face camera
 				scale: new THREE.Vector3(currentNavScale, currentNavScale, 1),
 			}
 		} else {
@@ -137,6 +168,13 @@ export function animatePyramid(labelManager, down = true, section = null) {
 		const sy = startScaleY + (endScaleY - startScaleY) * t
 		const sz = startScaleZ + (endScaleZ - startScaleZ) * t
 		pyramidGroup.scale.set(sx, sy, sz)
+
+		// Animate Camera
+		if (down && startCamPos && endCamPos) {
+			camera.position.lerpVectors(startCamPos, endCamPos, t)
+			controls.target.lerpVectors(startCamTarget, endCamTarget, t)
+			controls.update()
+		}
 
 		// Animate labels to/from flattened horizontal positions
 		for (const key in labels) {
@@ -197,6 +235,8 @@ export function animatePyramid(labelManager, down = true, section = null) {
 				const labelMesh = labels[key]
 				if (!labelMesh) continue
 
+				labelMesh.userData.isAnimating = false
+
 				if (down && labelTargetStates[key]) {
 					// Already in scene and animated to target.
 					// Just ensure exact final values.
@@ -204,7 +244,7 @@ export function animatePyramid(labelManager, down = true, section = null) {
 					if (flatPos) {
 						const currentNavScale = labelManager.getNavLabelScale()
 						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
-						labelMesh.rotation.set(0, 0, 0)
+						labelMesh.quaternion.copy(targetCamQuat || camera.quaternion) // Face camera
 						labelMesh.scale.set(currentNavScale, currentNavScale, 1)
 						// Mark as fixed nav so it never moves again
 						labelMesh.userData.fixedNav = true
@@ -219,6 +259,43 @@ export function animatePyramid(labelManager, down = true, section = null) {
 					if (origPos) labelMesh.position.copy(origPos)
 					if (origRot) labelMesh.rotation.copy(origRot)
 					if (origScale) labelMesh.scale.copy(origScale)
+				}
+			}
+
+			// Handle Home label fade-in if needed
+			if (down && labels.Home) {
+				const home = labels.Home
+				// Ensure it's visible and fixed
+				home.visible = true
+				home.userData.fixedNav = true
+
+				if (home.userData.needsFadeIn && home.material) {
+					const mat = home.material
+					mat.opacity = 0
+					const fadeStart = performance.now()
+					const fadeDuration = 500
+
+					function fadeIn(time) {
+						const t = Math.min((time - fadeStart) / fadeDuration, 1)
+						mat.opacity = t
+						if (t < 1) {
+							requestAnimationFrame(fadeIn)
+						} else {
+							mat.opacity = 1 // Ensure exactly 1
+							const hoverTargets = labelManager.getHoverTargets()
+							if (hoverTargets && hoverTargets.Home) {
+								hoverTargets.Home.visible = true
+							}
+						}
+					}
+					requestAnimationFrame(fadeIn)
+				} else if (home.material) {
+					// If not fading in, ensure it's fully opaque
+					home.material.opacity = 1
+					const hoverTargets = labelManager.getHoverTargets()
+					if (hoverTargets && hoverTargets.Home) {
+						hoverTargets.Home.visible = true
+					}
 				}
 			}
 

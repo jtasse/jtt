@@ -103,7 +103,7 @@ export class LabelManager {
 
 	updateNavLayout() {
 		// Match reference code positioning exactly
-		const startPixelX = 30
+		const startPixelX = 0
 		const startPixelY = 30
 		const topLeft = screenToWorld(startPixelX, startPixelY, 0)
 
@@ -122,7 +122,7 @@ export class LabelManager {
 		const availableWorldWidth = worldRightEdge.x - topLeft.x
 
 		// Use reference code values for label sizing
-		const labelWidth = 2.4
+		const labelWidth = 2.0
 		const spacing = 0.1
 		const totalStaticWidth =
 			keys.length * labelWidth + (keys.length - 1) * spacing
@@ -222,26 +222,21 @@ export class LabelManager {
 		const homeLabel = this.labels.Home
 		if (!homeLabel) return
 
+		// If label is being animated by animatePyramid, don't interfere
+		if (homeLabel.userData.isAnimating) return
+
+		// If label is fixed in nav, don't interfere
+		if (homeLabel.userData.fixedNav) return
+
 		const isPyramidAtTop = this.pyramidGroup.position.y > 1.0
 		const dist = camera.position.distanceTo(initialCameraState.position)
 		const isUserMoved = dist > 0.1
 
 		if (isPyramidAtTop) {
 			// Scenario: Pyramid at Top (Nav Mode)
-			// Home label visible on left side of nav
-			homeLabel.visible = true
-			if (homeLabel.material) homeLabel.material.opacity = 1
-
-			// Ensure it's in scene to avoid pyramid transforms if needed,
-			// though usually nav mode handles positions via updateNavLayout/resize.
-			// We force rotation to face camera.
-			homeLabel.quaternion.copy(camera.quaternion)
-
-			// Ensure position is correct (in case it was moved by the other logic block)
-			const navPos = this.getNavPosition("Home")
-			if (navPos) {
-				homeLabel.position.copy(navPos)
-			}
+			// Do nothing here. Position and rotation are handled by fixedNav logic in syncHoverTargets
+			// and the animation system. This prevents fighting with the fade-in animation.
+			return
 		} else {
 			// Scenario: Pyramid Centered
 			if (isUserMoved) {
@@ -275,6 +270,11 @@ export class LabelManager {
 			const label = this.labels[key]
 			const hover = this.hoverTargets[key]
 			if (label && hover) {
+				// If fixedNav (top menu), always face camera to prevent weird angles
+				if (label.userData.fixedNav) {
+					label.quaternion.copy(camera.quaternion)
+				}
+
 				// Ensure label's world matrix is up to date (works whether in pyramidGroup or scene)
 				label.updateWorldMatrix(true, true)
 
