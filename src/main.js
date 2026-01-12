@@ -8,6 +8,7 @@ import {
 	showPortfolioPlane,
 	hideAllPlanes,
 	showBlogPlane,
+	showBlogPost,
 	animate,
 	renderer,
 	camera,
@@ -190,6 +191,8 @@ function routeToPage(route) {
 		"/portfolio": "portfolio",
 		"/portfolio/orc-demo": "orc-demo",
 	}
+	// Handle individual blog posts
+	if (route.includes("/blog/posts/")) return "blog"
 	return routeMap[route] || "home"
 }
 
@@ -250,6 +253,25 @@ router.onRouteChange((route) => {
 			centerAndOpenLabel(labelManager, "Blog")
 			currentContentVisible = "blog"
 		}
+	} else if (route.includes("/blog/posts/")) {
+		// Handle individual blog posts - keep pyramid at top but don't reload content
+		if (isOrcSceneActive()) {
+			morphFromOrcScene()
+			setTimeout(() => {
+				triggerHandPageTransition("orc-demo", "blog")
+				animatePyramid(labelManager, true, "blog-post")
+				showBlogPost(route)
+			}, 1300)
+		} else {
+			const isAtTop = pyramidGroup.position.y >= 1.5
+			if (!isAtTop) {
+				animatePyramid(labelManager, true, "blog-post")
+			} else {
+				spinPyramidToSection("blog-post")
+			}
+			showBlogPost(route)
+		}
+		window.centeredLabelName = "Blog"
 	} else if (route === "/portfolio/orc-demo") {
 		// Move contact label to left sidebar position instead of hiding it
 		// moveContactLabelToLeft()

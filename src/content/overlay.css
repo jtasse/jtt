@@ -25,8 +25,16 @@
 
 /* Constrain content width within the full-width overlay */
 #content > * {
-	width: min(800px, 90%);
+	width: min(1300px, 90%);
 	padding-bottom: 100px; /* Ensure content clears bottom elements */
+}
+
+/* Ensure images and other content scale to fit */
+#content img,
+#content video,
+#content iframe {
+	max-width: 100%;
+	height: auto;
 }
 
 /* Custom Scrollbar (Blue Theme) */

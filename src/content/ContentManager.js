@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { loadContentHTML, parseBlogPosts } from "../contentLoader.js"
+import { router } from "../router.js"
 import { createOrcPreview } from "./orc-demo/orc-demo.js"
 import { scene, controls } from "../core/SceneManager.js"
 import { getPyramidAnimToken } from "../pyramid/state.js"
@@ -127,25 +128,116 @@ export function showBlogPlane() {
 
 		if (posts && posts.length > 0) {
 			contentHtml = posts
-				.map(
-					(post) => `
-				<div class="blog-post">
-					<h2>${post.title}</h2>
-					<div class="blog-meta">${post.date} | ${post.author}</div>
-					${post.image ? `<img src="${post.image}" alt="${post.title}">` : ""}
-					<p>${post.summary}</p>
-				</div>
-			`
-				)
+				.map((post) => {
+					const route = post.url
+						.replace(/^(\/)?src\/content/, "")
+						.replace(/\.html$/, "")
+					return `<a href="${route}" class="blog-post-link">
+						<div class="blog-post">
+							<h2>${post.title}</h2>
+							<div class="blog-meta">${post.date} | ${post.author}</div>
+							${post.image ? `<img src="${post.image}" alt="${post.title}">` : ""}
+							<p>${post.summary}</p>
+						</div>
+					</a>`
+				})
 				.join("")
 		} else {
-			contentHtml = html
+			// Extract main content if possible to avoid duplicating headers/footers
+			const parser = new DOMParser()
+			const doc = parser.parseFromString(html, "text/html")
+			const main = doc.querySelector("main")
+			contentHtml = main ? main.innerHTML : html
 		}
 		contentEl.innerHTML = `<div class="blog-content">${contentHtml}</div>`
 		contentEl.style.display = ""
 		contentEl.classList.add("show")
 		contentEl.style.pointerEvents = "auto"
+
+		// Add click handlers to prevent default navigation and use the client-side router
+		contentEl.querySelectorAll("a").forEach((link) => {
+			const href = link.getAttribute("href")
+			if (
+				href &&
+				(link.classList.contains("blog-post-link") ||
+					href.includes("/src/content/blog/posts/"))
+			) {
+				link.addEventListener("click", (e) => {
+					e.preventDefault()
+					let route = href
+					if (route.includes("/src/content/")) {
+						route = route.replace("/src/content", "").replace(".html", "")
+					}
+					router.navigate(route)
+				})
+			}
+		})
 	})
+}
+
+export function showBlogPost(route) {
+	hideAllPlanes()
+	if (controls) controls.enableZoom = false
+
+	const navBar = document.getElementById("content-floor")
+	if (navBar) navBar.classList.remove("show")
+
+	const contentEl = document.getElementById("content")
+	if (!contentEl) return
+
+	const myToken = getPyramidAnimToken()
+
+	const fetchUrl = `/src/content${route}.html`
+
+	fetch(fetchUrl)
+		.then((res) => {
+			if (!res.ok) throw new Error("Failed to load post")
+			return res.text()
+		})
+		.then((html) => {
+			if (myToken !== getPyramidAnimToken()) return
+
+			const parser = new DOMParser()
+			const doc = parser.parseFromString(html, "text/html")
+			const content = doc.querySelector("main")?.innerHTML || doc.body.innerHTML
+
+			contentEl.innerHTML = `
+				<div class="blog-content single-post">
+					<button class="embed-back-btn">← Back to Blog</button>
+					${content}
+				</div>
+			`
+			contentEl.style.display = ""
+			contentEl.classList.add("show")
+			contentEl.style.pointerEvents = "auto"
+
+			const backBtn = contentEl.querySelector(".embed-back-btn")
+			if (backBtn) {
+				backBtn.addEventListener("click", () => {
+					router.navigate("/blog")
+				})
+			}
+		})
+		.catch((err) => {
+			console.error(err)
+			contentEl.innerHTML = `
+				<div class="blog-content single-post">
+					<button class="embed-back-btn">← Back to Blog</button>
+					<h1>Error</h1>
+					<p>Failed to load blog post. Please try again later.</p>
+				</div>
+			`
+			contentEl.style.display = ""
+			contentEl.classList.add("show")
+			contentEl.style.pointerEvents = "auto"
+
+			const backBtn = contentEl.querySelector(".embed-back-btn")
+			if (backBtn) {
+				backBtn.addEventListener("click", () => {
+					router.navigate("/blog")
+				})
+			}
+		})
 }
 
 function hideAbout() {

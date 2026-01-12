@@ -18,25 +18,47 @@ All source code files MUST be created or modified under:
 /src
 ```
 
+Before attempting to create a file in another location, ASK FIRST.
+
+### Content Locations
+
+Content includes files that relate to the `About`, `Portfolio`, `Blog`, and `ORC Demo` pages.
+
+#### Blog
+
+Blog content must live under `src\content\blog`. More specifically:
+
+- The `src\content\blog` folder contains the files for the blog post navigation page.
+- The `src\content\blog\posts` folder contains the files for individual blog posts.
+
+#### Portfolio
+
+The Portfolio navigation page lives within `src\content\portfolio`. For now, portfolio content is stored externally, but should be viewable via a viewer on the portfolio navigation page.
+
+#### Orc Demo
+
+Files under `src\content\orc-demo` are for the Orc Demo, which should be treated as special interactive content. Accordingly, be careful when making changes within this folder, especially if the changes hould only apply to `Blog` or `Portfolio` content.
+
 ### Exceptions
 
 Files may exist outside `/src` ONLY if they are:
 
 - Project configuration files (e.g., `package.json`, `vite.config.js`)
 - Tooling configuration (e.g., `.eslintrc`, `.prettierrc`)
-- Documentation files (e.g., `README.md`, `ARCHITECTURE.md`)
+- Project guidelines (e.g., `README.md`, `ARCHITECTURE.md`)
+- Documentation (under `packages/docs`)
 - Test files (under `/tests`)
 
 ### Prohibited Behavior
 
-- Do NOT create duplicate files in the project root
+- Do NOT create files in the project root without asking first
 - Do NOT recreate files that already exist under `/src`
 - If a file already exists, ALWAYS update it in place
 
 ### If Unsure
 
 - Ask before creating a new file
-- Prefer modifying an existing file under `/src`
+- Always prefer modifying an existing file under `/src`
 
 ---
 

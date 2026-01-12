@@ -31,6 +31,7 @@ export const pyramidXPositions = {
 	about: -1.0,
 	bio: -1.0, // Alias for about
 	blog: 1.0,
+	"blog-post": 1.0,
 	portfolio: 3.0,
 }
 

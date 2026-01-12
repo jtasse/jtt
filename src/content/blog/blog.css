@@ -1,13 +1,19 @@
 .blog-content {
-	max-width: 800px;
+	max-width: 1300px;
 	margin: 0 auto;
 	padding: 20px;
 	color: white;
 }
 
-.blog-content p {
-	line-height: 1.6;
+.blog-content h1 {
+	color: #00ffff;
+	margin-top: 0;
 	margin-bottom: 1.5rem;
+}
+
+.blog-post-link {
+	text-decoration: none;
+	color: inherit;
 }
 
 .blog-post {
@@ -36,8 +42,10 @@
 	margin-bottom: 15px;
 }
 
-.blog-post img {
+.blog-post img,
+.single-post img {
 	max-width: 100%;
+	height: auto;
 	border: 1px solid #335555;
 	border-radius: 4px;
 	margin-bottom: 15px;
@@ -46,4 +54,13 @@
 .blog-post p {
 	line-height: 1.6;
 	margin-bottom: 0;
+}
+
+.single-post .embed-back-btn {
+	margin-bottom: 2rem;
+}
+
+.single-post p {
+	margin-bottom: 1.2rem;
+	line-height: 1.7;
 }

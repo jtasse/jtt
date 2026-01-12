@@ -30,6 +30,7 @@ import {
 	showAboutPlane,
 	showPortfolioPlane,
 	showBlogPlane,
+	showBlogPost,
 	hideAllPlanes,
 } from "./content/ContentManager.js"
 import "./content/home/home.css"
@@ -59,6 +60,7 @@ export {
 	showAboutPlane,
 	showPortfolioPlane,
 	showBlogPlane,
+	showBlogPost,
 	hideAllPlanes,
 	pyramidGroup,
 	initialPyramidState,
