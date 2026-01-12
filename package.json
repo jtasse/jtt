@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "dev": "vite",
+    "dev:all": "concurrently -k -n \"MAIN,DOCS\" -c \"blue,magenta\" \"npm run dev\" \"npm run dev:docs\"",
     "dev:docs": "npm run dev -w @jtt/docs -- --host 127.0.0.1 --force",
     "build": "npm run build:main && npm run build:docs && npm run build:combine",
     "build:main": "vite build",
@@ -30,6 +31,7 @@
     "three.regular.helvetiker": "^1.0.0"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
