@@ -315,28 +315,30 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 	contentEl.innerHTML = `
 		<div class="embed-wrapper">
-			<div class="embed-controls">
-				<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab">
-					<span>Open in new tab</span>
-					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
-						<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-					</svg>
-				</a>
-				<button class="embed-control-btn embed-close-btn" title="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
-						<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
-					</svg>
-				</button>
-			</div>
-			<div class="embed-content-container">
-				<iframe
-					src="${embedUrl}"
-					width="100%"
-					height="100%"
-					style="border: none;"
-					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-					allowfullscreen
-				></iframe>
+			<div class="embed-inner-container">
+				<div class="embed-controls">
+					<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab">
+						<span>Open in new tab</span>
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+						</svg>
+					</a>
+					<button class="embed-control-btn embed-close-btn" title="Close">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
+						</svg>
+					</button>
+				</div>
+				<div class="embed-content-container">
+					<iframe
+						src="${embedUrl}"
+						width="100%"
+						height="100%"
+						style="border: none;"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						allowfullscreen
+					></iframe>
+				</div>
 			</div>
 		</div>
 	`
@@ -351,25 +353,27 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 function showImageViewer(contentEl, imageUrl, onCloseCallback) {
 	contentEl.innerHTML = `
 		<div class="embed-wrapper">
-			<div class="embed-controls">
-				<a href="${imageUrl}" target="_blank" class="embed-control-btn" title="Open in new tab">
-					<span>Open in new tab</span>
-					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
-						<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-					</svg>
-				</a>
-				<button class="embed-control-btn embed-close-btn" title="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
-						<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
-					</svg>
-				</button>
-			</div>
-			<div class="embed-content-container" style="display: flex; align-items: center; justify-content: center;">
-				<img
-					src="${imageUrl}"
-					alt="Portfolio image"
-					style="max-width: 100%; max-height: 100%; border: 1px solid #00ffff; border-radius: 8px;"
-				/>
+			<div class="embed-inner-container">
+				<div class="embed-controls">
+					<a href="${imageUrl}" target="_blank" class="embed-control-btn" title="Open in new tab">
+						<span>Open in new tab</span>
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+						</svg>
+					</a>
+					<button class="embed-control-btn embed-close-btn" title="Close">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
+						</svg>
+					</button>
+				</div>
+				<div class="embed-content-container" style="overflow: auto; display: flex; justify-content: center; align-items: flex-start;">
+					<img
+						src="${imageUrl}"
+						alt="Portfolio image"
+						style="max-width: 100%; height: auto; border: 1px solid #00ffff; border-radius: 8px; margin: auto;"
+					/>
+				</div>
 			</div>
 		</div>
 	`

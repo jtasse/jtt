@@ -91,7 +91,7 @@
 			const iframe = document.createElement("iframe")
 			iframe.src = embedUrl
 			iframe.width = "100%"
-			iframe.height = "600"
+			iframe.height = "100%"
 			iframe.style.border = "1px solid #00ffff"
 			iframe.style.borderRadius = "8px"
 			iframe.allow =
@@ -100,6 +100,9 @@
 
 			const wrapper = document.createElement("div")
 			wrapper.className = "embed-wrapper"
+
+			const inner = document.createElement("div")
+			inner.className = "embed-inner-container"
 
 			// Create controls
 			const controls = document.createElement("div")
@@ -112,8 +115,9 @@
 			contentContainer.className = "embed-content-container"
 			contentContainer.appendChild(iframe)
 
-			wrapper.appendChild(controls)
-			wrapper.appendChild(contentContainer)
+			inner.appendChild(controls)
+			inner.appendChild(contentContainer)
+			wrapper.appendChild(inner)
 
 			content.appendChild(wrapper)
 			content.style.display = "block"
