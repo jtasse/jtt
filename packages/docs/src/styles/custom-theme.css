@@ -2,6 +2,7 @@
 
 :root {
 	/* Accent colors - cyan to match site */
+	--sl-font: Helvetica, sans-serif;
 	--sl-color-accent-low: #002040;
 	--sl-color-accent: #00aaff;
 	--sl-color-accent-high: #00ffff;

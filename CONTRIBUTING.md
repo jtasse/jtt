@@ -95,6 +95,17 @@ document.getElementById("content-overlay").classList.add("visible")
 
 ## Styling Rules
 
+### Accessibility
+
+First and foremost, the styling of text and other content should always support accessibility.
+
+With this in mind:
+
+- All pages should use an accessible font. For the time being, Helvetica or Roboto should be used everywhere.
+- Images should always have alt text.
+- Any other reasonable measures, including catering to screen readers, should be taken to enhance accessibility.
+- Ideally, a light theme should be available to users on pages that are text-heavy.
+
 ### CSS-First Principle
 
 **All visual styling MUST be defined in CSS files**, not JavaScript.

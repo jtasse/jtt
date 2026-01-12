@@ -8,7 +8,7 @@ export function makeLabelPlane(text, width = 1.6, height = 0.45) {
 	const ctx = canvas.getContext("2d")
 	ctx.clearRect(0, 0, canvas.width, canvas.height)
 	ctx.fillStyle = "white"
-	ctx.font = "bold 120px sans-serif"
+	ctx.font = "bold 120px Helvetica, sans-serif"
 	ctx.textAlign = "center"
 	ctx.textBaseline = "middle"
 	ctx.fillText(text, canvas.width / 2, canvas.height / 2)
