@@ -149,7 +149,6 @@ Authorization: Bearer <your-token>
 
 | Environment | Limit                  |
 | ----------- | ---------------------- |
-| Demo        | 100 requests/minute    |
 | Development | 1,000 requests/minute  |
 | Production  | 10,000 requests/minute |
 

@@ -5,7 +5,7 @@ head: []
 ---
 
 :::note[Abstract]
-The Orbital Refuse Collector (ORC) is a proposed autonomous spacecraft designed to address the growing threat of Kessler Syndrome. By utilizing a high-dexterity robotic actuator ("The Hand") and advanced computer vision, ORC can identify, capture, and deorbit defunct satellites and debris without creating additional fragments.
+The Orbital Refuse Collector (ORC) is a satellite deorbiting solution designed to address the growing threat of satellite congestion (see also: [Kessler Syndrome](https://en.wikipedia.org/wiki/Kessler_syndrome)). By utilizing a high-dexterity robotic actuator ("The Hand or ORC") and proprietary targeting capabilities; ORC can identify, capture, and deorbit defunct satellites and debris without creating additional fragments.
 :::
 
 ## 1. Introduction
@@ -20,9 +20,11 @@ The ORC unit is a semi-autonomous spacecraft built on a modular bus. Its primary
 
 ### Core Components
 
-- **The Actuator:** A multi-jointed robotic manipulator with adaptive grip technology. It can conform to irregular shapes, allowing it to grasp solar panels, antennas, or main bodies of debris.
+- **The Hand:** A multi-jointed robotic manipulator with adaptive grip technology. It can conform to irregular shapes, allowing it to grasp solar panels, antennas, or main bodies of debris.
 
 - **Sensor Suite:** A combination of Lidar, optical cameras, and infrared sensors provides real-time telemetry and 3D mapping of the target object.
+
+- **Power Generation:** An S9G reactor nuclear acts as the primary power source, with solar panels serving as a backup.
 
 - **Propulsion:** High-efficiency ion drives allow for extended mission duration and significant orbital plane changes.
 
@@ -32,35 +34,47 @@ The decommissioning process follows a strict four-phase protocol to ensure safet
 
 ### Phase 1: Identification & Tracking
 
-Ground stations upload target vectors to the ORC unit. The onboard AI verifies the target using visual recognition to confirm identity and assess structural integrity.
+Ground stations upload target vectors to the Hand, and its onboard AI verifies the target using visual recognition to confirm identity and assess structural integrity.
 
-### Phase 2: Approach & Synchronization
+### Phase 2: Intercept
 
-The ORC matches the orbit and rotation of the target debris. This "tumble matching" is critical for non-cooperative targets that may be spinning uncontrollably.
+The Hand calculates an intercept solution that minimizes power usage and approaches the satellite until it is within deorbiting range.
 
-### Phase 3: Capture
+#### Phase 3: Deorbit
 
-Once synchronized, the actuator extends to grapple the target. The adaptive grip secures the object, and the ORC unit rigidizes its connection to form a single compound mass.
+The deorbitnig methodology used is determined by the target satellite's orbit type.
 
-### Phase 4: Deorbit Burn
+#### Low Earth Orbit (LEO)
 
-The ORC uses its main thrusters to lower the perigee of the compound mass into the upper atmosphere. At the critical interface altitude, the ORC releases the debris to burn up upon reentry, then performs a separation maneuver to return to a parking orbit.
+The Hand closes to within pincer range and joins its thumb and index finger, building tension as it forms the 'OK' gesture. Next, the Hand releases this tension and uses its index finger to flick the satellite into the Earth's atmosphere at an angle sufficient to faciliate vaporizing the satellite in its entirety.
+
+#### Geostationary Orbit (GEO)
+
+After placing its target between itself in and the Earth, the Hand closes into a fist. After a short period of reverse thrust, the Hand closes the distance to the target, punching it into Earth's mesosphere, where it is physically disincorporated.
+
+#### Molniyan Orbit (MOL)
+
+As with the GEO deorbiting methodology, the hand lines up behind its target relative to the Earth. However, instead of forming a fist, the hand straightens and, using the thrusters in its fingertips, it readies itself. Then, with a quick burst of thrust from opposite its palm; the Hand performs a slap maneuver that sends the satellite hurtling toward a fast but complete fiery mesospheric demise.
+
+### Phase 4: Disengagement
+
+The Hand then performs a separation maneuver to return to a parking orbit.
 
 ## 4. Technical Specifications
 
 :::note
-Specifications are for the Mark IV prototype currently in simulation.
+Specifications are for the Mark IV model currently in operation.
 :::
 
-| Specification | Value |
-|--------------|-------|
-| Mass (dry) | 450 kg |
-| Delta-V Budget | 3,200 m/s |
-| Actuator Reach | 4.5 meters |
-| Grip Force | Variable, 5N to 500N |
-| Power Generation | 2.5 kW (Solar) |
-| Mission Duration | Up to 5 years |
-| Targets per Mission | 10-15 (LEO) |
+| Specification       | Value                |
+| ------------------- | -------------------- |
+| Mass (dry)          | 450 kg               |
+| Delta-V Budget      | 3,200 m/s            |
+| Actuator Reach      | 4.5 meters           |
+| Grip Force          | Variable, 5N to 500N |
+| Power Generation    | 2.5 kW (Solar)       |
+| Mission Duration    | Up to 10 years       |
+| Targets per Mission | 3-5                  |
 
 ## 5. Safety Considerations
 
