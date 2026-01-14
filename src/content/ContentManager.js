@@ -38,9 +38,6 @@ export function hideAllPlanes() {
 	const blogPlane = scene.getObjectByName("blogPlane")
 	if (blogPlane) scene.remove(blogPlane)
 
-	// Hide ORC preview overlay
-	hideOrcPreviewOverlay()
-
 	// Hide scroll UI
 	ScrollManager.hide()
 
@@ -447,74 +444,6 @@ function isImageURL(url) {
 		return /\.(png|jpg|jpeg|gif|webp|svg)$/.test(path)
 	} catch {
 		return false
-	}
-}
-
-// === ORC Overlays ===
-
-let orcPreviewOverlay = null
-
-export function showOrcPreviewOverlay() {
-	if (!orcPreviewOverlay) {
-		orcPreviewOverlay = document.createElement("div")
-		orcPreviewOverlay.id = "orc-preview-overlay"
-		Object.assign(orcPreviewOverlay.style, {
-			position: "fixed",
-			top: "22%",
-			left: "50%",
-			transform: "translateX(-50%)",
-			zIndex: "100",
-			display: "flex",
-			alignItems: "center",
-			gap: "20px",
-			background:
-				"linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(0, 40, 60, 0.95))",
-			border: "2px solid #00aaff",
-			borderRadius: "16px",
-			padding: "16px 20px",
-			cursor: "pointer",
-			boxShadow: "0 0 30px rgba(0, 170, 255, 0.3)",
-			maxWidth: "85%",
-			height: "120px",
-			boxSizing: "border-box",
-		})
-
-		const textContainer = document.createElement("div")
-		textContainer.innerHTML = `
-			<h2 style="color: #00ffff; margin: 0 0 8px 0; font-size: 1.3rem; text-shadow: 0 0 10px rgba(0,255,255,0.3);">
-				Click here to view ORC demo with inline docs!
-			</h2>
-			<p style="color: #aaddff; margin: 0; font-size: 0.95rem; line-height: 1.4;">
-				Orbital Refuse Collector - Interactive API documentation demo featuring satellite orbit visualization.
-			</p>
-		`
-		textContainer.style.pointerEvents = "none"
-		orcPreviewOverlay.appendChild(textContainer)
-
-		orcPreviewOverlay.addEventListener("mouseenter", () => {
-			orcPreviewOverlay.style.borderColor = "#00ffff"
-			orcPreviewOverlay.style.boxShadow = "0 0 40px rgba(0, 255, 255, 0.4)"
-			orcPreviewOverlay.style.transform = "translateX(-50%) scale(1.02)"
-		})
-		orcPreviewOverlay.addEventListener("mouseleave", () => {
-			orcPreviewOverlay.style.borderColor = "#00aaff"
-			orcPreviewOverlay.style.boxShadow = "0 0 30px rgba(0, 170, 255, 0.3)"
-			orcPreviewOverlay.style.transform = "translateX(-50%) scale(1)"
-		})
-
-		orcPreviewOverlay.addEventListener("click", (e) => {
-			e.stopPropagation()
-			if (window.routerNavigate) window.routerNavigate("/portfolio/orc-demo")
-		})
-
-		document.body.appendChild(orcPreviewOverlay)
-	}
-	orcPreviewOverlay.style.display = "flex"
-}
-
-export function hideOrcPreviewOverlay() {
-	if (orcPreviewOverlay) {
-		orcPreviewOverlay.style.display = "none"
 	}
 }
 

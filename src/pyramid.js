@@ -89,51 +89,6 @@ setInitialCameraState(camera.position, new THREE.Vector3(0, -0.36, 0))
 
 scene.add(pyramidGroup)
 
-// === Morph Sphere (for ORC demo transition) ===
-const morphSphereGeometry = new THREE.SphereGeometry(1.5, 32, 32)
-const morphSphereMaterial = new THREE.MeshStandardMaterial({
-	color: 0x000000,
-	metalness: 0.95,
-	roughness: 0.1,
-	side: THREE.DoubleSide,
-	transparent: true,
-	opacity: 0,
-})
-const morphSphere = new THREE.Mesh(morphSphereGeometry, morphSphereMaterial)
-morphSphere.visible = false
-morphSphere.name = "morphSphere"
-scene.add(morphSphere)
-
-// Create a WebGLCubeRenderTarget + CubeCamera to generate an environment map for reflections
-const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
-	format: THREE.RGBAFormat,
-	generateMipmaps: true,
-	minFilter: THREE.LinearMipmapLinearFilter,
-	magFilter: THREE.LinearFilter,
-	type: THREE.FloatType,
-})
-const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget)
-scene.add(cubeCamera)
-
-function updatePyramidEnvMap() {
-	const meshes = pyramidGroup.children.filter((c) => c.isMesh)
-	meshes.forEach((m) => (m.visible = false))
-
-	cubeCamera.position.copy(pyramidGroup.position)
-	cubeCamera.update(renderer, scene)
-
-	meshes.forEach((m) => {
-		m.visible = true
-		if (cubeCamera.renderTarget && cubeCamera.renderTarget.texture) {
-			m.material.envMap = cubeCamera.renderTarget.texture
-			m.material.envMapIntensity = 0
-			m.material.needsUpdate = true
-		}
-	})
-}
-
-updatePyramidEnvMap()
-
 let navLabelScale = 1.0
 
 // Update nav layout based on screen size - delegates to LabelManager
@@ -188,8 +143,6 @@ function morphToOrcScene() {
 			}
 		}
 	}
-
-	morphSphere.visible = false
 
 	// Remove hand from main scene before creating ORC demo
 	const roamingHand = getRoamingHand()
@@ -273,7 +226,6 @@ function morphFromOrcScene() {
 
 		updateNavLayout()
 		setCurrentSection(null)
-		morphSphere.visible = false
 
 		const startTime = performance.now()
 

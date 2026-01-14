@@ -8,8 +8,6 @@ let showcaseContainer = null
 let showcaseAnimId = null
 let showcaseGroup = null
 let showcaseSatellites = []
-let showcaseHand = null
-let handAnimationTime = 0
 let isRunning = false
 let cachedPlanetCanvas = null
 
@@ -19,7 +17,6 @@ const LEO_ORBIT_RADIUS = 0.65
 const LEO_ORBIT_SPEED = 0.0045
 const SATELLITE_SIZE = 0.08
 const GEO_ALTITUDE = 2.0
-const EXOSPHERE_RADIUS = 0.72
 
 // Surface marker position (Charleston, SC)
 const markerLatitude = 33

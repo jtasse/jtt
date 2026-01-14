@@ -446,64 +446,6 @@ ul:has(.docs-link) {
 	cursor: not-allowed;
 }
 
-/* ============================================
-   Decommission Button (legacy - keeping for compatibility)
-   ============================================ */
-.decommission-btn {
-	display: block;
-	width: 100%;
-	padding: 8px 12px;
-	margin-top: 10px;
-	background: rgba(80, 80, 80, 0.5);
-	border: 2px solid #666666;
-	border-radius: 6px;
-	color: #888888;
-	font-size: 0.95em;
-	font-weight: bold;
-	cursor: not-allowed;
-	transition: all 0.3s ease;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	box-shadow: none;
-}
-
-/* Enabled state - bright red when satellite is selected and operational */
-.decommission-btn:not(:disabled) {
-	background: linear-gradient(180deg, #ee3030 0%, #bb2020 100%);
-	border: 2px solid #ff5555;
-	color: #ffffff;
-	cursor: pointer;
-	box-shadow: 0 0 25px rgba(255, 50, 50, 0.5);
-}
-
-.decommission-btn:disabled {
-	background: rgba(80, 80, 80, 0.5);
-	border-color: #666666;
-	color: #888888;
-	cursor: not-allowed;
-	box-shadow: none;
-}
-
-.decommission-btn.decommissioning {
-	background: linear-gradient(
-		180deg,
-		rgba(255, 120, 50, 0.8) 0%,
-		rgba(200, 80, 30, 0.9) 100%
-	);
-	border-color: #ff8844;
-	animation: decommission-btn-pulse 0.8s ease-in-out infinite;
-}
-
-@keyframes decommission-btn-pulse {
-	0%,
-	100% {
-		box-shadow: 0 0 10px rgba(255, 136, 68, 0.4);
-	}
-	50% {
-		box-shadow: 0 0 25px rgba(255, 136, 68, 0.7);
-	}
-}
-
 /* Cancel Decommission Button */
 .action-list-item.cancel-action {
 	background: linear-gradient(180deg, #33bb66 0%, #228844 100%);
@@ -733,51 +675,6 @@ ul:has(.docs-link) {
 
 #satellite-info-content {
 	display: none;
-}
-
-#orc-preview-overlay {
-	position: fixed;
-	top: 22%;
-	left: 50%;
-	transform: translateX(-50%);
-	z-index: 100;
-	display: flex;
-	align-items: center;
-	gap: 20px;
-	background: linear-gradient(
-		135deg,
-		rgba(0, 20, 40, 0.98),
-		rgba(0, 40, 60, 0.95)
-	);
-	border: 2px solid #00aaff;
-	border-radius: 16px;
-	padding: 16px 20px;
-	cursor: pointer;
-	box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
-	max-width: 85%;
-	height: 120px;
-	box-sizing: border-box;
-	transition: all 0.3s ease;
-}
-
-#orc-preview-overlay:hover {
-	border-color: #00ffff;
-	box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
-	transform: translateX(-50%) scale(1.02);
-}
-
-#orc-preview-overlay h2 {
-	color: #00ffff;
-	margin: 0 0 8px 0;
-	font-size: 1.3rem;
-	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-}
-
-#orc-preview-overlay p {
-	color: #aaddff;
-	margin: 0;
-	font-size: 0.95rem;
-	line-height: 1.4;
 }
 
 #orc-doc-new-tab {
