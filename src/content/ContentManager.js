@@ -168,7 +168,8 @@ export function showBlogPlane() {
 					if (route.includes("/src/content/")) {
 						route = route.replace("/src/content", "").replace(".html", "")
 					}
-					router.navigate(route)
+					window.history.pushState({}, "", route)
+					showBlogPost(route)
 				})
 			}
 		})

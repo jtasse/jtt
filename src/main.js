@@ -259,15 +259,15 @@ router.onRouteChange((route) => {
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "blog")
-				animatePyramid(labelManager, true, "blog-post")
+				animatePyramid(labelManager, true, "blog")
 				showBlogPost(route)
 			}, 1300)
 		} else {
 			const isAtTop = pyramidGroup.position.y >= 1.5
 			if (!isAtTop) {
-				animatePyramid(labelManager, true, "blog-post")
+				animatePyramid(labelManager, true, "blog")
 			} else {
-				spinPyramidToSection("blog-post")
+				spinPyramidToSection("blog")
 			}
 			showBlogPost(route)
 		}
