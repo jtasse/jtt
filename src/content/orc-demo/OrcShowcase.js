@@ -11,6 +11,15 @@ let showcaseSatellites = []
 let isRunning = false
 let cachedPlanetCanvas = null
 
+// Hand animation state
+let showcaseHand = null
+let handAnimationTime = 0
+const HAND_ANIMATION_SPEED = 0.008
+
+// GEO tether reference for animation
+let geoTether = null
+let geoSatelliteRef = null
+
 // Constants matching OrcScene.js
 const PLANET_RADIUS = 0.5
 const LEO_ORBIT_RADIUS = 0.65
@@ -76,8 +85,8 @@ export function createOrcShowcase(container) {
 
 	// Position camera for a cinematic horizontal slice view
 	// Looking down at an angle to show the planet and orbits nicely
-	showcaseCamera.position.set(0.2, 0, 6.5)
-	showcaseCamera.lookAt(0, 0, 2)
+	showcaseCamera.position.set(0.2, 0.5, 2.5)
+	showcaseCamera.lookAt(0, 0.1, 0)
 
 	// Create the ORC scene content (isolated, not using global state)
 	showcaseGroup = createShowcaseOrcScene()
@@ -140,6 +149,7 @@ function createShowcaseOrcScene() {
 	geoSatellite.rotateX(Math.PI / 2)
 	geoSatellite.userData = { isGeosynchronous: true }
 	planet.add(geoSatellite)
+	geoSatelliteRef = geoSatellite
 
 	const geoRing = createGeoRing(
 		markerLatitude,
@@ -176,6 +186,11 @@ function createShowcaseOrcScene() {
 
 	// Store planet reference for rotation animation
 	group.userData.planet = planet
+
+	// Create animated hand
+	showcaseHand = createShowcaseHand()
+	showcaseHand.position.set(1.5, 0.5, 1)
+	group.add(showcaseHand)
 
 	return group
 }
@@ -215,6 +230,22 @@ function animateShowcase() {
 			sat.rotation.y = -data.angle - Math.PI / 2
 		}
 	})
+
+	// Animate hand - circular motion around the scene
+	if (showcaseHand) {
+		handAnimationTime += HAND_ANIMATION_SPEED
+		const handRadius = 2.0
+		const verticalOffset = Math.sin(handAnimationTime * 0.7) * 0.4
+		const x = Math.cos(handAnimationTime) * handRadius
+		const z = Math.sin(handAnimationTime) * handRadius * 0.5 + 1.5
+		showcaseHand.position.set(x, verticalOffset + 0.3, z)
+
+		// Make hand face the direction of movement
+		showcaseHand.rotation.y = -handAnimationTime + Math.PI / 2
+
+		// Subtle finger wiggle animation
+		animateHandFingers(showcaseHand, handAnimationTime)
+	}
 
 	// Render
 	if (showcaseRenderer && showcaseScene && showcaseCamera) {
@@ -269,6 +300,10 @@ export function cleanupOrcShowcase() {
 	showcaseGroup = null
 	showcaseSatellites = []
 	showcaseContainer = null
+	showcaseHand = null
+	handAnimationTime = 0
+	geoTether = null
+	geoSatelliteRef = null
 }
 
 /**
@@ -484,6 +519,141 @@ function createGeoRing(latitude, longitude, altitude, color) {
 		opacity: 0.5,
 	})
 	return new THREE.LineLoop(geometry, material)
+}
+
+/**
+ * Creates the GEO tether line connecting the surface marker to the satellite
+ */
+function createGeoTether(surfacePos, satellitePos) {
+	const points = [
+		new THREE.Vector3(surfacePos.x, surfacePos.y, surfacePos.z),
+		new THREE.Vector3(satellitePos.x, satellitePos.y, satellitePos.z),
+	]
+	const geometry = new THREE.BufferGeometry().setFromPoints(points)
+	const material = new THREE.LineBasicMaterial({
+		color: 0xff00ff,
+		transparent: true,
+		opacity: 0.7,
+	})
+	return new THREE.Line(geometry, material)
+}
+
+/**
+ * Creates a simplified hand for the showcase animation
+ */
+function createShowcaseHand() {
+	const hand = new THREE.Group()
+	hand.name = "showcaseHand"
+
+	// Palm
+	const palmGeometry = new THREE.BoxGeometry(0.15, 0.08, 0.2)
+	const palmMaterial = new THREE.MeshStandardMaterial({
+		color: 0x00ffff,
+		emissive: 0x004444,
+		metalness: 0.3,
+		roughness: 0.6,
+	})
+	const palm = new THREE.Mesh(palmGeometry, palmMaterial)
+	hand.add(palm)
+
+	// Create fingers
+	const fingerMaterial = new THREE.MeshStandardMaterial({
+		color: 0x00ffff,
+		emissive: 0x004444,
+		metalness: 0.3,
+		roughness: 0.6,
+	})
+
+	const fingerPositions = [
+		{ x: -0.05, name: "pinky" },
+		{ x: -0.025, name: "ring" },
+		{ x: 0, name: "middle" },
+		{ x: 0.025, name: "index" },
+	]
+
+	fingerPositions.forEach((fp, i) => {
+		const fingerGroup = new THREE.Group()
+		fingerGroup.name = fp.name
+
+		// Base segment
+		const baseGeo = new THREE.BoxGeometry(0.02, 0.02, 0.08)
+		const base = new THREE.Mesh(baseGeo, fingerMaterial)
+		base.position.z = -0.14
+		fingerGroup.add(base)
+
+		// Mid segment
+		const midGroup = new THREE.Group()
+		midGroup.name = fp.name + "_mid"
+		midGroup.position.z = -0.18
+		const midGeo = new THREE.BoxGeometry(0.018, 0.018, 0.06)
+		const mid = new THREE.Mesh(midGeo, fingerMaterial)
+		mid.position.z = -0.03
+		midGroup.add(mid)
+		fingerGroup.add(midGroup)
+
+		// Tip segment
+		const tipGroup = new THREE.Group()
+		tipGroup.name = fp.name + "_tip"
+		tipGroup.position.z = -0.06
+		const tipGeo = new THREE.BoxGeometry(0.015, 0.015, 0.04)
+		const tip = new THREE.Mesh(tipGeo, fingerMaterial)
+		tip.position.z = -0.02
+		tipGroup.add(tip)
+		midGroup.add(tipGroup)
+
+		fingerGroup.position.x = fp.x
+		hand.add(fingerGroup)
+	})
+
+	// Thumb (positioned on the side)
+	const thumbGroup = new THREE.Group()
+	thumbGroup.name = "thumb"
+	const thumbGeo = new THREE.BoxGeometry(0.025, 0.025, 0.06)
+	const thumb = new THREE.Mesh(thumbGeo, fingerMaterial)
+	thumb.position.z = -0.03
+	thumbGroup.add(thumb)
+	thumbGroup.position.set(0.09, 0, -0.05)
+	thumbGroup.rotation.y = -Math.PI / 4
+	hand.add(thumbGroup)
+
+	// Scale hand appropriately for the showcase
+	hand.scale.setScalar(0.6)
+
+	return hand
+}
+
+/**
+ * Animates the hand fingers with subtle wiggle
+ */
+function animateHandFingers(hand, time) {
+	if (!hand) return
+
+	const fingerNames = ["pinky", "ring", "middle", "index"]
+	fingerNames.forEach((name, i) => {
+		const finger = hand.getObjectByName(name)
+		if (finger) {
+			// Subtle curl animation, each finger slightly offset in phase
+			const phase = i * 0.5
+			const curl = Math.sin(time * 2 + phase) * 0.1
+			finger.rotation.x = curl
+
+			const mid = finger.getObjectByName(name + "_mid")
+			if (mid) {
+				mid.rotation.x = curl * 1.2
+
+				const tip = mid.getObjectByName(name + "_tip")
+				if (tip) {
+					tip.rotation.x = curl * 1.4
+				}
+			}
+		}
+	})
+
+	// Thumb subtle movement
+	const thumb = hand.getObjectByName("thumb")
+	if (thumb) {
+		thumb.rotation.z = Math.sin(time * 1.5) * 0.1
+	}
 }
 
 // Continent drawing helpers (simplified for the showcase)
