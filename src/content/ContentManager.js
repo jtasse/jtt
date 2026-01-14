@@ -111,9 +111,9 @@ export function showPortfolioPlane(onCloseCallback) {
 		const showcaseContainer = contentEl.querySelector("#orc-showcase-container")
 		if (showcaseContainer) {
 			// Small delay to ensure container has proper dimensions
-			requestAnimationFrame(() => {
+			setTimeout(() => {
 				createOrcShowcase(showcaseContainer)
-			})
+			}, 0)
 			showcaseContainer.addEventListener("click", () => {
 				router.navigate("/portfolio/orc-demo")
 			})

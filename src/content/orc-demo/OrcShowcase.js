@@ -11,6 +11,7 @@ let showcaseSatellites = []
 let showcaseHand = null
 let handAnimationTime = 0
 let isRunning = false
+let cachedPlanetCanvas = null
 
 // Constants matching OrcScene.js
 const PLANET_RADIUS = 0.5
@@ -293,18 +294,25 @@ function latLonTo3D(lat, lon, radius = PLANET_RADIUS) {
 
 function createPlanet() {
 	const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 64, 64)
-	const canvas = document.createElement("canvas")
-	canvas.width = 1024
-	canvas.height = 512
-	const ctx = canvas.getContext("2d")
-	ctx.fillStyle = "#0c177aff"
-	ctx.fillRect(0, 0, canvas.width, canvas.height)
-	ctx.fillStyle = "#EAE9BD"
-	ctx.strokeStyle = "#EAE9BD"
-	ctx.lineWidth = 1.5
-	ctx.lineCap = "round"
-	ctx.lineJoin = "round"
-	drawAccurateContinents(ctx, canvas.width, canvas.height)
+	let canvas
+
+	if (cachedPlanetCanvas) {
+		canvas = cachedPlanetCanvas
+	} else {
+		canvas = document.createElement("canvas")
+		canvas.width = 1024
+		canvas.height = 512
+		const ctx = canvas.getContext("2d")
+		ctx.fillStyle = "#0c177aff"
+		ctx.fillRect(0, 0, canvas.width, canvas.height)
+		ctx.fillStyle = "#EAE9BD"
+		ctx.strokeStyle = "#EAE9BD"
+		ctx.lineWidth = 1.5
+		ctx.lineCap = "round"
+		ctx.lineJoin = "round"
+		drawAccurateContinents(ctx, canvas.width, canvas.height)
+		cachedPlanetCanvas = canvas
+	}
 
 	const texture = new THREE.CanvasTexture(canvas)
 	texture.wrapS = THREE.RepeatWrapping

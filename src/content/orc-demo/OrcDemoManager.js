@@ -552,7 +552,7 @@ async function showAvailableSatellitesPane() {
 				"touchmove",
 			]
 			eventsToBlock.forEach((evt) => {
-				docViewer.addEventListener(evt, blockEvent)
+				docViewer.addEventListener(evt, blockEvent, { passive: true })
 			})
 
 			const iframe = docViewer.querySelector("#orc-doc-iframe")

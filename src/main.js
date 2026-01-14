@@ -369,10 +369,6 @@ inputManager.addClickHandler((raycaster) => {
 					let node = hitsEarly[0].object
 					while (node) {
 						if (node.userData && node.userData.link) {
-							console.debug(
-								"[onSceneMouseDown] EARLY clicked portfolio link:",
-								node.userData.link
-							)
 							try {
 								if (handleContentLink(node.userData.link, router)) return
 							} catch (e) {
@@ -423,13 +419,6 @@ inputManager.addClickHandler((raycaster) => {
 			return
 		}
 
-		console.debug(
-			"[onClick] clicked object labelName=",
-			labelName,
-			"active=",
-			window.centeredLabelName
-		)
-
 		// Map label names to section names for routing
 		const sectionName = labelName.toLowerCase()
 
@@ -478,10 +467,6 @@ inputManager.addClickHandler((raycaster) => {
 				// climb up to find any userData.link on the clicked object or its parents
 				while (node) {
 					if (node.userData && node.userData.link) {
-						console.debug(
-							"[onSceneMouseDown] clicked portfolio link:",
-							node.userData.link
-						)
 						try {
 							if (handleContentLink(node.userData.link, router)) return
 						} catch (e) {
@@ -499,10 +484,6 @@ inputManager.addClickHandler((raycaster) => {
 				let node = hit
 				while (node) {
 					if (node.userData && node.userData.link) {
-						console.debug(
-							"[onSceneMouseDown] clicked portfolio link (fallback):",
-							node.userData.link
-						)
 						try {
 							if (handleContentLink(node.userData.link, router)) return
 						} catch (e) {
