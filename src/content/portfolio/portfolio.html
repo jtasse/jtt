@@ -1,52 +1,347 @@
 <div class="content-page portfolio-page">
-	<a class="temp-portfolio-link" href="../portfolio/orc-demo">ORC Demo</a>
-	<a class="temp-portfolio-link" href="/portfolio/docs/orc">ORC Docs</a>
+	<div
+		id="orc-showcase-container"
+		style="
+			width: 100%;
+			height: 300px;
+			background: transparent;
+			border: 1px solid #335555;
+			border-radius: 8px;
+			margin-bottom: 20px;
+			position: relative;
+			overflow: hidden;
+		"
+	></div>
 
-	<div class="portfolio-grid">
+	<div
+		class="portfolio-body"
+		style="background: rgba(0, 10, 20, 0.9); padding: 20px; border-radius: 8px"
+	>
+		<!-- Top Grid: 4 Docs Items -->
 		<div
-			class="portfolio-item"
-			data-link="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
+			class="portfolio-grid-top"
+			style="
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+				gap: 20px;
+				margin-bottom: 30px;
+			"
 		>
-			<img
-				class="portfolio-thumb"
-				src="/images/portfolio/resume.svg"
-				alt="Resume"
-			/>
-			<h2>My Resume</h2>
-			<p></p>
+			<div
+				class="portfolio-item"
+				data-link="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
+			>
+				<img
+					class="portfolio-thumb"
+					src="/src/content/portfolio/images/thumbnails/resume.svg"
+					alt="Resume"
+				/>
+				<h2>My Resume</h2>
+				<p></p>
+			</div>
+
+			<div
+				class="portfolio-item"
+				data-link="/src/content/portfolio/images/visual_resume_v6.8 (James Tasse).drawio.png"
+			>
+				<img
+					class="portfolio-thumb"
+					src="/src/content/portfolio/images/thumbnails/visual-resume.svg"
+					alt="Visual Resume"
+				/>
+				<h2>My Visual Resume</h2>
+				<p>
+					This infographic shows my 7 years of experience in technical writing
+					and 14 years experience in technical roles (including 8 years in
+					software development).
+				</p>
+			</div>
+
+			<div
+				class="portfolio-item"
+				data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+			>
+				<img
+					class="portfolio-thumb"
+					src="/src/content/portfolio/images/thumbnails/ronin.svg"
+					alt="Ronin"
+				/>
+				<h2>Ronin: A Docs as Tests Story</h2>
+				<p>
+					Explains how Docs as Tests can be used to keep docs in sync with the
+					product.
+				</p>
+			</div>
+
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 1</h2>
+				<p>Coming soon...</p>
+			</div>
 		</div>
 
 		<div
-			class="portfolio-item"
-			data-link="/src/content/portfolio/images/visual_resume_v6.8 (James Tasse).drawio.png"
+			class="portfolio-links"
+			style="
+				display: flex;
+				gap: 15px;
+				margin-bottom: 30px;
+				justify-content: center;
+			"
 		>
-			<img
-				class="portfolio-thumb"
-				src="/images/portfolio/visual-resume.svg"
-				alt="Visual Resume"
-			/>
-			<h2>My Visual Resume</h2>
-			<p>
-				This infographic shows my 7 years of experience in technical writing and
-				14 years experience in technical roles (including 8 years in software
-				development).
-			</p>
+			<a
+				class="temp-portfolio-link"
+				href="../portfolio/orc-demo"
+				style="
+					padding: 10px 20px;
+					background: rgba(0, 255, 255, 0.1);
+					border: 1px solid #00ffff;
+					color: #00ffff;
+					text-decoration: none;
+					border-radius: 4px;
+					font-weight: bold;
+					transition: all 0.2s;
+				"
+				>Launch Full ORC Demo</a
+			>
+			<a
+				class="temp-portfolio-link"
+				href="/portfolio/docs/orc"
+				style="
+					padding: 10px 20px;
+					background: rgba(0, 255, 255, 0.1);
+					border: 1px solid #00ffff;
+					color: #00ffff;
+					text-decoration: none;
+					border-radius: 4px;
+					font-weight: bold;
+					transition: all 0.2s;
+				"
+				>View ORC Docs</a
+			>
 		</div>
 
+		<!-- Bottom Grid: Rest of items (2 per row) -->
 		<div
-			class="portfolio-item"
-			data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+			class="portfolio-grid-bottom"
+			style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
 		>
-			<img
-				class="portfolio-thumb"
-				src="/images/portfolio/ronin.svg"
-				alt="Ronin"
-			/>
-			<h2>Ronin: A Docs as Tests Story</h2>
-			<p>
-				Explains how Docs as Tests can be used to keep docs in sync with the
-				product.
-			</p>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 2</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 3</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 4</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 5</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 6</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 7</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 8</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 9</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 10</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 11</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 12</h2>
+				<p>Coming soon...</p>
+			</div>
+			<div class="portfolio-item placeholder">
+				<div
+					class="portfolio-thumb"
+					style="
+						background: rgba(0, 255, 255, 0.05);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 150px;
+						border-bottom: 1px solid #335555;
+					"
+				>
+					<span style="color: #335555; font-size: 2rem">?</span>
+				</div>
+				<h2>Project Placeholder 13</h2>
+				<p>Coming soon...</p>
+			</div>
 		</div>
 	</div>
 </div>

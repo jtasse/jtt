@@ -1,11 +1,14 @@
 import * as THREE from "three"
 import { loadContentHTML, parseBlogPosts } from "../contentLoader.js"
 import { router } from "../router.js"
-import { createOrcPreview } from "./orc-demo/orc-demo.js"
-import { scene, controls } from "../core/SceneManager.js"
+import { scene, controls, camera } from "../core/SceneManager.js"
 import { getPyramidAnimToken } from "../pyramid/state.js"
 import { pyramidGroup } from "../pyramid/state.js"
 import { ScrollManager } from "./ScrollManager.js"
+import {
+	createOrcShowcase,
+	cleanupOrcShowcase,
+} from "./orc-demo/OrcShowcase.js"
 
 // === Content Display Logic ===
 
@@ -103,6 +106,17 @@ export function showPortfolioPlane(onCloseCallback) {
 		contentEl.style.display = ""
 		contentEl.classList.add("show")
 		contentEl.style.pointerEvents = "auto"
+
+		// Initialize the ORC showcase in the header container
+		const showcaseContainer = contentEl.querySelector(
+			"#orc-showcase-container"
+		)
+		if (showcaseContainer) {
+			// Small delay to ensure container has proper dimensions
+			requestAnimationFrame(() => {
+				createOrcShowcase(showcaseContainer)
+			})
+		}
 
 		setupPortfolioClickHandlers(contentEl, onCloseCallback)
 	})
@@ -238,6 +252,10 @@ function hideAbout() {
 
 function hidePortfolio() {
 	const plane = scene.getObjectByName("portfolioPlane")
+
+	// Clean up ORC showcase if active
+	cleanupOrcShowcase()
+
 	if (plane) scene.remove(plane)
 
 	const contentEl = document.getElementById("content")
@@ -407,7 +425,6 @@ function isImageURL(url) {
 // === ORC Overlays ===
 
 let orcPreviewOverlay = null
-let orcPreviewElement = null
 
 export function showOrcPreviewOverlay() {
 	if (!orcPreviewOverlay) {
@@ -433,11 +450,6 @@ export function showOrcPreviewOverlay() {
 			height: "120px",
 			boxSizing: "border-box",
 		})
-
-		orcPreviewElement = createOrcPreview(140, 90)
-		orcPreviewElement.style.borderRadius = "8px"
-		orcPreviewElement.style.pointerEvents = "none"
-		orcPreviewOverlay.appendChild(orcPreviewElement)
 
 		const textContainer = document.createElement("div")
 		textContainer.innerHTML = `

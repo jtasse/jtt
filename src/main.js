@@ -230,7 +230,7 @@ router.onRouteChange((route) => {
 			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
-		if (isOrcSceneActive()) {
+		if (isOrcSceneActive() && currentPage === "orc-demo") {
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "portfolio")
