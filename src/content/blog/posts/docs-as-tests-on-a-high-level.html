@@ -7,37 +7,15 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Orbitron:wght@400..900&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Helvetica:wght@400..900&display=swap"
 			rel="stylesheet"
 		/>
 		<link rel="stylesheet" href="/src/content/blog/blog.css" />
+		<script src="/src/content/blog/blog.js" defer></script>
 	</head>
 	<body>
 		<div class="container">
-			<header>
-				<div class="site-branding">
-					<h1><a href="/" style="color: white">James.Tasse</a></h1>
-					<h2>// BLOG</h2>
-					<a href="/src/content/blog/blog.html" class="back-link"
-						>&lt;&lt; blog index</a
-					>
-				</div>
-				<div class="contact-info">
-					<h2>CONTACT</h2>
-					<p>james.tasse@gmail.com</p>
-					<p>(216)-219-1538</p>
-					<p>
-						<a
-							href="https://www.linkedin.com/in/jtasse/"
-							target="_blank"
-							rel="noreferrer noopener"
-							>LinkedIn</a
-						>
-					</p>
-				</div>
-			</header>
-
-			<main>
+			<main class="blog-content single-post">
 				<article>
 					<div class="post-image">
 						<img
@@ -46,18 +24,321 @@
 						/>
 					</div>
 
-					<div class="post-content" style="margin-top: 2rem; line-height: 1.6">
-						<h1>Docs as Tests: Part I — On a High (Level)</h1>
-						<div class="post-meta" style="margin-bottom: 2rem">
-							<time datetime="2025-07-17">July 17, 2025</time> • James Tasse
-						</div>
-
-						<p>
-							[Content placeholder: Please paste the content for "Docs as Tests:
-							Part I — On a High (Level)" here]
-						</p>
+					<h1>Docs as Tests: Part I — On a High (Level)</h1>
+					<div class="post-meta">
+						<time datetime="2025-05-29">May 29, 2025</time> | James Tasse | 4min
+						read
 					</div>
-					<hr />
+
+					<blockquote>
+						<p>
+							Docs as Tests: the series! OK the name needs work, but this is my
+							first post in what I expect to be a series of [at least 2] Docs as
+							Tests posts (and probably some videos as well)
+						</p>
+					</blockquote>
+
+					<p class="edit-note">
+						<strong>EDIT 6/30/25</strong>: I have created a
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+							target="_blank"
+							rel="noreferrer noopener"
+							>companion video</a
+						>
+						that illustrates the points of this post (and more). Just want to
+						see a demo of Docs as Tests in action? Use
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=452s"
+							target="_blank"
+							rel="noreferrer noopener"
+							>this link</a
+						>
+						to jump straight there.
+					</p>
+
+					<h2 id="the-book">The Book</h2>
+
+					<p>
+						Welcome! If you're here, you probably heard about this phenomenon
+						called "Docs as Tests", which
+						<a href="https://www.linkedin.com/in/manuelrbsilva/">Manny Silva</a>
+						coined and then went on to write the
+						<em
+							><a
+								href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361/"
+								>Docs as Tests</a
+							></em
+						>
+						book.
+					</p>
+
+					<p>
+						First off, let me be clear that I am not affiliated with the
+						<em>Docs as Tests</em> book, but as a technical writer I read it and
+						I
+						<a href="https://www.amazon.com/gp/customer-reviews/R24W3IKLHWG1S6/"
+							>thought it was really cool and definitely worth reading</a
+						>. (I can vouch for the Kindle version being well put together, but
+						there is a paperback version as well—either way, it's worth your
+						time!).
+					</p>
+
+					<blockquote>
+						<p>
+							<strong>DISCLAIMER</strong>: I will try to make it extra clear
+							where possible, but you can basically assume everything I am going
+							to say in this post was either pulled directly from the Docs as
+							Tests book or heavily inspired by it.
+						</p>
+					</blockquote>
+
+					<h2 id="the-promise">The Promise</h2>
+
+					<p>
+						After reading the <em>Docs as Tests</em> book, I am confident that
+						the Docs as Tests discipline can solve <em>many</em> business
+						problems related to documentation. In the book, Manny goes into
+						great detail how <em>this</em> bit of tech can help you test with
+						docs for <em>that</em> part of the stack.
+					</p>
+
+					<h2 id="the-goods">The Goods</h2>
+
+					<p>
+						However, if you're not a software engineer (or perhaps even if you
+						are, as I was!), you might be intimidated by the amount of tools
+						mentioned in the book. Some examples:
+					</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-testing-tools.png"
+							alt="Testing tools diagram"
+						/>
+					</figure>
+
+					<blockquote>
+						<p>
+							NOTES:<br />* I added Pytest because I have used it for
+							integration testing<br />** Doc Detective is kind of a unicorn in
+							that it seems to be capable of testing in multiple areas
+						</p>
+					</blockquote>
+
+					<p>
+						I did my best to break the tools down by test surface area, but I
+						suspect some of these tools are more versatile (i.e. - they can test
+						more areas) than the graphic would suggest.
+					</p>
+
+					<h2 id="and-you-showed-me-the-tools-why">
+						And You Showed Me the Tools Why?
+					</h2>
+
+					<p>Oh, right I'm trying to make you <em>more</em> comfortable.</p>
+
+					<p>
+						First, before going anywhere with Docs as Tests, one helpful
+						strategy is to
+						<a href="https://youtu.be/SkpXpvTk6iU?si=wCqnfOazZm1OLhtj&amp;t=422"
+							>redirect your overwhelm into curiosity</a
+						>. Another way to put this is to acknowledge you are going to have
+						"What the heck is <em>that</em>?" moments, and focus on the stuff
+						that you <em>can</em> understand.
+					</p>
+
+					<p>
+						Second, if there's one thing I learned as a developer it's that
+						scope matters. A lot. Don't bite off more than you can chew!
+					</p>
+
+					<p>
+						In the book, Manny suggests (and I agree completely) that you need
+						to decide which areas (e.g. - UI, API, etc.) that you want to begin
+						improving with documentation testing. (You might have multiple areas
+						that can be improved, but you should start with a small win and go
+						from there).
+					</p>
+
+					<h2 id="what-success-looks-like">What Success Looks Like</h2>
+
+					<p>
+						You may have already clocked it based on the tooling discussion
+						above, but one frustrating thing about Docs as Tests is that a
+						successful testing implementation for Company A might look very
+						different from Company B's implementation. In other words, it
+						depends on your environment and answers to questions like:
+					</p>
+
+					<ul>
+						<li>
+							Do your docs describe the behavior of a UI, an API, or both?
+						</li>
+						<li>Do you have code samples that developers can run?</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: this isn't a complete list of guiding
+							questions, but hopefully these are enough to get your docs testing
+							gears turning.
+						</p>
+					</blockquote>
+
+					<h2 id="demo">Demo</h2>
+
+					<blockquote>
+						<p>
+							Before going any further, I wanted to mention that Manny Silva
+							recently showed off v3 of his
+							<a href="https://doc-detective.com/">Doc Detective</a> tool in
+							<a href="https://www.youtube.com/watch?v=zQ4_1vBW_QY&amp;t=28s"
+								>this video</a
+							>, which includes some examples like the one I'm about to show.
+						</p>
+					</blockquote>
+
+					<p>
+						Although there is often a place for a deep dive showing how
+						something works (stay tuned for more Docs as Tests content here), I
+						also think there's value in distilling one potential approach down
+						to a few screenshots. So let's begin!
+					</p>
+
+					<p>First, consider the sign-up page below for a product:</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-signup-page.png"
+							alt="Sign-up page screenshot"
+						/>
+					</figure>
+
+					<p>
+						Now suppose that we have the following documentation (in markdown)
+						instructing end users how to sign up using this page:
+					</p>
+
+					<pre><code>1. Navigate to [Product Home](https://jtasse.github.io/docsastests-demo/index.html)
+
+2. Enter your address in the **Email** field.
+
+3. Enter a password in the **New Password** field.
+
+4. Click **Create Account**.</code></pre>
+
+					<p>Have you spotted the problem yet?</p>
+
+					<p>No worries if not. Let's see what Doc Detective can find.</p>
+
+					<pre class="error-output"><code>"result": "FAIL",
+"resultDescription":
+     "No elements matched selector or text.",
+     "find": "<mark>Create Account</mark>",</code></pre>
+
+					<p>
+						Oh no, it looks like that blasted development team has done it
+						again! As the above Doc Detective test result shows,
+						<strong
+							>the test failed because the text of the button on the product
+							page no longer matches the documentation</strong
+						>.
+					</p>
+
+					<h2 id="so-what">So what?</h2>
+
+					<p>
+						Isn't this cool?! OK, I hear you, failing tests are a bummer. But
+						think about what this means (again, just repeating the logic from
+						the <em>Docs as Tests</em> book):
+					</p>
+
+					<p class="highlight">
+						<strong
+							>You can use tools like Doc Detective to catch discrepancies
+							between your product and docs before the product even
+							releases!</strong
+						>
+					</p>
+
+					<h2 id="and-from-the-devs-come-testing-riches">
+						And from the devs come testing riches
+					</h2>
+
+					<blockquote>
+						<p>
+							DISCLAIMER: below is probably an oversimplification of how
+							software testing works (and how messy it can be), but hopefully it
+							communicates the power of what documentarians can now access
+						</p>
+					</blockquote>
+
+					<p>
+						Let me try to put the above revelation into a different context. I
+						worked as a software developer for about 7 years. For probably every
+						product I worked on, myself and other devs would write tests that
+						would run every time a new change is introduced to the software.
+					</p>
+
+					<p>
+						If a test failed, it meant that a developer had made a change that
+						didn't play nice with some existing functionality. They broke
+						something.
+					</p>
+
+					<p>
+						I don't recall documentarians/technical writers ever having access
+						to <em>anything</em> like that. Sure there are lots of tools to
+						check spelling, grammar, style; and those are still important.
+					</p>
+
+					<p>
+						But now technical writers armed with tests like the one I demoed
+						above can say:
+					</p>
+
+					<blockquote class="pullquote">
+						<p>Hey, dev team: <strong>you broke my docs*</strong></p>
+					</blockquote>
+
+					<p>
+						* you might want to say it a little nicer than that, as developers
+						are people just trying to get their stuff done, too (see: the
+						<a
+							href="https://retrospectivewiki.org/index.php?title=The_Prime_Directive"
+							>Agile Prime Directive</a
+						>)
+					</p>
+
+					<h2 id="whats-next">What's Next</h2>
+
+					<p>
+						If you're feeling brave, you can
+						<a
+							href="https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository"
+							>clone</a
+						>
+						the
+						<a href="https://github.com/jtasse/docsastests-demo/tree/main"
+							>GitHub repository</a
+						>
+						that I used for the demo in this post.
+					</p>
+
+					<p>
+						But fear not if you stopped learning about cloning with
+						<a href="https://www.imdb.com/title/tt0117108/">Multiplicity</a>
+						(Michael Keaton's best work?). I intend to do a deeper dive into how
+						Doc Detective (and maybe other testing tools) work in my next post.
+					</p>
+
+					<p>
+						I also plan produce a related video or two, if that's more your
+						speed.
+					</p>
+
+					<p>Until then, happy testing.</p>
 				</article>
 			</main>
 		</div>

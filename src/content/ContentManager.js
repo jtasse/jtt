@@ -203,26 +203,17 @@ export function showBlogPost(route) {
 
 			contentEl.innerHTML = `
 				<div class="blog-content single-post">
-					<button class="embed-back-btn">← Back to Blog</button>
 					${content}
 				</div>
 			`
 			contentEl.style.display = ""
 			contentEl.classList.add("show")
 			contentEl.style.pointerEvents = "auto"
-
-			const backBtn = contentEl.querySelector(".embed-back-btn")
-			if (backBtn) {
-				backBtn.addEventListener("click", () => {
-					router.navigate("/blog")
-				})
-			}
 		})
 		.catch((err) => {
 			console.error(err)
 			contentEl.innerHTML = `
 				<div class="blog-content single-post">
-					<button class="embed-back-btn">← Back to Blog</button>
 					<h1>Error</h1>
 					<p>Failed to load blog post. Please try again later.</p>
 				</div>
@@ -230,13 +221,6 @@ export function showBlogPost(route) {
 			contentEl.style.display = ""
 			contentEl.classList.add("show")
 			contentEl.style.pointerEvents = "auto"
-
-			const backBtn = contentEl.querySelector(".embed-back-btn")
-			if (backBtn) {
-				backBtn.addEventListener("click", () => {
-					router.navigate("/blog")
-				})
-			}
 		})
 }
 

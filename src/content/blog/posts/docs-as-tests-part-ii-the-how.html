@@ -7,37 +7,15 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Orbitron:wght@400..900&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Helvetica:wght@400..900&display=swap"
 			rel="stylesheet"
 		/>
 		<link rel="stylesheet" href="/src/content/blog/blog.css" />
+		<script src="/src/content/blog/blog.js" defer></script>
 	</head>
 	<body>
 		<div class="container">
-			<header>
-				<div class="site-branding">
-					<h1><a href="/" style="color: white">James.Tasse</a></h1>
-					<h2>// BLOG</h2>
-					<a href="/src/content/blog/blog.html" class="back-link"
-						>&lt;&lt; blog index</a
-					>
-				</div>
-				<div class="contact-info">
-					<h2>CONTACT</h2>
-					<p>james.tasse@gmail.com</p>
-					<p>(216)-219-1538</p>
-					<p>
-						<a
-							href="https://www.linkedin.com/in/jtasse/"
-							target="_blank"
-							rel="noreferrer noopener"
-							>LinkedIn</a
-						>
-					</p>
-				</div>
-			</header>
-
-			<main>
+			<main class="blog-content single-post">
 				<article>
 					<div class="post-image">
 						<img
@@ -46,18 +24,952 @@
 						/>
 					</div>
 
-					<div class="post-content" style="margin-top: 2rem; line-height: 1.6">
-						<h1>Docs as Tests: Part II — The How</h1>
-						<div class="post-meta" style="margin-bottom: 2rem">
-							<time datetime="2025-07-17">July 17, 2025</time> • James Tasse
-						</div>
-
-						<p>
-							[Content placeholder: Please paste the content for "Docs as Tests:
-							Part II — The How" here]
-						</p>
+					<h1>Docs as Tests: Part II — The How</h1>
+					<div class="post-meta">
+						<time datetime="2025-06-02">June 2, 2025</time> | James Tasse | 8min
+						read
 					</div>
-					<hr />
+
+					<blockquote>
+						<p>
+							This is part two in a series of posts describing the value and
+							implementation of
+							<a href="https://www.docsastests.com/">Docs as Tests</a>.
+						</p>
+					</blockquote>
+
+					<nav class="toc">
+						<p class="toc-heading">Contents</p>
+						<ol>
+							<li>
+								<a href="#previously-on-docs-as-tests"
+									>Previously On Docs as Tests</a
+								>
+							</li>
+							<li><a href="#intended-audience">Intended Audience</a></li>
+							<li><a href="#technical-approach">Technical Approach</a></li>
+							<li><a href="#goals-for-this-post">Goals for this post</a></li>
+							<li><a href="#where-are-we">Where Are We?</a></li>
+							<li><a href="#prerequisites">Prerequisites</a></li>
+							<li>
+								<a href="#structure-of-the-docsastests-demo-project"
+									>Structure of the docsastests-demo project</a
+								>
+							</li>
+							<li><a href="#running-the-tests">Running the tests</a></li>
+							<li><a href="#what-now">What now?</a></li>
+						</ol>
+					</nav>
+
+					<p class="edit-note">
+						<strong>EDIT 6/30/25</strong>: I have created a
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+							target="_blank"
+							rel="noreferrer noopener"
+							>companion video</a
+						>
+						that illustrates the points of this post (and more). Just want to
+						see how to set up and run Docs as Tests? Use
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=717s"
+							target="_blank"
+							rel="noreferrer noopener"
+							>this link</a
+						>
+						to jump straight there.
+					</p>
+
+					<h2 id="previously-on-docs-as-tests">
+						<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
+							>Previously</a
+						>
+						On Docs as Tests
+					</h2>
+
+					<ul>
+						<li>
+							I described the promise of the
+							<a href="https://www.docsastests.com/"
+								>Docs As Tests discipline</a
+							>
+							coined by
+							<a href="https://www.linkedin.com/in/manuelrbsilva"
+								>Manny Silva</a
+							>
+							and borrowed liberally from Manny's fantastic
+							<a
+								href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361"
+								>book of the same name</a
+							>.
+						</li>
+						<li>
+							I then went on to categorize some of the tools mentioned in the
+							book before encouraging documentarians to start thinking about
+							what part(s) of their environment might benefit the most from a
+							Docs as Tests implementation.
+						</li>
+						<li>
+							Finally, I presented a very simple
+							<a
+								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo"
+								>demo</a
+							>
+							showing how Docs as Tests (and Manny's
+							<a href="https://doc-detective.com/">Doc Detective</a> tool, in
+							this case) can catch a divergence between a product (a web
+							application in this scenario) and the documentation intended to
+							describe it.
+						</li>
+					</ul>
+
+					<h2 id="intended-audience">Intended Audience</h2>
+
+					<p>
+						My last post was very much focused on the business value of Docs as
+						Tests and [hopefully] building some excitement in the minds of
+						technical writers. But in this one my goal is to provide enough
+						technical detail to whet the appetite of more technical folks (think
+						developers, DocOps, etc.) while still bringing along those of you
+						tech writers (or documentarians, if you prefer) that dared to dream
+						after seeing the demo from last time.
+					</p>
+
+					<blockquote>
+						<p>
+							By the way, it's important I acknowledge that some documentarians
+							write code and some software engineers write docs—I will do my
+							best to meet you where you are!
+						</p>
+					</blockquote>
+
+					<h2 id="technical-approach">Technical Approach</h2>
+
+					<p>
+						I fully admit that trying to create an instructional technical post
+						for such a diverse set of readers is a bit like threading a needle,
+						but I am going to try anyway. So I'll start with some suggestions as
+						you read this post:
+					</p>
+
+					<ul>
+						<li>
+							<strong>For folks with <em>less</em> technical experience</strong
+							>: this might feel a bit like onboarding at your last job (but
+							hopefully more fun!), as I am going to introduce you to the tools,
+							commands, etc. that you'll need to run the demo from the
+							<a
+								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
+								>last post</a
+							>
+							(and more) yourself. If at any point you feel overwhelmed, that's
+							fine—you are welcome to
+							<a href="mailto:james.tasse@gmail.com">email me</a> or take a
+							break and come back in an hour, a day, or a week.
+						</li>
+						<li>
+							<strong>For folks with <em>more</em> technical experience</strong
+							>: I'll try to structure things so you can easily skip over
+							sections you might know (e.g. - installing VS Code).
+						</li>
+						<li>
+							<strong>For <em>everyone</em></strong
+							>: if you need help or have questions/feedback regarding this
+							post; go ahead and
+							<a href="mailto:james.tasse@gmail.com">email me</a> or leave a
+							comment below. On the other hand, if your questions/feedback
+							relate to Doc Detective, visit the Doc Detective
+							<a href="https://discord.gg/2M7wXEThfF">Discord</a> or
+							<a
+								href="https://www.linkedin.com/company/doc-detective/posts/?feedView=all"
+								>LinkedIn</a
+							>
+							page.
+						</li>
+					</ul>
+
+					<h2 id="goals-for-this-post">Goals for this post</h2>
+
+					<ol>
+						<li>
+							Discuss where the testing we're doing fits with automated software
+							tests
+						</li>
+						<li>Install prerequisites</li>
+						<li>Run tests</li>
+					</ol>
+
+					<h2 id="where-are-we">Where Are We?</h2>
+
+					<p>
+						Before getting into the technical stuff I want to paint a picture of
+						where Docs as Tests <em>lives</em> in the software development and
+						documentation space. If you have any familiarity with Continuous
+						Integration / Continuous Delivery (or
+						<a href="https://about.gitlab.com/topics/ci-cd/">CI/CD</a>), you've
+						probably seen a diagram like the one below.
+					</p>
+
+					<details open>
+						<summary>CI/CD Diagram (click to collapse/expand)</summary>
+						<figure class="post-figure">
+							<img
+								src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-cicd-diagram.png?w=1024"
+								alt="Diagram showing 'Continuous Integration / Continuous Delivery' process at a high level"
+							/>
+							<figcaption>
+								Image source:
+								<a
+									href="https://www.primotech.com/ci-cd-pipeline-everything-you-need-to-know/"
+									>primotech.com</a
+								>
+							</figcaption>
+						</figure>
+					</details>
+
+					<p>
+						Basically, the software (and docs) development process goes from
+						left to right. Now for our purposes, we want to focus on the
+						<code>test</code> step.
+					</p>
+
+					<details open>
+						<summary>Types of Tests</summary>
+						<figure class="post-figure">
+							<img
+								src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-software-vs-doc-testing.png?w=813"
+								alt="Types of software and documentation tests"
+							/>
+						</figure>
+					</details>
+
+					<blockquote>
+						<p>
+							A word of caution: this diagram is by no means a complete picture
+							of all types of testing (especially on the software development
+							side). Also, if you think about it too much you'll see there's a
+							bit of an apples to oranges comparison going on.
+						</p>
+					</blockquote>
+
+					<p>
+						It seems fair to say that software testing is more mature as a
+						discipline than Docs as Tests—after all, it has been around for much
+						longer. This is reflected in the diagram above where I show the
+						various flavors of software testing.
+					</p>
+
+					<p>
+						But Docs as Tests is catching up fast! When you look at the Venn
+						diagram in the <code>Docs</code> section of the diagram, do you see
+						anything familiar? You might recall (or not, which is fine!) how in
+						the last post I shared
+						<a
+							href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#the-goods"
+							>an image listing some of the tools</a
+						>
+						we have available for testing various parts of our docs.
+					</p>
+
+					<p>
+						Below is that image [slightly altered for correctness/emphasis]
+						again. The takeaway here is that despite Docs As Tests being the new
+						kid (compared to software testing), we already have lots of tools we
+						can use for our tests!
+					</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-testing-tools-v2.png?w=842"
+							alt="Documentation testing tools"
+						/>
+					</figure>
+
+					<p>
+						All right, that's enough mental positioning—let's get your
+						environment ready to do some testing!
+					</p>
+
+					<h2 id="prerequisites">Prerequisites</h2>
+
+					<blockquote class="pullquote">
+						<p>
+							You can't save the world without the right tools, especially a
+							crowbar.
+						</p>
+						<cite
+							>—<a href="https://half-life.fandom.com/wiki/Gordon_Freeman"
+								>Gordon Freeman</a
+							>
+							(probably)</cite
+						>
+					</blockquote>
+
+					<p>
+						I am going to list the tools that you'll need and where to get them.
+						I believe they are all available in Windows, Mac, and Linux
+						environments, but
+						<a href="mailto:james.tasse@gmail.com">let me know</a> if you run
+						into issues and we'll figure something out.
+					</p>
+
+					<p>
+						Also, I know that people might prefer different tools. For example,
+						the newer Cursor
+						<a
+							href="https://en.wikipedia.org/wiki/Integrated_development_environment"
+							>IDE</a
+						>
+						has gained some popularity. Of course, if you are using a different
+						IDE than VS Code, I suspect you already have the tools listed below
+						(or equivalent) installed and can skip down to cloning my repo.
+					</p>
+
+					<p>OK, let's get started.</p>
+
+					<h3 id="tools">Tools</h3>
+
+					<ul>
+						<li>
+							Download and install
+							<a href="https://git-scm.com/downloads">Git</a>.
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							Don't be intimidated by the Git installer: it has many screens
+							with different options (or at least the Windows one does), but the
+							defaults ought to be fine in most cases. Like good defaults should
+							be!
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>
+							Download and install
+							<a href="https://code.visualstudio.com/download"
+								>Visual Studio Code (VS Code)</a
+							>
+							(or your preferred IDE)
+						</li>
+						<li>
+							Download and install
+							<a href="https://nodejs.org/en/download">Node.js</a>
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							I can vouch for Node.js major version 22 working fine with the
+							tools we will use in these tests, but thankfully you can install
+							multiple versions of Node if you need to use an older version for
+							some reason.
+						</p>
+					</blockquote>
+
+					<h3 id="code">Code</h3>
+
+					<ul>
+						<li>
+							<a href="https://git-scm.com/docs/git-clone">Clone</a> my
+							<a href="https://github.com/jtasse/docsastests-demo"
+								>docsastests-demo</a
+							>
+							repository
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							This process will put a copy of my docsastests-demo repo on your
+							machine. I'll provide steps that should work in any environment.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>Open a command prompt or terminal of some kind</li>
+						<li>
+							Navigate to the directory where you want to store the code
+							repository (note that this is totally arbitrary). I believe there
+							are some slight differences in syntax depending on the OS and/or
+							terminal, but let's suppose you keep (or want to keep) your git
+							projects within the <code>C:/git</code> directory. In this case
+							you would run the command:
+						</li>
+					</ul>
+
+					<pre><code>cd c:/git</code></pre>
+
+					<ul>
+						<li>
+							You'll know you're in the right place if you see something like
+							following left of the blinking cursor in the terminal:
+						</li>
+					</ul>
+
+					<pre><code>c:\git&gt;</code></pre>
+
+					<ul>
+						<li>
+							OK, now go ahead and copy the following command and run it in your
+							terminal:
+						</li>
+					</ul>
+
+					<pre><code>git clone https://github.com/jtasse/docsastests-demo.git</code></pre>
+
+					<ul>
+						<li>
+							You should see <code>Cloning into 'docsastests-demo'...</code> and
+							some other messages appear in your terminal. If there are no
+							errors, you can move on to installing dependencies.
+						</li>
+					</ul>
+
+					<h3 id="dependencies">Dependencies</h3>
+
+					<blockquote>
+						<p>
+							Dependencies are software (often referred to as
+							<strong>packages</strong>) that we can include in a project if we
+							don't want to write the code for the corresponding functions
+							ourselves. For example, since I do not want to write a tool that
+							can auto-detect assertions in markdown and test them, we are going
+							to install Doc Detective as a dependency.
+						</p>
+					</blockquote>
+
+					<p>
+						One nice thing about dependencies is that it is generally quite easy
+						to install them once they are defined in your project.
+					</p>
+
+					<blockquote>
+						<p>
+							Further reading: if you'd like to see the dependencies for the
+							<code>docsastests-demo</code> repo (or any other node-based
+							project), open the
+							<a
+								href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json"
+								>package.json</a
+							>
+							file at the root of the repo.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>
+							OK, now open a terminal (or use an existing one) and navigate to
+							the root of the now-cloned <code>docsastests-demo</code> repo. For
+							example, if you put it in the location I used above, the command
+							would be:
+						</li>
+					</ul>
+
+					<pre><code>cd C:\git\docsastests-demo</code></pre>
+
+					<blockquote>
+						<p>
+							Tip: modern IDEs like VS Code tend to have built-in
+							<a
+								href="https://code.visualstudio.com/docs/terminal/getting-started"
+								>terminal</a
+							>
+							functionality. Although it's not required to use it, you might
+							find that it cuts down on context-switching and helps you ensure
+							you are in the right place (when running commands that are
+							directory-sensitive)
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>Now run the following command:</li>
+					</ul>
+
+					<pre><code>npm install</code></pre>
+
+					<ul>
+						<li>
+							You should see some activity in your terminal. This command can
+							take a long time to run in bigger projects, but we only have a few
+							packages so it shouldn't take more than a couple minutes.
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							NOTE: after the package install is complete you might see a
+							message in your output that looks like this:
+						</p>
+						<pre><code>19 vulnerabilities (6 moderate, 13 high)</code></pre>
+						<p>
+							Unless you plan on creating and releasing production software from
+							your current project/code, these vulnerabilities won't affect you.
+						</p>
+					</blockquote>
+
+					<h2 id="structure-of-the-docsastests-demo-project">
+						Structure of the docsastests-demo project
+					</h2>
+
+					<p>
+						We've installed all the stuff! However, before we jump into testing
+						a quick tour of the project is in order.
+					</p>
+
+					<p>
+						You can think of <code>docsastests-demo</code> as a Frankenstein
+						application that has one purpose—helping you learning how Docs as
+						Test-ing (ugh, I know) works. After you go through the demo you are
+						free to copy it, extend it, or delete it as you see fit. But for
+						now, here's a reference image and corresponding docs for how things
+						are laid out:
+					</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-project-structure.png?w=313"
+							alt="Annotated screenshot of the docsastests-demo project's files as viewed in VS Code"
+						/>
+					</figure>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: the content of this project workspace
+							screenshot will become out of date almost immediately, as some
+							folders (like the test results) will update with every test.
+							However, I will try not to change the
+							<strong>structure</strong> of the project more than is necessary
+						</p>
+					</blockquote>
+
+					<ol>
+						<li>
+							<strong>product</strong>: folder containing the files for the web
+							application we are testing
+						</li>
+						<li>
+							<strong>readthedocs</strong>: folder containing our
+							<a href="https://about.readthedocs.com/">Read the Docs</a>
+							implementation
+						</li>
+						<li>
+							<strong>source</strong>: this is the folder where I am storing
+							markdown files to be tested (we will use the highlighted
+							<code>account-setup.md</code> file for our first test)
+						</li>
+						<li>
+							<strong>results</strong>: this is the folder where
+							<code>Doc Detective</code> will store test results (you can change
+							this in <code>.doc-detective.json</code>)
+						</li>
+						<li>
+							<strong>.markdown-doctest-setup.js</strong>: contains required
+							setup code for markdown-doctest.
+						</li>
+						<li>
+							<strong>.doc-detective.json</strong>: the configuration file for
+							Doc Detective (see the Doc Detective
+							<a href="https://doc-detective.com/docs/category/configuration"
+								>config docs</a
+							>
+							for more info)
+						</li>
+						<li>
+							<strong>package.json</strong>: this file manages packages for the
+							project (see the
+							<a
+								href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json"
+								>npm docs</a
+							>
+							for more info)
+						</li>
+					</ol>
+
+					<h2 id="running-the-tests">Running the tests</h2>
+
+					<h3 id="ui-test-doc-detective">
+						UI Test (<a href="https://doc-detective.com/">Doc Detective</a>)
+					</h3>
+
+					<blockquote>
+						<p>
+							In this test we are going to use Doc Detective to run the test
+							described in the
+							<a
+								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo"
+								>demo</a
+							>
+							portion of the
+							<a
+								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
+								>previous blog post</a
+							>. After confirming that the test fails, we are going to make the
+							required change in our docs and run the tests again to verify the
+							issue is resolved.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>
+							Begin by opening the <code>account-setup.md</code> file, which
+							lives at the path
+							<code>readthedocs/docs/source/account-setup.md</code>.
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: paths can be a bit confusing depending on
+							the use case, but I usually mean "path if starting from the
+							workspace root". If I mean something else, I will try to call it
+							out.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>OK, so you should see markdown match what I have here:</li>
+					</ul>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-account-setup-md.png?w=716"
+							alt="Screenshot of the account-setup.md markdown file"
+						/>
+					</figure>
+
+					<ul>
+						<li>
+							Before we can test our docs against our product, we need to bring
+							the product page (located at <code>product/index.html</code>)
+							online. To do this, open a terminal and run the command:
+						</li>
+					</ul>
+
+					<pre><code>node server.js</code></pre>
+
+					<ul>
+						<li>
+							You should get a confirmation in the terminal that the server is
+							running:
+						</li>
+					</ul>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-server-running.png?w=386"
+							alt="Terminal showing server running"
+						/>
+					</figure>
+
+					<blockquote>
+						<p>
+							NOTE about terminals: when you run a process like a Node server in
+							a terminal, the process essentially takes that terminal over. So
+							if you want to run other commands without interrupting the server,
+							you need a new terminal instance.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>First, open a new terminal instance.</li>
+						<li>
+							Now, from the new terminal (not the one running the Node server),
+							execute the following command:
+						</li>
+					</ul>
+
+					<pre><code>npx doc-detective --input readthedocs/docs/source/account-setup.md</code></pre>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: <code>npx</code> is a Node command that
+							lets you run...other commands. Further reading in the
+							<a href="https://docs.npmjs.com/cli/v8/commands/npx">npm docs</a>.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>
+							This test might take a couple minutes, and you'll see a lot of
+							activity in the terminal. Keep waiting until you see the test
+							results.
+						</li>
+					</ul>
+
+					<h3 id="reviewing-test-results-one-by-one">
+						Reviewing Test Results One by One
+					</h3>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: if you installed the optional Doc Detective
+							extension in VS Code, the structure of these results should look
+							familiar
+						</p>
+					</blockquote>
+
+					<p>Let's start with the first block:</p>
+
+					<pre><code>{
+  "result": "PASS",
+  "resultDescription": "Opened URL.",
+  "goTo": {
+    "url": "http://localhost:3000/"
+  },
+  "stepId": "67f92b95-bae1-4c15-b9b8-4d5f3c4030b6"
+}</code></pre>
+
+					<p>Nice! With this test, Doc Detective:</p>
+
+					<ol>
+						<li>
+							Saw the URL in the first step of our
+							<code>account-setup.md</code> file
+						</li>
+						<li>Attempted to access the URL and succeeded</li>
+						<li>Reported a "PASS" result for this test</li>
+					</ol>
+
+					<p>Let's look at the next test:</p>
+
+					<pre><code>{
+  "result": "PASS",
+  "resultDescription": "Returned 200",
+  "checkLink": {
+    "url": "http://localhost:3000/"
+  },
+  "stepId": "9681b914-1cb4-42d2-8e9e-0af1d21602f6"
+}</code></pre>
+
+					<p>
+						If you're not familiar with
+						<a
+							href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
+							>HTTP response codes</a
+						>, a <code>200</code> means that the request has succeeded.
+					</p>
+
+					<p>Now let's see the failing test:</p>
+
+					<pre class="error-output"><code>{
+  "result": "FAIL",
+  "resultDescription": "No elements matched selector or text.",
+  "click": "Create Account",
+  "stepId": "d942f059-bb0c-4f6a-862f-d948d976538c"
+}</code></pre>
+
+					<p>
+						In this test, DD searched for an element with the text "Create
+						Account", but couldn't find it. So the test failed.
+					</p>
+
+					<p>
+						In a real world example, this might manifest as the
+						Development/Engineering team changing the text of a button without
+						informing the Docs team that the corresponding documentation needed
+						to be updated. But we have tests now, and we just caught it before
+						the release!
+					</p>
+
+					<h3 id="making-verifying-the-fix">Making &amp; Verifying the Fix</h3>
+
+					<p>
+						OK, so Doc Detective found a discrepancy between the docs and the
+						product. Awesome! But what happens next?
+					</p>
+
+					<p>
+						While it's possible that the change in the product was a mistake,
+						it's probably more likely that the Product team wanted to change the
+						button language to what it is now (i.e. -
+						<code>Sign Up</code> instead of <code>Create Account</code>) and
+						they just forgot to tell the Docs team.
+					</p>
+
+					<ul>
+						<li>
+							First, open
+							<code>readthedocs/docs/source/account-setup.md</code> in your IDE.
+						</li>
+						<li>
+							Now, on line 6 where it reads:
+							<code>4. Click **Create Account**</code>...
+						</li>
+						<li>
+							...change it so it reads <code>4. Click **Sign Up**.</code> (Be
+							sure to save your changes).
+						</li>
+						<li>Now go ahead and run your tests again:</li>
+					</ul>
+
+					<pre><code>npx doc-detective --input readthedocs/docs/source/account-setup.md</code></pre>
+
+					<ul>
+						<li>
+							When the test run finishes, you should see something that makes
+							you very happy: all items passed!
+						</li>
+					</ul>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-tests-passing.png?w=556"
+							alt="Screenshot of the terminal showing all Doc Detective tests passing"
+						/>
+					</figure>
+
+					<p>
+						Bravo—you just resolved a discrepancy between the docs and the
+						product before it ever got out the door!
+					</p>
+
+					<h3 id="api-test-markdown-doctest">
+						API Test (<a href="https://github.com/Widdershin/markdown-doctest"
+							>markdown-doctest</a
+						>)
+					</h3>
+
+					<p>
+						Up until now, our testing has been all about the UI. But I wanted to
+						conclude this post by dipping into another area, and why not API
+						testing?
+					</p>
+
+					<blockquote>
+						<p>
+							In this test we'll use markdown-doctest to find an issue with one
+							of our code snippets. As with our previous test, we'll fix the
+							issue (this time in our code snippet) and verify our test passes.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>
+							All right, since we don't need a local web server for this test,
+							you can (optionally) stop the Node server you ran in the previous
+							test by opening the terminal where it's running and pressing
+							<code>CTRL + C</code>.
+						</li>
+						<li>
+							Now go ahead and open the file
+							<code>readthedocs/docs/source/js.md</code> in your IDE.
+						</li>
+					</ul>
+
+					<p>
+						Cool. We already did our setup earlier, so let's go ahead and run
+						the test!
+					</p>
+
+					<pre><code>npx markdown-doctest</code></pre>
+
+					<p>
+						The output here is a bit misleading, but we can still get a
+						meaningful result. As I've highlighted below, the test reported that
+						it encountered an HTTP response code of
+						<a
+							href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/404"
+							>404</a
+						>
+						(not found) when trying to do a <code>fetch</code> from the endpoint
+						at <code>https://jsonplaceholder.typicode.com/todoz/1</code>.
+					</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-404-error.png?w=598"
+							alt="Screenshot of the terminal showing the expected 404 (not found) error"
+						/>
+					</figure>
+
+					<ul>
+						<li>
+							Wait a minute, what's a <em>TODOz</em> list? Let's go back to our
+							<code>readthedocs/docs/source/js.md</code> file and fix the code
+							snippet.
+						</li>
+						<li>
+							Change the URL on line 7 from
+							<code
+								>https://jsonplaceholder.typicode.com/<strong>todoz</strong>/1</code
+							>
+							to
+							<code
+								>https://jsonplaceholder.typicode.com/<strong>todos</strong>/1</code
+							>
+							and save your changes.
+						</li>
+						<li>Now run the test again</li>
+					</ul>
+
+					<pre><code>npx markdown-doctest</code></pre>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-doctest-passed.png?w=183"
+							alt="Screenshot of the terminal showing that all tests passed."
+						/>
+					</figure>
+
+					<p>
+						Look, no 404! Essentially, we just verified that after fixing a typo
+						in one of our code snippets, the test suite is now able to reach the
+						correct endpoint without errors. And because we caught it before the
+						docs were released, we didn't have to hear about the developers who
+						called Support asking why their TODOz apps weren't working.
+					</p>
+
+					<p>Great job!</p>
+
+					<h2 id="what-now">What now?</h2>
+
+					<p>
+						Since you've now tested a UI and API using different tools, you can
+						officially say you have Docs as Tests experience in those areas. And
+						seriously, give yourself credit for all of the work it took to get
+						here. Last I checked, the widget that indicates "reading time" for
+						this post was at 20 minutes, but I suspect it took you at least 2-3
+						times make it through all of that setup and testing (probably more
+						for the less technical folks).
+					</p>
+
+					<p>
+						But obviously it doesn't end here. For my part, I'm going to move on
+						to making a video that covers this and the last post. I know some
+						people vibe with learning from videos more than reading, and I also
+						have a large video-shaped hole in my portfolio.
+					</p>
+
+					<h3 id="code-coverage">Code Coverage</h3>
+
+					<p>
+						After that, there is a topic that I think deserves some attention:
+						<a
+							href="https://www.atlassian.com/continuous-delivery/software-testing/code-coverage"
+							>code coverage</a
+						>. You've probably noticed that I have a strong preference for
+						running tests that are auto-detected using tools like Doc Detective.
+						Aside from the fact that these tests have high return on investment,
+						they also scale with your docs automatically.
+					</p>
+
+					<p>
+						However, if code coverage of documentation-based tests is taken into
+						account, it becomes easier for us to have confidence that we are
+						"covering" all of our products with these tests. And, crucially,
+						this can help us prevent our hand-crafted tests from becoming out of
+						sync with our docs.
+					</p>
+
+					<p>
+						That's it for now. Follow me on
+						<a href="https://www.linkedin.com/in/jtasse/">LinkedIn</a> if you'd
+						like to be notified when I publish a video or another blog post.
+					</p>
+
+					<p>Cheers.</p>
 				</article>
 			</main>
 		</div>

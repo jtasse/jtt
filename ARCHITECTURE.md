@@ -140,42 +140,7 @@ These files were created during refactoring but are duplicates (some deleted):
 
 ## Refactor Progress
 
-### Phase 0: Hybrid Architecture ✅ COMPLETE
-
-DOM overlays now used for content instead of canvas textures.
-
-- `#content` div receives page content
-- CSS in `src/content/overlay.css` handles layout
-- Portfolio page converted to DOM hybrid
-
-### Phase 1: Responsive Layout System ✅ MOSTLY COMPLETE
-
-- `LayoutManager` created in `src/core/LayoutManager.js`
-- `LabelManager` created in `src/navigation/LabelManager.js`
-- Nav labels use frustum-based positioning
-- **Known issue**: ORC demo nav labels shift right (sidebar collision)
-
-### Phase 2: Code Extraction 🔄 IN PROGRESS
-
-| Module        | Status     | Notes                                    |
-| ------------- | ---------- | ---------------------------------------- |
-| SceneManager  | ✅ Done    | Scene, camera, renderer, lighting        |
-| InputManager  | ✅ Done    | Raycasting, click/drag detection         |
-| LayoutManager | ✅ Done    | Frustum calculations, responsive scaling |
-| PyramidMesh   | ✅ Done    | Geometry only, no animation              |
-| LabelManager  | ✅ Done    | Label creation, nav positions            |
-| ContactLabel  | ✅ Done    | Contact info display                     |
-| pyramid.js    | ⚠️ Bloated | Still ~2400 lines, needs splitting       |
-| main.js       | ✅ Clean   | Reduced to wiring and initialization     |
-
-### Phase 3: ORC Demo Fixes ✅ COMPLETE
-
-- SmartCamera implemented (`src/content/orc-demo/SmartCamera.js`)
-- Hand behaviors extracted to separate module (`src/hand/`)
-- ORC Demo logic split into `OrcScene.js` and `Decommission.js`
-- Sidebar layout issues fixed via CSS
-
-### Phase 4: Testing ❌ NOT STARTED
+### Phase 4: Testing - IN PROGRESS
 
 - No unit tests yet
 - No visual regression tests
@@ -262,6 +227,13 @@ src/
 2. **Frustum-based positioning** - Use LayoutManager, never hardcode 3D positions
 3. **CSS for styling** - Never use `element.style.*` in JavaScript
 4. **Hand as Actor** - Use high-level behavior methods, not direct mesh manipulation
+
+### Must-Display Elements
+
+- The following items **MUST** be displayed on every page _except_ those that live under `portfolio/docs/`
+  - The same 'Home', 'About', 'Blog', and 'Portfolio' navigation elements as can be seen on the home screen
+  - The same 'Contact Info' pane as can be seen on the home screen
+- While these items should be present on every page, if you believe you need manually add them (instead of using existing navl label and contact pane logic), _ask me first_.
 
 ### Import Conventions
 

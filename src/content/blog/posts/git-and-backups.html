@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Git and Backups - James.Tasse</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Helvetica:wght@400..900&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="/src/content/blog/blog.css" />
+		<script src="/src/content/blog/blog.js" defer></script>
+	</head>
+	<body>
+		<div class="container">
+			<main class="blog-content single-post">
+				<article>
+					<div class="post-image">
+						<img
+							src="/src/content/blog/posts/post-images/git-and-backups/git-backups-featured.png"
+							alt="Git and Backups"
+						/>
+					</div>
+
+					<h1>Git and Backups</h1>
+					<div class="post-meta">
+						<time datetime="2026-01-02">January 2, 2026</time> | James Tasse |
+						3min read
+					</div>
+
+					<nav class="toc">
+						<p class="toc-heading">Contents</p>
+						<ol>
+							<li><a href="#background">Background</a></li>
+							<li><a href="#gitting-gud">Gitting Gud</a></li>
+							<li>
+								<a href="#existing-local-backup-solutions"
+									>Existing Local Backup Solutions</a
+								>
+							</li>
+							<li><a href="#this-backup-solution">This Backup Solution</a></li>
+						</ol>
+					</nav>
+
+					<h2 id="background">Background</h2>
+
+					<p>
+						Lately I've been working on some projects—including a complete
+						reimagining of this very website—and as such I've been interacting
+						with Git on a daily basis. At some point I ran into some conflicts
+						(let's call it <em>infighting</em>) between various code assistants
+						(*glares at Copilot*) and the recurrence of some workspace troubles
+						that I have encountered over the years. So I decided that a backup
+						solution more robust than the *copy appropriate code folders to
+						backup folder* approach I've been doing for years was needed.
+					</p>
+
+					<p>
+						On a related note, since I pivoted to technical writing full time in
+						2024; I've encountered a lot of folks that have been writing for
+						years but have either been forced into the Docs as Code approach, or
+						just want to get more comfortable with it. I get you, and I think I
+						can help.
+					</p>
+
+					<h2 id="gitting-gud">Gitting Gud</h2>
+
+					<p>OK, sorry for the pun, but it's actually relevant here.</p>
+
+					<p>
+						Before I get into the specifics of the backup solution, I wanted to
+						address the elephant in the room:
+						<strong
+							>yes, if you're comfortable with the redundancy that git provides
+							when backing up your [pushed] code, then you don't need an
+							additional backup solution!</strong
+						>
+					</p>
+
+					<p>
+						To put that into technical terms, if you're doing something like
+						this...
+					</p>
+
+					<pre><code>git add .
+git push origin main</code></pre>
+
+					<p>
+						...then you've just backed up any tracked files to a remote
+						repository. Sweet!
+					</p>
+
+					<p>
+						But. <em>But</em>—and this is where things get messy—there's a lot
+						that can happen before you push.
+					</p>
+
+					<p>
+						I mentioned coding assistants above, and I'll pick on GitHub Copilot
+						(a tool co-developed by OpenAI and Microsoft subsidiary GitHub)
+						here. Copilot seems to take a different approach to other coding
+						assistants that I've tried. I confess I don't entirely understand
+						the differences, but according to ChatGPT (lol):
+					</p>
+
+					<blockquote>
+						<p>
+							"The short version:
+							<strong
+								>Copilot operates <em>inside</em> the editor's text
+								model</strong
+							>, while tools like Claude Code and Gemini tend to operate
+							<em>around</em> it. That difference makes Copilot uniquely capable
+							of introducing destructive conflicts when you accept or reject
+							suggestions."
+						</p>
+					</blockquote>
+
+					<p>
+						Furthermore, Copilot can make edits even "before you explicitly
+						accept them" (!).
+					</p>
+
+					<p>
+						This alone might be reason enough to look for a local code backup
+						solution, but I'll list a few more:
+					</p>
+
+					<ul>
+						<li>
+							You want to push "meaty" commits that contain a full feature,
+							bugfix, etc. rather than lots of little commits (see also:
+							squashing commits is a pain :p)
+						</li>
+						<li>
+							You don't know what you don't know, and just want the comfort of
+							being able to manually revert files if something gets borked
+						</li>
+						<li>You're rebasing commits (and not fully comfortable with it)</li>
+					</ul>
+
+					<h2 id="existing-local-backup-solutions">
+						Existing Local Backup Solutions
+					</h2>
+
+					<p>
+						It's worth noting that there are lots of existing backup tools out
+						there. (I, for one, used the free version of
+						<a href="http://fbackup.com">FBackup</a> for years). Although I
+						think the propagation of free cloud backup services like Google
+						Drive and Microsoft OneDrive have obviated the need for a lot of
+						folks to run local backups; if you already use a local backup
+						utility then this solution may be overkill.
+					</p>
+
+					<h2 id="this-backup-solution">This Backup Solution</h2>
+
+					<p>
+						OK, I think we're finally past the caveats. The particulars of my
+						backup solution (I call it "ReactiveBackup") can be found at
+						<a href="https://github.com/jtasse/ReactiveBackup"
+							>https://github.com/jtasse/ReactiveBackup</a
+						>
+						and its
+						<a
+							href="https://github.com/jtasse/ReactiveBackup/blob/main/README.md"
+							>README</a
+						>
+						file.
+					</p>
+
+					<p>But here's a quick primer:</p>
+
+					<p>
+						ReactiveBackup allows Windows, MacOS, and Linux users to configure
+						and run code backups for 1 to N repositories on your local machine.
+						You can use the tool to run a quick ad hoc backup, or have it run
+						backups automatically (it'll look for changes in
+						<code>x</code> configured code folders within the last
+						<code>y</code> number of configured minutes).
+					</p>
+
+					<p>
+						I hope you like the solution and find it useful. If you find bugs (I
+						am sure there are bug<strong>s</strong>—after all this thing was the
+						product of a few vibe coding sessions) please report them at
+						<a
+							href="https://github.com/jtasse/ReactiveBackup/issues"
+							target="_blank"
+							rel="noreferrer noopener"
+							>https://github.com/jtasse/ReactiveBackup/issues</a
+						>. Otherwise, you're welcome to reach out to me with
+						questions/comments.
+					</p>
+
+					<p>Thanks!</p>
+				</article>
+			</main>
+		</div>
+	</body>
+</html>

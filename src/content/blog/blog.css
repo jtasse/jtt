@@ -1,8 +1,62 @@
+/* Base styles */
+body {
+	font-family: "Nunito", sans-serif;
+	background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+	min-height: 100vh;
+	margin: 0;
+	padding: 0;
+}
+
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px;
+}
+
+/* Header styles */
+header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 20px 0;
+	border-bottom: 1px solid #335555;
+	margin-bottom: 30px;
+}
+
+.contact-info {
+	text-align: right;
+	color: #cccccc;
+}
+
+.contact-info h2 {
+	font-family: "Helvetica", sans-serif;
+	color: #00ffff;
+	font-size: 1rem;
+	margin: 0 0 0.5rem 0;
+}
+
+.contact-info p {
+	margin: 0.25rem 0;
+	font-size: 0.9rem;
+}
+
+.contact-info a {
+	color: #00ffff;
+	text-decoration: none;
+}
+
+.contact-info a:hover {
+	text-decoration: underline;
+}
+
+/* Blog content - shared */
 .blog-content {
 	max-width: 1300px;
 	margin: 0 auto;
-	padding: 20px;
+	padding: 2rem;
 	color: white;
+	background: rgba(0, 0, 0, 0.85);
+	border-radius: 12px;
 }
 
 .blog-content h1 {
@@ -11,48 +65,47 @@
 	margin-bottom: 1.5rem;
 }
 
-.blog-post-link {
-	text-decoration: none;
-	color: inherit;
-}
-
-.blog-post {
-	background: rgba(0, 0, 0, 0.6);
-	border: 1px solid #00ffff;
-	border-radius: 12px;
-	padding: 20px;
-	margin-bottom: 30px;
-	transition: transform 0.2s ease;
-}
-
-.blog-post:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 12px rgba(0, 255, 255, 0.1);
-}
-
-.blog-post h2 {
+#posts-heading {
+	text-align: left;
 	color: #00ffff;
-	margin-top: 0;
-	margin-bottom: 10px;
+	font-size: clamp(1.5rem, 4vw, 2.5rem);
+	color: #00aaff;
+	font-size: clamp(1.5rem, 4vw, 2.2rem);
+	margin-bottom: 1.5rem;
+	text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+	text-shadow: 0 0 5px rgba(0, 170, 255, 0.3);
 }
 
-.blog-meta {
+/* Blog index article styles */
+.blog-content article h3 {
+	margin: 0 0 0.5rem 0;
+}
+
+.blog-content article h3 a {
+	color: #00ffff;
+	text-decoration: none;
+	font-size: 1.4rem;
+}
+
+.blog-content article h3 a:hover {
+	text-shadow: 0 0 10px #00ffff;
+}
+
+.blog-content article hr {
+	border: none;
+	border-top: 1px solid #335555;
+	margin: 1.5rem 0;
+}
+
+/* Post meta (date/author) */
+.post-meta {
 	color: #88cccc;
-	font-size: 0.9em;
-	margin-bottom: 15px;
-}
-
-.blog-post img,
-.single-post img {
-	max-width: 100%;
-	height: auto;
-	border: 1px solid #335555;
-	border-radius: 4px;
-	margin-bottom: 15px;
+	font-size: 0.9rem;
+	margin-bottom: 1rem;
 }
 
 /* Blog list view images - constrained for consistent cover look */
-.blog-content:not(.single-post) article img {
+.blog-content:not(.single-post) .post-image img {
 	width: 100%;
 	height: 250px;
 	object-fit: cover;
@@ -61,16 +114,316 @@
 	margin-bottom: 15px;
 }
 
-.blog-post p {
-	line-height: 1.6;
-	margin-bottom: 0;
+/* Single post styles */
+.single-post .post-image {
+	margin-bottom: 2rem;
 }
 
-.single-post .embed-back-btn {
-	margin-bottom: 2rem;
+.single-post .post-image img {
+	width: auto;
+	max-width: 100%;
+	max-height: 600px;
+	object-fit: contain;
+	display: inline;
+	margin: 0 auto;
+	border: 1px solid #335555;
+	border-radius: 4px;
+}
+
+.single-post h1 {
+	font-size: 2.2rem;
+	margin-bottom: 0.5rem;
+}
+
+.single-post h2 {
+	color: #00ffff;
+	font-size: 1.6rem;
+	margin-top: 2.5rem;
+	margin-bottom: 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid #335555;
+}
+
+.single-post h3 {
+	color: #00dddd;
+	font-size: 1.3rem;
+	margin-top: 2rem;
+	margin-bottom: 0.75rem;
+}
+
+.single-post h4 {
+	color: #00cccc;
+	font-size: 1.1rem;
+	margin-top: 1.5rem;
+	margin-bottom: 0.5rem;
 }
 
 .single-post p {
 	margin-bottom: 1.2rem;
 	line-height: 1.7;
+}
+
+.single-post a {
+	color: #00ffff;
+}
+
+.single-post a:hover {
+	text-decoration: underline;
+}
+
+/* Lists */
+.single-post ul,
+.single-post ol {
+	margin-bottom: 1.2rem;
+	padding-left: 2rem;
+}
+
+.single-post li {
+	margin-bottom: 0.5rem;
+	line-height: 1.6;
+}
+
+/* Blockquotes */
+.single-post blockquote {
+	border-left: 3px solid #00ffff;
+	margin: 1.5rem 0;
+	padding: 1rem 1.5rem;
+	background: rgba(0, 255, 255, 0.05);
+	border-radius: 0 4px 4px 0;
+}
+
+.single-post blockquote p {
+	margin-bottom: 0.5rem;
+}
+
+.single-post blockquote p:last-child {
+	margin-bottom: 0;
+}
+
+.single-post blockquote cite {
+	display: block;
+	color: #88cccc;
+	font-style: italic;
+	margin-top: 0.5rem;
+}
+
+.single-post blockquote.pullquote {
+	border-left-width: 4px;
+	font-size: 1.1rem;
+	font-style: italic;
+}
+
+/* Code blocks */
+.single-post code {
+	font-family: "Consolas", "Monaco", monospace;
+	background: rgba(0, 0, 0, 0.4);
+	padding: 0.2rem 0.4rem;
+	border-radius: 3px;
+	font-size: 0.9em;
+	color: #00ffaa;
+}
+
+.single-post pre {
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid #335555;
+	border-radius: 4px;
+	padding: 1rem;
+	overflow-x: auto;
+	margin: 1.5rem 0;
+}
+
+.single-post pre code {
+	background: none;
+	padding: 0;
+	font-size: 0.85rem;
+	line-height: 1.5;
+}
+
+.single-post pre.error-output {
+	border-color: #ff6666;
+	background: rgba(255, 0, 0, 0.1);
+}
+
+.single-post pre.error-output code {
+	color: #ff9999;
+}
+
+/* Figures and images */
+.single-post figure.post-figure {
+	margin: 1.5rem 0;
+}
+
+.single-post figure.post-figure img {
+	max-width: 100%;
+	height: auto;
+	border: 1px solid #335555;
+	border-radius: 4px;
+}
+
+.single-post figure.post-figure.book-cover {
+	float: right;
+	margin: 0 0 1rem 1.5rem;
+	max-width: 250px;
+}
+
+.single-post figure.post-figure figcaption {
+	color: #88cccc;
+	font-size: 0.85rem;
+	font-style: italic;
+	margin-top: 0.5rem;
+}
+
+/* In-article images (not in figures) */
+.single-post img {
+	max-width: 100%;
+	height: auto;
+	border: 1px solid #335555;
+	border-radius: 4px;
+	margin-bottom: 15px;
+}
+
+/* Edit notes */
+.single-post .edit-note {
+	background: rgba(255, 200, 0, 0.1);
+	border-left: 3px solid #ffcc00;
+	padding: 0.75rem 1rem;
+	border-radius: 0 4px 4px 0;
+	font-size: 0.95rem;
+}
+
+/* Highlighted text */
+.single-post .highlight {
+	background: rgba(0, 255, 255, 0.1);
+	padding: 1rem;
+	border-radius: 4px;
+	font-size: 1.05rem;
+}
+
+/* Table of contents */
+.single-post .toc {
+	background: rgba(0, 0, 0, 0.4);
+	border: 1px solid #335555;
+	border-radius: 4px;
+	padding: 1rem 1.5rem;
+	margin: 1.5rem 0;
+}
+
+.single-post .toc-heading {
+	font-family: "Helvetica", sans-serif;
+	color: #00ffff;
+	margin: 0 0 0.75rem 0;
+	font-size: 1rem;
+}
+
+.single-post .toc ol {
+	margin: 0;
+	padding-left: 1.5rem;
+}
+
+.single-post .toc li {
+	margin-bottom: 0.25rem;
+}
+
+.single-post .toc a {
+	color: #88cccc;
+}
+
+.single-post .toc a:hover {
+	color: #00ffff;
+}
+
+/* Collapsible details/summary */
+.single-post details {
+	margin: 1.5rem 0;
+	border: 1px solid #335555;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.single-post details summary {
+	background: rgba(0, 0, 0, 0.4);
+	padding: 0.75rem 1rem;
+	cursor: pointer;
+	color: #00ffff;
+	font-weight: 600;
+}
+
+.single-post details summary:hover {
+	background: rgba(0, 255, 255, 0.1);
+}
+
+.single-post details[open] summary {
+	border-bottom: 1px solid #335555;
+}
+
+.single-post details > *:not(summary) {
+	padding: 0 1rem;
+}
+
+/* Attributions list */
+.single-post .attributions {
+	font-size: 0.9rem;
+	color: #88cccc;
+}
+
+.single-post .attributions a {
+	color: #00cccc;
+}
+
+/* Strikethrough */
+.single-post s {
+	color: #888888;
+}
+
+/* Mark/highlight in code */
+.single-post mark {
+	background: rgba(255, 255, 0, 0.3);
+	color: inherit;
+	padding: 0.1rem 0.2rem;
+	border-radius: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.contact-info {
+		text-align: left;
+		margin-top: 1rem;
+	}
+
+	.blog-content {
+		padding: 1.5rem;
+	}
+
+	.single-post h1 {
+		font-size: 1.8rem;
+	}
+
+	.single-post h2 {
+		font-size: 1.4rem;
+	}
+
+	.single-post figure.post-figure.book-cover {
+		float: none;
+		margin: 1rem auto;
+		max-width: 200px;
+	}
+}
+
+/* Portrait mode adjustments (vertical monitors) */
+@media (max-aspect-ratio: 1/1) {
+	.blog-content {
+		max-width: 90%;
+	}
+}
+
+/* Large screens */
+@media (min-width: 1920px) {
+	.blog-content {
+		max-width: 1300px;
+	}
 }

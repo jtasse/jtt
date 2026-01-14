@@ -1,13 +1,178 @@
-<article>
-	<h1>The Art of Em-Dashing</h1>
-	<div class="blog-meta">January 12, 2026 | James Tasse</div>
-	<p>
-		The em dash is perhaps the most versatile punctuation mark. Depending on the
-		context, the em dash can take the place of commas, parentheses, or colons—in
-		each case to slightly different effect.
-	</p>
-	<p>
-		Notwithstanding its versatility, the em dash is best limited to two
-		appearances per sentence. Otherwise, confusion is likely to result.
-	</p>
-</article>
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Em dashing - James.Tasse</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Helvetica:wght@400..900&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="/src/content/blog/blog.css" />
+		<script src="/src/content/blog/blog.js" defer></script>
+	</head>
+	<body>
+		<div class="container">
+			<main class="blog-content single-post">
+				<article>
+					<div class="post-image">
+						<img
+							src="/src/content/blog/nav-images/dash-2.png"
+							alt="Em dashing"
+						/>
+					</div>
+
+					<h1>Em dashing</h1>
+					<div class="post-meta">
+						<time datetime="2025-06-17">June 17, 2025</time> | James Tasse |
+						2min read
+					</div>
+
+					<h2>The what-dash?</h2>
+
+					<p>
+						If you're like me, the em dash (<code>—</code>) represents an
+						irresistible (lazy?) way to break up sentences. But, frustratingly,
+						it's not super easy to use in every context. For example, MS Word
+						and Google Docs will automatically convert 2 en dashes
+						(<code>--</code>) into an em dash. But what if you're in Notepad or
+						a browser?
+					</p>
+
+					<h2>Windows</h2>
+
+					<h3>Pure keystrokes (if you have a num pad)</h3>
+
+					<p>In Windows, you can insert an em dash by doing the following:</p>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: this solution requires that you have a
+							number pad on your keyboard
+						</p>
+					</blockquote>
+
+					<ol>
+						<li>Hold down Alt</li>
+						<li>Type <code>0151</code></li>
+						<li>Release <code>Alt</code></li>
+					</ol>
+
+					<h3>Emoji picker</h3>
+
+					<p>
+						You can also press Windows key + period to bring up the 'emoji and
+						more' interface and insert an em dash via the 'Symbols' tab.
+					</p>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/em-dashing/emdash-emoji-picker.png"
+							alt="Windows emoji picker showing symbols tab"
+						/>
+					</figure>
+
+					<h3>Espanso</h3>
+
+					<p>
+						These options are fine, if a bit gross. But if you're open to
+						installing the <a href="https://espanso.org/">espanso</a> app on
+						Mac, Windows, or Linux, there is another way.
+					</p>
+
+					<h4>Steps</h4>
+
+					<ul>
+						<li>
+							Download <a href="https://espanso.org/install/">espanso</a> and
+							install it.
+						</li>
+						<li>
+							Find out where the match configuration lives in your environment.
+						</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: in Windows, you can find it by navigating
+							to <code><strong>%appdata%/espanso/match</strong></code> and
+							opening <code><strong>base.yaml</strong></code
+							>. I am not sure about where to configure matches for other
+							operating systems, so see the
+							<a href="https://espanso.org/docs/get-started/">docs</a> for
+							those.
+						</p>
+					</blockquote>
+
+					<ul>
+						<li>Within the base.yaml file, configure a match.</li>
+					</ul>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: below is the match config I am using, but
+							you can use whatever you want (just be sure to avoid collisions
+							with other keystrokes where possible)
+						</p>
+					</blockquote>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/em-dashing/emdash-espanso-config.png"
+							alt="Espanso configuration example"
+						/>
+					</figure>
+
+					<ol>
+						<li>(OPTIONAL but recommended) heading for the match</li>
+						<li>
+							<code>trigger</code>: when these keystrokes are entered while
+							espanso is running they will be replaced by the text defined for
+							the <code>replace</code> value
+						</li>
+						<li>
+							<code>replace</code>: this is the value that will be substituted
+							for the trigger value.
+						</li>
+					</ol>
+
+					<h2>Enjoy!</h2>
+
+					<figure class="post-figure">
+						<img
+							src="/src/content/blog/posts/post-images/em-dashing/emdash-demo.gif"
+							alt="Espanso em dash demo in Notepad"
+						/>
+					</figure>
+
+					<p>
+						<strong>EDIT 6/30/25</strong>: Here's a copy/paste-friendly version
+						of the config that you can add to your <code>base.yaml</code> file,
+						with an entry for an en dash added as a bonus.
+					</p>
+
+					<blockquote>
+						<p>
+							<strong>NOTE</strong>: apparently yaml (or VS Code reading yaml)
+							doesn't display em dashes differently from en dashes (as seen in
+							the <code>replace</code> values below), but it does preserve the
+							character information.<br /><br />If you'd like to verify this
+							yourself, you can copy the characters out of the yaml and paste
+							them somewhere like Notepad or a browser.
+						</p>
+					</blockquote>
+
+					<pre><code>  ## Em dash
+  - trigger: "---"
+    replace: "—"
+
+  ## En dash
+  - trigger: "-+"
+    replace: "–"</code></pre>
+				</article>
+			</main>
+		</div>
+	</body>
+</html>
