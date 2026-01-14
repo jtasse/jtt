@@ -341,10 +341,13 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 }
 
 function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
+	contentEl.scrollTop = 0
+	contentEl.classList.add("fullscreen-viewer")
+
 	contentEl.innerHTML = `
 		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 95vw; height: 98vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
-				<div class="embed-controls" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 100%; height: 100%; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
+				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
 						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
@@ -357,12 +360,10 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 						</svg>
 					</button>
 				</div>
-				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden;">
+				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden; position: relative;">
 					<iframe
 						src="${embedUrl}"
-						width="100%"
-						height="100%"
-						style="border: none;"
+						style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
 						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 						allowfullscreen
 					></iframe>
@@ -370,19 +371,30 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 			</div>
 		</div>
 	`
+
+	const closeViewer = () => {
+		document.removeEventListener("keydown", onEsc)
+		contentEl.classList.remove("fullscreen-viewer")
+		showPortfolioPlane(onCloseCallback)
+	}
+
+	const onEsc = (e) => {
+		if (e.key === "Escape") closeViewer()
+	}
+	document.addEventListener("keydown", onEsc)
+
 	const closeBtn = contentEl.querySelector(".embed-close-btn")
 	if (closeBtn) {
-		closeBtn.addEventListener("click", () =>
-			showPortfolioPlane(onCloseCallback)
-		)
+		closeBtn.addEventListener("click", closeViewer)
 	}
 }
 
 function showImageViewer(contentEl, imageUrl, onCloseCallback) {
+	contentEl.scrollTop = 0
 	contentEl.innerHTML = `
 		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center;">
-			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 90vw; height: 90vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
-				<div class="embed-controls" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: auto; max-width: 90vw; height: auto; max-height: 90vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
+				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${imageUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
 						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
@@ -399,17 +411,27 @@ function showImageViewer(contentEl, imageUrl, onCloseCallback) {
 					<img
 						src="${imageUrl}"
 						alt="Portfolio image"
-						style="max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid #335555; border-radius: 4px;"
+						class="portfolio-viewer-image"
+						style="max-width: 100%; max-height: calc(90vh - 60px); object-fit: contain; border: 1px solid #335555; border-radius: 4px;"
 					/>
 				</div>
 			</div>
 		</div>
 	`
+
+	const closeViewer = () => {
+		document.removeEventListener("keydown", onEsc)
+		showPortfolioPlane(onCloseCallback)
+	}
+
+	const onEsc = (e) => {
+		if (e.key === "Escape") closeViewer()
+	}
+	document.addEventListener("keydown", onEsc)
+
 	const closeBtn = contentEl.querySelector(".embed-close-btn")
 	if (closeBtn) {
-		closeBtn.addEventListener("click", () =>
-			showPortfolioPlane(onCloseCallback)
-		)
+		closeBtn.addEventListener("click", closeViewer)
 	}
 }
 
@@ -494,16 +516,17 @@ export function handleContentLink(link, router) {
 function showFullScreenEmbed(contentEl, url, type) {
 	if (!contentEl) return
 
+	contentEl.scrollTop = 0
 	// Reset styles for full screen
 	contentEl.innerHTML = ""
-	contentEl.className = "fullscreen-embed"
+	contentEl.className = "fullscreen-viewer"
 	contentEl.style.display = "block"
 	contentEl.style.pointerEvents = "auto"
 
 	contentEl.innerHTML = `
 		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 95vw; height: 98vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
-				<div class="embed-controls" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 100%; height: 100%; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
+				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${url}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
 						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
@@ -516,12 +539,10 @@ function showFullScreenEmbed(contentEl, url, type) {
 						</svg>
 					</button>
 				</div>
-				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden;">
+				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden; position: relative;">
 					<iframe
 						src="${url}"
-						width="100%"
-						height="100%"
-						style="border: none;"
+						style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
 						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 						allowfullscreen
 					></iframe>
@@ -530,56 +551,88 @@ function showFullScreenEmbed(contentEl, url, type) {
 		</div>
 	`
 
-	const closeBtn = contentEl.querySelector(".embed-close-btn")
-	if (closeBtn) {
-		closeBtn.addEventListener("click", () => {
-			contentEl.innerHTML = ""
-			contentEl.style.display = "none"
-			contentEl.className = ""
-			// Restore portfolio state
-			if (pyramidGroup) {
-				pyramidGroup.visible = true
-				// We assume we came from portfolio if clicking links
-				showPortfolioPlane()
-			}
-		})
-	}
-}
-
-function showFullScreenImage(contentEl, url) {
-	if (!contentEl) return
-
-	contentEl.innerHTML = ""
-	contentEl.className = "fullscreen-embed"
-	contentEl.style.display = "block"
-	contentEl.style.pointerEvents = "auto"
-
-	const closeBtn = createCloseButton(() => {
+	const closeViewer = () => {
+		document.removeEventListener("keydown", onEsc)
 		contentEl.innerHTML = ""
 		contentEl.style.display = "none"
 		contentEl.className = ""
+		// Restore portfolio state
 		if (pyramidGroup) {
 			pyramidGroup.visible = true
+			// We assume we came from portfolio if clicking links
 			showPortfolioPlane()
 		}
-	})
+	}
 
-	const img = document.createElement("img")
-	img.src = url
-	img.className = "fullscreen-image"
+	const onEsc = (e) => {
+		if (e.key === "Escape") closeViewer()
+	}
+	document.addEventListener("keydown", onEsc)
 
-	contentEl.appendChild(img)
-	contentEl.appendChild(closeBtn)
+	const closeBtn = contentEl.querySelector(".embed-close-btn")
+	if (closeBtn) {
+		closeBtn.addEventListener("click", closeViewer)
+	}
 }
 
-function createCloseButton(onClick) {
-	const btn = document.createElement("button")
-	btn.innerHTML = "&times;"
-	btn.className = "fullscreen-close-btn"
-	btn.onclick = (e) => {
-		e.preventDefault()
-		e.stopPropagation()
-		onClick()
+function showFullScreenImage(contentEl, url, onCloseCallback) {
+	if (!contentEl) return
+
+	contentEl.scrollTop = 0
+	contentEl.innerHTML = ""
+	contentEl.className = "fullscreen-viewer"
+	contentEl.style.display = "block"
+	contentEl.style.pointerEvents = "auto"
+
+	contentEl.innerHTML = `
+		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); padding: 10px; box-sizing: border-box;">
+				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+					<a href="${url}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
+						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
+						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+						</svg>
+					</a>
+					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
+						</svg>
+					</button>
+				</div>
+				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+					<img
+						src="${url}"
+						alt="Full screen image"
+						style="max-width: 100%; max-height: 100%; object-fit: contain;"
+					/>
+				</div>
+			</div>
+		</div>
+	`
+
+	const closeViewer = () => {
+		document.removeEventListener("keydown", onEsc)
+		if (onCloseCallback) {
+			onCloseCallback()
+		} else {
+			contentEl.innerHTML = ""
+			contentEl.style.display = "none"
+			contentEl.className = ""
+			if (pyramidGroup) {
+				pyramidGroup.visible = true
+				showPortfolioPlane()
+			}
+		}
 	}
-	return btn
+
+	const onEsc = (e) => {
+		if (e.key === "Escape") closeViewer()
+	}
+	document.addEventListener("keydown", onEsc)
+
+	const closeBtn = contentEl.querySelector(".embed-close-btn")
+	if (closeBtn) {
+		closeBtn.addEventListener("click", closeViewer)
+	}
 }
