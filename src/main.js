@@ -217,11 +217,13 @@ router.onRouteChange((route) => {
 	if (route === "/bio" || route === "/about") {
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
+			hideAllPlanes()
 			morphFromOrcScene()
 			setTimeout(() => {
 				// After ORC scene fade out, trigger hand entry from the right
 				// (ORC demo is rightmost, so leaving it means entering from right)
 				triggerHandPageTransition("orc-demo", "about")
+				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "About")
 				currentContentVisible = "about"
 			}, 1300)
@@ -230,10 +232,12 @@ router.onRouteChange((route) => {
 			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
-		if (isOrcSceneActive() && currentPage === "orc-demo") {
+		if (isOrcSceneActive()) {
+			hideAllPlanes()
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "portfolio")
+				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "Portfolio")
 				currentContentVisible = "portfolio"
 			}, 1300)
@@ -243,9 +247,11 @@ router.onRouteChange((route) => {
 		}
 	} else if (route === "/blog") {
 		if (isOrcSceneActive()) {
+			hideAllPlanes()
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "blog")
+				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "Blog")
 				currentContentVisible = "blog"
 			}, 1300)
@@ -256,9 +262,11 @@ router.onRouteChange((route) => {
 	} else if (route.includes("/blog/posts/")) {
 		// Handle individual blog posts - keep pyramid at top but don't reload content
 		if (isOrcSceneActive()) {
+			hideAllPlanes()
 			morphFromOrcScene()
 			setTimeout(() => {
 				triggerHandPageTransition("orc-demo", "blog")
+				resetPyramidToHome(labelManager)
 				animatePyramid(labelManager, true, "blog")
 				showBlogPost(route)
 			}, 1300)
@@ -275,6 +283,10 @@ router.onRouteChange((route) => {
 	} else if (route === "/portfolio/orc-demo") {
 		// Move contact label to left sidebar position instead of hiding it
 		// moveContactLabelToLeft()
+
+		// Ensure previous content (like portfolio preview) is cleaned up
+		hideAllPlanes()
+
 		// Morph pyramid into ORC demo scene
 		morphToOrcScene()
 		currentContentVisible = "orc-demo"

@@ -8,6 +8,8 @@ let showcaseContainer = null
 let showcaseAnimId = null
 let showcaseGroup = null
 let showcaseSatellites = []
+let showcaseHand = null
+let handAnimationTime = 0
 let isRunning = false
 
 // Constants matching OrcScene.js
@@ -76,8 +78,8 @@ export function createOrcShowcase(container) {
 
 	// Position camera for a cinematic horizontal slice view
 	// Looking down at an angle to show the planet and orbits nicely
-	showcaseCamera.position.set(0, 3.5, 5)
-	showcaseCamera.lookAt(0, 0, 0)
+	showcaseCamera.position.set(0.2, 0, 6.5)
+	showcaseCamera.lookAt(0, 0, 2)
 
 	// Create the ORC scene content (isolated, not using global state)
 	showcaseGroup = createShowcaseOrcScene()
@@ -141,7 +143,12 @@ function createShowcaseOrcScene() {
 	geoSatellite.userData = { isGeosynchronous: true }
 	planet.add(geoSatellite)
 
-	const geoRing = createGeoRing(markerLatitude, markerLongitude, GEO_ALTITUDE, 0xff00ff)
+	const geoRing = createGeoRing(
+		markerLatitude,
+		markerLongitude,
+		GEO_ALTITUDE,
+		0xff00ff
+	)
 	planet.add(geoRing)
 
 	// Molniya Satellite (Moltar) - orange
@@ -192,8 +199,9 @@ function animateShowcase() {
 
 		if (data.eccentricity) {
 			// Molniya orbit (elliptical)
-			const r = (data.semiMajorAxis * (1 - data.eccentricity ** 2)) /
-			          (1 + data.eccentricity * Math.cos(data.angle))
+			const r =
+				(data.semiMajorAxis * (1 - data.eccentricity ** 2)) /
+				(1 + data.eccentricity * Math.cos(data.angle))
 			const speed = data.orbitSpeed * (1.5 / (r * r))
 			data.angle += speed
 			const x = Math.cos(data.angle) * r
@@ -250,7 +258,9 @@ export function cleanupOrcShowcase() {
 	// Dispose renderer
 	if (showcaseRenderer) {
 		if (showcaseRenderer.domElement && showcaseRenderer.domElement.parentNode) {
-			showcaseRenderer.domElement.parentNode.removeChild(showcaseRenderer.domElement)
+			showcaseRenderer.domElement.parentNode.removeChild(
+				showcaseRenderer.domElement
+			)
 		}
 		showcaseRenderer.dispose()
 		showcaseRenderer = null
@@ -307,7 +317,11 @@ function createPlanet() {
 	sphere.name = "planet"
 
 	// Add atmosphere glow
-	const atmosphereGeometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.1, 64, 64)
+	const atmosphereGeometry = new THREE.SphereGeometry(
+		PLANET_RADIUS * 1.1,
+		64,
+		64
+	)
 	const atmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
 			glowColor: { value: new THREE.Color(0x4488ff) },
@@ -338,7 +352,10 @@ function createPlanet() {
 	sphere.add(new THREE.Mesh(atmosphereGeometry, atmosphereMaterial))
 
 	// Outer glow
-	const outerAtmosphereGeometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.4, 32)
+	const outerAtmosphereGeometry = new THREE.SphereGeometry(
+		PLANET_RADIUS * 1.4,
+		32
+	)
 	const outerAtmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
 			glowColor: { value: new THREE.Color(0x3366cc) },
@@ -371,7 +388,11 @@ function createPlanet() {
 function createSatellite(color) {
 	const group = new THREE.Group()
 	const body = new THREE.Mesh(
-		new THREE.BoxGeometry(SATELLITE_SIZE, SATELLITE_SIZE * 0.5, SATELLITE_SIZE * 0.5),
+		new THREE.BoxGeometry(
+			SATELLITE_SIZE,
+			SATELLITE_SIZE * 0.5,
+			SATELLITE_SIZE * 0.5
+		),
 		new THREE.MeshStandardMaterial({
 			color: 0x888888,
 			metalness: 0.8,
@@ -414,7 +435,16 @@ function createOrbitalRing(xRadius, zRadius, color) {
 		})
 		ring = new THREE.Mesh(geometry, material)
 	} else {
-		const curve = new THREE.EllipseCurve(0, 0, xRadius, zRadius, 0, 2 * Math.PI, false, 0)
+		const curve = new THREE.EllipseCurve(
+			0,
+			0,
+			xRadius,
+			zRadius,
+			0,
+			2 * Math.PI,
+			false,
+			0
+		)
 		const points = curve.getPoints(128)
 		const geometry = new THREE.BufferGeometry().setFromPoints(points)
 		const material = new THREE.LineBasicMaterial({
@@ -458,7 +488,14 @@ function latLonToCanvas(lat, lon, width, height) {
 	return { x, y }
 }
 
-function drawContinentPath(ctx, coords, width, height, closePath = true, fillColor = "#5A5840") {
+function drawContinentPath(
+	ctx,
+	coords,
+	width,
+	height,
+	closePath = true,
+	fillColor = "#5A5840"
+) {
 	if (coords.length < 2) return
 	ctx.beginPath()
 	const start = latLonToCanvas(coords[0][1], coords[0][0], width, height)
@@ -466,7 +503,12 @@ function drawContinentPath(ctx, coords, width, height, closePath = true, fillCol
 
 	for (let i = 1; i < coords.length; i++) {
 		const point = latLonToCanvas(coords[i][1], coords[i][0], width, height)
-		const prevPoint = latLonToCanvas(coords[i - 1][1], coords[i - 1][0], width, height)
+		const prevPoint = latLonToCanvas(
+			coords[i - 1][1],
+			coords[i - 1][0],
+			width,
+			height
+		)
 
 		if (Math.abs(point.x - prevPoint.x) > width / 2) {
 			if (closePath) ctx.closePath()
@@ -491,74 +533,257 @@ function drawContinentPath(ctx, coords, width, height, closePath = true, fillCol
 function drawAccurateContinents(ctx, width, height) {
 	// North America
 	const northAmerica = [
-		[-168, 65], [-165, 62], [-160, 60], [-150, 61], [-140, 60],
-		[-135, 57], [-130, 55], [-125, 50], [-124, 45], [-123, 40],
-		[-117, 33], [-110, 30], [-105, 25], [-100, 22], [-95, 18],
-		[-90, 20], [-88, 22], [-85, 22], [-83, 18], [-80, 10],
-		[-78, 8], [-82, 10], [-85, 12], [-88, 18], [-92, 20],
-		[-95, 25], [-97, 28], [-95, 30], [-90, 30], [-85, 30],
-		[-82, 32], [-78, 35], [-75, 38], [-72, 42], [-70, 43],
-		[-68, 45], [-66, 45], [-64, 47], [-67, 48], [-70, 47],
-		[-72, 45], [-75, 45], [-78, 43], [-80, 42], [-82, 45],
-		[-85, 47], [-88, 48], [-92, 49], [-95, 49], [-100, 49],
-		[-105, 49], [-115, 49], [-120, 49], [-125, 50], [-130, 55],
-		[-135, 58], [-140, 60], [-145, 62], [-150, 64], [-155, 68],
-		[-160, 70], [-165, 70], [-170, 68], [-168, 65],
+		[-168, 65],
+		[-165, 62],
+		[-160, 60],
+		[-150, 61],
+		[-140, 60],
+		[-135, 57],
+		[-130, 55],
+		[-125, 50],
+		[-124, 45],
+		[-123, 40],
+		[-117, 33],
+		[-110, 30],
+		[-105, 25],
+		[-100, 22],
+		[-95, 18],
+		[-90, 20],
+		[-88, 22],
+		[-85, 22],
+		[-83, 18],
+		[-80, 10],
+		[-78, 8],
+		[-82, 10],
+		[-85, 12],
+		[-88, 18],
+		[-92, 20],
+		[-95, 25],
+		[-97, 28],
+		[-95, 30],
+		[-90, 30],
+		[-85, 30],
+		[-82, 32],
+		[-78, 35],
+		[-75, 38],
+		[-72, 42],
+		[-70, 43],
+		[-68, 45],
+		[-66, 45],
+		[-64, 47],
+		[-67, 48],
+		[-70, 47],
+		[-72, 45],
+		[-75, 45],
+		[-78, 43],
+		[-80, 42],
+		[-82, 45],
+		[-85, 47],
+		[-88, 48],
+		[-92, 49],
+		[-95, 49],
+		[-100, 49],
+		[-105, 49],
+		[-115, 49],
+		[-120, 49],
+		[-125, 50],
+		[-130, 55],
+		[-135, 58],
+		[-140, 60],
+		[-145, 62],
+		[-150, 64],
+		[-155, 68],
+		[-160, 70],
+		[-165, 70],
+		[-170, 68],
+		[-168, 65],
 	]
 
 	// South America
 	const southAmerica = [
-		[-80, 10], [-75, 10], [-70, 12], [-65, 10], [-60, 5],
-		[-55, 5], [-50, 0], [-48, -2], [-45, -5], [-42, -8],
-		[-38, -12], [-35, -8], [-38, -15], [-42, -22], [-45, -24],
-		[-48, -26], [-52, -30], [-55, -35], [-58, -38], [-65, -42],
-		[-68, -50], [-72, -52], [-75, -50], [-73, -45], [-72, -40],
-		[-70, -35], [-70, -30], [-70, -25], [-70, -20], [-72, -15],
-		[-78, -5], [-80, 0], [-80, 5], [-80, 10],
+		[-80, 10],
+		[-75, 10],
+		[-70, 12],
+		[-65, 10],
+		[-60, 5],
+		[-55, 5],
+		[-50, 0],
+		[-48, -2],
+		[-45, -5],
+		[-42, -8],
+		[-38, -12],
+		[-35, -8],
+		[-38, -15],
+		[-42, -22],
+		[-45, -24],
+		[-48, -26],
+		[-52, -30],
+		[-55, -35],
+		[-58, -38],
+		[-65, -42],
+		[-68, -50],
+		[-72, -52],
+		[-75, -50],
+		[-73, -45],
+		[-72, -40],
+		[-70, -35],
+		[-70, -30],
+		[-70, -25],
+		[-70, -20],
+		[-72, -15],
+		[-78, -5],
+		[-80, 0],
+		[-80, 5],
+		[-80, 10],
 	]
 
 	// Europe
 	const europe = [
-		[-10, 36], [-8, 38], [-9, 40], [-8, 42], [-5, 44],
-		[-2, 44], [0, 43], [3, 43], [5, 44], [8, 45],
-		[12, 45], [14, 42], [18, 40], [20, 40], [24, 38],
-		[26, 40], [28, 42], [30, 44], [32, 46], [35, 48],
-		[38, 50], [42, 55], [38, 60], [30, 62], [25, 65],
-		[20, 68], [15, 70], [10, 70], [5, 62], [8, 58],
-		[10, 55], [8, 52], [5, 52], [0, 50], [-5, 50],
-		[-8, 48], [-10, 44], [-10, 40], [-10, 36],
+		[-10, 36],
+		[-8, 38],
+		[-9, 40],
+		[-8, 42],
+		[-5, 44],
+		[-2, 44],
+		[0, 43],
+		[3, 43],
+		[5, 44],
+		[8, 45],
+		[12, 45],
+		[14, 42],
+		[18, 40],
+		[20, 40],
+		[24, 38],
+		[26, 40],
+		[28, 42],
+		[30, 44],
+		[32, 46],
+		[35, 48],
+		[38, 50],
+		[42, 55],
+		[38, 60],
+		[30, 62],
+		[25, 65],
+		[20, 68],
+		[15, 70],
+		[10, 70],
+		[5, 62],
+		[8, 58],
+		[10, 55],
+		[8, 52],
+		[5, 52],
+		[0, 50],
+		[-5, 50],
+		[-8, 48],
+		[-10, 44],
+		[-10, 40],
+		[-10, 36],
 	]
 
 	// Africa
 	const africa = [
-		[-17, 15], [-15, 20], [-12, 25], [-8, 30], [-5, 35],
-		[0, 36], [10, 37], [15, 32], [25, 32], [30, 30],
-		[35, 28], [38, 22], [42, 15], [45, 12], [50, 10],
-		[50, 5], [45, 0], [42, -5], [40, -12], [38, -18],
-		[35, -22], [30, -28], [28, -32], [25, -34], [20, -35],
-		[18, -32], [15, -28], [12, -18], [15, -10], [12, -5],
-		[10, 0], [8, 5], [5, 5], [0, 5], [-5, 5],
-		[-10, 8], [-15, 12], [-17, 15],
+		[-17, 15],
+		[-15, 20],
+		[-12, 25],
+		[-8, 30],
+		[-5, 35],
+		[0, 36],
+		[10, 37],
+		[15, 32],
+		[25, 32],
+		[30, 30],
+		[35, 28],
+		[38, 22],
+		[42, 15],
+		[45, 12],
+		[50, 10],
+		[50, 5],
+		[45, 0],
+		[42, -5],
+		[40, -12],
+		[38, -18],
+		[35, -22],
+		[30, -28],
+		[28, -32],
+		[25, -34],
+		[20, -35],
+		[18, -32],
+		[15, -28],
+		[12, -18],
+		[15, -10],
+		[12, -5],
+		[10, 0],
+		[8, 5],
+		[5, 5],
+		[0, 5],
+		[-5, 5],
+		[-10, 8],
+		[-15, 12],
+		[-17, 15],
 	]
 
 	// Asia (simplified)
 	const asia = [
-		[26, 40], [30, 42], [35, 42], [40, 42], [45, 40],
-		[50, 38], [55, 38], [60, 40], [65, 42], [70, 45],
-		[75, 42], [80, 35], [85, 28], [88, 22], [92, 20],
-		[98, 18], [100, 15], [102, 12], [105, 10], [108, 12],
-		[110, 15], [115, 20], [118, 25], [120, 30], [125, 35],
-		[130, 40], [135, 45], [140, 45], [145, 48], [150, 52],
-		[155, 58], [160, 62], [170, 65], [180, 68],
+		[26, 40],
+		[30, 42],
+		[35, 42],
+		[40, 42],
+		[45, 40],
+		[50, 38],
+		[55, 38],
+		[60, 40],
+		[65, 42],
+		[70, 45],
+		[75, 42],
+		[80, 35],
+		[85, 28],
+		[88, 22],
+		[92, 20],
+		[98, 18],
+		[100, 15],
+		[102, 12],
+		[105, 10],
+		[108, 12],
+		[110, 15],
+		[115, 20],
+		[118, 25],
+		[120, 30],
+		[125, 35],
+		[130, 40],
+		[135, 45],
+		[140, 45],
+		[145, 48],
+		[150, 52],
+		[155, 58],
+		[160, 62],
+		[170, 65],
+		[180, 68],
 	]
 
 	// Australia
 	const australia = [
-		[115, -22], [118, -20], [122, -18], [128, -15], [132, -12],
-		[136, -12], [140, -15], [145, -15], [150, -18], [153, -22],
-		[153, -28], [150, -32], [147, -38], [145, -40], [140, -38],
-		[135, -35], [130, -32], [125, -32], [120, -30], [115, -28],
-		[113, -25], [115, -22],
+		[115, -22],
+		[118, -20],
+		[122, -18],
+		[128, -15],
+		[132, -12],
+		[136, -12],
+		[140, -15],
+		[145, -15],
+		[150, -18],
+		[153, -22],
+		[153, -28],
+		[150, -32],
+		[147, -38],
+		[145, -40],
+		[140, -38],
+		[135, -35],
+		[130, -32],
+		[125, -32],
+		[120, -30],
+		[115, -28],
+		[113, -25],
+		[115, -22],
 	]
 
 	drawContinentPath(ctx, northAmerica, width, height)

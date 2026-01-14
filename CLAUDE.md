@@ -131,6 +131,42 @@ element.classList.remove('visible');
 2. Apply the class via JavaScript using `classList.add()`/`classList.remove()`
 3. Never inline styles in JavaScript
 
+### Text Readability
+
+**Critical:** All text content must be readable against the dark, semi-transparent backgrounds used throughout the site. The 3D starfield and scene elements show through behind content.
+
+**Required patterns for text containers:**
+```css
+/* ✅ CORRECT: High-opacity backgrounds for text readability */
+.text-container {
+  background: rgba(0, 10, 20, 0.85);  /* Min 0.85 opacity */
+  padding: 12px 15px;
+  border-radius: 6px;
+}
+
+/* ✅ Accent border for visual hierarchy */
+.important-text {
+  background: rgba(0, 10, 20, 0.9);
+  border-left: 3px solid #00ffff;
+}
+
+/* ❌ WRONG: Low-opacity backgrounds make text unreadable */
+.bad-container {
+  background: rgba(0, 0, 0, 0.3);  /* Too transparent! */
+}
+```
+
+**Text color guidelines:**
+- Primary text: `#cceeff` or `#ddeeff` (light blue-white)
+- Headings: `#00ffff` (cyan)
+- Secondary/muted text: `#aaddff`
+- Links/interactive: `#00ffff` with hover glow
+
+**Accessibility requirements:**
+- Maintain WCAG AA contrast ratio (4.5:1 minimum for body text)
+- Use bright, saturated colors for labels and UI elements (e.g., `#8eff8e` instead of `#4CAF50`)
+- Add `text-shadow` for text over variable backgrounds
+
 ### Responsive Positioning (3D Elements)
 
 Navigation labels and 3D objects should use **frustum-based positioning**, not hardcoded coordinates:

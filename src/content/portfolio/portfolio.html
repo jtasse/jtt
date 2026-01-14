@@ -1,32 +1,96 @@
 <div class="content-page portfolio-page">
-	<div
-		id="orc-showcase-container"
-		style="
-			width: 100%;
-			height: 300px;
-			background: transparent;
-			border: 1px solid #335555;
-			border-radius: 8px;
-			margin-bottom: 20px;
-			position: relative;
-			overflow: hidden;
-		"
-	></div>
-
-	<div
-		class="portfolio-body"
-		style="background: rgba(0, 10, 20, 0.9); padding: 20px; border-radius: 8px"
-	>
-		<!-- Top Grid: 4 Docs Items -->
-		<div
-			class="portfolio-grid-top"
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-				gap: 20px;
-				margin-bottom: 30px;
-			"
+	<link rel="stylesheet" href="/src/content/portfolio/portfolio.css" />
+	<h1>Welcome to my portfolio!</h1>
+	<p>
+		Below I invite you to check out the Orbital Refuse Collector (or ORC) demo
+		and/or the Astro docs I wrote for it. Further down you will find other
+		portfolio fare like my
+		<a
+			class="resume-link"
+			href="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
+			>resume</a
 		>
+		and other documentation samples.
+	</p>
+	<div class="orc-explanation">
+		<h2>What is ORC?</h2>
+		<p>
+			The Orbital Refuse Collector is a fictional system designed to deorbit
+			Earth's satellites that are at risk of having their orbits decay
+			undesirably.
+		</p>
+	</div>
+
+	<!-- ORC Hero Section: Showcase + Description side by side -->
+	<div class="orc-hero-section">
+		<div id="orc-showcase-container"></div>
+		<div class="orc-description">
+			<div class="orc-actions">
+				<div class="orc-action-pane">
+					<h3>Try it out!</h3>
+					<a href="/portfolio/orc-demo" class="orc-launch-btn"
+						>Launch ORC Demo</a
+					>
+				</div>
+				<div class="orc-action-pane">
+					<h3>Read about ORC</h3>
+					<a href="/portfolio/docs/orc" class="orc-launch-btn">View ORC Docs</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<h2 class="diataxis-section-header">Jump to specific ORC docs</h2>
+
+	<!-- Diataxis 2x2 Grid -->
+	<div class="diataxis-grid">
+		<div
+			class="diataxis-quadrant learning"
+			data-link="/portfolio/docs/orc/tutorial/"
+		>
+			<div class="quadrant-content">
+				<h3>Tutorial</h3>
+				<p>Step-by-step guide to decommissioning your first satellite</p>
+			</div>
+			<span class="quadrant-label">Learning</span>
+		</div>
+		<div
+			class="diataxis-quadrant goals"
+			data-link="/portfolio/docs/orc/user-guide/"
+		>
+			<div class="quadrant-content">
+				<h3>User Guide</h3>
+				<p>How to accomplish specific tasks with the ORC system</p>
+			</div>
+			<span class="quadrant-label">Goals</span>
+		</div>
+		<div
+			class="diataxis-quadrant understanding"
+			data-link="/portfolio/docs/orc/whitepaper/"
+		>
+			<div class="quadrant-content">
+				<h3>Whitepaper</h3>
+				<p>The science and rationale behind orbital refuse collection</p>
+			</div>
+			<span class="quadrant-label">Understanding</span>
+		</div>
+		<div
+			class="diataxis-quadrant information"
+			data-link="/portfolio/docs/orc/api-reference/"
+		>
+			<div class="quadrant-content">
+				<h3>API Reference</h3>
+				<p>Complete technical specification of the ORC API</p>
+			</div>
+			<span class="quadrant-label">Information</span>
+		</div>
+	</div>
+
+	<!-- Additional Portfolio Section -->
+	<div class="portfolio-body">
+		<h2 class="portfolio-section-header">Additional Portfolio Items</h2>
+
+		<div class="portfolio-grid">
 			<div
 				class="portfolio-item"
 				data-link="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
@@ -74,272 +138,58 @@
 			</div>
 
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 1</h2>
 				<p>Coming soon...</p>
 			</div>
-		</div>
 
-		<div
-			class="portfolio-links"
-			style="
-				display: flex;
-				gap: 15px;
-				margin-bottom: 30px;
-				justify-content: center;
-			"
-		>
-			<a
-				class="temp-portfolio-link"
-				href="../portfolio/orc-demo"
-				style="
-					padding: 10px 20px;
-					background: rgba(0, 255, 255, 0.1);
-					border: 1px solid #00ffff;
-					color: #00ffff;
-					text-decoration: none;
-					border-radius: 4px;
-					font-weight: bold;
-					transition: all 0.2s;
-				"
-				>Launch Full ORC Demo</a
-			>
-			<a
-				class="temp-portfolio-link"
-				href="/portfolio/docs/orc"
-				style="
-					padding: 10px 20px;
-					background: rgba(0, 255, 255, 0.1);
-					border: 1px solid #00ffff;
-					color: #00ffff;
-					text-decoration: none;
-					border-radius: 4px;
-					font-weight: bold;
-					transition: all 0.2s;
-				"
-				>View ORC Docs</a
-			>
-		</div>
-
-		<!-- Bottom Grid: Rest of items (2 per row) -->
-		<div
-			class="portfolio-grid-bottom"
-			style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
-		>
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 2</h2>
 				<p>Coming soon...</p>
 			</div>
+
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 3</h2>
 				<p>Coming soon...</p>
 			</div>
+
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 4</h2>
 				<p>Coming soon...</p>
 			</div>
+
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 5</h2>
 				<p>Coming soon...</p>
 			</div>
+
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 6</h2>
 				<p>Coming soon...</p>
 			</div>
+
 			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
+				<div class="portfolio-thumb placeholder-thumb">
+					<span>?</span>
 				</div>
 				<h2>Project Placeholder 7</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 8</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 9</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 10</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 11</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 12</h2>
-				<p>Coming soon...</p>
-			</div>
-			<div class="portfolio-item placeholder">
-				<div
-					class="portfolio-thumb"
-					style="
-						background: rgba(0, 255, 255, 0.05);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						height: 150px;
-						border-bottom: 1px solid #335555;
-					"
-				>
-					<span style="color: #335555; font-size: 2rem">?</span>
-				</div>
-				<h2>Project Placeholder 13</h2>
 				<p>Coming soon...</p>
 			</div>
 		</div>
@@ -347,12 +197,6 @@
 </div>
 
 <script>
-	/* Portfolio item interaction: treat each .portfolio-item as a link.
-	   On click:
-	   - if link is YouTube, embed player into #content
-	   - if link is Google Docs, embed document viewer
-	   - otherwise open link in new tab
-	*/
 	;(function () {
 		function extractYouTubeID(url) {
 			try {
@@ -378,98 +222,67 @@
 			return null
 		}
 
-		function createEmbedViewer(embedUrl, title) {
-			const content = document.getElementById("content")
-			if (!content) return null
+		// Handle Diataxis quadrant clicks
+		document.querySelectorAll(".diataxis-quadrant").forEach((quadrant) => {
+			quadrant.addEventListener("click", (ev) => {
+				ev.preventDefault()
+				ev.stopPropagation()
+				const link = quadrant.dataset.link
+				if (link) {
+					window.location.href = link
+				}
+			})
+		})
 
-			content.innerHTML = ""
-			const iframe = document.createElement("iframe")
-			iframe.src = embedUrl
-			iframe.width = "100%"
-			iframe.height = "100%"
-			iframe.style.border = "1px solid #00ffff"
-			iframe.style.borderRadius = "8px"
-			iframe.allow =
-				"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-			iframe.allowFullscreen = true
-
-			const wrapper = document.createElement("div")
-			wrapper.className = "embed-wrapper"
-
-			const inner = document.createElement("div")
-			inner.className = "embed-inner-container"
-
-			// Create controls
-			const controls = document.createElement("div")
-			controls.className = "embed-controls"
-			// Note: This is a simplified version for the inline script fallback.
-			// The main logic is handled in ContentManager.js which has the full implementation.
-			// We'll just append the iframe here for the basic fallback.
-
-			const contentContainer = document.createElement("div")
-			contentContainer.className = "embed-content-container"
-			contentContainer.appendChild(iframe)
-
-			inner.appendChild(controls)
-			inner.appendChild(contentContainer)
-			wrapper.appendChild(inner)
-
-			content.appendChild(wrapper)
-			content.style.display = "block"
-			content.style.pointerEvents = "auto"
-
-			return wrapper
-		}
-
+		// Handle portfolio item clicks
 		document.querySelectorAll(".portfolio-item").forEach((item) => {
-			item.style.cursor = "pointer"
 			item.addEventListener("click", (ev) => {
 				ev.preventDefault()
 				ev.stopPropagation()
 				const link = item.dataset.link
 				if (!link) return
 
-				// Hide 3D planes
 				if (window.hideAllPlanes) window.hideAllPlanes()
 
 				const content = document.getElementById("content")
-				// Clear any pinned bottom/maxHeight so embedded content can be visible
 				if (content) {
 					content.style.bottom = ""
 					content.style.maxHeight = ""
 				}
 
-				// Check for YouTube
 				const ytId = extractYouTubeID(link)
 				if (ytId) {
-					console.debug("[portfolio] embedding YouTube:", ytId)
 					const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-					createEmbedViewer(embedUrl, "YouTube Video")
-					// Ensure layout updaters run
-					if (window.updateContentFloorPosition)
-						window.updateContentFloorPosition()
-					if (window.updateContentMaxHeightToSeparator)
-						window.updateContentMaxHeightToSeparator()
+					if (window.handleContentLink) {
+						window.handleContentLink(embedUrl)
+					} else {
+						window.open(`https://www.youtube.com/watch?v=${ytId}`, "_blank")
+					}
 					return
 				}
 
-				// Check for Google Docs
 				const docId = extractGoogleDocsID(link)
 				if (docId) {
-					console.debug("[portfolio] embedding Google Doc:", docId)
-					const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-					createEmbedViewer(embedUrl, "Google Document")
-					// Ensure layout updaters run
-					if (window.updateContentFloorPosition)
-						window.updateContentFloorPosition()
-					if (window.updateContentMaxHeightToSeparator)
-						window.updateContentMaxHeightToSeparator()
+					window.open(link, "_blank")
 					return
 				}
 
-				// For other links, open in new tab
-				console.debug("[portfolio] opening external link:", link)
+				// For images and other links
 				window.open(link, "_blank")
+			})
+		})
+
+		// Handle launch button clicks
+		document.querySelectorAll(".orc-launch-btn").forEach((btn) => {
+			btn.addEventListener("click", (ev) => {
+				ev.preventDefault()
+				ev.stopPropagation()
+				const href = btn.getAttribute("href")
+				if (href && window.routerNavigate) {
+					window.routerNavigate(href)
+				} else if (href) {
+					window.location.href = href
+				}
 			})
 		})
 	})()

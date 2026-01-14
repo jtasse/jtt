@@ -108,13 +108,14 @@ export function showPortfolioPlane(onCloseCallback) {
 		contentEl.style.pointerEvents = "auto"
 
 		// Initialize the ORC showcase in the header container
-		const showcaseContainer = contentEl.querySelector(
-			"#orc-showcase-container"
-		)
+		const showcaseContainer = contentEl.querySelector("#orc-showcase-container")
 		if (showcaseContainer) {
 			// Small delay to ensure container has proper dimensions
 			requestAnimationFrame(() => {
 				createOrcShowcase(showcaseContainer)
+			})
+			showcaseContainer.addEventListener("click", () => {
+				router.navigate("/portfolio/orc-demo")
 			})
 		}
 
@@ -313,12 +314,39 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			window.open(link, "_blank")
 		})
 	})
+
+	// Resume link handler (in intro text)
+	const resumeLink = contentEl.querySelector(".resume-link")
+	if (resumeLink) {
+		resumeLink.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			const link = resumeLink.getAttribute("href")
+			const docId = extractGoogleDocsID(link)
+			if (docId) {
+				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
+				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
+			}
+		})
+	}
+
+	// Handle Diataxis quadrant clicks
+	contentEl.querySelectorAll(".diataxis-quadrant").forEach((quadrant) => {
+		quadrant.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			const link = quadrant.dataset.link
+			if (link) {
+				showEmbedViewer(contentEl, link, onCloseCallback)
+			}
+		})
+	})
 }
 
 function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 	contentEl.innerHTML = `
-		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center;">
-			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 90vw; height: 90vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
+		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 95vw; height: 98vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
@@ -543,27 +571,50 @@ function showFullScreenEmbed(contentEl, url, type) {
 	contentEl.style.display = "block"
 	contentEl.style.pointerEvents = "auto"
 
-	const closeBtn = createCloseButton(() => {
-		contentEl.innerHTML = ""
-		contentEl.style.display = "none"
-		contentEl.className = ""
-		// Restore portfolio state
-		if (pyramidGroup) {
-			pyramidGroup.visible = true
-			// We assume we came from portfolio if clicking links
-			showPortfolioPlane()
-		}
-	})
+	contentEl.innerHTML = `
+		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 95vw; height: 98vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
+				<div class="embed-controls" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+					<a href="${url}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
+						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
+						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+						</svg>
+					</a>
+					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+							<path d="M256-213.85 213.85-256l224-224-224-224L256-746.15l224 224 224-224L746.15-704l-224 224 224 224L704-213.85l-224-224-224 224Z"/>
+						</svg>
+					</button>
+				</div>
+				<div class="embed-content-container" style="flex: 1; min-height: 0; overflow: hidden;">
+					<iframe
+						src="${url}"
+						width="100%"
+						height="100%"
+						style="border: none;"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						allowfullscreen
+					></iframe>
+				</div>
+			</div>
+		</div>
+	`
 
-	const iframe = document.createElement("iframe")
-	iframe.src = url
-	iframe.className = "fullscreen-iframe"
-	iframe.allow =
-		"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-	iframe.allowFullscreen = true
-
-	contentEl.appendChild(iframe)
-	contentEl.appendChild(closeBtn)
+	const closeBtn = contentEl.querySelector(".embed-close-btn")
+	if (closeBtn) {
+		closeBtn.addEventListener("click", () => {
+			contentEl.innerHTML = ""
+			contentEl.style.display = "none"
+			contentEl.className = ""
+			// Restore portfolio state
+			if (pyramidGroup) {
+				pyramidGroup.visible = true
+				// We assume we came from portfolio if clicking links
+				showPortfolioPlane()
+			}
+		})
+	}
 }
 
 function showFullScreenImage(contentEl, url) {
