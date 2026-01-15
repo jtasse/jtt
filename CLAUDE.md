@@ -25,14 +25,14 @@ npm run build:docs # Build docs only
 - **src/pyramid/pyramid.js** - The heart of the 3D scene. Contains:
 
   - Three.js scene setup (camera, renderer, lighting, starfield)
-  - Pyramid geometry with three labeled faces
+  - Pyramid geometry with three labeled faces (About, Portfolio, Blog)
   - Animation functions: `animatePyramid()`, `spinPyramidToSection()`, `resetPyramidToHome()`
-  - Content plane display: `showBioPlane()`, `showPortfolioPlane()`, `showBlogPlane()`
+  - Content plane display: `showAboutPlane()`, `showPortfolioPlane()`, `showBlogPlane()`
   - Label management and positioning
 
-- **src/planes.js** - Canvas-based text rendering for 3D planes. Creates textures from HTML content for Bio, Portfolio, and Blog sections. Also provides `makeLabelPlane()` for face labels.
+  - **src/planes.js** - Canvas-based text rendering for 3D planes. Provides `makeLabelPlane()` for face labels.
 
-- **src/router.js** - Simple client-side router using History API. Routes: `/`, `/bio`, `/portfolio`, `/blog`
+  - **src/router.js** - Simple client-side router using History API. Routes: `/`, `/about`, `/portfolio`, `/blog`
 
 - **src/contentLoader.js** - Fetches and parses HTML content files into structured data for rendering.
 
@@ -40,7 +40,7 @@ npm run build:docs # Build docs only
 
 Content is stored as HTML in `src/content/` and rendered to canvas textures (not DOM):
 
-- `src/content/bio.html` - Bio page markup
+- `src/content/about/about.html` - About page markup
 - `src/content/portfolio.html` - Portfolio items
 - `src/content/blog.html` - Blog posts as JSON in script tag
 
@@ -48,7 +48,7 @@ See `ARCHITECTURE.md` for detailed content editing instructions.
 
 ### Key Animation Flow
 
-1. **Home state**: Pyramid centered with labels on faces
+1. **Home state**: Pyramid centered with labels on faces (About, Portfolio, Blog)
 2. **Label click**: Labels animate to horizontal top nav, pyramid moves up/shrinks under selected label
 3. **Section switch**: Pyramid slides horizontally to new label position
 4. **Home click**: Everything animates back to initial state
@@ -78,28 +78,30 @@ These rules apply to Claude Code, Gemini, GitHub Copilot, and any other AI codin
 
 We are transitioning to a **hybrid architecture**:
 
-| Layer | Technology | Content |
-|-------|------------|---------|
-| **WebGL (Three.js)** | Canvas | Pyramid, starfield, Hand of ORC, navigation labels |
-| **DOM Overlay** | HTML/CSS | Page content (About, Portfolio, Blog) |
+| Layer                | Technology | Content                                            |
+| -------------------- | ---------- | -------------------------------------------------- |
+| **WebGL (Three.js)** | Canvas     | Pyramid, starfield, Hand of ORC, navigation labels |
+| **DOM Overlay**      | HTML/CSS   | Page content (About, Portfolio, Blog)              |
 
 **Why:** Canvas-rendered text (current `planes.js` approach) cannot be made responsive or accessible. DOM overlays give us CSS responsiveness and screen reader support.
 
 **When implementing content display:**
+
 ```javascript
 // ❌ OLD: Do not create new canvas textures for content
-const plane = makeAboutPlane(content);
-scene.add(plane);
+const plane = makeAboutPlane(content)
+scene.add(plane)
 
 // ✅ NEW: Use DOM overlays
-const overlay = document.getElementById('about-content');
-overlay.innerHTML = content;
-overlay.classList.add('visible');
+const overlay = document.getElementById("about-content")
+overlay.innerHTML = content
+overlay.classList.add("visible")
 ```
 
 ### Styling Rules
 
 **CSS is REQUIRED for:**
+
 - All text styling (fonts, colors, sizes)
 - Layout of DOM content
 - Responsive breakpoints and media queries
@@ -107,65 +109,32 @@ overlay.classList.add('visible');
 - Transitions and hover effects
 
 **JavaScript is ALLOWED for:**
+
 - Three.js object positioning (required - no CSS alternative)
 - GSAP animations (transforms only, not layout properties)
 - Dynamic calculations based on camera/viewport
 
 **Forbidden patterns:**
+
 ```javascript
 // ❌ NEVER do this:
-element.style.fontSize = '16px';
-element.style.color = '#fff';
-element.style.top = '100px';
-element.style.display = 'none';
+element.style.fontSize = "16px"
+element.style.color = "#fff"
+element.style.top = "100px"
+element.style.display = "none"
 
 // ✅ Do this instead:
-element.classList.add('large-text');
-element.classList.add('highlight');
-element.classList.add('positioned-top');
-element.classList.remove('visible');
+element.classList.add("large-text")
+element.classList.add("highlight")
+element.classList.add("positioned-top")
+element.classList.remove("visible")
 ```
 
 **When you need a new style:**
+
 1. Add a CSS class to the appropriate `.css` file in `src/content/`
 2. Apply the class via JavaScript using `classList.add()`/`classList.remove()`
 3. Never inline styles in JavaScript
-
-### Text Readability
-
-**Critical:** All text content must be readable against the dark, semi-transparent backgrounds used throughout the site. The 3D starfield and scene elements show through behind content.
-
-**Required patterns for text containers:**
-```css
-/* ✅ CORRECT: High-opacity backgrounds for text readability */
-.text-container {
-  background: rgba(0, 10, 20, 0.85);  /* Min 0.85 opacity */
-  padding: 12px 15px;
-  border-radius: 6px;
-}
-
-/* ✅ Accent border for visual hierarchy */
-.important-text {
-  background: rgba(0, 10, 20, 0.9);
-  border-left: 3px solid #00ffff;
-}
-
-/* ❌ WRONG: Low-opacity backgrounds make text unreadable */
-.bad-container {
-  background: rgba(0, 0, 0, 0.3);  /* Too transparent! */
-}
-```
-
-**Text color guidelines:**
-- Primary text: `#cceeff` or `#ddeeff` (light blue-white)
-- Headings: `#00ffff` (cyan)
-- Secondary/muted text: `#aaddff`
-- Links/interactive: `#00ffff` with hover glow
-
-**Accessibility requirements:**
-- Maintain WCAG AA contrast ratio (4.5:1 minimum for body text)
-- Use bright, saturated colors for labels and UI elements (e.g., `#8eff8e` instead of `#4CAF50`)
-- Add `text-shadow` for text over variable backgrounds
 
 ### Responsive Positioning (3D Elements)
 
@@ -173,19 +142,21 @@ Navigation labels and 3D objects should use **frustum-based positioning**, not h
 
 ```javascript
 // ❌ AVOID hardcoded positions:
-label.position.set(3.0, 2.5, 0);
+label.position.set(3.0, 2.5, 0)
 
 // ✅ PREFER viewport-relative calculations:
 // Calculate based on camera frustum so positions adapt to screen size
-const frustumHeight = 2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
-const frustumWidth = frustumHeight * camera.aspect;
-const xPos = (percentX - 0.5) * frustumWidth;
+const frustumHeight =
+	2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.z
+const frustumWidth = frustumHeight * camera.aspect
+const xPos = (percentX - 0.5) * frustumWidth
 ```
 
 When a `LayoutManager` class exists, use it:
+
 ```javascript
-const pos = layoutManager.getWorldPosition(0.8, 0.9); // 80% right, 90% up
-label.position.copy(pos);
+const pos = layoutManager.getWorldPosition(0.8, 0.9) // 80% right, 90% up
+label.position.copy(pos)
 ```
 
 ### Hand of ORC
@@ -195,19 +166,21 @@ The Hand is treated as an **actor** with high-level behaviors, not a mesh to man
 **When modifying hand behavior:**
 
 1. **Use high-level methods** (when available in `HandBehaviors.js`):
+
    ```javascript
    // ✅ Preferred:
-   hand.pointAt(satellite);
-   hand.travelTo(destination);
-   hand.gesture('thumbsUp');
+   hand.pointAt(satellite)
+   hand.travelTo(destination)
+   hand.gesture("thumbsUp")
    ```
 
 2. **Do not directly manipulate mesh properties:**
+
    ```javascript
    // ❌ Avoid in main code:
-   hand.mesh.position.set(x, y, z);
-   hand.mesh.rotation.set(rx, ry, rz);
-   fingerJoint.rotation.z = angle;
+   hand.mesh.position.set(x, y, z)
+   hand.mesh.rotation.set(rx, ry, rz)
+   fingerJoint.rotation.z = angle
    ```
 
 3. **To add new hand behaviors:**
@@ -217,29 +190,20 @@ The Hand is treated as an **actor** with high-level behaviors, not a mesh to man
 
 **Critical constraint:** The hand must NEVER be positioned behind the planet (z < 0.5 in ORC scene). All movement calculations must enforce this.
 
-**Decommission animations by orbit type:**
-
-Each satellite type has a distinct decommission animation:
-
-| Orbit | Satellite | Animation | Description |
-|-------|-----------|-----------|-------------|
-| LEO | Leona | **Flicking** | Quick flick motion |
-| GEO | George | **Punching** | Hand winds up far behind satellite, punches straight through toward Earth |
-| Molniya | Moltar | **Slapping** | Backhand slap motion |
-
-When implementing or modifying decommission animations, ensure each orbit type maintains its unique motion style.
-
 ### File Organization
 
 **Size limits:**
+
 - No single file should exceed **500 lines**
 - If approaching this limit, discuss splitting before adding more code
 
 **When creating new functionality:**
+
 - Create new modules rather than expanding existing large files
 - `pyramid.js` (2800+ lines) is a known issue - prefer adding to other files
 
 **Planned structure** (work in progress):
+
 ```
 src/
 ├── core/           # Scene, camera, layout management
@@ -253,6 +217,7 @@ src/
 ### Configuration
 
 **Magic numbers should be centralized:**
+
 - Check `src/config.js` for existing constants (when it exists)
 - Add new constants there rather than inline in code
 - Document units and expected ranges
@@ -283,7 +248,7 @@ packages/docs/
 │   │   ├── index.mdx         # Docs landing page
 │   │   └── orc/              # ORC documentation
 │   │       ├── index.mdx     # ORC overview
-│   │       ├── tutorial.md   # Diataxis: Tutorial
+│   │       ├── getting-started-tutorial.md   # Diataxis: Tutorial
 │   │       ├── user-guide.md # Diataxis: How-To
 │   │       ├── api-reference.md # Diataxis: Reference
 │   │       └── whitepaper.md # Diataxis: Explanation
@@ -331,24 +296,27 @@ To document a new application (e.g., "my-app"):
 
 Follow the [Diataxis framework](https://diataxis.fr/) for documentation:
 
-| Category | File Pattern | Purpose |
-|----------|--------------|---------|
-| Tutorial | `tutorial-*.md` | Learning-oriented, step-by-step |
-| How-To | `*-guide.md` | Task-oriented, practical |
-| Reference | `*-reference.md` | Information-oriented, specifications |
-| Explanation | `whitepaper.md`, `architecture.md` | Understanding-oriented, conceptual |
+| Category    | File Pattern                       | Purpose                              |
+| ----------- | ---------------------------------- | ------------------------------------ |
+| Tutorial    | `tutorial-*.md`                    | Learning-oriented, step-by-step      |
+| How-To      | `*-guide.md`                       | Task-oriented, practical             |
+| Reference   | `*-reference.md`                   | Information-oriented, specifications |
+| Explanation | `whitepaper.md`, `architecture.md` | Understanding-oriented, conceptual   |
 
 ### Starlight Components
 
 Use Starlight's built-in components for rich content:
 
 ```mdx
-import { Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+import {
+	Steps,
+	Tabs,
+	TabItem,
+	Card,
+	CardGrid,
+} from "@astrojs/starlight/components"
 
-<Steps>
-1. First step
-2. Second step
-</Steps>
+<Steps>1. First step 2. Second step</Steps>
 
 :::note[Title]
 A note callout
@@ -369,4 +337,4 @@ The combined build places docs at `dist/portfolio/docs/`:
 
 - `jamestasse.tech/portfolio/docs/` - Docs landing
 - `jamestasse.tech/portfolio/docs/orc/` - ORC section
-- `jamestasse.tech/portfolio/docs/orc/tutorial/` - Individual pages
+- `jamestasse.tech/portfolio/docs/orc/getting-started-tutorial/` - Individual pages

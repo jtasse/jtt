@@ -8,7 +8,7 @@ This project separates concerns across multiple layers:
 
 HTML files that define page structure and data:
 
-- **bio.html**: Semantic HTML with heading and paragraphs
+- **about.html**: Semantic HTML with heading and paragraphs (in `src/content/about/`)
 - **portfolio.html**: Portfolio items with structured markup (portfolio-item divs)
 - **blog.html**: JSON script containing blog post data
 
@@ -16,7 +16,7 @@ HTML files that define page structure and data:
 
 JavaScript style objects that define how content is rendered on canvas:
 
-- **bio.style.js**: Typography and layout settings for bio page
+- **about.style.js**: Typography and layout settings for about page
 - **portfolio.style.js**: Card styling, borders, and responsive sizing for portfolio
 - **blog.style.js**: Post typography and image sizing for blog
 
@@ -27,14 +27,14 @@ These styles are applied dynamically during canvas rendering and can be imported
 Handles loading and parsing HTML content:
 
 - `loadContentHTML(page)`: Fetches HTML file for a page
-- `parseBioContent(html)`: Extracts heading and paragraphs from bio HTML
+- `parseAboutContent(html)`: Extracts heading and paragraphs from about HTML
 - `parseBlogPosts(html)`: Extracts JSON blog post data from script tag
 
 ### Plane Renderers (`src/planes.js`)
 
 Renders parsed content to Three.js canvas textures:
 
-- `makeBioPlane(bioContent)`: Renders structured bio content with typography
+- `makeAboutPlane(aboutContent)`: Renders structured about content with typography
 - `makePortfolioPlane(items)`: Renders portfolio cards with images
 - `makeBlogPlane(posts)`: Renders blog posts with images and metadata
 
@@ -42,16 +42,16 @@ Renders parsed content to Three.js canvas textures:
 
 Orchestrates content loading and display:
 
-- `showBioPlane()`: Loads bio HTML, parses it, and renders to canvas
+- `showAboutPlane()`: Loads about HTML, parses it, and renders to canvas
 - `showPortfolioPlane()`: Loads and renders portfolio items
 - `showBlogPlane()`: Loads and renders blog posts
 
 ## Adding or Modifying Content
 
-### To Update Bio Content
+### To Update About Content
 
-1. Edit `src/content/bio.html` - change the h1 text or add/modify paragraphs
-2. Styling is controlled in `src/styles/bio.style.js`
+1. Edit `src/content/about/about.html` - change the h1 text or add/modify paragraphs
+2. Styling is controlled in `src/styles/about.style.js` (or CSS)
 3. Changes appear automatically on next page load
 
 ### To Update Portfolio

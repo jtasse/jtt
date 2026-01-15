@@ -266,7 +266,9 @@ function updateCameraTracking() {
 
 			// Side direction: perpendicular to punch line (camera views from side)
 			const upDir = new THREE.Vector3(0, 1, 0)
-			const sideDir = new THREE.Vector3().crossVectors(punchLine, upDir).normalize()
+			const sideDir = new THREE.Vector3()
+				.crossVectors(punchLine, upDir)
+				.normalize()
 			if (sideDir.lengthSq() < 0.0001) {
 				sideDir.set(1, 0, 0)
 			}
@@ -620,7 +622,7 @@ async function showAvailableSatellitesPane() {
 					if (link.id === "user-guide-link") {
 						fetchUrl = "/portfolio/docs/orc/user-guide/"
 					} else if (link.id === "decommission-tutorial-link") {
-						fetchUrl = "/portfolio/docs/orc/tutorial/"
+						fetchUrl = "/portfolio/docs/orc/getting-started-tutorial/"
 					} else if (link.id === "api-docs-link") {
 						fetchUrl = "/portfolio/docs/orc/api-reference/"
 					} else if (link.id === "whitepaper-link") {

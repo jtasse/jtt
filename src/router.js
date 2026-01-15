@@ -1,5 +1,5 @@
 // Simple client-side router for pyramid labels
-// Usage: router.navigate('/portfolio')
+// Usage: router.navigate('/about')
 // Listen for route changes: router.onRouteChange(callback)
 
 class Router {
