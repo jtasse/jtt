@@ -64,6 +64,7 @@ export default defineConfig(({ mode }) => {
 					target: "http://127.0.0.1:4321",
 					changeOrigin: true,
 					onError: handleProxyError,
+					ws: true,
 				},
 				// Proxy Astro/Starlight assets to the docs server
 				"^/(@fs/.*)?(node_modules/astro|node_modules/@astrojs|packages/docs)/.*":
@@ -71,30 +72,35 @@ export default defineConfig(({ mode }) => {
 						target: "http://127.0.0.1:4321",
 						changeOrigin: true,
 						onError: handleProxyError,
+						ws: true,
 					},
 				// Proxy Astro component styles/scripts
 				"^/.*\\?astro.*": {
 					target: "http://127.0.0.1:4321",
 					changeOrigin: true,
 					onError: handleProxyError,
+					ws: true,
 				},
 				// Proxy Astro/Starlight virtual modules
 				"^/@id/.*(astro|starlight).*": {
 					target: "http://127.0.0.1:4321",
 					changeOrigin: true,
 					onError: handleProxyError,
+					ws: true,
 				},
 				// Proxy Astro-specific dependencies in node_modules/.vite
 				"^/node_modules/\\.vite/deps/astro_.*": {
 					target: "http://127.0.0.1:4321",
 					changeOrigin: true,
 					onError: handleProxyError,
+					ws: true,
 				},
 				// Proxy docs styles (main app doesn't use src/styles)
 				"^/src/styles/.*": {
 					target: "http://127.0.0.1:4321",
 					changeOrigin: true,
 					onError: handleProxyError,
+					ws: true,
 				},
 			},
 		},

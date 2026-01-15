@@ -2,9 +2,22 @@
 
 This document provides guidelines for contributing to this project, whether you're a human developer or an AI coding assistant (Claude, Gemini, GitHub Copilot, etc.).
 
+## Table of Contents
+
+- [AI Coding Assistants](#ai-coding-assistants)
+- [File Placement Rules](#file-placement-rules)
+- [Architecture Rules](#architecture-rules)
+- [Styling Rules](#styling-rules)
+- [Responsive Design Rules](#responsive-design-rules)
+- [Hand of ORC Rules](#hand-of-orc-rules)
+- [File Size Limits](#file-size-limits)
+- [Configuration and Constants](#configuration-and-constants)
+- [Testing](#testing)
+- [Quick Reference for AI Assistants](#quick-reference-for-ai-assistants)
+
 ## AI Coding Assistants
 
-**If you are an AI assistant**, read this entire document before making changes. These rules are mandatory.
+**If you are an AI assistant**, read this entire document before making changes. These rules are **mandatory**.
 
 ---
 
@@ -106,11 +119,27 @@ With this in mind:
 - Any other reasonable measures, including catering to screen readers, should be taken to enhance accessibility.
 - Ideally, a light theme should be available to users on pages that are text-heavy.
 
-### CSS-First Principle
+### Separation of Concerns
 
-**All visual styling MUST be defined in CSS files**, not JavaScript.
+As stated in the [Architecture](./ARCHITECTURE.md) document, wherever possible we **MUST** follow the traditional web development approach of putting:
 
-#### CSS is REQUIRED for:
+- _Content_ in HTML
+- _Styles_ in CSS
+- _Logic_ in in JavaScript
+
+This may be difficult if not impossible for 3D scenes, but following this approach on other pages is **mandatory** as it will make maintenance, enhancement, and testing much easier.
+
+I understand there will be exceptions to this rule, but if you believe that we need to violate this principle, ASK FIRST.
+
+See below for additional guidelines regarding separation of concerns.
+
+#### HTML
+
+HTML is for content, not scripts or styles!
+
+#### CSS
+
+CSS is REQUIRED for:
 
 - Colors, fonts, sizes
 - Layout and positioning of DOM elements
@@ -118,13 +147,22 @@ With this in mind:
 - Visibility toggling (`.visible`, `.hidden` classes)
 - Transitions and animations (when possible)
 
-#### JavaScript is ONLY for:
+##### Adding New Styles
+
+1. Find the appropriate CSS file in `src/content/[section]/[section].css`
+2. Add your CSS class there
+3. Apply via `element.classList.add('your-class')` in JavaScript
+4. Never create inline styles
+
+#### JavaScript
+
+##### JavaScript is REQUIRED for:
 
 - Three.js object properties (positions, rotations, scales in 3D space)
 - GSAP animations on Three.js objects
 - Calculations that depend on runtime values (camera frustum, etc.)
 
-### Forbidden JavaScript Patterns
+##### Forbidden JavaScript Patterns
 
 ```javascript
 // NEVER do this - inline styles in JavaScript:
@@ -142,14 +180,7 @@ element.classList.add("position-top")
 element.classList.remove("visible")
 ```
 
-### Adding New Styles
-
-1. Find the appropriate CSS file in `src/content/[section]/[section].css`
-2. Add your CSS class there
-3. Apply via `element.classList.add('your-class')` in JavaScript
-4. Never create inline styles
-
-### Exception: GSAP Animations
+#### Exception: GSAP Animations
 
 GSAP may animate transform properties directly when animating DOM elements, but only for:
 

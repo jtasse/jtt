@@ -338,6 +338,22 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			}
 		})
 	})
+
+	// Handle launch button clicks
+	contentEl.querySelectorAll(".orc-launch-btn").forEach((btn) => {
+		btn.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			const href = btn.getAttribute("href")
+			if (href) {
+				if (href.startsWith("/portfolio/orc-demo")) {
+					router.navigate(href)
+				} else {
+					window.location.href = href
+				}
+			}
+		})
+	})
 }
 
 function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {

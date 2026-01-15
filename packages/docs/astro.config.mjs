@@ -13,8 +13,27 @@ export default defineConfig({
 			social: {
 				github: "https://github.com/jtasse/jtt",
 			},
-			head: [],
+			head: [
+				{
+					tag: "script",
+					content: `
+						document.addEventListener("DOMContentLoaded", () => {
+							const targets = document.querySelectorAll("a[rel='prev']");
+							targets.forEach(el => {
+								if (el.textContent.includes("← jamestasse.tech home")) {
+									el.remove();
+								}
+							});
+						});
+					`,
+				},
+			],
 			sidebar: [
+				{
+					label: "← jamestasse.tech home",
+					link: "/../../",
+					attrs: { class: "home-link" },
+				},
 				{
 					label: "ORC",
 					items: [

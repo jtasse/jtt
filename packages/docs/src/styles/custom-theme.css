@@ -68,3 +68,32 @@ a:hover {
 	border-color: #ff4444;
 	background: rgba(255, 68, 68, 0.1);
 }
+
+/* Differentiate the "Back to home" link in the sidebar */
+.sidebar-content a.home-link {
+	display: block;
+	color: white;
+	background: rgba(14, 2, 78, 0.1);
+	border: 1px solid;
+	border-color: var(--sl-color-gray-2);
+	margin-bottom: 1.5rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+.sidebar-content a.home-link:hover {
+	background: rgba(0, 255, 255, 0.2);
+	color: #ffffff !important;
+	text-decoration: none;
+	border-color: var(--sl-color-accent-high);
+}
+
+/* Hide the "Back to home" link in pagination */
+.pagination-links a[href="/"],
+.pagination-links a[href="/../../"],
+.pagination-links a[href="../../"],
+.pagination-links a[href="../.."] {
+	display: none !important;
+}

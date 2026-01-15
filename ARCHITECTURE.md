@@ -2,6 +2,17 @@
 
 ## File Organization
 
+## Table of Contents
+
+- [File Organization](#file-organization)
+- [Adding or Modifying Content](#adding-or-modifying-content)
+- [Why No CSS?](#why-no-css)
+- [Refactor](#refactor)
+  - [Background](#background)
+  - [Refactor Progress](#refactor-progress)
+  - [Known Issues](#known-issues-as-of-11026)
+  - [Architecture Principles](#architecture-principles)
+
 This project separates concerns across multiple layers:
 
 ### Content Layer (`src/content/`)
@@ -89,55 +100,6 @@ The separation is maintained by:
 
 On 1/4/26 I began a refactor project working with Claude Code and Gemini Code Assist. This document tracks progress and remaining work.
 
----
-
-## Current File Structure
-
-This is the **actual** current state of the codebase:
-
-```
-src/
-├── core/
-│   ├── SceneManager.js      # ✅ DONE - Scene, camera, renderer, lighting, starfield
-│   └── LayoutManager.js     # ✅ DONE - Frustum-based responsive positioning
-├── pyramid/
-│   └── PyramidMesh.js       # ✅ DONE - Pyramid geometry creation (createPyramid)
-├── navigation/
-│   └── LabelManager.js      # ✅ DONE - Label creation and nav positioning
-├── contact/
-│   └── ContactLabel.js      # ✅ DONE - Contact info system (extracted)
-├── content/
-│   ├── overlay.css          # ✅ DONE - Content overlay styles
-│   ├── home/                # Home page content & styles
-│   ├── about/               # About/Bio page content & styles
-│   ├── blog/                # Blog content & styles
-│   ├── portfolio/           # Portfolio content & styles
-│   ├── orc-demo/            # ORC demo
-│   │   ├── orc-demo.js      # ✅ DONE - Barrel file
-│   │   ├── OrcScene.js      # ✅ DONE - Scene setup
-│   │   ├── Decommission.js  # ✅ DONE - Decommission logic
-│   │   ├── SmartCamera.js   # ✅ DONE - Camera tracking
-│   │   ├── OrcDemoManager.js # ✅ DONE - Manager logic
-│   │   └── ...
-│   ├── ContentManager.js    # ✅ DONE - Content display logic
-│   └── ScrollManager.js     # ✅ DONE - Scroll UI logic
-├── contentLoader.js         # HTML content loading utilities
-├── planes.js                # ✅ CLEANED - Canvas texture rendering (Label helper only)
-├── pyramid.js               # ✅ CLEANED - Main scene orchestration
-├── router.js                # Simple client-side router
-└── main.js                  # Entry point, event handling
-```
-
-### Files to Delete (Duplicates)
-
-These files were created during refactoring but are duplicates (some deleted):
-
-- `src/layout/LayoutManager.js` - Duplicate of `src/core/LayoutManager.js`
-- `LayoutManager.js` (root) - Stray file
-- `config.js` (root) - Stray file
-
----
-
 ## Refactor Progress
 
 ### Phase 4: Testing - IN PROGRESS
@@ -170,46 +132,6 @@ These files were created during refactoring but are duplicates (some deleted):
 
 ## Next Steps (Priority Order)
 
-### Testing
-
-TBD
-
-## Target File Structure
-
-Once refactor is complete:
-
-```
-src/
-├── core/
-│   ├── SceneManager.js      # Scene, camera, renderer, lighting
-│   ├── LayoutManager.js     # Frustum-based responsive positioning
-│   └── InputManager.js      # Raycasting, click/drag detection
-├── pyramid/
-│   ├── PyramidMesh.js       # Geometry creation
-│   ├── animations.js        # All pyramid animations
-│   └── state.js             # Position state, pyramidGroup
-├── navigation/
-│   ├── LabelManager.js      # Label creation and management
-│   └── NavAnimations.js     # Label transition animations
-├── contact/
-│   └── ContactLabel.js      # Contact info system
-├── hand/
-│   ├── HandMesh.js          # Hand geometry
-│   ├── HandBehaviors.js     # High-level API: pointAt, travelTo, gesture
-│   └── HandStateMachine.js  # State transitions
-├── content/
-│   ├── ContentManager.js    # Load and display content
-│   ├── overlay.css          # Content overlay styles
-│   └── [page folders]/      # Page-specific content
-├── orc-demo/
-│   ├── OrcScene.js          # Planet, satellites, atmosphere
-│   ├── Decommission.js      # Decommission orchestration
-│   └── SmartCamera.js       # Camera that avoids occlusion
-├── config.js                # All magic constants
-├── router.js                # Client-side routing
-└── main.js                  # Wiring only (~200 lines)
-```
-
 ---
 
 ## Architecture Principles
@@ -223,9 +145,14 @@ src/
 
 ### Key Rules
 
-1. **Nav labels at z=1** - Keeps them in front of pyramid for visibility and raycasting
-2. **Frustum-based positioning** - Use LayoutManager, never hardcode 3D positions
-3. **CSS for styling** - Never use `element.style.*` in JavaScript
+1. **Maintain separation of concerns (where possible)**: although this has been more challening for 3D scenes, in places where pages follow a more traditional approach, we have tried to keep:
+
+- _Content_ in HTML
+- _Styles_ in CSS
+- _Logic_ in in JavaScript
+
+2. **Nav labels at z=1** - Keeps them in front of pyramid for visibility and raycasting
+3. **Frustum-based positioning** - Use LayoutManager, never hardcode 3D positions
 4. **Hand as Actor** - Use high-level behavior methods, not direct mesh manipulation
 
 ### Must-Display Elements
