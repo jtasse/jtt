@@ -13,6 +13,7 @@ import {
 	avoidSatellites,
 	avoidPlanet,
 	clampToFrontOfPlanet,
+	clampToPlanetSurface,
 } from "./HandBehaviors.js"
 
 // States where cancel is allowed
@@ -94,7 +95,12 @@ export class HandStateMachine {
 				this.stateData.windUpStartRotation = this.hand.rotation.y
 				break
 			case HandState.SLAPPING:
-				transitionToGesture(this.hand, "backhand", 100)
+				// Use fist for GEO punch, backhand for LEO/Molniya slap
+				if (this.stateData.isGeoPunch) {
+					transitionToGesture(this.hand, "fist", 100)
+				} else {
+					transitionToGesture(this.hand, "backhand", 100)
+				}
 				this.stateData.slapApplied = false
 				break
 			case HandState.CELEBRATING:
@@ -313,78 +319,77 @@ export class HandStateMachine {
 			const targetPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(targetPos)
 
-			// Check if this is a LEO satellite (close to planet)
 			const satDistance = targetPos.length()
-			const isLEO = satDistance < 0.8 // LEO orbit is 0.65, GEO is 2.0
+			// GEO satellites are at altitude ~2.0, LEO at ~0.65, Molniya varies (elliptical)
+			const isGEO = this.targetSatellite.userData.isGeosynchronous === true
 
-			// If satellite is behind the planet (negative Z), we need a special approach
-			// that keeps the hand in front of the planet at all times
-			const satBehindPlanet = targetPos.z < 0.5 // MIN_FRONT_Z
-
-			// Calculate path that avoids the planet
-			// Use an arc if direct path would go through planet
 			const startPos = this.stateData.startPosition
-			const directPath = targetPos.clone().sub(startPos)
-			const midPoint = startPos
-				.clone()
-				.add(directPath.clone().multiplyScalar(0.5))
-			const midDistance = midPoint.length()
-
-			// For LEO satellites, always use an arc approach to stay clear of planet
-			// If midpoint is too close to planet OR satellite is behind planet, arc around it
 			let interpolatedPos
-			if (
-				midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
-				satBehindPlanet ||
-				isLEO
-			) {
-				// Create an arc path by pushing the midpoint outward
-				// ALWAYS bias towards camera (positive Z) to stay visible
-				let pushDirection
 
-				if (this.camera) {
-					// Use camera direction as primary push direction
-					pushDirection = this.camera.position.clone().normalize()
-				} else {
-					// Fallback: push toward positive Z (camera direction)
-					pushDirection = new THREE.Vector3(0, 0, 1)
+			if (isGEO) {
+				// GEO PUNCH: Position hand FAR BEHIND satellite (further from Earth)
+				// Hand will punch TOWARD Earth, through the satellite
+				this.stateData.isGeoPunch = true
+
+				const earthToSat = targetPos.clone().normalize()
+				const satDistance = targetPos.length()
+
+				// Hand approaches to a position BEYOND the satellite (further from Earth)
+				// This is the "cocked back" position before the wind-up pulls even further
+				const approachDistance = satDistance + 0.8 // Beyond satellite
+				const approachPos = earthToSat.clone().multiplyScalar(approachDistance)
+
+				// Store punch line direction (toward Earth, through satellite)
+				this.stateData.punchLineDirection = earthToSat.clone().negate()
+				this.stateData.satelliteDistance = satDistance
+
+				// Simple arc to approach position
+				interpolatedPos = startPos.clone().lerp(approachPos, eased)
+
+				// Keep hand visible (don't go behind planet from camera view)
+				if (interpolatedPos.z < 0.3) {
+					interpolatedPos.z = 0.3
 				}
 
-				// Add some XY component from the midpoint for more natural arc
-				const xyBias = new THREE.Vector3(midPoint.x, midPoint.y, 0)
-				if (xyBias.lengthSq() > 0.01) {
-					xyBias.normalize().multiplyScalar(0.3)
-					pushDirection.add(xyBias)
-					pushDirection.normalize()
-				}
-
-				// For LEO satellites, push the arc further out to avoid planet proximity
-				const arcRadius = isLEO
-					? HAND_ORBIT_CONFIG.minPlanetDistance * 2.0
-					: HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
-
-				// Ensure arc midpoint has strong positive Z to stay in front
-				const arcMidPoint = pushDirection.multiplyScalar(arcRadius)
-				// Force arc midpoint to stay in front of planet
-				arcMidPoint.z = Math.max(
-					arcMidPoint.z,
-					0.5 + (isLEO ? 0.6 : 0.3) // MIN_FRONT_Z + buffer
-				)
-
-				// Quadratic bezier interpolation for smooth arc
-				const oneMinusT = 1 - eased
-				interpolatedPos = startPos
-					.clone()
-					.multiplyScalar(oneMinusT * oneMinusT)
-					.add(arcMidPoint.clone().multiplyScalar(2 * oneMinusT * eased))
-					.add(targetPos.clone().multiplyScalar(eased * eased))
 			} else {
-				// Direct path is safe
-				interpolatedPos = startPos.clone().lerp(targetPos, eased)
+				// LEO/Molniya: Original slap behavior - approach from front
+				this.stateData.isGeoPunch = false
+
+				const isLEO = satDistance < 0.8
+				const satBehindPlanet = targetPos.z < 0.5
+				const directPath = targetPos.clone().sub(startPos)
+				const midPoint = startPos.clone().add(directPath.clone().multiplyScalar(0.5))
+				const midDistance = midPoint.length()
+
+				if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance || satBehindPlanet || isLEO) {
+					let pushDirection = this.camera
+						? this.camera.position.clone().normalize()
+						: new THREE.Vector3(0, 0, 1)
+
+					const xyBias = new THREE.Vector3(midPoint.x, midPoint.y, 0)
+					if (xyBias.lengthSq() > 0.01) {
+						xyBias.normalize().multiplyScalar(0.3)
+						pushDirection.add(xyBias)
+						pushDirection.normalize()
+					}
+
+					const arcRadius = isLEO
+						? HAND_ORBIT_CONFIG.minPlanetDistance * 2.0
+						: HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
+					const arcMidPoint = pushDirection.multiplyScalar(arcRadius)
+					arcMidPoint.z = Math.max(arcMidPoint.z, 0.5 + (isLEO ? 0.6 : 0.3))
+
+					const oneMinusT = 1 - eased
+					interpolatedPos = startPos.clone().multiplyScalar(oneMinusT * oneMinusT)
+						.add(arcMidPoint.clone().multiplyScalar(2 * oneMinusT * eased))
+						.add(targetPos.clone().multiplyScalar(eased * eased))
+				} else {
+					interpolatedPos = startPos.clone().lerp(targetPos, eased)
+				}
+
+				clampToFrontOfPlanet(interpolatedPos)
 			}
 
-			// Apply planet collision clamping AND ensure we stay in front
-			clampToFrontOfPlanet(interpolatedPos)
 			this.hand.position.copy(interpolatedPos)
 
 			// Face satellite
@@ -396,15 +401,12 @@ export class HandStateMachine {
 					direction,
 					up
 				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
-					rotMatrix
-				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
 				this.hand.quaternion.slerp(targetQuat, 0.1)
 			}
 		}
 
 		if (t >= 1) {
-			// Skip grab/carry/release - go straight to wind up
 			this.transition(HandState.WINDING_UP)
 		}
 	}
@@ -423,91 +425,130 @@ export class HandStateMachine {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
 
-			// Position hand for a swing toward the satellite
-			// Calculate vector from Earth to Satellite
 			const earthToSat = satPos.clone()
 			if (earthToSat.lengthSq() < 0.0001) {
-				earthToSat.set(0, 1, 0) // Fallback
+				earthToSat.set(0, 1, 0)
 			} else {
 				earthToSat.normalize()
 			}
 
-			// Check if this is a LEO satellite (close to planet)
 			const satDistance = satPos.length()
-			const isLEO = satDistance < 0.8 // LEO orbit is 0.65, GEO is 2.0
+			const isLEO = satDistance < 0.8
+			let windUpPos
 
-			// Wind up position: outside the orbit but ALWAYS in front of planet
-			// For LEO satellites, use a larger wind-up distance to stay clear of planet
-			const windUpDist = isLEO ? 1.2 : 0.8
-			let windUpPos = satPos
-				.clone()
-				.add(earthToSat.clone().multiplyScalar(windUpDist))
+			if (this.stateData.isGeoPunch) {
+				// GEO PUNCH: Pull hand WAY BACK in a straight line from Earth
+				// Like winding up for a massive punch toward Earth
+				this.timeScale = 0.15 // Very slow for dramatic effect
 
-			// For LEO satellites, ALWAYS swing from above/side to avoid planet proximity
-			// The satellite is so close to the planet that we need a different approach angle
-			if (isLEO) {
-				// Position above and to the side of the satellite for a downward swing
-				// This keeps the hand far from the planet surface
-				const lateralDir = new THREE.Vector3(satPos.x, 0, satPos.z)
-				if (lateralDir.lengthSq() > 0.01) {
-					lateralDir.normalize()
-				} else {
-					lateralDir.set(1, 0, 0)
+				const satDistance = this.stateData.satelliteDistance || satPos.length()
+
+				// Wind-up position: Pull hand FURTHER from Earth (beyond satellite)
+				// Start at satDistance + 0.8, pull back to satDistance + 2.5
+				const pullBackDistance = satDistance + 0.8 + eased * 1.7
+
+				// Position directly along the Earth-to-satellite line
+				windUpPos = earthToSat.clone().multiplyScalar(pullBackDistance)
+
+				// Store the wind-up end position for the punch
+				this.stateData.windUpEndPos = earthToSat.clone().multiplyScalar(satDistance + 2.5)
+				this.stateData.punchDirection = earthToSat.clone().negate() // Toward Earth
+
+				// Keep hand visible to camera
+				if (windUpPos.z < 0.2) {
+					windUpPos.z = 0.2
 				}
 
-				// Wind up position: above the satellite and pushed outward
-				windUpPos = new THREE.Vector3(
-					satPos.x + lateralDir.x * 0.5,
-					satPos.y + 0.8, // Above the satellite
-					Math.max(0.5 + 0.5, satPos.z + 0.6) // In front of planet
-				)
-			} else if (windUpPos.z < 0.5) {
-				// If the wind-up position would be behind the planet, reposition
-				// to the side/front while maintaining ability to swing at satellite
-				// Calculate a position that's in front of planet but offset to swing from
-				// Use the satellite's XY position to determine swing direction
-				const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
-				if (swingDir.lengthSq() > 0.01) {
-					swingDir.normalize()
-				} else {
-					swingDir.set(1, 0, 0) // Default swing from right
+			} else {
+				// LEO/Molniya: Original slap behavior
+				const windUpDist = isLEO ? 1.2 : 0.8
+				windUpPos = satPos.clone().add(earthToSat.clone().multiplyScalar(windUpDist))
+
+				if (isLEO) {
+					const lateralDir = new THREE.Vector3(satPos.x, 0, satPos.z)
+					if (lateralDir.lengthSq() > 0.01) {
+						lateralDir.normalize()
+					} else {
+						lateralDir.set(1, 0, 0)
+					}
+					windUpPos = new THREE.Vector3(
+						satPos.x + lateralDir.x * 0.5,
+						satPos.y + 0.8,
+						Math.max(0.5 + 0.5, satPos.z + 0.6)
+					)
+				} else if (windUpPos.z < 0.5) {
+					const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
+					if (swingDir.lengthSq() > 0.01) {
+						swingDir.normalize()
+					} else {
+						swingDir.set(1, 0, 0)
+					}
+					windUpPos = new THREE.Vector3(
+						satPos.x + swingDir.x * windUpDist,
+						satPos.y + swingDir.y * windUpDist * 0.5,
+						Math.max(0.5 + 0.3, satPos.z + 0.5)
+					)
 				}
 
-				// Position to the side of the satellite, in front of planet
-				windUpPos = new THREE.Vector3(
-					satPos.x + swingDir.x * windUpDist,
-					satPos.y + swingDir.y * windUpDist * 0.5,
-					Math.max(0.5 + 0.3, satPos.z + 0.5)
-				)
+				clampToFrontOfPlanet(windUpPos)
 			}
 
-			// Final safety clamp
-			clampToFrontOfPlanet(windUpPos)
 			this.hand.position.lerp(windUpPos, 0.1)
 
-			// Rotate hand to face satellite, with palm ready for backhand
-			const toSatellite = satPos.clone().sub(this.hand.position)
-			if (toSatellite.lengthSq() < 0.0001) {
-				toSatellite.set(0, 0, 1) // Fallback
+			// Rotate hand to face toward Earth (for punch) or satellite (for slap)
+			let faceDirection
+			if (this.stateData.isGeoPunch) {
+				// For punch: fist faces TOWARD Earth (the punch direction)
+				// Hand is behind satellite, punching toward planet
+				faceDirection = this.stateData.punchDirection
+					? this.stateData.punchDirection.clone()
+					: satPos.clone().negate().normalize()
+
+				if (faceDirection.lengthSq() < 0.0001) {
+					faceDirection.set(0, -1, 0)
+				}
+
+				const up = new THREE.Vector3(0, 1, 0)
+				const rotMatrix = new THREE.Matrix4().lookAt(
+					new THREE.Vector3(),
+					faceDirection,
+					up
+				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+
+				// Fist cocked back, ready to punch forward
+				// Slight rotation to show the arm is pulled back
+				const cockBackQuat = new THREE.Quaternion().setFromAxisAngle(
+					new THREE.Vector3(0, 1, 0),
+					eased * Math.PI * 0.15 // Slight twist
+				)
+				targetQuat.multiply(cockBackQuat)
+
+				this.hand.quaternion.slerp(targetQuat, 0.1)
 			} else {
-				toSatellite.normalize()
+				// For slap: face toward satellite
+				faceDirection = satPos.clone().sub(this.hand.position).normalize()
+				if (faceDirection.lengthSq() < 0.0001) {
+					faceDirection.set(0, 0, 1)
+				}
+
+				const up = new THREE.Vector3(0, 1, 0)
+				const rotMatrix = new THREE.Matrix4().lookAt(
+					new THREE.Vector3(),
+					faceDirection,
+					up
+				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+
+				// Add wind-up rotation (pull arm back)
+				const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
+					new THREE.Vector3(0, 1, 0),
+					-eased * Math.PI * 0.4
+				)
+				targetQuat.multiply(windUpQuat)
+
+				this.hand.quaternion.slerp(targetQuat, 0.06)
 			}
-			const up = new THREE.Vector3(0, 1, 0)
-			const rotMatrix = new THREE.Matrix4().lookAt(
-				new THREE.Vector3(),
-				toSatellite,
-				up
-			)
-			const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
-
-			// Add wind-up rotation (pull arm back)
-			const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
-				new THREE.Vector3(0, 1, 0),
-				-eased * Math.PI * 0.4 // Wind up by rotating away
-			)
-			targetQuat.multiply(windUpQuat)
-
-			this.hand.quaternion.slerp(targetQuat, 0.06)
 		}
 
 		if (t >= 1) {
@@ -519,29 +560,59 @@ export class HandStateMachine {
 		const elapsed = this.getElapsedTime()
 		const t = Math.min(elapsed / SEQUENCE_TIMINGS.slapDuration, 1)
 
-		// Linear swing for impact
-		const eased = t // Linear is good for impact speed
+		// For GEO punch: Use ease-out for explosive start, decelerating impact
+		// For slap: Linear is fine
+		const eased = this.stateData.isGeoPunch
+			? 1 - Math.pow(1 - t, 3) // Ease-out cubic - fast start, slow end
+			: t
 
 		if (this.targetSatellite) {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
 
-			// Swing THROUGH the satellite toward Earth
-			// Start from current hand pos (wind up pos)
-			// End pos is past the satellite
+			let moveDirection
+			const moveSpeed = 0.025 // units per ms
 
-			// Vector from Hand to Satellite
-			const toSat = satPos.clone().sub(this.hand.position)
-			if (toSat.lengthSq() < 0.0001) {
-				toSat.set(0, -1, 0) // Fallback if on top of it
+			if (this.stateData.isGeoPunch) {
+				// GEO PUNCH: Straight line punch TOWARD Earth, through satellite
+				// Gradually speed up for impact feel
+				this.timeScale = 0.2 + t * 0.5 // Speed up as punch lands
+
+				// Punch direction: straight toward Earth center
+				const punchDir = this.stateData.punchDirection
+					? this.stateData.punchDirection.clone()
+					: satPos.clone().negate().normalize()
+
+				// Accelerating punch - starts slow, gets FAST
+				const punchSpeed = moveSpeed * (0.5 + eased * 4) // Much faster at end
+				this.hand.position.add(punchDir.multiplyScalar(punchSpeed * dt))
+
+				// Hand maintains forward-facing orientation during punch
+				const up = new THREE.Vector3(0, 1, 0)
+				const rotMatrix = new THREE.Matrix4().lookAt(
+					new THREE.Vector3(),
+					punchDir,
+					up
+				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+				this.hand.quaternion.slerp(targetQuat, 0.2)
+
+				// Stop hand when it reaches past the satellite (closer to Earth)
+				// Don't let it go into the planet
+				clampToPlanetSurface(this.hand.position, 0.3)
+
 			} else {
-				toSat.normalize()
+				// LEO/Molniya: Original slap behavior - swing through satellite
+				moveDirection = satPos.clone().sub(this.hand.position)
+				if (moveDirection.lengthSq() < 0.0001) {
+					moveDirection.set(0, -1, 0)
+				} else {
+					moveDirection.normalize()
+				}
+
+				this.hand.position.add(moveDirection.clone().multiplyScalar(moveSpeed * dt))
+				clampToFrontOfPlanet(this.hand.position)
 			}
-
-			const moveSpeed = 0.02 // units per ms
-			this.hand.position.add(toSat.multiplyScalar(moveSpeed * dt))
-
-			clampToFrontOfPlanet(this.hand.position)
 
 			// Check for contact
 			const dist = this.hand.position.distanceTo(satPos)

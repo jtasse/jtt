@@ -250,15 +250,60 @@ function updateCameraTracking() {
 		satPos.x += orcGroup.position.x
 
 		const sidebarCompensation = 0.4
-		const adjustedTarget = satPos.clone()
-		adjustedTarget.x += sidebarCompensation
-
-		const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
 		const targetDistance = decommState.targetZoomDistance
-		const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
-		cameraOffset.y += targetDistance * 0.3
+		let targetCamPos
+		let adjustedTarget
 
-		const targetCamPos = satPos.clone().add(cameraOffset)
+		if (decommState.isGeoPunch && decommState.hand) {
+			// GEO PUNCH: Camera to the SIDE to see the full punch line
+			// (hand behind satellite, satellite in middle, planet in front)
+			const handWorldPos = new THREE.Vector3()
+			decommState.hand.getWorldPosition(handWorldPos)
+			handWorldPos.x += orcGroup.position.x
+
+			// Punch line direction: from hand toward planet (through satellite)
+			const punchLine = satPos.clone().sub(planetCenter).normalize()
+
+			// Side direction: perpendicular to punch line (camera views from side)
+			const upDir = new THREE.Vector3(0, 1, 0)
+			const sideDir = new THREE.Vector3().crossVectors(punchLine, upDir).normalize()
+			if (sideDir.lengthSq() < 0.0001) {
+				sideDir.set(1, 0, 0)
+			}
+
+			// Look at the satellite (center of action)
+			adjustedTarget = satPos.clone()
+			adjustedTarget.x += sidebarCompensation
+
+			if (decommState.phase === "burning") {
+				// After punch: Pull back to see hand celebrating near planet
+				const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
+				adjustedTarget = midPoint.clone()
+				adjustedTarget.x += sidebarCompensation
+
+				targetCamPos = midPoint.clone()
+				targetCamPos.add(sideDir.multiplyScalar(targetDistance * 1.2))
+				targetCamPos.y += targetDistance * 0.4
+			} else {
+				// During approach/wind-up/punch: Side view of the punch line
+				// Camera perpendicular to punch trajectory
+				targetCamPos = satPos.clone()
+				targetCamPos.add(sideDir.multiplyScalar(targetDistance * 1.5)) // Far to side
+				targetCamPos.y += targetDistance * 0.3 // Slightly elevated
+
+				// Ensure camera stays in front
+				if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
+			}
+		} else {
+			// LEO/Molniya: Original camera tracking
+			adjustedTarget = satPos.clone()
+			adjustedTarget.x += sidebarCompensation
+
+			const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
+			const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
+			cameraOffset.y += targetDistance * 0.3
+			targetCamPos = satPos.clone().add(cameraOffset)
+		}
 
 		// Occlusion check
 		const currentCamPos = orcDemoCamera.position.clone()
@@ -273,7 +318,7 @@ function updateCameraTracking() {
 				.clone()
 				.add(camToSat.normalize().multiplyScalar(projLength))
 			const perpDistance = planetCenter.distanceTo(closestPointOnLine)
-			isOccluded = perpDistance < 0.65 // Radius + margin
+			isOccluded = perpDistance < 0.65
 		}
 
 		let cameraSpeed = decommState.cameraSpeed

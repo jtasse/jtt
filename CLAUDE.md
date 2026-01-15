@@ -217,6 +217,18 @@ The Hand is treated as an **actor** with high-level behaviors, not a mesh to man
 
 **Critical constraint:** The hand must NEVER be positioned behind the planet (z < 0.5 in ORC scene). All movement calculations must enforce this.
 
+**Decommission animations by orbit type:**
+
+Each satellite type has a distinct decommission animation:
+
+| Orbit | Satellite | Animation | Description |
+|-------|-----------|-----------|-------------|
+| LEO | Leona | **Flicking** | Quick flick motion |
+| GEO | George | **Punching** | Hand winds up far behind satellite, punches straight through toward Earth |
+| Molniya | Moltar | **Slapping** | Backhand slap motion |
+
+When implementing or modifying decommission animations, ensure each orbit type maintains its unique motion style.
+
 ### File Organization
 
 **Size limits:**

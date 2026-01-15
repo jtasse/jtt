@@ -283,6 +283,24 @@ export function clampOutsidePlanet(
 	return position
 }
 
+// Clamp position to stay outside planet surface (allows going behind planet)
+// Used for LEO punch animation where hand needs to go behind satellite
+export function clampToPlanetSurface(
+	position,
+	buffer = 0.1
+) {
+	const planetRadius = HAND_ORBIT_CONFIG.planetRadius
+	const dist = position.length()
+	if (dist < planetRadius + buffer) {
+		if (dist < 0.0001) {
+			position.set(0, 0, planetRadius + buffer)
+		} else {
+			position.normalize().multiplyScalar(planetRadius + buffer)
+		}
+	}
+	return position
+}
+
 // Ensure a position stays in front of the planet from camera's perspective
 // Camera is at Z=6 looking at origin. Negative Z values put objects behind the planet.
 // This function ensures the hand never goes behind the planet and stays visible.

@@ -121,6 +121,7 @@ export function getDecommissionState() {
 		config: DECOMMISSION_CONFIG,
 		handState: orcHandStateMachine?.state,
 		hand: orcHand,
+		isGeoPunch: orcHandStateMachine?.stateData?.isGeoPunch === true,
 	}
 }
 
