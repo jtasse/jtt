@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { HandState } from "../../hand/HandConfig.js"
+import { HandState, GEO_PUNCH_CONFIG } from "../../hand/HandConfig.js"
 import {
 	orcHandStateMachine,
 	orcHand,
@@ -8,13 +8,8 @@ import {
 	surfaceMarker,
 	surfaceCircle,
 	hideGeoTether,
-	latLonTo3D,
-	markerLatitude,
-	markerLongitude,
-	GEO_ALTITUDE,
 	LEO_ORBIT_RADIUS,
 	EXOSPHERE_RADIUS,
-	INNER_ATMOSPHERE_RADIUS,
 } from "./OrcScene.js"
 
 // Decommission animation configuration
@@ -109,6 +104,26 @@ export function getDecommissionState() {
 					DECOMMISSION_CONFIG.cameraZoomDistanceClose)
 	}
 
+	let cameraOffset = null
+	let cameraLookAt = null
+
+	if (orcHandStateMachine?.stateData?.isGeoPunch) {
+		const stage = orcHandStateMachine.stateData.geoPunchStage
+		if (stage === "PULL_BACK" || stage === "POSITION_HOLD") {
+			cameraSpeed = GEO_PUNCH_CONFIG.windUpCameraSpeed
+			cameraOffset = GEO_PUNCH_CONFIG.windUpCameraOffset
+			cameraLookAt = GEO_PUNCH_CONFIG.windUpCameraLookAt
+		} else if (stage === "PUNCH") {
+			cameraSpeed = GEO_PUNCH_CONFIG.punchCameraSpeed
+			cameraOffset = GEO_PUNCH_CONFIG.punchCameraOffset
+			cameraLookAt = GEO_PUNCH_CONFIG.punchCameraLookAt
+		} else if (stage === "FOLLOW_THROUGH") {
+			cameraSpeed = GEO_PUNCH_CONFIG.followThroughCameraSpeed
+			cameraOffset = GEO_PUNCH_CONFIG.followThroughCameraOffset
+			cameraLookAt = GEO_PUNCH_CONFIG.followThroughCameraLookAt
+		}
+	}
+
 	return {
 		satellite: sat,
 		position: trackingPosition,
@@ -122,6 +137,8 @@ export function getDecommissionState() {
 		handState: orcHandStateMachine?.state,
 		hand: orcHand,
 		isGeoPunch: orcHandStateMachine?.stateData?.isGeoPunch === true,
+		cameraOffset,
+		cameraLookAt,
 	}
 }
 

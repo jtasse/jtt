@@ -255,41 +255,60 @@ function updateCameraTracking() {
 		let adjustedTarget
 
 		if (decommState.isGeoPunch && decommState.hand) {
-			// GEO PUNCH: Camera to the SIDE, framing BOTH hand AND satellite
-			const handWorldPos = new THREE.Vector3()
-			decommState.hand.getWorldPosition(handWorldPos)
-			handWorldPos.x += orcGroup.position.x
+			if (decommState.cameraOffset && decommState.cameraLookAt) {
+				// Explicit camera positioning relative to hand
+				const handWorldPos = new THREE.Vector3()
+				decommState.hand.getWorldPosition(handWorldPos)
 
-			// Punch line direction: from planet through satellite
-			const punchLine = satPos.clone().sub(planetCenter).normalize()
+				// Apply offsets relative to hand position
+				targetCamPos = handWorldPos
+					.clone()
+					.add(
+						new THREE.Vector3(
+							decommState.cameraOffset.x,
+							decommState.cameraOffset.y,
+							decommState.cameraOffset.z
+						)
+					)
 
-			// Side direction: perpendicular to punch line
-			const upDir = new THREE.Vector3(0, 1, 0)
-			const sideDir = new THREE.Vector3()
-				.crossVectors(punchLine, upDir)
-				.normalize()
-			if (sideDir.lengthSq() < 0.0001) {
-				sideDir.set(1, 0, 0)
+				adjustedTarget = handWorldPos
+					.clone()
+					.add(
+						new THREE.Vector3(
+							decommState.cameraLookAt.x,
+							decommState.cameraLookAt.y,
+							decommState.cameraLookAt.z
+						)
+					)
+
+				// Apply sidebar compensation
+				adjustedTarget.x += sidebarCompensation
+			} else {
+				// Fallback: Camera to the SIDE, framing BOTH hand AND satellite
+				const handWorldPos = new THREE.Vector3()
+				decommState.hand.getWorldPosition(handWorldPos)
+				handWorldPos.x += orcGroup.position.x
+
+				const punchLine = satPos.clone().sub(planetCenter).normalize()
+				const upDir = new THREE.Vector3(0, 1, 0)
+				const sideDir = new THREE.Vector3()
+					.crossVectors(punchLine, upDir)
+					.normalize()
+				if (sideDir.lengthSq() < 0.0001) sideDir.set(1, 0, 0)
+
+				const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
+				const handSatDist = handWorldPos.distanceTo(satPos)
+				const frameDistance = Math.max(targetDistance, handSatDist * 1.2)
+
+				adjustedTarget = midPoint.clone()
+				adjustedTarget.x += sidebarCompensation
+
+				targetCamPos = midPoint.clone()
+				targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
+				targetCamPos.y += frameDistance * 0.3
+
+				if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
 			}
-
-			// Calculate midpoint between hand and satellite to frame both
-			const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
-
-			// Calculate distance between hand and satellite for zoom
-			const handSatDist = handWorldPos.distanceTo(satPos)
-			const frameDistance = Math.max(targetDistance, handSatDist * 1.2)
-
-			// Look at midpoint to keep both in frame
-			adjustedTarget = midPoint.clone()
-			adjustedTarget.x += sidebarCompensation
-
-			// Camera positioned to the side, far enough to see both
-			targetCamPos = midPoint.clone()
-			targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
-			targetCamPos.y += frameDistance * 0.3
-
-			// Ensure camera stays in front
-			if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
 		} else {
 			// LEO/Molniya: Original camera tracking
 			adjustedTarget = satPos.clone()

@@ -66,6 +66,18 @@ export const GEO_PUNCH_CONFIG = {
 	pullBackDistance: 1.5, // How far to pull back during wind-up
 	followThroughDistance: 0.4, // How far past satellite to drive through
 	followThroughAngle: Math.PI * 0.15, // Angle offset after follow-through (like punch ending beside head)
+
+	// Camera settings (relative to hand)
+	windUpCameraOffset: { x: 4.0, y: 2.0, z: 4.0 },
+	windUpCameraLookAt: { x: 0, y: 0, z: 0 },
+	punchCameraOffset: { x: 2.5, y: 1.0, z: 2.5 },
+	punchCameraLookAt: { x: 0, y: 0, z: 0 },
+	followThroughCameraOffset: { x: 2.0, y: 0.5, z: 2.0 },
+	followThroughCameraLookAt: { x: 0, y: 0, z: 0 },
+
+	windUpCameraSpeed: 0.02,
+	punchCameraSpeed: 0.05,
+	followThroughCameraSpeed: 0.03,
 }
 
 // ============================================
