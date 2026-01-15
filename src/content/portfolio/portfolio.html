@@ -1,25 +1,93 @@
 <div class="content-page portfolio-page">
 	<link rel="stylesheet" href="/src/content/portfolio/portfolio.css" />
-	<h1>Welcome to my portfolio!</h1>
-	<p>
-		Below I invite you to check out the Orbital Refuse Collector (ORC) demo
-		and/or read the Astro docs I wrote for it to demonstrate my experience as a
-		technical writer. Further down you will find other portfolio fare like my
-		<a
-			class="resume-link"
-			href="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
-			>resume</a
-		>
-		, <a href="https://github.com/jtasse">GitHub</a>, and other documentation
-		samples.
-	</p>
-	<div class="orc-explanation">
-		<h2>What is ORC?</h2>
-		<p>
-			The Orbital Refuse Collector is a fictional system designed to deorbit
-			Earth's satellites that are at risk of having their orbits decay
-			undesirably.
-		</p>
+	<script type="module" src="/src/content/portfolio/portfolio.js"></script>
+	<div class="portfolio-header-layout">
+		<div class="portfolio-intro">
+			<h1>Welcome to my portfolio!</h1>
+			<p>
+				I invite you to check out my Astro docs and the software demo they
+				document, as I believe these items best illustrate my experience as a
+				technical writer and software engineer. Further down you will find more
+				traditional portfolio fare like my
+				<a
+					class="resume-link"
+					href="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
+					>résumé</a
+				>, <a href="https://github.com/jtasse">GitHub profile</a>, and other
+				documentation samples.
+			</p>
+			<div class="orc-explanation">
+				<h2 id="orc-explanation">Introducing the Orbital Refuse Collector</h2>
+				<p>
+					The Orbital Refuse Collector (ORC) is a fictional system designed to
+					deorbit Earth's satellites that are at risk of having their orbits
+					decay undesirably.
+				</p>
+			</div>
+		</div>
+		<nav class="quick-links">
+			<h2>Contents</h2>
+			<ul>
+				<li>
+					<a href="#orc-explanation">Orbital Refuse Collector</a>
+					<ul>
+						<li>
+							<a
+								href="/portfolio/orc-demo"
+								target="_blank"
+								class="toc-external-link"
+							>
+								Try it out!
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="14px"
+									viewBox="0 -960 960 960"
+									width="14px"
+									fill="currentColor"
+								>
+									<path
+										d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+									/>
+								</svg>
+							</a>
+						</li>
+						<li>
+							<a
+								href="/portfolio/docs/orc"
+								target="_blank"
+								class="toc-external-link"
+							>
+								Read about ORC
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="14px"
+									viewBox="0 -960 960 960"
+									width="14px"
+									fill="currentColor"
+								>
+									<path
+										d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+									/>
+								</svg>
+							</a>
+						</li>
+						<li>
+							<a href="#orc-docs-jump">ORC Docs Links</a>
+						</li>
+					</ul>
+				</li>
+
+				<li>
+					<a href="#portfolio-additional">Additional Portfolio Items</a>
+					<ul>
+						<li><a href="#portfolio-employment">Employment History</a></li>
+						<li><a href="#portfolio-code">Code</a></li>
+						<li><a href="#portfolio-docs">Documentation Samples</a></li>
+						<li><a href="#portfolio-other">Other</a></li>
+					</ul>
+				</li>
+			</ul>
+		</nav>
 	</div>
 
 	<!-- ORC Hero Section: Showcase + Description side by side -->
@@ -28,20 +96,22 @@
 		<div class="orc-description">
 			<div class="orc-actions">
 				<div class="orc-action-pane">
-					<h3>Try it out!</h3>
+					<h3 id="orc-hero-try">Try it out!</h3>
 					<a href="/portfolio/orc-demo" class="orc-launch-btn"
 						>Launch ORC Demo</a
 					>
 				</div>
 				<div class="orc-action-pane">
-					<h3>Read about ORC</h3>
+					<h3 id="orc-hero-read">Read about ORC</h3>
 					<a href="/portfolio/docs/orc" class="orc-launch-btn">View ORC Docs</a>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<h2 class="diataxis-section-header">Jump to specific ORC docs</h2>
+	<h3 class="diataxis-section-header" id="orc-docs-jump">
+		Quick ORC Documentation Links
+	</h3>
 
 	<!-- Diataxis 2x2 Grid -->
 	<div class="diataxis-grid">
@@ -50,7 +120,7 @@
 			data-link="/portfolio/docs/orc/getting-started-tutorial/"
 		>
 			<div class="quadrant-content">
-				<h3>Tutorial</h3>
+				<h3 id="orc-tutorial">Tutorial</h3>
 				<p>Step-by-step guide to decommissioning your first satellite</p>
 			</div>
 			<span class="quadrant-label">Learning</span>
@@ -60,7 +130,7 @@
 			data-link="/portfolio/docs/orc/user-guide/"
 		>
 			<div class="quadrant-content">
-				<h3>User Guide</h3>
+				<h3 id="orc-user-guide">User Guide</h3>
 				<p>How to accomplish specific tasks with the ORC system</p>
 			</div>
 			<span class="quadrant-label">Goals</span>
@@ -70,7 +140,7 @@
 			data-link="/portfolio/docs/orc/whitepaper/"
 		>
 			<div class="quadrant-content">
-				<h3>Whitepaper</h3>
+				<h3 id="orc-whitepaper">Whitepaper</h3>
 				<p>The science and rationale behind orbital refuse collection</p>
 			</div>
 			<span class="quadrant-label">Understanding</span>
@@ -80,7 +150,7 @@
 			data-link="/portfolio/docs/orc/api-reference/"
 		>
 			<div class="quadrant-content">
-				<h3>API Reference</h3>
+				<h3 id="orc-api">API Reference</h3>
 				<p>Complete technical specification of the ORC API</p>
 			</div>
 			<span class="quadrant-label">Information</span>
@@ -88,19 +158,21 @@
 	</div>
 
 	<div class="portfolio-body">
-		<h2 class="portfolio-section-header">Additional Portfolio Items</h2>
-		<h3>Employment History</h3>
+		<h2 class="portfolio-section-header" id="portfolio-additional">
+			Additional Portfolio Items
+		</h2>
+		<h3 id="portfolio-employment">Employment History</h3>
 
 		<div class="portfolio-grid">
 			<div
 				class="portfolio-item"
 				data-link="https://docs.google.com/document/d/1_Qa2S895RjTyAfpDfiXPbe9kCe7aDrc9P-8HHN1j3HQ/edit?usp=sharing"
 			>
-				<h2>My Resume</h2>
+				<h2>Résumé</h2>
 				<img
 					class="portfolio-thumb"
 					src="/src/content/portfolio/images/thumbnails/resume_thumb.png"
-					alt="Resume"
+					alt="Résumé"
 				/>
 			</div>
 
@@ -108,11 +180,11 @@
 				class="portfolio-item"
 				data-link="/src/content/portfolio/images/visual_resume_v6.8 (James Tasse).drawio.png"
 			>
-				<h2>My Visual Resume</h2>
+				<h2>Visual Résumé</h2>
 				<img
 					class="portfolio-thumb"
 					src="/src/content/portfolio/images/visual_resume_v6.8 (James Tasse).drawio.png"
-					alt="Visual Resume"
+					alt="Visual Résumé"
 				/>
 
 				<p>
@@ -121,9 +193,11 @@
 					software development).
 				</p>
 			</div>
+		</div>
 
-			<h3>Code</h3>
+		<h3 id="portfolio-code">Code</h3>
 
+		<div class="portfolio-grid">
 			<div class="portfolio-item" data-link="https://github.com/jtasse">
 				<h2>Code in GitHub</h2>
 				<img
@@ -141,7 +215,11 @@
 					alt="GitLab logo"
 				/>
 			</div>
+		</div>
 
+		<h3 id="portfolio-docs">Documentation Samples</h3>
+
+		<div class="portfolio-grid">
 			<div
 				class="portfolio-item video-item"
 				data-link="https://www.youtube.com/watch?v=yu0_Xme9lEI"
@@ -160,8 +238,6 @@
 				</p>
 			</div>
 
-			<h3>Documentation Samples</h3>
-
 			<div
 				class="portfolio-item"
 				data-link="https://jtj-inc.github.io/docusaurus-openapi-docs/"
@@ -172,7 +248,7 @@
 					src="src\content\portfolio\images\thumbnails\Docusaurus_OpenAPI_Docs_thumb.png"
 					alt="Docusaurus OpenAPI Docs screenshot"
 				/>
-				<p>Earlier docs I created for ORC using Docusaurus</p>
+				<p>Earlier API docs I created for ORC using Docusaurus</p>
 			</div>
 
 			<div
@@ -226,8 +302,8 @@
 					alt="Docs as Tests blog posts thumbnail"
 				/>
 				<p>
-					Blog posts that help documentarians to understand & implement Docs as
-					Tests for themselves
+					Blog posts that help documentarians to understand & implement
+					<i>Docs as Tests</i> for themselves.
 				</p>
 			</div>
 
@@ -272,8 +348,10 @@
 				/>
 				<p>This is the original design documentation I created for ORC.</p>
 			</div>
+		</div>
 
-			<h3>Other</h3>
+		<h3 id="portfolio-other">Other</h3>
+		<div class="portfolio-grid">
 			<div
 				class="portfolio-item"
 				data-link="https://drive.google.com/file/d/13zgOS7V8mKzTeo8lefCv8BSE4sIbcf5P/view?usp=sharing"
@@ -292,11 +370,13 @@
 				data-link="https://www.youtube.com/watch?v=iiW1iJgPzyg"
 			>
 				<h2><i>Assumption</i> presentation</h2>
-				<img
-					class="portfolio-thumb"
-					src="src\content\portfolio\images\thumbnails\assumption_video_thumb.webp"
-					alt="Assumption video thumbnail"
-				/>
+				<div class="portfolio-thumb-wrapper">
+					<img
+						class="portfolio-thumb"
+						src="src\content\portfolio\images\thumbnails\assumption_video_thumb.webp"
+						alt="Assumption video thumbnail"
+					/>
+				</div>
 				<p>
 					Recording of a short presentation in which I discuss the dangers of
 					assumption
@@ -307,12 +387,14 @@
 				class="portfolio-item video-item"
 				data-link="https://www.youtube.com/watch?v=V0qsEFlE7W0"
 			>
-				<h2>2 Dots music video</h2>
-				<img
-					class="portfolio-thumb"
-					src="src\content\portfolio\images\thumbnails\2_dots_video_thumbnail.png"
-					alt="2 Dots music video thumbnail"
-				/>
+				<h2>"2 Dots" music video</h2>
+				<div class="portfolio-thumb-wrapper">
+					<img
+						class="portfolio-thumb"
+						src="src\content\portfolio\images\thumbnails\2_dots_video_thumbnail.png"
+						alt="2 Dots music video thumbnail"
+					/>
+				</div>
 				<p>
 					This was a fun side project where I made a music video for one of my
 					favorite songs. I showcase it here as it further demonstrates my

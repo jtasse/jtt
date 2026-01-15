@@ -10,6 +10,9 @@
 
 .portfolio-page h3 {
 	color: #7cccd6;
+	clear: both;
+	width: 100%;
+	display: block;
 }
 
 /* Intro Text - Ensure no highlight */
@@ -21,6 +24,7 @@
 /* ORC Explanation - Highlight Style */
 .orc-explanation {
 	border-left: 4px solid #00ffff;
+	clear: both;
 	padding-left: 1.5rem;
 	margin: 2rem 0;
 	/* Ensure no box background/border */
@@ -88,6 +92,7 @@
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
+	box-sizing: border-box;
 }
 
 .orc-actions {
@@ -224,6 +229,8 @@
 /* Portfolio Grid */
 .portfolio-section-header {
 	color: #00ffff;
+	clear: both;
+	width: 100%;
 	margin-bottom: 20px;
 	border-top: 1px solid #335555;
 	padding-top: 40px;
@@ -240,8 +247,25 @@
 	border: 1px solid #335555;
 	border-radius: 8px;
 	padding: 20px;
-	cursor: pointer;
+	cursor: default;
 	transition: all 0.2s ease;
+}
+
+h1 {
+	text-align: left;
+	color: #00ffff;
+	font-size: clamp(1.5rem, 4vw, 2.5rem);
+	color: #00aaff;
+	font-size: clamp(1.5rem, 4vw, 2.2rem);
+	margin-bottom: 1.5rem;
+	text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+	text-shadow: 0 0 5px rgba(0, 170, 255, 0.3);
+}
+
+.portfolio-item h2,
+.portfolio-item .portfolio-thumb,
+.portfolio-item .portfolio-thumb-wrapper {
+	cursor: pointer;
 }
 
 .portfolio-item:hover {
@@ -318,6 +342,137 @@
 	.portfolio-grid {
 		grid-template-columns: 1fr;
 	}
+
+	.portfolio-header-layout {
+		flex-direction: column;
+	}
+
+	.quick-links {
+		width: 100%;
+		margin-top: 1rem;
+	}
+}
+
+/* Header Layout & Quick Links */
+.portfolio-header-layout {
+	display: flex;
+	gap: 2rem;
+	align-items: flex-start;
+	margin-bottom: 2rem;
+}
+
+.portfolio-intro {
+	flex: 2;
+}
+
+.quick-links {
+	flex: 0 0 250px;
+	background: rgba(0, 20, 40, 0.6);
+	border: 1px solid #335555;
+	padding: 1.5rem;
+	border-radius: 8px;
+	min-width: 250px;
+	width: 250px;
+	box-sizing: border-box;
+}
+
+.quick-links h2 {
+	margin-top: 0;
+	font-size: 1.3rem;
+	color: #00ffff;
+	border-bottom: 1px solid #335555;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.quick-links ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.quick-links ul ul {
+	padding-left: 1.5rem;
+	margin-top: 0.25rem;
+}
+
+.quick-links li {
+	margin-bottom: 0.5rem;
+}
+
+.quick-links a {
+	color: #aaddff;
+	text-decoration: none;
+	transition: color 0.2s;
+	font-size: 0.95rem;
+}
+
+.quick-links a:hover {
+	color: #00ffff;
+	text-decoration: underline;
+}
+
+.toc-external-link svg {
+	vertical-align: middle;
+	margin-left: 4px;
+	opacity: 0.8;
+}
+
+/* Viewer Overlay */
+.portfolio-viewer-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.9);
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+.portfolio-viewer-overlay.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.viewer-content {
+	max-width: 90%;
+	max-height: 85%;
+	position: relative;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.viewer-close-btn {
+	position: absolute;
+	top: 20px;
+	right: 30px;
+	background: transparent;
+	border: none;
+	color: white;
+	font-size: 2rem;
+	cursor: pointer;
+	z-index: 1001;
+}
+
+.viewer-new-tab-btn {
+	margin-top: 1rem;
+	padding: 8px 16px;
+	background: #335555;
+	color: white;
+	text-decoration: none;
+	border-radius: 4px;
+	transition: background 0.2s;
+}
+
+.viewer-new-tab-btn:hover {
+	background: #00ffff;
+	color: black;
 }
 
 /* Specific positioning for 2-column layout (Desktop) */
