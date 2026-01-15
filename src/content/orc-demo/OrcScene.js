@@ -208,6 +208,11 @@ export function setOrcHand(hand, camera) {
 		satellite.userData.handSlapped = true
 		satellite.userData.burnStartTime = performance.now()
 
+		// Clear waitForPunch flag so satellite can start moving
+		satellite.userData.waitForPunch = false
+		// Reset decommission start time for proper animation timing
+		satellite.userData.decommissionStartTime = Date.now()
+
 		if (satellite.userData.isGeosynchronous && satellite.parent === planet) {
 			const worldPos = new THREE.Vector3()
 			satellite.getWorldPosition(worldPos)
@@ -662,6 +667,12 @@ export function animateOrcScene(animateNormal = true) {
 
 		// 2. Decommissioning
 		if (data.decommissioning) {
+			// GEO satellites wait for hand to punch before moving
+			if (data.waitForPunch) {
+				// Don't auto-approach, satellite stays in place
+				return
+			}
+
 			const worldPos = new THREE.Vector3()
 			sat.getWorldPosition(worldPos)
 			const currentDistance = worldPos.length()

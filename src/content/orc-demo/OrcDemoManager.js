@@ -255,16 +255,15 @@ function updateCameraTracking() {
 		let adjustedTarget
 
 		if (decommState.isGeoPunch && decommState.hand) {
-			// GEO PUNCH: Camera to the SIDE to see the full punch line
-			// (hand behind satellite, satellite in middle, planet in front)
+			// GEO PUNCH: Camera to the SIDE, framing BOTH hand AND satellite
 			const handWorldPos = new THREE.Vector3()
 			decommState.hand.getWorldPosition(handWorldPos)
 			handWorldPos.x += orcGroup.position.x
 
-			// Punch line direction: from hand toward planet (through satellite)
+			// Punch line direction: from planet through satellite
 			const punchLine = satPos.clone().sub(planetCenter).normalize()
 
-			// Side direction: perpendicular to punch line (camera views from side)
+			// Side direction: perpendicular to punch line
 			const upDir = new THREE.Vector3(0, 1, 0)
 			const sideDir = new THREE.Vector3()
 				.crossVectors(punchLine, upDir)
@@ -273,29 +272,24 @@ function updateCameraTracking() {
 				sideDir.set(1, 0, 0)
 			}
 
-			// Look at the satellite (center of action)
-			adjustedTarget = satPos.clone()
+			// Calculate midpoint between hand and satellite to frame both
+			const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
+
+			// Calculate distance between hand and satellite for zoom
+			const handSatDist = handWorldPos.distanceTo(satPos)
+			const frameDistance = Math.max(targetDistance, handSatDist * 1.2)
+
+			// Look at midpoint to keep both in frame
+			adjustedTarget = midPoint.clone()
 			adjustedTarget.x += sidebarCompensation
 
-			if (decommState.phase === "burning") {
-				// After punch: Pull back to see hand celebrating near planet
-				const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
-				adjustedTarget = midPoint.clone()
-				adjustedTarget.x += sidebarCompensation
+			// Camera positioned to the side, far enough to see both
+			targetCamPos = midPoint.clone()
+			targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
+			targetCamPos.y += frameDistance * 0.3
 
-				targetCamPos = midPoint.clone()
-				targetCamPos.add(sideDir.multiplyScalar(targetDistance * 1.2))
-				targetCamPos.y += targetDistance * 0.4
-			} else {
-				// During approach/wind-up/punch: Side view of the punch line
-				// Camera perpendicular to punch trajectory
-				targetCamPos = satPos.clone()
-				targetCamPos.add(sideDir.multiplyScalar(targetDistance * 1.5)) // Far to side
-				targetCamPos.y += targetDistance * 0.3 // Slightly elevated
-
-				// Ensure camera stays in front
-				if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
-			}
+			// Ensure camera stays in front
+			if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
 		} else {
 			// LEO/Molniya: Original camera tracking
 			adjustedTarget = satPos.clone()

@@ -40,7 +40,7 @@ Ground stations upload target vectors to the Hand, and its onboard AI verifies t
 
 The Hand calculates an intercept solution that minimizes power usage and approaches the satellite until it is within deorbiting range.
 
-#### Phase 3: Deorbit
+### Phase 3: Deorbit
 
 The deorbitnig methodology used is determined by the target satellite's orbit type.
 

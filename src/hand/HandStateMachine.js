@@ -4,6 +4,7 @@ import {
 	SEQUENCE_TIMINGS,
 	SLAP_SLOW_MOTION_FACTOR,
 	HAND_ORBIT_CONFIG,
+	GEO_PUNCH_CONFIG,
 } from "./HandConfig.js"
 import {
 	transitionToGesture,
@@ -76,7 +77,9 @@ export class HandStateMachine {
 				)}`
 			)
 
-		this.stateData = { ...data }
+		// MERGE new data into existing stateData (don't replace!)
+		// This preserves flags like isGeoPunch across state transitions
+		this.stateData = { ...this.stateData, ...data }
 		this.onEnterState(newState)
 	}
 
@@ -162,6 +165,9 @@ export class HandStateMachine {
 		this.targetSatellite = satellite
 		const targetPos = new THREE.Vector3()
 		satellite.getWorldPosition(targetPos)
+
+		// Clear ALL stateData when starting a new decommission sequence
+		this.stateData = {}
 
 		this.transition(HandState.POINTING, {
 			targetPosition: targetPos,
@@ -328,29 +334,39 @@ export class HandStateMachine {
 
 			if (isGEO) {
 				// GEO PUNCH: Position hand FAR BEHIND satellite (further from Earth)
-				// Hand will punch TOWARD Earth, through the satellite
+				// Per whitepaper: "placing its target between itself and the Earth"
 				this.stateData.isGeoPunch = true
 
 				const earthToSat = targetPos.clone().normalize()
 				const satDistance = targetPos.length()
 
-				// Hand approaches to a position BEYOND the satellite (further from Earth)
-				// This is the "cocked back" position before the wind-up pulls even further
-				const approachDistance = satDistance + 0.8 // Beyond satellite
+				// Debug: Confirm GEO detected
+				if (!this.stateData._geoLoggedApproach) {
+					console.log(
+						`[GEO PUNCH] Detected GEO satellite at distance ${satDistance.toFixed(
+							2
+						)}`
+					)
+					this.stateData._geoLoggedApproach = true
+				}
+
+				// Hand approaches to position BEYOND satellite (further from Earth)
+				// Satellite will be between hand and Earth
+				const approachDistance = satDistance + GEO_PUNCH_CONFIG.approachOffset
 				const approachPos = earthToSat.clone().multiplyScalar(approachDistance)
 
 				// Store punch line direction (toward Earth, through satellite)
+				this.stateData.earthToSat = earthToSat.clone()
 				this.stateData.punchLineDirection = earthToSat.clone().negate()
 				this.stateData.satelliteDistance = satDistance
+				this.stateData.geoPunchStartTime = null // Will be set when wind-up starts
 
-				// Simple arc to approach position
+				// Arc to approach position (stay on the punch line)
 				interpolatedPos = startPos.clone().lerp(approachPos, eased)
 
-				// Keep hand visible (don't go behind planet from camera view)
-				if (interpolatedPos.z < 0.3) {
-					interpolatedPos.z = 0.3
-				}
-
+				// Only prevent planet collision, NOT z-clamping
+				// Hand must stay on punch line regardless of camera view
+				clampToPlanetSurface(interpolatedPos)
 			} else {
 				// LEO/Molniya: Original slap behavior - approach from front
 				this.stateData.isGeoPunch = false
@@ -358,10 +374,16 @@ export class HandStateMachine {
 				const isLEO = satDistance < 0.8
 				const satBehindPlanet = targetPos.z < 0.5
 				const directPath = targetPos.clone().sub(startPos)
-				const midPoint = startPos.clone().add(directPath.clone().multiplyScalar(0.5))
+				const midPoint = startPos
+					.clone()
+					.add(directPath.clone().multiplyScalar(0.5))
 				const midDistance = midPoint.length()
 
-				if (midDistance < HAND_ORBIT_CONFIG.minPlanetDistance || satBehindPlanet || isLEO) {
+				if (
+					midDistance < HAND_ORBIT_CONFIG.minPlanetDistance ||
+					satBehindPlanet ||
+					isLEO
+				) {
 					let pushDirection = this.camera
 						? this.camera.position.clone().normalize()
 						: new THREE.Vector3(0, 0, 1)
@@ -380,7 +402,9 @@ export class HandStateMachine {
 					arcMidPoint.z = Math.max(arcMidPoint.z, 0.5 + (isLEO ? 0.6 : 0.3))
 
 					const oneMinusT = 1 - eased
-					interpolatedPos = startPos.clone().multiplyScalar(oneMinusT * oneMinusT)
+					interpolatedPos = startPos
+						.clone()
+						.multiplyScalar(oneMinusT * oneMinusT)
 						.add(arcMidPoint.clone().multiplyScalar(2 * oneMinusT * eased))
 						.add(targetPos.clone().multiplyScalar(eased * eased))
 				} else {
@@ -401,7 +425,9 @@ export class HandStateMachine {
 					direction,
 					up
 				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+					rotMatrix
+				)
 				this.hand.quaternion.slerp(targetQuat, 0.1)
 			}
 		}
@@ -437,32 +463,126 @@ export class HandStateMachine {
 			let windUpPos
 
 			if (this.stateData.isGeoPunch) {
-				// GEO PUNCH: Pull hand WAY BACK in a straight line from Earth
-				// Like winding up for a massive punch toward Earth
-				this.timeScale = 0.15 // Very slow for dramatic effect
+				// GEO PUNCH: Staged animation with explicit positioning
+				// The hand is BEHIND the satellite (further from Earth)
+				// Pull-back moves AWAY from Earth (increasing distance)
+				// Punch moves TOWARD Earth (decreasing distance)
 
-				const satDistance = this.stateData.satelliteDistance || satPos.length()
+				const punchLine = this.stateData.earthToSat || earthToSat.clone()
+				const satDist = this.stateData.satelliteDistance || satPos.length()
 
-				// Wind-up position: Pull hand FURTHER from Earth (beyond satellite)
-				// Start at satDistance + 0.8, pull back to satDistance + 2.5
-				const pullBackDistance = satDistance + 0.8 + eased * 1.7
-
-				// Position directly along the Earth-to-satellite line
-				windUpPos = earthToSat.clone().multiplyScalar(pullBackDistance)
-
-				// Store the wind-up end position for the punch
-				this.stateData.windUpEndPos = earthToSat.clone().multiplyScalar(satDistance + 2.5)
-				this.stateData.punchDirection = earthToSat.clone().negate() // Toward Earth
-
-				// Keep hand visible to camera
-				if (windUpPos.z < 0.2) {
-					windUpPos.z = 0.2
+				// Debug: Confirm we're in GEO punch wind-up
+				if (!this.stateData._geoLoggedWindup) {
+					console.log(
+						`[GEO PUNCH] Wind-up started. isGeoPunch=${
+							this.stateData.isGeoPunch
+						}, satDist=${satDist.toFixed(2)}`
+					)
+					console.log(
+						`[GEO PUNCH] Config: pullBackDuration=${GEO_PUNCH_CONFIG.pullBackDuration}ms, punchDuration=${GEO_PUNCH_CONFIG.punchDuration}ms`
+					)
+					this.stateData._geoLoggedWindup = true
 				}
 
+				// Initialize stage tracking
+				if (!this.stateData.geoPunchStage) {
+					this.stateData.geoPunchStage = "POSITION_HOLD"
+					this.stateData.geoPunchStageStart = performance.now()
+
+					// Lock orientation: fist/knuckles toward Earth, thruster away from Earth
+					// The hand model's local -Z is the "forward" (fist direction)
+					// So we lookAt AWAY from Earth, which makes -Z point toward Earth
+					const awayFromEarth = punchLine.clone() // Points away from Earth
+					console.log("Away from Earth:", awayFromEarth.toArray())
+					const up = new THREE.Vector3(0, 1, 0)
+					const rotMatrix = new THREE.Matrix4().lookAt(
+						new THREE.Vector3(),
+						awayFromEarth,
+						up
+					)
+					this.stateData.lockedPunchOrientation =
+						new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+					this.stateData.punchDirection = punchLine.clone().negate() // Toward Earth (movement direction)
+
+					// Starting position: just beyond satellite
+					this.stateData.initialPunchDist =
+						satDist + GEO_PUNCH_CONFIG.approachOffset
+					console.log(
+						`[GEO PUNCH] Init: satDist=${satDist.toFixed(
+							2
+						)}, startDist=${this.stateData.initialPunchDist.toFixed(2)}`
+					)
+				}
+
+				const stageElapsed =
+					performance.now() - this.stateData.geoPunchStageStart
+
+				if (this.stateData.geoPunchStage === "POSITION_HOLD") {
+					// Brief pause at starting position
+					this.timeScale = GEO_PUNCH_CONFIG.pullBackTimeScale
+					const holdDist = this.stateData.initialPunchDist
+					windUpPos = punchLine.clone().multiplyScalar(holdDist)
+
+					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+
+					if (stageElapsed >= GEO_PUNCH_CONFIG.positionHoldDuration) {
+						console.log(
+							`[GEO PUNCH] POSITION_HOLD complete, starting PULL_BACK`
+						)
+						this.stateData.geoPunchStage = "PULL_BACK"
+						this.stateData.geoPunchStageStart = performance.now()
+					}
+				} else if (this.stateData.geoPunchStage === "PULL_BACK") {
+					// PULL_BACK: Move AWAY from Earth (like car reversing)
+					// Distance increases from initialPunchDist to initialPunchDist + pullBackDistance
+					this.timeScale = GEO_PUNCH_CONFIG.pullBackTimeScale
+
+					const pullT = Math.min(
+						stageElapsed / GEO_PUNCH_CONFIG.pullBackDuration,
+						1
+					)
+					const pullEased =
+						pullT < 0.5
+							? 2 * pullT * pullT
+							: 1 - Math.pow(-2 * pullT + 2, 2) / 2
+
+					const startDist = this.stateData.initialPunchDist
+					const maxDist = startDist + GEO_PUNCH_CONFIG.pullBackDistance
+					const currentDist =
+						startDist + pullEased * GEO_PUNCH_CONFIG.pullBackDistance
+
+					// Position along Earth-to-satellite line at currentDist
+					windUpPos = punchLine.clone().multiplyScalar(currentDist)
+
+					// Keep orientation locked (no rotation)
+					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+
+					// Store max distance for punch phase
+					this.stateData.maxPullBackDist = maxDist
+
+					if (pullT >= 1) {
+						console.log(
+							`[GEO PUNCH] PULL_BACK complete at dist=${currentDist.toFixed(
+								2
+							)}, starting PUNCH`
+						)
+						this.stateData.geoPunchStage = "PUNCH"
+						this.stateData.geoPunchStageStart = performance.now()
+						this.transition(HandState.SLAPPING)
+						return
+					}
+				}
+
+				// Ensure valid position
+				if (windUpPos) {
+					clampToPlanetSurface(windUpPos)
+				}
 			} else {
 				// LEO/Molniya: Original slap behavior
 				const windUpDist = isLEO ? 1.2 : 0.8
-				windUpPos = satPos.clone().add(earthToSat.clone().multiplyScalar(windUpDist))
+				windUpPos = satPos
+					.clone()
+					.add(earthToSat.clone().multiplyScalar(windUpDist))
 
 				if (isLEO) {
 					const lateralDir = new THREE.Vector3(satPos.x, 0, satPos.z)
@@ -493,41 +613,20 @@ export class HandStateMachine {
 				clampToFrontOfPlanet(windUpPos)
 			}
 
-			this.hand.position.lerp(windUpPos, 0.1)
+			// For GEO punch, position is set directly in staged code above
+			// For LEO/Molniya, use lerp
+			if (!this.stateData.isGeoPunch) {
+				this.hand.position.lerp(windUpPos, 0.1)
+			} else {
+				this.hand.position.copy(windUpPos)
+			}
 
-			// Rotate hand to face toward Earth (for punch) or satellite (for slap)
-			let faceDirection
+			// Rotate hand - GEO handles its own rotation in stages
 			if (this.stateData.isGeoPunch) {
-				// For punch: fist faces TOWARD Earth (the punch direction)
-				// Hand is behind satellite, punching toward planet
-				faceDirection = this.stateData.punchDirection
-					? this.stateData.punchDirection.clone()
-					: satPos.clone().negate().normalize()
-
-				if (faceDirection.lengthSq() < 0.0001) {
-					faceDirection.set(0, -1, 0)
-				}
-
-				const up = new THREE.Vector3(0, 1, 0)
-				const rotMatrix = new THREE.Matrix4().lookAt(
-					new THREE.Vector3(),
-					faceDirection,
-					up
-				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
-
-				// Fist cocked back, ready to punch forward
-				// Slight rotation to show the arm is pulled back
-				const cockBackQuat = new THREE.Quaternion().setFromAxisAngle(
-					new THREE.Vector3(0, 1, 0),
-					eased * Math.PI * 0.15 // Slight twist
-				)
-				targetQuat.multiply(cockBackQuat)
-
-				this.hand.quaternion.slerp(targetQuat, 0.1)
+				// Rotation already handled in staged code above
 			} else {
 				// For slap: face toward satellite
-				faceDirection = satPos.clone().sub(this.hand.position).normalize()
+				let faceDirection = satPos.clone().sub(this.hand.position).normalize()
 				if (faceDirection.lengthSq() < 0.0001) {
 					faceDirection.set(0, 0, 1)
 				}
@@ -538,7 +637,9 @@ export class HandStateMachine {
 					faceDirection,
 					up
 				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+					rotMatrix
+				)
 
 				// Add wind-up rotation (pull arm back)
 				const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
@@ -551,20 +652,123 @@ export class HandStateMachine {
 			}
 		}
 
-		if (t >= 1) {
+		// Transition for non-GEO (GEO handles its own transitions in staged code)
+		if (t >= 1 && !this.stateData.isGeoPunch) {
 			this.transition(HandState.SLAPPING)
 		}
 	}
 
 	updateSlapping(dt) {
-		const elapsed = this.getElapsedTime()
-		const t = Math.min(elapsed / SEQUENCE_TIMINGS.slapDuration, 1)
+		let t, eased
 
-		// For GEO punch: Use ease-out for explosive start, decelerating impact
-		// For slap: Linear is fine
-		const eased = this.stateData.isGeoPunch
-			? 1 - Math.pow(1 - t, 3) // Ease-out cubic - fast start, slow end
-			: t
+		if (this.stateData.isGeoPunch) {
+			// GEO PUNCH: Staged PUNCH and FOLLOW_THROUGH
+			// Uses explicit distance-based positioning along the punch line
+			const stageElapsed = performance.now() - this.stateData.geoPunchStageStart
+			const punchLine = this.stateData.earthToSat
+			const satDist = this.stateData.satelliteDistance
+
+			if (!punchLine || !satDist) {
+				console.error("[GEO PUNCH] Missing punchLine or satDist!")
+				return
+			}
+
+			if (this.stateData.geoPunchStage === "PUNCH") {
+				// PUNCH: Move TOWARD Earth (decreasing distance)
+				// From maxPullBackDist down to near satellite, then through
+				this.timeScale = GEO_PUNCH_CONFIG.punchTimeScale
+
+				t = Math.min(stageElapsed / GEO_PUNCH_CONFIG.punchDuration, 1)
+				// Ease-in-out for smooth acceleration then deceleration
+				eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+
+				const startDist = this.stateData.maxPullBackDist
+				// Target: just past the satellite (closer to Earth)
+				const targetDist = satDist - GEO_PUNCH_CONFIG.followThroughDistance
+				const currentDist = startDist - eased * (startDist - targetDist)
+
+				// Position along punch line
+				this.hand.position.copy(punchLine.clone().multiplyScalar(currentDist))
+
+				// Keep locked orientation
+				if (this.stateData.lockedPunchOrientation) {
+					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+				}
+
+				// Check for contact with satellite (when distance crosses satellite distance)
+				if (currentDist <= satDist && !this.stateData.contactMade) {
+					console.log(
+						`[GEO PUNCH] Contact! dist=${currentDist.toFixed(
+							2
+						)}, satDist=${satDist.toFixed(2)}`
+					)
+					this.stateData.contactMade = true
+					if (this.onSatelliteBurn) {
+						this.onSatelliteBurn(this.targetSatellite)
+					}
+				}
+
+				clampToPlanetSurface(this.hand.position, 0.3)
+
+				if (t >= 1) {
+					console.log(`[GEO PUNCH] PUNCH complete, starting FOLLOW_THROUGH`)
+					this.stateData.geoPunchStage = "FOLLOW_THROUGH"
+					this.stateData.geoPunchStageStart = performance.now()
+					this.stateData.followThroughStartDist = currentDist
+				}
+				return
+			} else if (this.stateData.geoPunchStage === "FOLLOW_THROUGH") {
+				// FOLLOW_THROUGH: Continue briefly, add lateral offset, slight rotation
+				this.timeScale = GEO_PUNCH_CONFIG.punchTimeScale
+
+				t = Math.min(stageElapsed / GEO_PUNCH_CONFIG.followThroughDuration, 1)
+				eased = 1 - Math.pow(1 - t, 2) // Ease-out
+
+				const startDist = this.stateData.followThroughStartDist
+				// Continue slightly closer to Earth
+				const currentDist = startDist - eased * 0.2
+
+				// Base position along punch line
+				const basePos = punchLine.clone().multiplyScalar(currentDist)
+
+				// Add lateral offset (ending "beside the head")
+				const up = new THREE.Vector3(0, 1, 0)
+				const lateral = new THREE.Vector3()
+					.crossVectors(punchLine, up)
+					.normalize()
+				const lateralOffset = lateral.multiplyScalar(eased * 0.3)
+
+				this.hand.position.copy(basePos).add(lateralOffset)
+
+				// Rotate hand slightly during follow-through
+				if (this.stateData.lockedPunchOrientation) {
+					const angleOffset = eased * GEO_PUNCH_CONFIG.followThroughAngle
+					const tiltQuat = new THREE.Quaternion().setFromAxisAngle(
+						up,
+						angleOffset
+					)
+					const targetQuat = this.stateData.lockedPunchOrientation
+						.clone()
+						.multiply(tiltQuat)
+					this.hand.quaternion.slerp(targetQuat, 0.3)
+				}
+
+				clampToPlanetSurface(this.hand.position, 0.3)
+
+				if (t >= 1) {
+					console.log(`[GEO PUNCH] FOLLOW_THROUGH complete, celebrating`)
+					this.transition(HandState.CELEBRATING, {
+						burnStartTime: this.internalTime,
+					})
+				}
+				return
+			}
+		}
+
+		// Non-GEO path (LEO/Molniya slap)
+		const elapsed = this.getElapsedTime()
+		t = Math.min(elapsed / SEQUENCE_TIMINGS.slapDuration, 1)
+		eased = t
 
 		if (this.targetSatellite) {
 			const satPos = new THREE.Vector3()
@@ -574,33 +778,8 @@ export class HandStateMachine {
 			const moveSpeed = 0.025 // units per ms
 
 			if (this.stateData.isGeoPunch) {
-				// GEO PUNCH: Straight line punch TOWARD Earth, through satellite
-				// Gradually speed up for impact feel
-				this.timeScale = 0.2 + t * 0.5 // Speed up as punch lands
-
-				// Punch direction: straight toward Earth center
-				const punchDir = this.stateData.punchDirection
-					? this.stateData.punchDirection.clone()
-					: satPos.clone().negate().normalize()
-
-				// Accelerating punch - starts slow, gets FAST
-				const punchSpeed = moveSpeed * (0.5 + eased * 4) // Much faster at end
-				this.hand.position.add(punchDir.multiplyScalar(punchSpeed * dt))
-
-				// Hand maintains forward-facing orientation during punch
-				const up = new THREE.Vector3(0, 1, 0)
-				const rotMatrix = new THREE.Matrix4().lookAt(
-					new THREE.Vector3(),
-					punchDir,
-					up
-				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
-				this.hand.quaternion.slerp(targetQuat, 0.2)
-
-				// Stop hand when it reaches past the satellite (closer to Earth)
-				// Don't let it go into the planet
-				clampToPlanetSurface(this.hand.position, 0.3)
-
+				// This branch shouldn't be reached anymore for GEO
+				return
 			} else {
 				// LEO/Molniya: Original slap behavior - swing through satellite
 				moveDirection = satPos.clone().sub(this.hand.position)
@@ -610,7 +789,9 @@ export class HandStateMachine {
 					moveDirection.normalize()
 				}
 
-				this.hand.position.add(moveDirection.clone().multiplyScalar(moveSpeed * dt))
+				this.hand.position.add(
+					moveDirection.clone().multiplyScalar(moveSpeed * dt)
+				)
 				clampToFrontOfPlanet(this.hand.position)
 			}
 

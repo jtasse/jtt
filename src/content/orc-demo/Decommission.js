@@ -133,6 +133,11 @@ export function startDecommission(satellite) {
 	data.decommissioning = true
 	data.decommissionStartTime = Date.now()
 
+	// GEO satellites: Don't auto-approach, wait for hand to punch
+	if (data.isGeosynchronous) {
+		data.waitForPunch = true
+	}
+
 	if (data.isGeosynchronous) {
 		hideGeoTether()
 		if (surfaceMarker) surfaceMarker.visible = false

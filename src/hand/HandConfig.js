@@ -41,12 +41,32 @@ export const SEQUENCE_TIMINGS = {
 	windUpDuration: 1000, // Time to wind up slap
 	slapDuration: 400, // Fast slap motion
 	burnDuration: 4000, // Extended time to ensure satellite reaches Earth
-	celebrateDuration: 3000, // Thumbs up duration
+	celebrateDuration: 2000, // Thumbs up duration
 	returnDuration: 2000, // Time to return to orbit
 }
 
 // Slow motion factor during wind-up and burn phase (0.5 = half speed)
 export const SLAP_SLOW_MOTION_FACTOR = 0.5
+
+// GEO Punch configuration - staged animation
+// Stages: POSITION -> PULL_BACK -> PUNCH -> FOLLOW_THROUGH -> CELEBRATE
+export const GEO_PUNCH_CONFIG = {
+	// Stage durations in milliseconds (real time)
+	positionHoldDuration: 500, // Brief pause after positioning, before pull-back
+	pullBackDuration: 1200, // Loooong exaggerated pull-back (reverse thrust)
+	punchDuration: 300, // Quick punch forward
+	followThroughDuration: 1000, // Drive through motion
+
+	// Slow motion factors
+	pullBackTimeScale: 0.15, // Super slow during pull-back
+	punchTimeScale: 0.1, // Near normal speed for punch impact
+
+	// Distance values (relative to satellite distance from Earth)
+	approachOffset: 0.5, // How far beyond satellite to initially position
+	pullBackDistance: 1.5, // How far to pull back during wind-up
+	followThroughDistance: 0.4, // How far past satellite to drive through
+	followThroughAngle: Math.PI * 0.15, // Angle offset after follow-through (like punch ending beside head)
+}
 
 // ============================================
 // Gesture Definitions
