@@ -1,5 +1,6 @@
 import { defineConfig } from "vite"
-import { resolve } from "path"
+import { resolve, join } from "path"
+import fs from "fs"
 
 export default defineConfig(({ mode }) => {
 	const alias = {}
@@ -28,6 +29,30 @@ export default defineConfig(({ mode }) => {
 						file.endsWith(".html")
 					) {
 						server.ws.send({ type: "full-reload", path: "*" })
+					}
+				},
+			},
+			{
+				name: "copy-content",
+				closeBundle() {
+					const srcDir = resolve(__dirname, "src/content")
+					const destDir = resolve(__dirname, "dist/src/content")
+
+					if (fs.existsSync(srcDir)) {
+						const copyRecursive = (src, dest) => {
+							if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
+							fs.readdirSync(src).forEach((file) => {
+								const srcPath = join(src, file)
+								const destPath = join(dest, file)
+								if (fs.statSync(srcPath).isDirectory()) {
+									copyRecursive(srcPath, destPath)
+								} else {
+									fs.copyFileSync(srcPath, destPath)
+								}
+							})
+						}
+						copyRecursive(srcDir, destDir)
+						console.log("[copy-content] Copied src/content to dist/src/content")
 					}
 				},
 			},
