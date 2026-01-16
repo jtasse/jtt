@@ -5,6 +5,8 @@ import {
 	SLAP_SLOW_MOTION_FACTOR,
 	HAND_ORBIT_CONFIG,
 	GEO_PUNCH_CONFIG,
+	LEO_FLICK_CONFIG,
+	MOLNIYA_SLAP_CONFIG,
 } from "./HandConfig.js"
 import {
 	transitionToGesture,
@@ -16,6 +18,25 @@ import {
 	clampToFrontOfPlanet,
 	clampToPlanetSurface,
 } from "./HandBehaviors.js"
+
+// Helper: Interpolate rotation keyframes and apply to base orientation
+function applyRotationKeyframe(baseQuat, rotations, phase, t) {
+	if (!rotations || !rotations[phase]) return baseQuat.clone()
+
+	const { start, end } = rotations[phase]
+	// Interpolate Euler angles
+	const x = start.x + t * (end.x - start.x)
+	const y = start.y + t * (end.y - start.y)
+	const z = start.z + t * (end.z - start.z)
+
+	// Create rotation from interpolated Euler angles
+	const offsetQuat = new THREE.Quaternion().setFromEuler(
+		new THREE.Euler(x, y, z, "XYZ")
+	)
+
+	// Apply offset to base orientation
+	return baseQuat.clone().multiply(offsetQuat)
+}
 
 // States where cancel is allowed
 const CANCELLABLE_STATES = [
@@ -372,6 +393,7 @@ export class HandStateMachine {
 				this.stateData.isGeoPunch = false
 
 				const isLEO = satDistance < 0.8
+				this.stateData.isLeoFlick = isLEO
 				const satBehindPlanet = targetPos.z < 0.5
 				const directPath = targetPos.clone().sub(startPos)
 				const midPoint = startPos
@@ -416,19 +438,38 @@ export class HandStateMachine {
 
 			this.hand.position.copy(interpolatedPos)
 
-			// Face satellite
-			const direction = targetPos.clone().sub(this.hand.position).normalize()
-			if (direction.length() > 0) {
+			// Face satellite (or set up punch orientation for GEO)
+			if (this.stateData.isGeoPunch) {
+				// For GEO: Set up base orientation and apply approach keyframes
+				const punchLine = this.stateData.earthToSat
+				const awayFromEarth = punchLine.clone() // Points away from Earth
 				const up = new THREE.Vector3(0, 1, 0)
 				const rotMatrix = new THREE.Matrix4().lookAt(
 					new THREE.Vector3(),
-					direction,
+					awayFromEarth,
 					up
 				)
-				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
-					rotMatrix
-				)
+				const baseQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
+
+				// Apply approach rotation keyframes
+				const rotations = GEO_PUNCH_CONFIG.rotations
+				const targetQuat = applyRotationKeyframe(baseQuat, rotations, "approach", eased)
 				this.hand.quaternion.slerp(targetQuat, 0.1)
+			} else {
+				// Non-GEO: Face satellite
+				const direction = targetPos.clone().sub(this.hand.position).normalize()
+				if (direction.length() > 0) {
+					const up = new THREE.Vector3(0, 1, 0)
+					const rotMatrix = new THREE.Matrix4().lookAt(
+						new THREE.Vector3(),
+						direction,
+						up
+					)
+					const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+						rotMatrix
+					)
+					this.hand.quaternion.slerp(targetQuat, 0.1)
+				}
 			}
 		}
 
@@ -523,7 +564,15 @@ export class HandStateMachine {
 					const holdDist = this.stateData.initialPunchDist
 					windUpPos = punchLine.clone().multiplyScalar(holdDist)
 
-					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+					// Apply end-of-approach rotation (hold position uses approach.end)
+					const rotations = GEO_PUNCH_CONFIG.rotations
+					const targetQuat = applyRotationKeyframe(
+						this.stateData.lockedPunchOrientation,
+						rotations,
+						"approach",
+						1.0 // t=1 means end keyframe
+					)
+					this.hand.quaternion.slerp(targetQuat, 0.2)
 
 					if (stageElapsed >= GEO_PUNCH_CONFIG.positionHoldDuration) {
 						console.log(
@@ -554,8 +603,15 @@ export class HandStateMachine {
 					// Position along Earth-to-satellite line at currentDist
 					windUpPos = punchLine.clone().multiplyScalar(currentDist)
 
-					// Keep orientation locked (no rotation)
-					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+					// Apply pullBack rotation keyframes
+					const rotations = GEO_PUNCH_CONFIG.rotations
+					const targetQuat = applyRotationKeyframe(
+						this.stateData.lockedPunchOrientation,
+						rotations,
+						"pullBack",
+						pullEased
+					)
+					this.hand.quaternion.slerp(targetQuat, 0.15)
 
 					// Store max distance for punch phase
 					this.stateData.maxPullBackDist = maxDist
@@ -690,9 +746,16 @@ export class HandStateMachine {
 				// Position along punch line
 				this.hand.position.copy(punchLine.clone().multiplyScalar(currentDist))
 
-				// Keep locked orientation
+				// Apply punch rotation keyframes
 				if (this.stateData.lockedPunchOrientation) {
-					this.hand.quaternion.copy(this.stateData.lockedPunchOrientation)
+					const rotations = GEO_PUNCH_CONFIG.rotations
+					const targetQuat = applyRotationKeyframe(
+						this.stateData.lockedPunchOrientation,
+						rotations,
+						"punch",
+						eased
+					)
+					this.hand.quaternion.slerp(targetQuat, 0.3)
 				}
 
 				// Check for contact with satellite (when distance crosses satellite distance)
@@ -718,7 +781,7 @@ export class HandStateMachine {
 				}
 				return
 			} else if (this.stateData.geoPunchStage === "FOLLOW_THROUGH") {
-				// FOLLOW_THROUGH: Continue briefly, add lateral offset, slight rotation
+				// FOLLOW_THROUGH: Continue briefly, add lateral offset, rotation from keyframes
 				this.timeScale = GEO_PUNCH_CONFIG.punchTimeScale
 
 				t = Math.min(stageElapsed / GEO_PUNCH_CONFIG.followThroughDuration, 1)
@@ -740,16 +803,15 @@ export class HandStateMachine {
 
 				this.hand.position.copy(basePos).add(lateralOffset)
 
-				// Rotate hand slightly during follow-through
+				// Apply followThrough rotation keyframes
 				if (this.stateData.lockedPunchOrientation) {
-					const angleOffset = eased * GEO_PUNCH_CONFIG.followThroughAngle
-					const tiltQuat = new THREE.Quaternion().setFromAxisAngle(
-						up,
-						angleOffset
+					const rotations = GEO_PUNCH_CONFIG.rotations
+					const targetQuat = applyRotationKeyframe(
+						this.stateData.lockedPunchOrientation,
+						rotations,
+						"followThrough",
+						eased
 					)
-					const targetQuat = this.stateData.lockedPunchOrientation
-						.clone()
-						.multiply(tiltQuat)
 					this.hand.quaternion.slerp(targetQuat, 0.3)
 				}
 
@@ -822,16 +884,32 @@ export class HandStateMachine {
 		}
 	}
 
+	// Get celebration config based on decommission type
+	getCelebrationConfig() {
+		if (this.stateData.isGeoPunch) {
+			return GEO_PUNCH_CONFIG.celebration
+		} else if (this.stateData.isLeoFlick) {
+			return LEO_FLICK_CONFIG.celebration
+		} else {
+			// Default to Molniya slap config
+			return MOLNIYA_SLAP_CONFIG.celebration
+		}
+	}
+
 	updateCelebrating() {
 		const elapsed = this.getElapsedTime()
+		const celebrationConfig = this.getCelebrationConfig()
 
 		// Keep position locked - no movement allowed
 		this.hand.position.copy(this.stateData.lockedPosition)
 
-		// Phase 1: Wait for satellite to be destroyed - keep original rotation
+		// Store celebration config for camera access
+		this.stateData.celebrationConfig = celebrationConfig
+
+		// Phase 1: Wait briefly for satellite destruction animation - keep original rotation
 		if (this.targetSatellite) {
 			this.hand.quaternion.copy(this.stateData.lockedRotation)
-			if (elapsed > 1500 && this.onSatelliteDestroyed) {
+			if (elapsed > celebrationConfig.satelliteDestroyDelay && this.onSatelliteDestroyed) {
 				this.onSatelliteDestroyed(this.targetSatellite)
 				this.targetSatellite = null
 			}
@@ -842,7 +920,10 @@ export class HandStateMachine {
 		if (!this.stateData.thumbsUpStarted) {
 			this.stateData.thumbsUpStarted = true
 			this.stateData.thumbsUpStartTime = this.internalTime
-			transitionToGesture(this.hand, "thumbsUp", 500)
+
+			// Use config for gesture transition duration
+			const gestureDuration = celebrationConfig.gestureTransitionDuration || 400
+			transitionToGesture(this.hand, "thumbsUp", gestureDuration)
 
 			// Calculate target rotation: palm faces camera, thumb points straight up
 			// Like looking at Washington Monument from the front - thumb rises vertically
@@ -863,12 +944,14 @@ export class HandStateMachine {
 			this.stateData.targetThumbsUpQuat = targetQuat
 		}
 
-		// Smoothly rotate to thumbs-up orientation
+		// Smoothly rotate to thumbs-up orientation using config duration
+		const rotationDuration = celebrationConfig.rotationTransitionDuration || 400
 		if (this.stateData.targetThumbsUpQuat) {
 			const rotationProgress = Math.min(
-				(this.internalTime - this.stateData.thumbsUpStartTime) / 500,
+				(this.internalTime - this.stateData.thumbsUpStartTime) / rotationDuration,
 				1
 			)
+			// Cubic ease-in-out for smooth rotation
 			const eased =
 				rotationProgress < 0.5
 					? 4 * rotationProgress * rotationProgress * rotationProgress
@@ -879,10 +962,10 @@ export class HandStateMachine {
 				.slerp(this.stateData.targetThumbsUpQuat, eased)
 		}
 
-		// After 3 seconds of thumbs up, transition to RETURNING
+		// Transition to RETURNING after rotation completes + hold duration
 		const thumbsUpElapsed = this.internalTime - this.stateData.thumbsUpStartTime
-		const thumbsUpDuration = 3000
-		if (thumbsUpElapsed > thumbsUpDuration) {
+		const totalDuration = rotationDuration + celebrationConfig.thumbsUpHoldDuration
+		if (thumbsUpElapsed > totalDuration) {
 			this.transition(HandState.RETURNING)
 		}
 	}

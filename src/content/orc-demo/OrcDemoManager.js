@@ -254,63 +254,62 @@ function updateCameraTracking() {
 		let targetCamPos
 		let adjustedTarget
 
-		if (decommState.isGeoPunch && decommState.hand) {
-			if (decommState.cameraOffset && decommState.cameraLookAt) {
-				// Explicit camera positioning relative to hand
-				const handWorldPos = new THREE.Vector3()
-				decommState.hand.getWorldPosition(handWorldPos)
+		// Check if we have explicit camera offset (works for all decommission types)
+		if (decommState.cameraOffset && decommState.cameraLookAt && decommState.hand) {
+			// Explicit camera positioning relative to hand
+			const handWorldPos = new THREE.Vector3()
+			decommState.hand.getWorldPosition(handWorldPos)
 
-				// Apply offsets relative to hand position
-				targetCamPos = handWorldPos
-					.clone()
-					.add(
-						new THREE.Vector3(
-							decommState.cameraOffset.x,
-							decommState.cameraOffset.y,
-							decommState.cameraOffset.z
-						)
+			// Apply offsets relative to hand position
+			targetCamPos = handWorldPos
+				.clone()
+				.add(
+					new THREE.Vector3(
+						decommState.cameraOffset.x,
+						decommState.cameraOffset.y,
+						decommState.cameraOffset.z
 					)
+				)
 
-				adjustedTarget = handWorldPos
-					.clone()
-					.add(
-						new THREE.Vector3(
-							decommState.cameraLookAt.x,
-							decommState.cameraLookAt.y,
-							decommState.cameraLookAt.z
-						)
+			adjustedTarget = handWorldPos
+				.clone()
+				.add(
+					new THREE.Vector3(
+						decommState.cameraLookAt.x,
+						decommState.cameraLookAt.y,
+						decommState.cameraLookAt.z
 					)
+				)
 
-				// Apply sidebar compensation
-				adjustedTarget.x += sidebarCompensation
-			} else {
-				// Fallback: Camera to the SIDE, framing BOTH hand AND satellite
-				const handWorldPos = new THREE.Vector3()
-				decommState.hand.getWorldPosition(handWorldPos)
-				handWorldPos.x += orcGroup.position.x
+			// Apply sidebar compensation
+			adjustedTarget.x += sidebarCompensation
+		} else if (decommState.isGeoPunch && decommState.hand) {
+			// Fallback for GEO: Camera to the SIDE, framing BOTH hand AND satellite
+			const handWorldPos = new THREE.Vector3()
+			decommState.hand.getWorldPosition(handWorldPos)
+			handWorldPos.x += orcGroup.position.x
 
-				const punchLine = satPos.clone().sub(planetCenter).normalize()
-				const upDir = new THREE.Vector3(0, 1, 0)
-				const sideDir = new THREE.Vector3()
-					.crossVectors(punchLine, upDir)
-					.normalize()
-				if (sideDir.lengthSq() < 0.0001) sideDir.set(1, 0, 0)
+			const punchLine = satPos.clone().sub(planetCenter).normalize()
+			const upDir = new THREE.Vector3(0, 1, 0)
+			const sideDir = new THREE.Vector3()
+				.crossVectors(punchLine, upDir)
+				.normalize()
+			if (sideDir.lengthSq() < 0.0001) sideDir.set(1, 0, 0)
 
-				const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
-				const handSatDist = handWorldPos.distanceTo(satPos)
-				const frameDistance = Math.max(targetDistance, handSatDist * 1.2)
+			const midPoint = satPos.clone().lerp(handWorldPos, 0.5)
+			const handSatDist = handWorldPos.distanceTo(satPos)
+			const frameDistance = Math.max(targetDistance, handSatDist * 1.2)
 
-				adjustedTarget = midPoint.clone()
-				adjustedTarget.x += sidebarCompensation
+			adjustedTarget = midPoint.clone()
+			adjustedTarget.x += sidebarCompensation
 
-				targetCamPos = midPoint.clone()
-				targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
-				targetCamPos.y += frameDistance * 0.3
+			targetCamPos = midPoint.clone()
+			targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
+			targetCamPos.y += frameDistance * 0.3
 
-				if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
-			}
+			if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
 		} else {
-			// LEO/Molniya: Original camera tracking
+			// LEO/Molniya: Default camera tracking (follows satellite)
 			adjustedTarget = satPos.clone()
 			adjustedTarget.x += sidebarCompensation
 
