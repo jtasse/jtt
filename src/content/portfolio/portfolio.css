@@ -498,3 +498,13 @@ h1 {
 		right: auto;
 	}
 }
+
+/* Top Nav Fix: Ensure links return to normal size and animate smoothly */
+header nav a {
+	transition: transform 0.3s ease-out, font-size 0.3s ease-out !important;
+}
+
+header nav a:not(:hover) {
+	transform: none !important;
+	font-size: 100% !important;
+}

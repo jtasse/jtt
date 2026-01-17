@@ -71,7 +71,7 @@ export class LabelManager {
 
 			// Create larger invisible hover target for better click detection
 			// Added to SCENE directly (not as child of label) - synchronized in animate loop
-			const hoverWidth = cfg.size[0] * 0.75
+			const hoverWidth = cfg.size[0] * 0.6
 			const hoverHeight = cfg.size[1] * 2.5
 			const hoverGeo = new THREE.PlaneGeometry(hoverWidth, hoverHeight)
 			const hoverMat = new THREE.MeshBasicMaterial({
@@ -153,9 +153,11 @@ export class LabelManager {
 		if (flattenedLabelPositions.Home)
 			pyramidXPositions.home = flattenedLabelPositions.Home.x
 		if (flattenedLabelPositions.About)
-			pyramidXPositions.about = flattenedLabelPositions.About.x
+			pyramidXPositions.about =
+				flattenedLabelPositions.About.x + 0.05 * this.navLabelScale
 		if (flattenedLabelPositions.About)
-			pyramidXPositions.bio = flattenedLabelPositions.About.x
+			pyramidXPositions.bio =
+				flattenedLabelPositions.About.x + 0.15 * this.navLabelScale
 		if (flattenedLabelPositions.Blog)
 			pyramidXPositions.blog = flattenedLabelPositions.Blog.x
 		if (flattenedLabelPositions.Portfolio)

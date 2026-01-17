@@ -473,7 +473,7 @@ import {
 	showBlogPlane,
 	hideAllPlanes,
 	animatePyramid,
-} from "../src/pyramid.js"
+} from "../src/pyramid/pyramid.js"
 
 describe("Pyramid UI smoke tests", () => {
 	let mockLabelManager

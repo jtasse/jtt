@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import { LayoutManager } from "./core/LayoutManager.js"
+import { LayoutManager } from "../core/LayoutManager.js"
 import {
 	scene,
 	camera,
@@ -8,7 +8,7 @@ import {
 	controls,
 	stars,
 	screenToWorld,
-} from "./core/SceneManager.js"
+} from "../core/SceneManager.js"
 import {
 	pyramidGroup,
 	initialPyramidState,
@@ -20,32 +20,32 @@ import {
 	incrementPyramidAnimToken,
 	initialCameraState,
 	setInitialCameraState,
-} from "./pyramid/state.js"
+} from "./state.js"
 import {
 	animatePyramid,
 	spinPyramidToSection,
 	resetPyramidToHome,
-} from "./pyramid/animations.js"
+} from "./animations.js"
 import {
 	showAboutPlane,
 	showPortfolioPlane,
 	showBlogPlane,
 	showBlogPost,
 	hideAllPlanes,
-} from "./content/ContentManager.js"
-import "./content/home/home.css"
-import "./content/about/about.css"
-import "./content/blog/blog.css"
-import "./content/portfolio/portfolio.css"
-import "./content/orc-demo/orc-demo.css"
-import "./content/overlay.css"
+} from "../content/ContentManager.js"
+import "../content/home/home.css"
+import "../content/about/about.css"
+import "../content/blog/blog.css"
+import "../content/portfolio/portfolio.css"
+import "../content/orc-demo/orc-demo.css"
+import "../content/overlay.css"
 import {
 	getRoamingHand,
 	updateHandIdleMotion,
 	setCurrentHandPage,
-} from "./hand/HandManager.js"
-import { OrcDemoManager } from "./content/orc-demo/OrcDemoManager.js"
-import { ScrollManager } from "./content/ScrollManager.js"
+} from "../hand/HandManager.js"
+import { OrcDemoManager } from "../content/orc-demo/OrcDemoManager.js"
+import { ScrollManager } from "../content/ScrollManager.js"
 
 // Re-export core scene elements for main.js
 export {

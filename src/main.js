@@ -25,7 +25,7 @@ import {
 	layoutManager,
 	screenToWorld,
 	initialPyramidState,
-} from "./pyramid.js"
+} from "./pyramid/pyramid.js"
 import { handleContentLink } from "./content/ContentManager.js"
 import { LabelManager } from "./navigation/LabelManager.js"
 import { InputManager } from "./core/InputManager.js"
@@ -46,11 +46,42 @@ const labelManager = new LabelManager(scene, layoutManager, pyramidGroup)
 labelManager.createLabels()
 setLabelManager(labelManager)
 
+// Ensure all labels have originalScale set (specifically Home label might be missing it)
+const allLabels = labelManager.getLabels()
+Object.values(allLabels).forEach((label) => {
+	if (!label.userData.originalScale) {
+		label.userData.originalScale = label.scale.clone()
+	}
+})
+
 // === Input Manager ===
 const inputManager = new InputManager(renderer, camera)
 
 // Initialize roaming hand
 initRoamingHand()
+
+let hoveredLabel = null
+
+// Animation loop for smooth label scaling
+function animateLabels() {
+	requestAnimationFrame(animateLabels)
+
+	const labels = labelManager.getLabels()
+	Object.values(labels).forEach((label) => {
+		if (!label.visible) return
+		if (!label.userData.originalScale) return
+
+		const isHovered = hoveredLabel === label
+		const targetScaleScalar = isHovered ? 1.12 : 1.0
+
+		const target = label.userData.originalScale
+			.clone()
+			.multiplyScalar(targetScaleScalar)
+		// Adjust 0.1 to change the speed of the smoothing (lower = slower/smoother)
+		label.scale.lerp(target, 0.1)
+	})
+}
+animateLabels()
 
 // Start animation loop
 animate()
@@ -59,7 +90,6 @@ window.dispatchEvent(new Event("resize"))
 // Initialize DOM-based contact pane (bottom-right corner)
 initContactPane()
 
-let hoveredLabel = null
 let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
 
 // Hover detection
@@ -90,42 +120,57 @@ inputManager.addHoverHandler((raycaster) => {
 	// Check hover targets for pyramid labels (use hoverTargets for larger hit areas)
 	const labels = labelManager.getLabels()
 	const hoverTargets = labelManager.getHoverTargets()
-	const hoverTargetIntersects = raycaster.intersectObjects(
-		Object.values(hoverTargets)
-	)
-	// Clear previous hover if not still over its hover target
-	if (hoveredLabel) {
-		const stillOver = hoverTargetIntersects.some(
-			(h) => h.object.userData.labelKey === hoveredLabel.userData.name
-		)
-		if (!stillOver) {
-			if (hoveredLabel.userData.originalScale) {
-				hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+
+	// 1. Try hover targets (invisible planes for larger hit area)
+	let intersects = raycaster.intersectObjects(Object.values(hoverTargets))
+	let hitLabel = null
+
+	if (intersects.length > 0) {
+		const labelKey = intersects[0].object.userData.labelKey
+		hitLabel = labels[labelKey]
+	}
+
+	// 2. Fallback: Try actual label meshes (for Home label or if hover target missed)
+	if (!hitLabel) {
+		intersects = raycaster.intersectObjects(Object.values(labels), true)
+		if (intersects.length > 0) {
+			let hit = intersects[0].object
+			while (hit && !hit.userData.name && hit.parent) {
+				hit = hit.parent
 			}
-			hoveredLabel = null
-			inputManager.setCursor("default")
+			if (hit && hit.userData.name) {
+				hitLabel = labels[hit.userData.name]
+			}
 		}
 	}
 
-	// Check if pyramid is in centered/home position (not at top nav)
-	const isPyramidCentered = pyramidGroup.position.y < 1.0
-
-	if (hoverTargetIntersects.length > 0) {
-		const hoverObj = hoverTargetIntersects[0].object
-		const labelKey = hoverObj.userData.labelKey
-		const labelMesh = labels[labelKey]
-		if (labelMesh && labelMesh.visible && hoveredLabel !== labelMesh) {
-			// Only scale if the label is visible
-			if (labelMesh.userData.originalScale) {
-				hoveredLabel = labelMesh
-				hoveredLabel.scale
-					.copy(hoveredLabel.userData.originalScale)
-					.multiplyScalar(1.12)
+	// Update hover state
+	if (hitLabel && hitLabel.visible) {
+		// Lazy capture of originalScale if missing or zero (fixes Home label animation)
+		if (
+			!hitLabel.userData.originalScale ||
+			hitLabel.userData.originalScale.lengthSq() < 0.0001
+		) {
+			if (hitLabel.scale.lengthSq() > 0.01) {
+				hitLabel.userData.originalScale = hitLabel.scale.clone()
 			}
 		}
 
+		if (hoveredLabel !== hitLabel) {
+			if (
+				hitLabel.userData.originalScale &&
+				hitLabel.userData.originalScale.lengthSq() > 0.0001
+			) {
+				hoveredLabel = hitLabel
+			}
+		}
 		inputManager.setCursor("pointer")
 	} else {
+		// Clear hover if no label hit
+		if (hoveredLabel) {
+			hoveredLabel = null
+		}
+
 		// Check contact label/details hover state for expansion logic
 		let isOverContactLabel = false
 		let isOverContactDetails = false
@@ -139,7 +184,7 @@ inputManager.addHoverHandler((raycaster) => {
 		// Check if hovering over the pyramid mesh itself (when centered)
 		// No hover targets: ensure cursor is default and reset hoveredLabel
 		if (hoveredLabel) {
-			hoveredLabel.scale.copy(hoveredLabel.userData.originalScale)
+			// Scale reset handled in animateLabels loop
 			hoveredLabel = null
 		}
 
@@ -215,6 +260,7 @@ router.onRouteChange((route) => {
 	}
 
 	if (route === "/bio" || route === "/about") {
+		if (controls) controls.enabled = false
 		// If coming from ORC scene, morph back first
 		if (isOrcSceneActive()) {
 			hideAllPlanes()
@@ -232,6 +278,7 @@ router.onRouteChange((route) => {
 			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
+		if (controls) controls.enabled = false
 		if (isOrcSceneActive()) {
 			hideAllPlanes()
 			morphFromOrcScene()
@@ -246,6 +293,7 @@ router.onRouteChange((route) => {
 			currentContentVisible = "portfolio"
 		}
 	} else if (route === "/blog") {
+		if (controls) controls.enabled = false
 		if (isOrcSceneActive()) {
 			hideAllPlanes()
 			morphFromOrcScene()
@@ -260,6 +308,7 @@ router.onRouteChange((route) => {
 			currentContentVisible = "blog"
 		}
 	} else if (route.includes("/blog/posts/")) {
+		if (controls) controls.enabled = false
 		// Handle individual blog posts - keep pyramid at top but don't reload content
 		if (isOrcSceneActive()) {
 			hideAllPlanes()
@@ -281,6 +330,7 @@ router.onRouteChange((route) => {
 		}
 		window.centeredLabelName = "Blog"
 	} else if (route === "/portfolio/orc-demo") {
+		if (controls) controls.enabled = false
 		// Move contact label to left sidebar position instead of hiding it
 		// moveContactLabelToLeft()
 
