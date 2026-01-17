@@ -1,7 +1,10 @@
-/* Wrapper style to match blog content width */
-.portfolio-content {
-	max-width: 1300px;
-	margin: 0 auto;
+/* Wrapper style for content pages */
+.content-page {
+	margin-left: 20px !important;
+	margin-right: 320px !important;
+	max-width: none !important;
+	width: auto !important;
+	box-sizing: border-box;
 	padding: 2rem;
 	color: white;
 	background: rgba(0, 0, 0, 0.85);
@@ -259,7 +262,7 @@
 
 .portfolio-grid {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: repeat(3, 1fr);
 	gap: 20px;
 }
 
@@ -343,7 +346,18 @@ h1 {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+	.portfolio-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
 @media (max-width: 768px) {
+	.content-page {
+		margin-left: 1rem !important;
+		margin-right: 1rem !important;
+	}
+
 	.orc-hero-section {
 		flex-direction: column;
 	}

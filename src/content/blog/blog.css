@@ -51,8 +51,11 @@ header {
 
 /* Blog content - shared */
 .blog-content {
-	max-width: 1300px;
-	margin: 0 auto;
+	margin-left: 20px;
+	margin-right: 320px;
+	max-width: none;
+	width: auto;
+	box-sizing: border-box;
 	padding: 2rem;
 	color: white;
 	background: rgba(0, 0, 0, 0.85);
@@ -397,6 +400,8 @@ header {
 
 	.blog-content {
 		padding: 1.5rem;
+		margin-left: 1rem;
+		margin-right: 1rem;
 	}
 
 	.single-post h1 {
@@ -417,13 +422,13 @@ header {
 /* Portrait mode adjustments (vertical monitors) */
 @media (max-aspect-ratio: 1/1) {
 	.blog-content {
-		max-width: 90%;
+		max-width: none;
 	}
 }
 
 /* Large screens */
 @media (min-width: 1920px) {
 	.blog-content {
-		max-width: 1300px;
+		max-width: none;
 	}
 }
