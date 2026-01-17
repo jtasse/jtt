@@ -51,8 +51,8 @@ header {
 
 /* Blog content - shared */
 .blog-content {
-	margin-left: 20px;
-	margin-right: 320px;
+	margin-left: 60px;
+	margin-right: 20px;
 	max-width: none;
 	width: auto;
 	box-sizing: border-box;
