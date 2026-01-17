@@ -500,6 +500,11 @@ ul:has(.docs-link) {
 	border: 1px solid rgba(0, 170, 255, 0.3);
 	color: #00ffff;
 	box-shadow: 0 4px 0 rgba(0, 30, 50, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3);
+	padding: 0 12px;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 #orc-reset-button:hover {
@@ -666,12 +671,75 @@ ul:has(.docs-link) {
 }
 
 /* ============================================
+   Scene Controls (Play/Pause + Reset)
+   ============================================ */
+.scene-controls-container {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 15px;
+	align-items: stretch;
+	height: 40px;
+}
+
+.scene-control-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 12px;
+	height: 100%;
+	box-sizing: border-box;
+	background: linear-gradient(
+		180deg,
+		rgba(0, 60, 100, 0.6) 0%,
+		rgba(0, 40, 80, 0.7) 100%
+	);
+	border: 1px solid rgba(0, 170, 255, 0.3);
+	border-radius: 8px;
+	color: #00ffff;
+	cursor: pointer;
+	box-shadow: 0 4px 0 rgba(0, 30, 50, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3);
+	position: relative;
+	top: 0;
+	transition: all 0.1s ease;
+}
+
+.scene-control-button:hover {
+	background: linear-gradient(
+		180deg,
+		rgba(0, 80, 130, 0.7) 0%,
+		rgba(0, 50, 90, 0.8) 100%
+	);
+	box-shadow: 0 4px 0 rgba(0, 40, 60, 0.9), 0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.scene-control-button:active {
+	top: 4px;
+	box-shadow: 0 2px 0 rgba(0, 30, 50, 0.8);
+}
+
+.scene-control-button svg {
+	width: 16px;
+	height: 16px;
+}
+
+.scene-control-button.paused {
+	background: linear-gradient(
+		180deg,
+		rgba(100, 60, 0, 0.6) 0%,
+		rgba(80, 40, 0, 0.7) 100%
+	);
+	border-color: rgba(255, 170, 0, 0.5);
+	color: #ffaa00;
+}
+
+.scene-controls-container #orc-reset-button {
+	flex: 1;
+}
+
+/* ============================================
    Extracted Inline Styles
    ============================================ */
-
-.reset-button-container {
-	margin-bottom: 15px;
-}
 
 #satellite-info-content {
 	display: none;

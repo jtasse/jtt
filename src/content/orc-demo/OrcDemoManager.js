@@ -33,10 +33,16 @@ let selectedSatellite = null
 // Camera tracking state
 let originalCameraState = null
 let isCameraTracking = false
+// Smoothed camera target to reduce jerking on phase transitions
+let smoothedCameraTarget = null
+
+// Animation pause state
+let isPaused = false
 
 export const OrcDemoManager = {
 	isActive: false,
 	escapeListener: null,
+	keydownListener: null,
 
 	start() {
 		if (this.isActive) return
@@ -73,6 +79,15 @@ export const OrcDemoManager = {
 				flyHandIntoOrcScene()
 			}, 300)
 		}
+
+		// Set up spacebar listener for play/pause
+		this.keydownListener = (e) => {
+			if (e.code === "Space" && !e.target.matches("input, textarea, button")) {
+				e.preventDefault()
+				togglePause()
+			}
+		}
+		document.addEventListener("keydown", this.keydownListener)
 	},
 
 	stop() {
@@ -108,6 +123,14 @@ export const OrcDemoManager = {
 			document.removeEventListener("keydown", this.escapeListener)
 			this.escapeListener = null
 		}
+
+		if (this.keydownListener) {
+			document.removeEventListener("keydown", this.keydownListener)
+			this.keydownListener = null
+		}
+
+		// Reset pause state
+		isPaused = false
 
 		this.isActive = false
 		return hand
@@ -213,9 +236,39 @@ function createOrcDemo() {
 	animateOrcDemo()
 }
 
+function togglePause() {
+	isPaused = !isPaused
+	updatePauseButtonUI()
+}
+
+function updatePauseButtonUI() {
+	const button = document.getElementById("orc-play-pause-button")
+	if (!button) return
+
+	const path = button.querySelector("path")
+	if (!path) return
+
+	if (isPaused) {
+		button.classList.add("paused")
+		button.title = "Resume Scene (Spacebar)"
+		path.setAttribute("d", "M320-200v-560l440 280-440 280Z")
+	} else {
+		button.classList.remove("paused")
+		button.title = "Pause Scene (Spacebar)"
+		path.setAttribute(
+			"d",
+			"M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z"
+		)
+	}
+}
+
 function animateOrcDemo() {
 	orcDemoRequestId = requestAnimationFrame(animateOrcDemo)
-	animateOrcScene(true)
+
+	// Skip animation updates when paused, but still render
+	if (!isPaused) {
+		animateOrcScene(true)
+	}
 
 	if (selectedSatellite && selectionIndicator) {
 		const worldPos = new THREE.Vector3()
@@ -255,21 +308,30 @@ function updateCameraTracking() {
 		let adjustedTarget
 
 		// Check if we have explicit camera offset (works for all decommission types)
-		if (decommState.cameraOffset && decommState.cameraLookAt && decommState.hand) {
+		if (
+			decommState.cameraOffset &&
+			decommState.cameraLookAt &&
+			decommState.hand
+		) {
 			// Explicit camera positioning relative to hand
 			const handWorldPos = new THREE.Vector3()
 			decommState.hand.getWorldPosition(handWorldPos)
 
-			// Apply offsets relative to hand position
-			targetCamPos = handWorldPos
-				.clone()
-				.add(
-					new THREE.Vector3(
-						decommState.cameraOffset.x,
-						decommState.cameraOffset.y,
-						decommState.cameraOffset.z
-					)
-				)
+			// Create offset vector from config
+			const offsetDir = new THREE.Vector3(
+				decommState.cameraOffset.x,
+				decommState.cameraOffset.y,
+				decommState.cameraOffset.z
+			)
+
+			// If cameraDistance is provided, normalize the offset and scale by distance
+			// This separates "direction" from "zoom level"
+			if (decommState.cameraDistance && offsetDir.lengthSq() > 0) {
+				offsetDir.normalize().multiplyScalar(decommState.cameraDistance)
+			}
+
+			// Apply offset relative to hand position
+			targetCamPos = handWorldPos.clone().add(offsetDir)
 
 			adjustedTarget = handWorldPos
 				.clone()
@@ -338,7 +400,17 @@ function updateCameraTracking() {
 		let cameraSpeed = decommState.cameraSpeed
 		if (isOccluded) cameraSpeed = 0.15
 
-		orcDemoCamera.position.lerp(targetCamPos, cameraSpeed)
+		// Smooth the camera target position to reduce jerking on phase transitions
+		// The target itself is smoothed before applying the camera lerp
+		if (!smoothedCameraTarget) {
+			smoothedCameraTarget = targetCamPos.clone()
+		} else {
+			// Use a slower rate for target smoothing to reduce jerking
+			const targetSmoothRate = Math.min(cameraSpeed * 0.5, 0.03)
+			smoothedCameraTarget.lerp(targetCamPos, targetSmoothRate)
+		}
+
+		orcDemoCamera.position.lerp(smoothedCameraTarget, cameraSpeed)
 		orcDemoControls.target.lerp(adjustedTarget, cameraSpeed * 2)
 	} else if (isCameraTracking && originalCameraState) {
 		const resetSpeed = getDecommissionConfig().cameraResetSpeed
@@ -352,6 +424,7 @@ function updateCameraTracking() {
 			orcDemoControls.target.copy(originalCameraState.target)
 			isCameraTracking = false
 			originalCameraState = null
+			smoothedCameraTarget = null
 		}
 	}
 }
@@ -586,8 +659,16 @@ async function showAvailableSatellitesPane() {
 			)
 		}
 
+		// Set up play/pause button
+		const playPauseButton = orcInfoPane.querySelector("#orc-play-pause-button")
+		if (playPauseButton) {
+			playPauseButton.addEventListener("click", togglePause)
+		}
+
 		updateAvailableSatellitesHighlight()
 		document.body.appendChild(orcInfoPane)
+
+		updatePauseButtonUI()
 
 		// Also extract and add the doc viewer
 		const docViewer = temp.querySelector("#orc-doc-viewer")

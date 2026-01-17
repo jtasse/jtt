@@ -111,6 +111,7 @@ export function getDecommissionState() {
 
 	let cameraOffset = null
 	let cameraLookAt = null
+	let cameraDistance = null
 
 	// Get celebration config based on decommission type
 	const getCelebrationConfig = () => {
@@ -123,16 +124,6 @@ export function getDecommissionState() {
 		}
 	}
 
-	// Determine which config to use based on decommission type
-	const getPhaseConfig = () => {
-		if (orcHandStateMachine?.stateData?.isLeoFlick) {
-			return LEO_FLICK_CONFIG
-		} else if (!orcHandStateMachine?.stateData?.isGeoPunch) {
-			return MOLNIYA_SLAP_CONFIG
-		}
-		return null // GEO punch has its own handling
-	}
-
 	const handState = orcHandStateMachine?.state
 
 	// Check celebration state FIRST (applies to all decommission types)
@@ -140,6 +131,7 @@ export function getDecommissionState() {
 		const celebConfig = getCelebrationConfig()
 		cameraSpeed = celebConfig.cameraSpeed
 		cameraOffset = celebConfig.cameraOffset
+		cameraDistance = celebConfig.cameraDistance
 		cameraLookAt = celebConfig.cameraLookAt
 	} else if (orcHandStateMachine?.stateData?.isGeoPunch) {
 		// GEO Punch camera handling
@@ -148,18 +140,23 @@ export function getDecommissionState() {
 		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
 			cameraSpeed = GEO_PUNCH_CONFIG.approachCameraSpeed || 0.02
 			cameraOffset = GEO_PUNCH_CONFIG.approachCameraOffset
+			cameraDistance = GEO_PUNCH_CONFIG.approachCameraDistance
 			cameraLookAt = GEO_PUNCH_CONFIG.approachCameraLookAt
-		} else if (stage === "PULL_BACK" || stage === "POSITION_HOLD") {
+		} else if (stage === "PULL_BACK" || stage === "POSITION_HOLD" || handState === HandState.WINDING_UP) {
+			// Include WINDING_UP state check to handle first frame before stage is set
 			cameraSpeed = GEO_PUNCH_CONFIG.windUpCameraSpeed
 			cameraOffset = GEO_PUNCH_CONFIG.windUpCameraOffset
+			cameraDistance = GEO_PUNCH_CONFIG.windUpCameraDistance
 			cameraLookAt = GEO_PUNCH_CONFIG.windUpCameraLookAt
 		} else if (stage === "PUNCH") {
 			cameraSpeed = GEO_PUNCH_CONFIG.punchCameraSpeed
 			cameraOffset = GEO_PUNCH_CONFIG.punchCameraOffset
+			cameraDistance = GEO_PUNCH_CONFIG.punchCameraDistance
 			cameraLookAt = GEO_PUNCH_CONFIG.punchCameraLookAt
 		} else if (stage === "FOLLOW_THROUGH") {
 			cameraSpeed = GEO_PUNCH_CONFIG.followThroughCameraSpeed
 			cameraOffset = GEO_PUNCH_CONFIG.followThroughCameraOffset
+			cameraDistance = GEO_PUNCH_CONFIG.followThroughCameraDistance
 			cameraLookAt = GEO_PUNCH_CONFIG.followThroughCameraLookAt
 		}
 	} else if (orcHandStateMachine?.stateData?.isLeoFlick) {
@@ -169,16 +166,19 @@ export function getDecommissionState() {
 		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
 			cameraSpeed = config.approachCameraSpeed
 			cameraOffset = config.approachCameraOffset
+			cameraDistance = config.approachCameraDistance
 			cameraLookAt = config.approachCameraLookAt
 		} else if (handState === HandState.WINDING_UP) {
 			// PREPARING phase for LEO
 			cameraSpeed = config.preparingCameraSpeed
 			cameraOffset = config.preparingCameraOffset
+			cameraDistance = config.preparingCameraDistance
 			cameraLookAt = config.preparingCameraLookAt
 		} else if (handState === HandState.SLAPPING) {
 			// FLICKING phase for LEO
 			cameraSpeed = config.flickingCameraSpeed
 			cameraOffset = config.flickingCameraOffset
+			cameraDistance = config.flickingCameraDistance
 			cameraLookAt = config.flickingCameraLookAt
 		}
 	} else {
@@ -188,14 +188,17 @@ export function getDecommissionState() {
 		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
 			cameraSpeed = config.approachCameraSpeed
 			cameraOffset = config.approachCameraOffset
+			cameraDistance = config.approachCameraDistance
 			cameraLookAt = config.approachCameraLookAt
 		} else if (handState === HandState.WINDING_UP) {
 			cameraSpeed = config.windUpCameraSpeed
 			cameraOffset = config.windUpCameraOffset
+			cameraDistance = config.windUpCameraDistance
 			cameraLookAt = config.windUpCameraLookAt
 		} else if (handState === HandState.SLAPPING) {
 			cameraSpeed = config.slapCameraSpeed
 			cameraOffset = config.slapCameraOffset
+			cameraDistance = config.slapCameraDistance
 			cameraLookAt = config.slapCameraLookAt
 		}
 	}
@@ -214,12 +217,25 @@ export function getDecommissionState() {
 		hand: orcHand,
 		isGeoPunch: orcHandStateMachine?.stateData?.isGeoPunch === true,
 		cameraOffset,
+		cameraDistance,
 		cameraLookAt,
 	}
 }
 
 export function startDecommission(satellite) {
-	if (!satellite || satellite.userData.decommissioning) return
+	if (!satellite || satellite.userData.decommissioning) return false
+
+	// Prevent starting a new decommission if one is already in progress
+	if (activeDecommission) {
+		console.log("[Decommission] Cannot start - another decommission is in progress")
+		return false
+	}
+
+	// Check if hand state machine is ready
+	if (orcHandStateMachine && orcHandStateMachine.state !== "IDLE_ORBIT") {
+		console.log("[Decommission] Cannot start - hand not in IDLE_ORBIT state")
+		return false
+	}
 
 	const data = satellite.userData
 	activeDecommission = satellite
@@ -264,8 +280,17 @@ export function startDecommission(satellite) {
 	data.originalOrbitSpeed = data.orbitSpeed
 
 	if (orcHandStateMachine) {
-		orcHandStateMachine.startDecommission(satellite)
+		const started = orcHandStateMachine.startDecommission(satellite)
+		if (!started) {
+			// Hand state machine rejected the decommission, reset state
+			data.decommissioning = false
+			activeDecommission = null
+			console.log("[Decommission] Hand state machine rejected start")
+			return false
+		}
 	}
+
+	return true
 }
 
 export function cancelDecommission(satellite) {

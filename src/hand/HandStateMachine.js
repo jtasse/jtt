@@ -84,7 +84,13 @@ export class HandStateMachine {
 	}
 
 	transition(newState, data = {}) {
-		console.log(`Hand state: ${this.state} -> ${newState}`)
+		// Log with orbit-specific phase names for clarity
+		let displayState = newState
+		if (this.stateData.isLeoFlick) {
+			if (newState === HandState.WINDING_UP) displayState = "PREPARING"
+			else if (newState === HandState.SLAPPING) displayState = "FLICKING"
+		}
+		console.log(`Hand state: ${this.state} -> ${displayState}`)
 		this.state = newState
 		this.stateStartTime = this.internalTime
 
@@ -117,12 +123,20 @@ export class HandStateMachine {
 			case HandState.WINDING_UP:
 				if (this.onSlowMotionStart) this.onSlowMotionStart()
 				this.stateData.windUpStartRotation = this.hand.rotation.y
+				// LEO uses flickReady gesture (thumb and middle finger pressed together)
+				if (this.stateData.isLeoFlick) {
+					transitionToGesture(this.hand, "flickReady", 300)
+				}
 				break
 			case HandState.SLAPPING:
-				// Use fist for GEO punch, backhand for LEO/Molniya slap
+				// Use appropriate gesture for each orbit type
 				if (this.stateData.isGeoPunch) {
 					transitionToGesture(this.hand, "fist", 100)
+				} else if (this.stateData.isLeoFlick) {
+					// LEO: transition to flickRelease (finger extends)
+					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
+					// Molniya: backhand slap
 					transitionToGesture(this.hand, "backhand", 100)
 				}
 				this.stateData.slapApplied = false
@@ -133,6 +147,9 @@ export class HandStateMachine {
 				this.stateData.lockedRotation = this.hand.quaternion.clone()
 				this.stateData.thumbsUpStarted = false
 				this.stateData.thumbsUpStartTime = null
+				// Reset timeScale to normal speed for celebration
+				this.timeScale = 1.0
+				if (this.onSlowMotionEnd) this.onSlowMotionEnd()
 				break
 			case HandState.RETURNING:
 				transitionToGesture(this.hand, "fist", 400)
@@ -146,6 +163,10 @@ export class HandStateMachine {
 				break
 			case HandState.IDLE_ORBIT:
 				transitionToGesture(this.hand, "fist", 400)
+				// Clear all decommission state when returning to idle
+				this.targetSatellite = null
+				this.stateData = {}
+				this.timeScale = 1.0
 				break
 		}
 	}
@@ -633,26 +654,33 @@ export class HandStateMachine {
 				if (windUpPos) {
 					clampToPlanetSurface(windUpPos)
 				}
+			} else if (this.stateData.isLeoFlick) {
+				// LEO FLICK: Hand stays in place, only fingers move
+				// Lock position at start of preparing phase
+				if (!this.stateData.flickLockedPosition) {
+					this.stateData.flickLockedPosition = this.hand.position.clone()
+					this.stateData.flickLockedRotation = this.hand.quaternion.clone()
+					console.log(`[LEO FLICK] PREPARING - hand locked, fingers moving to flickReady`)
+				}
+
+				// Keep hand locked in position
+				this.hand.position.copy(this.stateData.flickLockedPosition)
+				this.hand.quaternion.copy(this.stateData.flickLockedRotation)
+
+				// Transition to FLICKING after preparing duration
+				if (t >= 1) {
+					console.log(`[LEO FLICK] PREPARING complete, starting FLICKING`)
+					this.transition(HandState.SLAPPING)
+				}
+				return
 			} else {
-				// LEO/Molniya: Original slap behavior
-				const windUpDist = isLEO ? 1.2 : 0.8
+				// Molniya: Original slap behavior
+				const windUpDist = 0.8
 				windUpPos = satPos
 					.clone()
 					.add(earthToSat.clone().multiplyScalar(windUpDist))
 
-				if (isLEO) {
-					const lateralDir = new THREE.Vector3(satPos.x, 0, satPos.z)
-					if (lateralDir.lengthSq() > 0.01) {
-						lateralDir.normalize()
-					} else {
-						lateralDir.set(1, 0, 0)
-					}
-					windUpPos = new THREE.Vector3(
-						satPos.x + lateralDir.x * 0.5,
-						satPos.y + 0.8,
-						Math.max(0.5 + 0.5, satPos.z + 0.6)
-					)
-				} else if (windUpPos.z < 0.5) {
+				if (windUpPos.z < 0.5) {
 					const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
 					if (swingDir.lengthSq() > 0.01) {
 						swingDir.normalize()
@@ -670,18 +698,18 @@ export class HandStateMachine {
 			}
 
 			// For GEO punch, position is set directly in staged code above
-			// For LEO/Molniya, use lerp
-			if (!this.stateData.isGeoPunch) {
+			// For Molniya, use lerp
+			if (!this.stateData.isGeoPunch && !this.stateData.isLeoFlick) {
 				this.hand.position.lerp(windUpPos, 0.1)
-			} else {
+			} else if (this.stateData.isGeoPunch) {
 				this.hand.position.copy(windUpPos)
 			}
 
-			// Rotate hand - GEO handles its own rotation in stages
-			if (this.stateData.isGeoPunch) {
-				// Rotation already handled in staged code above
+			// Rotate hand - GEO handles its own rotation in stages, LEO is locked
+			if (this.stateData.isGeoPunch || this.stateData.isLeoFlick) {
+				// Rotation already handled above
 			} else {
-				// For slap: face toward satellite
+				// For Molniya slap: face toward satellite
 				let faceDirection = satPos.clone().sub(this.hand.position).normalize()
 				if (faceDirection.lengthSq() < 0.0001) {
 					faceDirection.set(0, 0, 1)
