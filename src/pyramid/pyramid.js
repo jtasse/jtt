@@ -20,6 +20,7 @@ import {
 	incrementPyramidAnimToken,
 	initialCameraState,
 	setInitialCameraState,
+	getLastSpinDirection,
 } from "./state.js"
 import {
 	animatePyramid,
@@ -104,6 +105,7 @@ function updateNavLayout() {
 function morphToOrcScene() {
 	incrementPyramidAnimToken()
 	hideAllPlanes()
+	setCurrentSection("portfolio")
 
 	// Start ORC Demo first so isActive is true for layout calculations
 	OrcDemoManager.start()
@@ -297,12 +299,81 @@ function isOrcSceneActive() {
 	return OrcDemoManager.isActive
 }
 
+// === Loading Animation ===
+let isLoading = false
+let loadingTextElem = null
+
+function initLoadingText() {
+	if (loadingTextElem) return
+	loadingTextElem = document.createElement("div")
+	loadingTextElem.id = "pyramid-loading-text"
+	loadingTextElem.innerText = "LOADING..."
+	Object.assign(loadingTextElem.style, {
+		position: "absolute",
+		color: "#00ffff",
+		fontFamily: '"Orbitron", sans-serif',
+		fontSize: "12px",
+		letterSpacing: "2px",
+		pointerEvents: "none",
+		opacity: "0",
+		transition: "opacity 0.3s",
+		textAlign: "center",
+		transform: "translate(-50%, 0)",
+		textShadow: "0 0 10px rgba(0, 255, 255, 0.5)",
+		zIndex: "10001",
+	})
+	document.body.appendChild(loadingTextElem)
+}
+
+export function startLoading() {
+	isLoading = true
+	initLoadingText()
+	if (loadingTextElem) {
+		loadingTextElem.style.opacity = "1"
+		updateLoadingTextPosition()
+	}
+}
+
+export function stopLoading() {
+	isLoading = false
+	if (loadingTextElem) {
+		loadingTextElem.style.opacity = "0"
+	}
+	// Snap back to correct orientation for the current section
+	// Use skipTokenIncrement=true to avoid invalidating in-progress content loading
+	const section = getCurrentSection()
+	if (section) {
+		// Use a fast duration for the snap-back to avoid delaying interaction
+		spinPyramidToSection(section, null, 200, true)
+	}
+}
+
+function updateLoadingTextPosition() {
+	if (!isLoading || !loadingTextElem) return
+
+	const pos = pyramidGroup.position.clone()
+	pos.y -= 0.18 // Position text below pyramid
+	pos.project(camera)
+
+	const x = (pos.x * 0.5 + 0.5) * window.innerWidth
+	const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight
+
+	loadingTextElem.style.left = `${x}px`
+	loadingTextElem.style.top = `${y}px`
+}
+
 // === Animate Loop ===
 export function animate() {
 	requestAnimationFrame(animate)
 	stars.rotation.y += 0.0008
 
 	updateHandIdleMotion(OrcDemoManager.isActive)
+
+	if (isLoading) {
+		const dir = getLastSpinDirection()
+		pyramidGroup.rotation.y += dir * 0.08
+		updateLoadingTextPosition()
+	}
 
 	if (controls.enabled) {
 		controls.update()

@@ -9,6 +9,8 @@ import {
 	getPyramidAnimToken,
 	incrementPyramidAnimToken,
 	initialCameraState,
+	getLastSpinDirection,
+	setLastSpinDirection,
 } from "./state.js"
 import {
 	showAboutPlane,
@@ -17,7 +19,12 @@ import {
 	hideAllPlanes,
 } from "../content/ContentManager.js"
 
-export function animatePyramid(labelManager, down = true, section = null) {
+export function animatePyramid(
+	labelManager,
+	down = true,
+	section = null,
+	onComplete = null
+) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
 	const myToken = incrementPyramidAnimToken()
@@ -36,6 +43,8 @@ export function animatePyramid(labelManager, down = true, section = null) {
 	// and always points straight down. Only reset Y rotation when returning home.
 	const endRotY = down ? startRotY + Math.PI * 2 : initialPyramidState.rotationY
 	if (down && section) {
+		// Navigating from Home (left) to a section (right) always implies positive direction
+		setLastSpinDirection(1)
 		setCurrentSection(section)
 	}
 
@@ -300,7 +309,9 @@ export function animatePyramid(labelManager, down = true, section = null) {
 			}
 
 			// Show section content only if requested and this animation is still valid
-			if (down) {
+			if (onComplete) {
+				onComplete()
+			} else if (down) {
 				if (section === "about" || section === "bio") showAboutPlane()
 				else if (section === "portfolio") showPortfolioPlane()
 				else if (section === "blog") showBlogPlane()
@@ -318,22 +329,51 @@ export function animatePyramid(labelManager, down = true, section = null) {
 }
 
 // Slide pyramid horizontally to position below a different label (when already at top)
-export function spinPyramidToSection(section, onComplete = null) {
-	console.log(`spinPyramidToSection(${section})`)
+// Set skipTokenIncrement=true for cosmetic-only animations that shouldn't invalidate content loading
+export function spinPyramidToSection(
+	section,
+	onComplete = null,
+	duration = 600,
+	skipTokenIncrement = false
+) {
 	if (!section || pyramidXPositions[section] === undefined) return
 
-	const myToken = incrementPyramidAnimToken()
+	// Only increment token for real navigations, not cosmetic snap-backs
+	const myToken = skipTokenIncrement
+		? getPyramidAnimToken()
+		: incrementPyramidAnimToken()
 	pyramidGroup.visible = true
-
-	const duration = 600
 
 	const startPosX = pyramidGroup.position.x
 	const endPosX = pyramidXPositions[section]
 
-	const startRotY = pyramidGroup.rotation.y
-	const endRotY = startRotY + Math.PI * 2
+	const diffX = endPosX - startPosX
+	let direction = getLastSpinDirection()
 
-	setCurrentSection(section)
+	// If moving significantly, update direction
+	if (Math.abs(diffX) > 0.1) {
+		direction = Math.sign(diffX)
+		setLastSpinDirection(direction)
+	}
+
+	const startRotY = pyramidGroup.rotation.y
+	let endRotY
+
+	if (Math.abs(diffX) > 0.1) {
+		// Navigating: Spin in direction of movement
+		endRotY = startRotY + direction * Math.PI * 2
+		setCurrentSection(section)
+	} else {
+		// Just aligning (e.g. stop loading): Snap to nearest face-forward rotation
+		// This prevents the "double spin" feeling when loading finishes
+		const twoPi = Math.PI * 2
+		if (direction > 0) {
+			endRotY = Math.ceil(startRotY / twoPi) * twoPi
+		} else {
+			endRotY = Math.floor(startRotY / twoPi) * twoPi
+		}
+		setCurrentSection(section)
+	}
 
 	const startTime = performance.now()
 	function step(time) {

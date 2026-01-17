@@ -56,6 +56,12 @@ let pyramidAnimToken = 0
 export const getPyramidAnimToken = () => pyramidAnimToken
 export const incrementPyramidAnimToken = () => ++pyramidAnimToken
 
+let lastSpinDirection = 1
+export const getLastSpinDirection = () => lastSpinDirection
+export const setLastSpinDirection = (dir) => {
+	lastSpinDirection = dir
+}
+
 // Camera State (initialized later in pyramid.js)
 export const initialCameraState = {
 	position: new THREE.Vector3(0, 0, 6),

@@ -19,6 +19,8 @@ import {
 	isOrcSceneActive,
 	spinPyramidToSection,
 	controls,
+	startLoading,
+	stopLoading,
 	// Roaming hand functions
 	setLabelManager,
 	pyramidGroup,
@@ -213,14 +215,30 @@ function centerAndOpenLabel(labelManager, labelName) {
 		// Already at top, just spin to new section
 		hideAllPlanes()
 		const sectionName = labelName.toLowerCase()
-		spinPyramidToSection(sectionName, () => {
-			if (labelName === "About") showAboutPlane()
-			else if (labelName === "Portfolio") showPortfolioPlane()
-			else if (labelName === "Blog") showBlogPlane()
-		})
+		spinPyramidToSection(
+			sectionName,
+			() => {
+				startLoading()
+				setTimeout(async () => {
+					if (labelName === "About") await showAboutPlane()
+					else if (labelName === "Portfolio") await showPortfolioPlane()
+					else if (labelName === "Blog") await showBlogPlane()
+					stopLoading()
+				}, 500)
+			},
+			600
+		)
 	} else if (!isAtTop) {
 		// animate pyramid to top and flatten labels - content will be shown when animation completes
-		animatePyramid(labelManager, true, labelName.toLowerCase())
+		animatePyramid(labelManager, true, labelName.toLowerCase(), () => {
+			startLoading()
+			setTimeout(async () => {
+				if (labelName === "About") await showAboutPlane()
+				else if (labelName === "Portfolio") await showPortfolioPlane()
+				else if (labelName === "Blog") await showBlogPlane()
+				stopLoading()
+			}, 500)
+		})
 	}
 	// Track which section is active (for highlighting in menu if desired)
 	window.centeredLabelName = labelName
@@ -322,25 +340,39 @@ router.onRouteChange((route) => {
 		} else {
 			const isAtTop = pyramidGroup.position.y >= 1.5
 			if (!isAtTop) {
-				animatePyramid(labelManager, true, "blog")
+				animatePyramid(labelManager, true, "blog", () => {
+					startLoading()
+					setTimeout(async () => {
+						await showBlogPost(route)
+						stopLoading()
+					}, 500)
+				})
 			} else {
-				spinPyramidToSection("blog")
+				spinPyramidToSection(
+					"blog",
+					() => {
+						startLoading()
+						setTimeout(async () => {
+							await showBlogPost(route)
+							stopLoading()
+						}, 600)
+					},
+					600
+				)
 			}
-			showBlogPost(route)
 		}
 		window.centeredLabelName = "Blog"
 	} else if (route === "/portfolio/orc-demo") {
 		if (controls) controls.enabled = false
-		// Move contact label to left sidebar position instead of hiding it
-		// moveContactLabelToLeft()
 
-		// Ensure previous content (like portfolio preview) is cleaned up
 		hideAllPlanes()
-
-		// Morph pyramid into ORC demo scene
-		morphToOrcScene()
-		currentContentVisible = "orc-demo"
-		window.centeredLabelName = null
+		startLoading()
+		setTimeout(() => {
+			morphToOrcScene()
+			currentContentVisible = "orc-demo"
+			window.centeredLabelName = null
+			stopLoading()
+		}, 600)
 	} else {
 		// For non-content routes (home), reset pyramid, hide all content, and hide contact
 		if (isOrcSceneActive && isOrcSceneActive()) {
@@ -471,30 +503,6 @@ inputManager.addClickHandler((raycaster) => {
 
 		// Map label names to section names for routing
 		const sectionName = labelName.toLowerCase()
-
-		// Always navigate when a label is clicked, regardless of current state
-		// This fixes issues where navigation could get stuck
-		const isAtTop = pyramidGroup.position.y >= 0.75
-		if (isAtTop) {
-			// Already in flattened state, spin pyramid to new face and switch content
-			hideAllPlanes()
-			spinPyramidToSection(sectionName, () => {
-				// Show content after spin completes
-				if (labelName === "About") {
-					showAboutPlane()
-					currentContentVisible = "about"
-				} else if (labelName === "Portfolio") {
-					showPortfolioPlane()
-					currentContentVisible = "portfolio"
-				} else if (labelName === "Blog") {
-					showBlogPlane()
-					currentContentVisible = "blog"
-				}
-			})
-		} else {
-			// Animate pyramid to top and show content
-			animatePyramid(labelManager, true, sectionName)
-		}
 
 		window.centeredLabelName = labelName
 		router.navigate("/" + sectionName)
