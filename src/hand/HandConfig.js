@@ -80,14 +80,14 @@ export const HAND_ORBIT_CONFIG = {
 // ============================================
 // Animation Sequence Timing (milliseconds)
 // ============================================
-// Controls duration of each phase in the decommission animation.
-// Note: Some orbit types override these with their own config.
+// DEFAULT timings used as fallback. Each orbit type can override these.
+// See GEO_PUNCH_CONFIG, LEO_FLICK_CONFIG, MOLNIYA_SLAP_CONFIG for orbit-specific timings.
 export const SEQUENCE_TIMINGS = {
 	pointDuration: 800, // How long hand points at target before moving
 	pointPause: 400, // Additional pause after pointing animation completes
 	approachDuration: 2000, // Time to travel from orbit to satellite position
 	windUpDuration: 1000, // Time for wind-up animation (pulling back arm)
-	slapDuration: 400, // Duration of the actual slap/punch motion
+	contactDuration: 400, // Duration of contact motion (LEO: flick, GEO: punch, Molniya: slap)
 	burnDuration: 4000, // How long satellite burns before destruction
 	celebrateDuration: 1000, // Duration of thumbs-up celebration
 	returnDuration: 2000, // Time to travel back to idle orbit position
@@ -98,6 +98,18 @@ export const SEQUENCE_TIMINGS = {
 export const SLAP_SLOW_MOTION_FACTOR = 0.5
 
 // ============================================
+// Helper: Get timing for current orbit type
+// ============================================
+// Use this to get phase durations. Falls back to SEQUENCE_TIMINGS if not specified.
+export function getOrbitTiming(orbitConfig, phaseName) {
+	if (orbitConfig?.phaseDurations?.[phaseName] !== undefined) {
+		return orbitConfig.phaseDurations[phaseName]
+	}
+	// Fallback to SEQUENCE_TIMINGS
+	return SEQUENCE_TIMINGS[phaseName] ?? 1000
+}
+
+// ============================================
 // GEO Punch Configuration
 // ============================================
 // For Geosynchronous satellites (high orbit ~2.0 units from Earth).
@@ -105,8 +117,22 @@ export const SLAP_SLOW_MOTION_FACTOR = 0.5
 // The hand positions BEHIND the satellite (further from Earth), then punches TOWARD Earth.
 export const GEO_PUNCH_CONFIG = {
 	// -----------------------------------------
-	// Stage Durations (real-time milliseconds)
+	// Phase Durations (milliseconds)
 	// -----------------------------------------
+	// These override SEQUENCE_TIMINGS for GEO satellites
+	phaseDurations: {
+		pointDuration: 800, // How long hand points at satellite
+		pointPause: 400, // Pause after pointing before approach
+		approachDuration: 2000, // Time to fly to position behind satellite
+		windUpDuration: 1000, // Total wind-up phase (includes sub-stages below)
+		contactDuration: 400, // Base contact duration (GEO uses staged punch instead)
+		returnDuration: 2000, // Time to return to idle orbit
+	},
+
+	// -----------------------------------------
+	// GEO-Specific Stage Durations (milliseconds)
+	// -----------------------------------------
+	// These are sub-stages within the wind-up and contact phases
 	positionHoldDuration: 500, // Brief pause at approach position before pull-back
 	pullBackDuration: 300, // Duration of exaggerated pull-back (arm coils back)
 	punchDuration: 800, // Duration of the forward punch motion
@@ -135,39 +161,33 @@ export const GEO_PUNCH_CONFIG = {
 	// Camera looks at: handWorldPosition + lookAt
 	//
 	// cameraOffset: Direction vector for camera position (will be normalized)
-	//   x: positive = away from Earth along punch line (behind hand)
-	//   y: positive = up (world Y)
-	//   z: positive = perpendicular to punch line (used for side views/orbiting around hand)
-	// cameraDistance: How far camera is from hand (zoom level). Larger = more zoomed out.
+	// cameraDistance: How far camera is from hand. Larger = more zoomed out.
 	// cameraSpeed: Lerp rate (0.01 = slow/smooth, 0.1 = snappy)
 	// cameraLookAt: Offset from hand position for camera target
-	//
-	// To orbit AROUND the hand: change z offset direction while keeping distance same.
-	// To zoom in/out: adjust cameraDistance (independent of angle).
 
 	// Approach phase (POINTING, APPROACHING)
-	approachCameraOffset: { x: 0, y: 1.0, z: 0 },
-	approachCameraDistance: 5.0, // Distance from hand (zoom level)
+	approachCameraOffset: { x: 0.5, y: 1.0, z: 2.0 },
+	approachCameraDistance: 4.0,
 	approachCameraLookAt: { x: 0, y: 0, z: 0 },
 	approachCameraSpeed: 0.02,
 
 	// Wind-up phase (POSITION_HOLD, PULL_BACK)
-	windUpCameraOffset: { x: 0, y: 1.0, z: 2 },
-	windUpCameraDistance: 4,
+	windUpCameraOffset: { x: 0.5, y: 1.0, z: 2.0 },
+	windUpCameraDistance: 4.0,
 	windUpCameraLookAt: { x: 0, y: 0, z: 0 },
-	windUpCameraSpeed: 0.01,
+	windUpCameraSpeed: 0.02,
 
 	// Punch phase
-	punchCameraOffset: { x: 4.0, y: 1.0, z: 0 },
-	punchCameraDistance: 3.0,
+	punchCameraOffset: { x: 0.5, y: 1.0, z: 2.0 },
+	punchCameraDistance: 4.0,
 	punchCameraLookAt: { x: 0, y: 0, z: 0 },
-	punchCameraSpeed: 0.01,
+	punchCameraSpeed: 0.02,
 
 	// Follow-through phase
-	followThroughCameraOffset: { x: 2.0, y: 2.5, z: 0 },
-	followThroughCameraDistance: 3.5,
+	followThroughCameraOffset: { x: 0.5, y: 1.0, z: 2.0 },
+	followThroughCameraDistance: 4.0,
 	followThroughCameraLookAt: { x: 0, y: 0, z: 0 },
-	followThroughCameraSpeed: 0.01,
+	followThroughCameraSpeed: 0.02,
 
 	// -----------------------------------------
 	// Hand Rotation Keyframes
@@ -198,16 +218,15 @@ export const GEO_PUNCH_CONFIG = {
 	// Celebration Phase Settings
 	// -----------------------------------------
 	celebration: {
-		satelliteDestroyDelay: 300, // ms after entering celebration to destroy satellite
-		gestureTransitionDuration: 300, // ms to transition fingers to thumbs up
-		rotationTransitionDuration: 300, // ms to rotate hand to thumbs up orientation
-		thumbsUpHoldDuration: 1500, // ms to hold thumbs up before returning
-		// Camera for celebration - positioned to show thumbs up from the side
-		// z offset moves camera perpendicular to punch line for a side view
-		cameraOffset: { x: 0.5, y: 0.3, z: 2 },
-		cameraDistance: 3, // Zoom level for thumbs up shot
+		satelliteDestroyDelay: 800, // ms after entering celebration to destroy satellite
+		gestureTransitionDuration: 600, // ms to transition fingers to thumbs up
+		rotationTransitionDuration: 800, // ms to rotate hand to thumbs up orientation
+		thumbsUpHoldDuration: 2000, // ms to hold thumbs up before returning
+		// Camera for celebration - side view for thumbs up
+		cameraOffset: { x: 0.5, y: 0.5, z: 2.0 },
+		cameraDistance: 3.0,
 		cameraLookAt: { x: 0, y: 0, z: 0 },
-		cameraSpeed: 0.02,
+		cameraSpeed: 0.03,
 	},
 }
 
@@ -217,48 +236,59 @@ export const GEO_PUNCH_CONFIG = {
 // For Low Earth Orbit satellites (close orbit ~0.65 units from Earth).
 // Animation: POINTING -> APPROACHING -> PREPARING -> FLICKING -> CELEBRATING
 // Uses a "flick" gesture like flicking a paper football.
-// NOTE: Currently maps PREPARING to WINDING_UP state and FLICKING to SLAPPING state.
+// NOTE: PREPARING maps to WINDING_UP state, FLICKING maps to CONTACT state internally.
 export const LEO_FLICK_CONFIG = {
+	// -----------------------------------------
+	// Phase Durations (milliseconds)
+	// -----------------------------------------
+	// These override SEQUENCE_TIMINGS for LEO satellites
+	phaseDurations: {
+		pointDuration: 600, // Shorter point for close satellites
+		pointPause: 300, // Quick pause before approach
+		approachDuration: 1500, // Faster approach (closer distance)
+		windUpDuration: 2000, // "Preparing" - getting fingers ready to flick
+		contactDuration: 500, // "Flicking" - the actual flick motion (fast!)
+		returnDuration: 1800, // Return to orbit
+	},
+
 	// Slow motion factor during preparing phase (0.5 = half speed)
 	slowMotionFactor: 0.5,
 
 	// -----------------------------------------
 	// Camera Settings Per Phase
 	// -----------------------------------------
-	// cameraOffset: Direction vector (will be normalized, then scaled by cameraDistance)
-	// cameraDistance: How far camera is from hand (zoom level)
-	// Positive z = toward camera (in front of planet).
+	// LEO satellites are close to Earth. Camera stays relatively stable.
 
 	// Approach phase (POINTING, APPROACHING)
-	approachCameraOffset: { x: 1.5, y: 1.0, z: 2.0 },
-	approachCameraDistance: 5.0,
+	approachCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	approachCameraDistance: 3.5,
 	approachCameraLookAt: { x: 0, y: 0, z: 0 },
 	approachCameraSpeed: 0.02,
 
 	// Preparing phase (WINDING_UP state - hand gets ready to flick)
-	preparingCameraOffset: { x: 1.2, y: 0.8, z: 1.5 },
-	preparingCameraDistance: 4,
+	preparingCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	preparingCameraDistance: 3.5,
 	preparingCameraLookAt: { x: 0, y: 0, z: 0 },
-	preparingCameraSpeed: 0.03,
+	preparingCameraSpeed: 0.02,
 
 	// Flicking phase (SLAPPING state - the actual flick motion)
-	flickingCameraOffset: { x: 1.0, y: 0.6, z: 1.2 },
-	flickingCameraDistance: 3.0,
+	flickingCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	flickingCameraDistance: 3.5,
 	flickingCameraLookAt: { x: 0, y: 0, z: 0 },
-	flickingCameraSpeed: 0.05,
+	flickingCameraSpeed: 0.02,
 
 	// -----------------------------------------
 	// Celebration Phase Settings
 	// -----------------------------------------
 	celebration: {
-		satelliteDestroyDelay: 500, // ms before satellite is removed
-		gestureTransitionDuration: 400, // ms to form thumbs up
-		rotationTransitionDuration: 400, // ms to rotate to thumbs up pose
-		thumbsUpHoldDuration: 2000, // ms to hold thumbs up
-		cameraOffset: { x: 2.0, y: 1.0, z: 2.5 },
-		cameraDistance: 3.5,
+		satelliteDestroyDelay: 800, // ms before satellite is removed
+		gestureTransitionDuration: 600, // ms to form thumbs up
+		rotationTransitionDuration: 800, // ms to rotate to thumbs up pose
+		thumbsUpHoldDuration: 2500, // ms to hold thumbs up
+		cameraOffset: { x: 0.5, y: 0.5, z: 2.0 },
+		cameraDistance: 3.0,
 		cameraLookAt: { x: 0, y: 0, z: 0 },
-		cameraSpeed: 0.04,
+		cameraSpeed: 0.03,
 	},
 }
 
@@ -266,49 +296,61 @@ export const LEO_FLICK_CONFIG = {
 // Molniya Slap Configuration
 // ============================================
 // For Molniya orbit satellites (highly elliptical orbit, varies from ~0.6 to ~2.3 units).
-// Animation: POINTING -> APPROACHING -> WINDING_UP -> SLAPPING -> CELEBRATING
-// Uses a backhand slap motion.
+// Animation: POINTING -> APPROACHING -> WINDING_UP -> CONTACT (slap) -> CELEBRATING
+// Uses a backhand slap motion - the only orbit type that actually slaps!
 export const MOLNIYA_SLAP_CONFIG = {
+	// -----------------------------------------
+	// Phase Durations (milliseconds)
+	// -----------------------------------------
+	// These override SEQUENCE_TIMINGS for Molniya satellites
+	phaseDurations: {
+		pointDuration: 800, // Point at satellite
+		pointPause: 400, // Pause before approach
+		approachDuration: 2200, // Longer approach (elliptical orbit = variable distance)
+		windUpDuration: 1200, // Dramatic wind-up for backhand slap
+		contactDuration: 1000, // The backhand slap motion
+		returnDuration: 2200, // Return to orbit
+	},
+
 	// Slow motion factor during wind-up phase (0.5 = half speed)
 	slowMotionFactor: 0.5,
 
 	// -----------------------------------------
 	// Camera Settings Per Phase
 	// -----------------------------------------
-	// cameraOffset: Direction vector (will be normalized, then scaled by cameraDistance)
-	// cameraDistance: How far camera is from hand (zoom level)
-	// Molniya uses negative x to view from the "other side" of the scene.
+	// Molniya has an elliptical orbit. Camera positioned to show both hand AND planet.
+	// Larger distances and look-at offsets toward planet center (negative z).
 
 	// Approach phase (POINTING, APPROACHING)
-	approachCameraOffset: { x: -3.0, y: 1.2, z: -1 },
-	approachCameraDistance: 5,
-	approachCameraLookAt: { x: 0, y: 0, z: 0 },
+	approachCameraOffset: { x: 0.3, y: 0.8, z: 1.5 },
+	approachCameraDistance: 5.0,
+	approachCameraLookAt: { x: 0, y: -0.3, z: -1.0 }, // Look toward planet
 	approachCameraSpeed: 0.02,
 
 	// Wind-up phase (arm pulls back for slap)
-	windUpCameraOffset: { x: -5, y: 1.0, z: 0 },
-	windUpCameraDistance: 3,
-	windUpCameraLookAt: { x: 0, y: 0, z: 0 },
-	windUpCameraSpeed: 0.03,
+	windUpCameraOffset: { x: 0.3, y: 0.8, z: 5 },
+	windUpCameraDistance: 5.0,
+	windUpCameraLookAt: { x: 0, y: -0.3, z: -1.0 },
+	windUpCameraSpeed: 0.02,
 
-	// Slapping phase (the actual slap motion)
-	slapCameraOffset: { x: 0, y: 0.8, z: 0 },
-	slapCameraDistance: 3.0,
-	slapCameraLookAt: { x: 0, y: 1, z: 0 }, // Look slightly above hand
-	slapCameraSpeed: 0.05,
+	// Contact phase (the actual slap motion)
+	slapCameraOffset: { x: 0.3, y: 0.8, z: 1.5 },
+	slapCameraDistance: 5.0,
+	slapCameraLookAt: { x: 2, y: -0.3, z: 1.0 },
+	slapCameraSpeed: 0.02,
 
 	// -----------------------------------------
 	// Celebration Phase Settings
 	// -----------------------------------------
 	celebration: {
-		satelliteDestroyDelay: 500, // ms before satellite is removed
-		gestureTransitionDuration: 400, // ms to form thumbs up
-		rotationTransitionDuration: 400, // ms to rotate to thumbs up pose
-		thumbsUpHoldDuration: 2000, // ms to hold thumbs up
-		cameraOffset: { x: -4, y: 0.5, z: 3 },
-		cameraDistance: 1.5,
+		satelliteDestroyDelay: 1500, // ms before satellite is removed
+		gestureTransitionDuration: 600, // ms to form thumbs up
+		rotationTransitionDuration: 800, // ms to rotate to thumbs up pose
+		thumbsUpHoldDuration: 2500, // ms to hold thumbs up
+		cameraOffset: { x: 0.5, y: 0.5, z: 2.0 },
+		cameraDistance: 3.0,
 		cameraLookAt: { x: 0, y: 0, z: 0 },
-		cameraSpeed: 0.04,
+		cameraSpeed: 0.03,
 	},
 }
 
@@ -387,38 +429,38 @@ export const GESTURES = {
 
 	// LEO Flick gestures - like flicking a paper football
 	flickReady: {
-		// Thumb and middle finger pressed together, ready to flick
+		// Thumb and index finger pressed together, ready to flick
 		thumb: {
 			proximal: 0.3, // Slightly bent inward
-			middle: 0.8, // Bent to meet middle finger
+			middle: 0.8, // Bent to meet index finger
 			distal: 0.3,
-			proximalZ: 0.8, // Rotated toward middle finger
+			proximalZ: 0.8, // Rotated toward index finger
 		},
-		index: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled out of the way
-		middle: {
+		index: {
 			proximal: 0.6, // Bent at knuckle
 			middle: 1.5, // Strongly bent - fingertip pulled back under thumb
 			distal: 0.8, // Tip bent
 		},
+		middle: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled out of the way
 		ring: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled
 		pinky: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled
 		wristRotation: 0,
 	},
 
 	flickRelease: {
-		// Middle finger extended after flick (thumb stays in position)
+		// Index finger extended after flick (thumb stays in position)
 		thumb: {
 			proximal: 0.3,
 			middle: 0.8,
 			distal: 0.3,
 			proximalZ: 0.8,
 		},
-		index: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Still curled
-		middle: {
+		index: {
 			proximal: -0.2, // Slightly raised at knuckle
 			middle: 0, // Straight
 			distal: 0, // Straight - finger fully extended
 		},
+		middle: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Still curled
 		ring: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled
 		pinky: { proximal: 1.4, middle: 1.3, distal: 1.1 }, // Curled
 		wristRotation: 0,
@@ -429,14 +471,19 @@ export const GESTURES = {
 // Hand State Machine States
 // ============================================
 // States control the hand's behavior during decommission sequences.
-// Transitions: IDLE_ORBIT -> POINTING -> APPROACHING -> WINDING_UP -> SLAPPING -> CELEBRATING -> RETURNING -> IDLE_ORBIT
+// Transitions: IDLE_ORBIT -> POINTING -> APPROACHING -> WINDING_UP -> CONTACT -> CELEBRATING -> RETURNING -> IDLE_ORBIT
+//
+// The CONTACT phase (internal state name: SLAPPING for legacy reasons) manifests differently per orbit:
+//   - LEO (Leona): FLICKING - finger flick like a paper football
+//   - GEO (George): PUNCHING - fist punch toward Earth
+//   - Molniya (Moltar): SLAPPING - backhand slap
 export const HandState = {
 	IDLE_ORBIT: "IDLE_ORBIT", // Default state: hand orbits Earth autonomously
 	POINTING: "POINTING", // Points at target satellite to indicate selection
 	THUMBS_UP: "THUMBS_UP", // Legacy state for thumbs up pose
 	APPROACHING: "APPROACHING", // Flying from orbit position to satellite
 	WINDING_UP: "WINDING_UP", // Preparing strike (LEO: PREPARING, GEO: PULL_BACK)
-	SLAPPING: "SLAPPING", // Executing strike (LEO: FLICKING, GEO: PUNCH)
+	CONTACTING: "CONTACTING", // CONTACT phase (LEO: flick, GEO: punch, Molniya: slap)
 	CELEBRATING: "CELEBRATING", // Post-strike thumbs up gesture
 	RETURNING: "RETURNING", // Flying back to idle orbit position
 	CANCELLED: "CANCELLED", // User cancelled - returning satellite to orbit

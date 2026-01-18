@@ -606,7 +606,10 @@ export function animateOrcScene(animateNormal = true) {
 
 	satellites.forEach((sat) => {
 		const data = sat.userData
-		const timeScale = orcHandStateMachine ? orcHandStateMachine.timeScale : 1.0
+		// Use timeScale from state machine if available, otherwise default to 1.0
+		const timeScale = (orcHandStateMachine && typeof orcHandStateMachine.timeScale === 'number')
+			? orcHandStateMachine.timeScale
+			: 1.0
 
 		// 1. Hand Slap Physics
 		if (data.handSlapped) {

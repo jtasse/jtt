@@ -289,13 +289,21 @@ export function clampToPlanetSurface(
 	position,
 	buffer = 0.1
 ) {
+	// Guard against NaN input
+	if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
+		position.set(0, 0, HAND_ORBIT_CONFIG.planetRadius + buffer)
+		return position
+	}
+
 	const planetRadius = HAND_ORBIT_CONFIG.planetRadius
 	const dist = position.length()
 	if (dist < planetRadius + buffer) {
-		if (dist < 0.0001) {
+		if (dist < 0.001) {
 			position.set(0, 0, planetRadius + buffer)
 		} else {
-			position.normalize().multiplyScalar(planetRadius + buffer)
+			// Scale to minimum distance (safer than normalize + multiplyScalar)
+			const scale = (planetRadius + buffer) / dist
+			position.multiplyScalar(scale)
 		}
 	}
 	return position
@@ -308,14 +316,22 @@ export function clampToFrontOfPlanet(
 	position,
 	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
 ) {
+	// Guard against NaN input
+	if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
+		position.set(0, 0, minDistance)
+		return position
+	}
+
 	// First ensure minimum distance from planet center
 	const distanceFromCenter = position.length()
 	if (distanceFromCenter < minDistance) {
-		if (distanceFromCenter < 0.0001) {
-			// At origin - push to front
+		if (distanceFromCenter < 0.001) {
+			// At or very near origin - push to front
 			position.set(0, 0, minDistance)
 		} else {
-			position.normalize().multiplyScalar(minDistance)
+			// Scale to minimum distance (safer than normalize + multiplyScalar)
+			const scale = minDistance / distanceFromCenter
+			position.multiplyScalar(scale)
 		}
 	}
 

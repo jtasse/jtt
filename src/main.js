@@ -69,16 +69,27 @@ function animateLabels() {
 	requestAnimationFrame(animateLabels)
 
 	const labels = labelManager.getLabels()
+	const navScale = labelManager.getNavLabelScale()
+
 	Object.values(labels).forEach((label) => {
 		if (!label.visible) return
+		if (label.userData.isAnimating) return
 		if (!label.userData.originalScale) return
 
 		const isHovered = hoveredLabel === label
 		const targetScaleScalar = isHovered ? 1.12 : 1.0
 
-		const target = label.userData.originalScale
-			.clone()
-			.multiplyScalar(targetScaleScalar)
+		let target
+		if (label.userData.fixedNav) {
+			target = new THREE.Vector3(navScale, navScale, 1).multiplyScalar(
+				targetScaleScalar
+			)
+		} else {
+			target = label.userData.originalScale
+				.clone()
+				.multiplyScalar(targetScaleScalar)
+		}
+
 		// Adjust 0.1 to change the speed of the smoothing (lower = slower/smoother)
 		label.scale.lerp(target, 0.1)
 	})
@@ -366,13 +377,28 @@ router.onRouteChange((route) => {
 		if (controls) controls.enabled = false
 
 		hideAllPlanes()
-		startLoading()
-		setTimeout(() => {
-			morphToOrcScene()
-			currentContentVisible = "orc-demo"
-			window.centeredLabelName = null
-			stopLoading()
-		}, 600)
+		const isAtTop = pyramidGroup.position.y >= 1.5
+		if (!isAtTop) {
+			animatePyramid(labelManager, true, "portfolio", () => {
+				startLoading()
+				setTimeout(() => {
+					morphToOrcScene()
+					currentContentVisible = "orc-demo"
+					window.centeredLabelName = null
+					stopLoading()
+				}, 600)
+			})
+		} else {
+			spinPyramidToSection("portfolio", () => {
+				startLoading()
+				setTimeout(() => {
+					morphToOrcScene()
+					currentContentVisible = "orc-demo"
+					window.centeredLabelName = null
+					stopLoading()
+				}, 600)
+			})
+		}
 	} else {
 		// For non-content routes (home), reset pyramid, hide all content, and hide contact
 		if (isOrcSceneActive && isOrcSceneActive()) {

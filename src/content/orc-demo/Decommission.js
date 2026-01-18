@@ -42,7 +42,7 @@ export function getDecommissionState() {
 		(orcHandStateMachine.state === HandState.POINTING ||
 			orcHandStateMachine.state === HandState.APPROACHING ||
 			orcHandStateMachine.state === HandState.WINDING_UP ||
-			orcHandStateMachine.state === HandState.SLAPPING ||
+			orcHandStateMachine.state === HandState.CONTACTING ||
 			orcHandStateMachine.state === HandState.CELEBRATING ||
 			orcHandStateMachine.state === HandState.THUMBS_UP ||
 			orcHandStateMachine.state === HandState.RETURNING)
@@ -74,7 +74,7 @@ export function getDecommissionState() {
 			case HandState.WINDING_UP:
 				phase = "carrying"
 				break
-			case HandState.SLAPPING:
+			case HandState.CONTACTING:
 			case HandState.CELEBRATING:
 			case HandState.THUMBS_UP:
 				phase = "burning"
@@ -127,7 +127,10 @@ export function getDecommissionState() {
 	const handState = orcHandStateMachine?.state
 
 	// Check celebration state FIRST (applies to all decommission types)
-	if (handState === HandState.CELEBRATING || handState === HandState.THUMBS_UP) {
+	if (
+		handState === HandState.CELEBRATING ||
+		handState === HandState.THUMBS_UP
+	) {
 		const celebConfig = getCelebrationConfig()
 		cameraSpeed = celebConfig.cameraSpeed
 		cameraOffset = celebConfig.cameraOffset
@@ -137,12 +140,19 @@ export function getDecommissionState() {
 		// GEO Punch camera handling
 		const stage = orcHandStateMachine.stateData.geoPunchStage
 
-		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
+		if (
+			handState === HandState.POINTING ||
+			handState === HandState.APPROACHING
+		) {
 			cameraSpeed = GEO_PUNCH_CONFIG.approachCameraSpeed || 0.02
 			cameraOffset = GEO_PUNCH_CONFIG.approachCameraOffset
 			cameraDistance = GEO_PUNCH_CONFIG.approachCameraDistance
 			cameraLookAt = GEO_PUNCH_CONFIG.approachCameraLookAt
-		} else if (stage === "PULL_BACK" || stage === "POSITION_HOLD" || handState === HandState.WINDING_UP) {
+		} else if (
+			stage === "PULL_BACK" ||
+			stage === "POSITION_HOLD" ||
+			handState === HandState.WINDING_UP
+		) {
 			// Include WINDING_UP state check to handle first frame before stage is set
 			cameraSpeed = GEO_PUNCH_CONFIG.windUpCameraSpeed
 			cameraOffset = GEO_PUNCH_CONFIG.windUpCameraOffset
@@ -163,7 +173,10 @@ export function getDecommissionState() {
 		// LEO Flick camera handling
 		const config = LEO_FLICK_CONFIG
 
-		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
+		if (
+			handState === HandState.POINTING ||
+			handState === HandState.APPROACHING
+		) {
 			cameraSpeed = config.approachCameraSpeed
 			cameraOffset = config.approachCameraOffset
 			cameraDistance = config.approachCameraDistance
@@ -174,7 +187,7 @@ export function getDecommissionState() {
 			cameraOffset = config.preparingCameraOffset
 			cameraDistance = config.preparingCameraDistance
 			cameraLookAt = config.preparingCameraLookAt
-		} else if (handState === HandState.SLAPPING) {
+		} else if (handState === HandState.CONTACTING) {
 			// FLICKING phase for LEO
 			cameraSpeed = config.flickingCameraSpeed
 			cameraOffset = config.flickingCameraOffset
@@ -185,7 +198,10 @@ export function getDecommissionState() {
 		// Molniya Slap camera handling (default for non-GEO, non-LEO)
 		const config = MOLNIYA_SLAP_CONFIG
 
-		if (handState === HandState.POINTING || handState === HandState.APPROACHING) {
+		if (
+			handState === HandState.POINTING ||
+			handState === HandState.APPROACHING
+		) {
 			cameraSpeed = config.approachCameraSpeed
 			cameraOffset = config.approachCameraOffset
 			cameraDistance = config.approachCameraDistance
@@ -195,7 +211,7 @@ export function getDecommissionState() {
 			cameraOffset = config.windUpCameraOffset
 			cameraDistance = config.windUpCameraDistance
 			cameraLookAt = config.windUpCameraLookAt
-		} else if (handState === HandState.SLAPPING) {
+		} else if (handState === HandState.CONTACTING) {
 			cameraSpeed = config.slapCameraSpeed
 			cameraOffset = config.slapCameraOffset
 			cameraDistance = config.slapCameraDistance
@@ -227,7 +243,9 @@ export function startDecommission(satellite) {
 
 	// Prevent starting a new decommission if one is already in progress
 	if (activeDecommission) {
-		console.log("[Decommission] Cannot start - another decommission is in progress")
+		console.log(
+			"[Decommission] Cannot start - another decommission is in progress"
+		)
 		return false
 	}
 

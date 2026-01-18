@@ -26,7 +26,7 @@ export class SmartCamera {
 				}
 			}
 
-			const satPos = decommState.position.clone()
+			const handPos = decommState.position.clone()
 
 			// Calculate planet center in world space
 			const planetCenter = new THREE.Vector3()
@@ -36,17 +36,43 @@ export class SmartCamera {
 
 			// Offset target slightly to the right (sidebar compensation)
 			const sidebarCompensation = 0.4
-			const adjustedTarget = satPos.clone()
-			adjustedTarget.x += sidebarCompensation
 
-			// Calculate optimal camera position relative to satellite
-			const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
-			const targetDistance = decommState.targetZoomDistance
-			const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
-			// Lift camera slightly up relative to the planet-satellite vector
-			cameraOffset.y += targetDistance * 0.3
+			let targetCamPos
+			let adjustedTarget
 
-			const targetCamPos = satPos.clone().add(cameraOffset)
+			// Use orbit-specific camera config if available
+			if (decommState.cameraOffset && decommState.cameraDistance) {
+				// Camera position: hand position + (normalized offset * distance)
+				const offset = new THREE.Vector3(
+					decommState.cameraOffset.x,
+					decommState.cameraOffset.y,
+					decommState.cameraOffset.z
+				).normalize().multiplyScalar(decommState.cameraDistance)
+
+				targetCamPos = handPos.clone().add(offset)
+
+				// Camera looks at hand + lookAt offset
+				adjustedTarget = handPos.clone()
+				if (decommState.cameraLookAt) {
+					adjustedTarget.add(new THREE.Vector3(
+						decommState.cameraLookAt.x,
+						decommState.cameraLookAt.y,
+						decommState.cameraLookAt.z
+					))
+				}
+				adjustedTarget.x += sidebarCompensation
+			} else {
+				// Fallback: Legacy camera calculation
+				adjustedTarget = handPos.clone()
+				adjustedTarget.x += sidebarCompensation
+
+				const dirFromCenter = handPos.clone().sub(planetCenter).normalize()
+				const targetDistance = decommState.targetZoomDistance
+				const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
+				cameraOffset.y += targetDistance * 0.3
+
+				targetCamPos = handPos.clone().add(cameraOffset)
+			}
 
 			// === Occlusion Avoidance ===
 			// Check if the planet is blocking the view of the satellite
