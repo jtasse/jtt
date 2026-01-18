@@ -48,6 +48,10 @@ async function initReadingTime() {
 		const singlePostArticle = document.querySelector(".single-post article")
 
 		if (singlePostArticle) {
+			// Check if already processed
+			if (singlePostArticle.dataset.readingTimeProcessed) return
+			singlePostArticle.dataset.readingTimeProcessed = "true"
+
 			// Single Post View
 			const text = singlePostArticle.textContent
 			const range = calculateReadingTimeRange(text)
@@ -58,6 +62,10 @@ async function initReadingTime() {
 			const articles = document.querySelectorAll(".blog-content article")
 
 			for (const article of articles) {
+				// Check if already processed
+				if (article.dataset.readingTimeProcessed) continue
+				article.dataset.readingTimeProcessed = "true"
+
 				const link = article.querySelector("h3 a")
 				const meta = article.querySelector(".post-meta")
 
@@ -87,8 +95,58 @@ async function initReadingTime() {
 	}
 }
 
-if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", initReadingTime)
-} else {
-	initReadingTime()
+function filterPostsByTag() {
+	const params = new URLSearchParams(window.location.search)
+	const tag = params.get("tag")
+	if (!tag) return
+
+	const articles = document.querySelectorAll(".blog-content article")
+	articles.forEach((article) => {
+		const tags = article.dataset.tags ? article.dataset.tags.split(",") : []
+		if (tags.includes(tag)) {
+			article.style.display = ""
+		} else {
+			article.style.display = "none"
+		}
+	})
+
+	// Update heading to show filtered state
+	const heading = document.getElementById("posts-heading")
+	if (heading) {
+		// Avoid duplicate tags
+		const existingSpan = heading.querySelector("span")
+		if (!existingSpan) {
+			heading.innerHTML += ` <span style="font-size: 0.5em; vertical-align: middle; opacity: 0.7;">#${tag}</span>`
+		}
+	}
 }
+
+function init() {
+	initReadingTime()
+	filterPostsByTag()
+}
+
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", init)
+} else {
+	init()
+}
+
+// Watch for dynamic content injection (SPA navigation)
+let initTimeout
+const observer = new MutationObserver((mutations) => {
+	for (const mutation of mutations) {
+		if (mutation.addedNodes.length) {
+			// If blog content is added, re-initialize
+			if (document.querySelector(".blog-content")) {
+				if (initTimeout) clearTimeout(initTimeout)
+				initTimeout = setTimeout(() => {
+					init()
+				}, 50)
+				return
+			}
+		}
+	}
+})
+
+observer.observe(document.body, { childList: true, subtree: true })

@@ -37,6 +37,7 @@ import {
 import "../content/home/home.css"
 import "../content/about/about.css"
 import "../content/blog/blog.css"
+import "../content/blog/blog.js"
 import "../content/portfolio/portfolio.css"
 import "../content/orc-demo/orc-demo.css"
 import "../content/overlay.css"
@@ -120,7 +121,7 @@ function morphToOrcScene() {
 	pyramidGroup.scale.set(
 		flattenedMenuState.scale,
 		flattenedMenuState.scaleY,
-		flattenedMenuState.scaleZ
+		flattenedMenuState.scaleZ,
 	)
 	pyramidGroup.rotation.x = flattenedMenuState.rotationX
 
@@ -198,7 +199,7 @@ function morphFromOrcScene() {
 		pyramidGroup.scale.set(
 			initialPyramidState.scale,
 			initialPyramidState.scale,
-			initialPyramidState.scale
+			initialPyramidState.scale,
 		)
 
 		const labels = activeLabelManager ? activeLabelManager.labels : {}
@@ -431,7 +432,7 @@ window.addEventListener("resize", () => {
 		pyramidGroup.scale.set(
 			flattenedMenuState.scale,
 			flattenedMenuState.scaleY,
-			flattenedMenuState.scaleZ
+			flattenedMenuState.scaleZ,
 		)
 		if (
 			getCurrentSection() &&
