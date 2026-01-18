@@ -112,3 +112,9 @@
 	color: #04dddd;
 	text-decoration: underline;
 }
+
+.external-link-icon {
+	vertical-align: middle;
+	margin-left: 4px;
+	opacity: 0.8;
+}

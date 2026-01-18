@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
@@ -35,6 +35,13 @@
 				display: block;
 			}
 		</style>
+		<script>
+			// Local dev fallback: If we are at /old or /old/ and this SPA loaded,
+			// it means the server didn't serve the static file. Redirect explicitly.
+			if (window.location.pathname.replace(/\/$/, "") === "/old") {
+				window.location.href = "/old/index.html"
+			}
+		</script>
 	</head>
 	<body>
 		<div id="content"></div>

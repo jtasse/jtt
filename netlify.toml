@@ -14,6 +14,17 @@
   to = "/portfolio/docs/:splat"
   status = 200
 
+# Preserve old WordPress site (static export)
+[[redirects]]
+  from = "/old"
+  to = "/old/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/old/*"
+  to = "/old/:splat"
+  status = 200
+
 # SPA fallback for main Vite app routes
 [[redirects]]
   from = "/*"

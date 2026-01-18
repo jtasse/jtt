@@ -1,0 +1,1499 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	xmlns:georss="http://www.georss.org/georss" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:media="http://search.yahoo.com/mrss/"
+	>
+
+<channel>
+	<title>docs-as-tests &#8211; James.Tasse</title>
+	<atom:link href="https://jamestasse.tech/tag/docs-as-tests/feed/" rel="self" type="application/rss+xml" />
+	<link>https://jamestasse.tech</link>
+	<description>Technical.Writer.</description>
+	<lastBuildDate>Thu, 17 Jul 2025 21:17:48 +0000</lastBuildDate>
+	<language>en</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>http://wordpress.com/</generator>
+
+<image>
+	<url>https://jamestasse.tech/wp-content/uploads/2024/04/headshot_small.jpg?w=24</url>
+	<title>docs-as-tests &#8211; James.Tasse</title>
+	<link>https://jamestasse.tech</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+<site xmlns="com-wordpress:feed-additions:1">232433456</site><cloud domain='jamestasse.tech' port='80' path='/?rsscloud=notify' registerProcedure='' protocol='http-post' />
+<atom:link rel="search" type="application/opensearchdescription+xml" href="https://jamestasse.tech/osd.xml" title="James.Tasse" />
+	<atom:link rel='hub' href='https://jamestasse.tech/?pushpress=hub'/>
+	<item>
+		<title>Docs as Tests: Part II — The How</title>
+		<link>https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/</link>
+					<comments>https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#respond</comments>
+		
+		<dc:creator><![CDATA[James Tasse]]></dc:creator>
+		<pubDate>Tue, 03 Jun 2025 01:11:00 +0000</pubDate>
+				<category><![CDATA[Uncategorized]]></category>
+		<category><![CDATA[docs-as-tests]]></category>
+		<guid isPermaLink="false">http://jamestasse.tech/?p=978</guid>
+
+					<description><![CDATA[This is part two in a series of posts describing the value and implementation of Docs as Tests. Contents EDIT 6/30/25: I have created a companion video that illustrates the points of this post (and more). Just want to see how to set up and run Docs as Tests? Use this link to jump straight [&#8230;]]]></description>
+										<content:encoded><![CDATA[
+<div class="wp-block-group has-secondary-background-color has-background has-link-color has-nunito-font-family wp-elements-1851b7ec90111080d11588d2fffd7ab2 has-global-padding is-layout-constrained wp-container-core-group-is-layout-12243e0f wp-block-group-is-layout-constrained">
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>This is part two in a series of posts describing the value and implementation of <a href="https://www.docsastests.com/">Docs as Tests</a>.</p>
+</blockquote>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<p class="has-large-font-size">Contents</p>
+
+
+
+<ol class="wp-block-list">
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#previously-on-docs-as-tests">Previously On Docs as Tests</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#intended-audience">Intended Audience</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#technical-approach">Technical Approach</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#goals-for-this-post">Goals for this post</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#where-are-we">Where Are We?</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#prerequisites">Prerequisites</a>
+<ol style="list-style-type:upper-alpha" class="wp-block-list">
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#tools">Tools</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#code">Code</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#dependencies">Dependencies</a></li>
+</ol>
+</li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#structure-of-the-docsastests-demo-project">Structure of the docsastests-demo project</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#running-the-tests">Running the tests</a>
+<ol style="list-style-type:upper-alpha" class="wp-block-list">
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#ui-test-doc-detective">UI Test (Doc Detective)</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#reviewing-test-results-one-by-one">Reviewing Test Results One by One</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#making-verifying-the-fix">Making &amp; Verifying the Fix</a></li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#api-test-markdown-doctest">API Test (markdown-doctest)</a></li>
+</ol>
+</li>
+
+
+
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#what-now">What now?</a>
+<ol style="list-style-type:upper-alpha" class="wp-block-list">
+<li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/#code-coverage">Code Coverage</a></li>
+</ol>
+</li>
+</ol>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<p class="has-link-color wp-elements-e7aa6db0dfb5ecae646c2231bfafc0fe" style="border-width:2px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)"><strong>EDIT 6/30/25</strong>: I have created a <a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank" rel="noreferrer noopener">companion video</a> that illustrates the points of this post (and more). Just want to see how to set up and run Docs as Tests? Use <a href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=717s" target="_blank" rel="noreferrer noopener">this link</a> to jump straight there.</p>
+
+
+
+<h2 class="wp-block-heading" id="previously-on-docs-as-tests"><a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/">Previously</a> On Docs as Tests</h2>
+
+
+
+<ul class="wp-block-list">
+<li style="padding-bottom:var(--wp--preset--spacing--30)">I described the promise of the <a href="https://www.docsastests.com/">Docs As Tests discipline</a> coined by <a href="https://www.linkedin.com/in/manuelrbsilva">Manny Silva</a> and borrowed liberally from Manny&#8217;s fantastic <a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361">book of the same name</a>.</li>
+
+
+
+<li style="padding-bottom:var(--wp--preset--spacing--30)">I then went on to categorize some of the tools mentioned in the book before encouraging documentarians to start thinking about what part(s) of their environment might benefit the most from a Docs as Tests implementation.</li>
+
+
+
+<li>Finally, I presented a very simple <a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#demo">demo</a> showing how Docs as Tests (and Manny&#8217;s <a href="https://doc-detective.com/">Doc Detective</a> tool, in this case) can catch a divergence between a product (a web application in this scenario) and the documentation intended to describe it.</li>
+</ul>
+</div>
+</div>
+
+
+
+<h2 class="wp-block-heading" id="intended-audience">Intended Audience</h2>
+
+
+
+<p>My last post was very much focused on the business value of Docs as Tests and [hopefully] building some excitement in the minds of technical writers. But in this one my goal is to provide enough technical detail to whet the appetite of more technical folks (think developers, DocOps, etc.) while still bringing along those of you tech writers (or documentarians, if you prefer) that dared to dream after seeing the demo from last time.</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>By the way, it&#8217;s important I acknowledge that some documentarians write code and some software engineers write docs—I will do my best to meet you where you are!</p>
+</blockquote>
+
+
+
+<h2 class="wp-block-heading" id="technical-approach">Technical Approach</h2>
+
+
+
+<p>I fully admit that trying to create an instructional technical post for such a diverse set of readers is a bit like threading a needle, but I am going to try anyway <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60a.png" alt="😊" class="wp-smiley" style="height: 1em; max-height: 1em;" /> So I&#8217;ll start with some suggestions as you read this post:</p>
+
+
+
+<ul style="padding-top:0;padding-bottom:0" class="wp-block-list">
+<li style="padding-bottom:var(--wp--preset--spacing--30);line-height:1.5"><strong>For folks with <em>less </em>technical experience</strong>: this might feel a bit like onboarding at your last job (but hopefully more fun!), as I am going to introduce you to the tools, commands, etc. that you&#8217;ll need to run the demo from the <a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/">last post</a> (and more) yourself. If at any point you feel overwhelmed, that&#8217;s fine—you are welcome to <a href="mailto:james.tasse@gmail.com">email me</a> or take a break and come back in an hour, a day, or a week.</li>
+
+
+
+<li style="margin-top:0;margin-bottom:0;padding-bottom:var(--wp--preset--spacing--30);line-height:1.5"><strong><strong>For folks with <em>more </em>technical experience</strong></strong>: I&#8217;ll try to structure things so you can easily skip over sections you might know (e.g. &#8211; installing VS Code).</li>
+
+
+
+<li style="margin-top:var(--wp--preset--spacing--40);margin-bottom:var(--wp--preset--spacing--40);line-height:1.5"><strong>For <em>everyone</em></strong>: if you need help or have questions/feedback regarding this post; go ahead and <a href="mailto:james.tasse@gmail.com"></a><a href="mailto:james.tasse@gmail.com">email me</a> or leave a comment below. On the other hand, if your questions/feedback relate to Doc Detective, visit the Doc Detective <a href="https://discord.gg/2M7wXEThfF">Discord</a> or <a href="https://www.linkedin.com/company/doc-detective/posts/?feedView=all">LinkedIn</a> page.</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading" id="goals-for-this-post">Goals for this post</h2>
+
+
+
+<ol class="wp-block-list">
+<li style="padding-bottom:0">Discuss where the testing we&#8217;re doing fits with automated software tests</li>
+
+
+
+<li>Install prerequisites</li>
+
+
+
+<li>Run tests</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading" id="where-are-we">Where Are We?</h2>
+
+
+
+<p>Before getting into the technical stuff I want to paint a picture of where Docs as Tests <em>lives </em>in the software development and documentation space. If you have any familiarity with Continuous Integration / Continuous Delivery (or <a href="https://about.gitlab.com/topics/ci-cd/">CI/CD</a>), you&#8217;ve probably seen a diagram like the one below.</p>
+
+
+
+<details class="wp-block-details is-layout-flow wp-block-details-is-layout-flow" open><summary>CI/CD Diagram (click to collapse/expand)</summary>
+<figure class="wp-block-image alignleft size-large"><img width="1024" height="546" data-attachment-id="1034" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-3/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image.png" data-orig-size="1368,730" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=1024" src="https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=1024" alt="Diagram showing 'Continuous Integration / Continuous Delivery' process at a high level" class="wp-image-1034" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=1024 1024w, https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=300 300w, https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=768 768w, https://jamestasse.tech/wp-content/uploads/2025/06/image.png 1368w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<div style="height:0px" aria-hidden="true" class="wp-block-spacer"></div>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="has-text-align-left has-small-font-size" style="padding-top:var(--wp--preset--spacing--30)">Image source: <a href="https://www.primotech.com/ci-cd-pipeline-everything-you-need-to-know/">https://www.primotech.com/ci-cd-pipeline-everything-you-need-to-know/</a></p>
+</blockquote>
+</details>
+
+
+
+<p>Basically, the software (and docs) development process goes from left to right . Now for our purposes, we want to focus on the <code>test</code> step.</p>
+
+
+
+<details class="wp-block-details is-layout-flow wp-block-details-is-layout-flow" open><summary>CI/CD Diagram (test step)</summary>
+<figure class="wp-block-image alignleft size-large"><img width="1024" height="546" data-attachment-id="1036" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-4/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png" data-orig-size="1368,730" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=1024" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=1024" alt="" class="wp-image-1036" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=1024 1024w, https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=300 300w, https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=768 768w, https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png 1368w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+</details>
+
+
+
+<div style="height:0px" aria-hidden="true" class="wp-block-spacer"></div>
+
+
+
+<p style="padding-top:0">But let&#8217;s zoom in a bit.</p>
+
+
+
+<details class="wp-block-details is-layout-flow wp-block-details-is-layout-flow" open><summary>Types of Tests</summary>
+<figure class="wp-block-image alignleft size-large"><img width="813" height="1024" data-attachment-id="1040" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/software-vs-doc-testing-drawio/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png" data-orig-size="842,1061" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="software vs doc testing.drawio" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=238" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=813" src="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=813" alt="" class="wp-image-1040" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=813 813w, https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=119 119w, https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=238 238w, https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=768 768w, https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png 842w" sizes="(max-width: 813px) 100vw, 813px" /></figure>
+</details>
+
+
+
+<div style="height:0px" aria-hidden="true" class="wp-block-spacer"></div>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>A word of caution: this diagram is by no means a complete picture of all types of testing (especially on the software development side). Also, if you think about it too much you&#8217;ll see there&#8217;s a bit of an apples to oranges comparison going on<img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f605.png" alt="😅" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+</blockquote>
+
+
+
+<p>It seems fair to say that software testing is more mature as a discipline than Docs as Tests—after all, it has been around for much longer. This is reflected in the diagram  above where I show the various flavors of software testing.</p>
+
+
+
+<p>But Docs as Tests is catching up fast! When you look at the Venn diagram in the <code>Docs</code> section of the diagram, do you see anything familiar? You might recall (or not, which is fine!) how in the last post I shared <a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#the-goods">an image listing some of the tools</a> we have available for testing various parts of our docs.</p>
+
+
+
+<p>Below is that image [slightly altered for correctness/emphasis] again. The takeaway here is that despite Docs As Tests being the new  kid (compared to software testing), we already have lots of tools we can use for our tests!</p>
+
+
+
+<figure class="wp-block-image alignleft size-large"><img loading="lazy" width="842" height="222" data-attachment-id="1046" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/testing_tools_v2-drawio/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png" data-orig-size="842,222" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="Testing_Tools_v2.drawio" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=842" src="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=842" alt="" class="wp-image-1046" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png 842w, https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=300 300w, https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=768 768w" sizes="(max-width: 842px) 100vw, 842px" /></figure>
+
+
+
+<div style="height:0px" aria-hidden="true" class="wp-block-spacer"></div>
+
+
+
+<p>All right, that&#8217;s enough mental positioning—let&#8217;s get your environment ready to do some testing!</p>
+
+
+
+<h2 class="wp-block-heading" id="prerequisites">Prerequisites</h2>
+
+
+
+<figure class="wp-block-pullquote"><blockquote><p>You can&#8217;t save the world without the right tools, especially a crowbar.</p><cite><a href="https://half-life.fandom.com/wiki/Gordon_Freeman">Gordon Freeman</a> (probably)</cite></blockquote></figure>
+
+
+
+<p>I am going to list the tools that you&#8217;ll need and where to get them. I believe they are all available in Windows, Mac, and Linux environments, but <a href="mailto:james.tasse@gmail.com">let me know</a> if you run into issues and we&#8217;ll figure something out.</p>
+
+
+
+<p>Also, I know that people might prefer different tools. For example, the newer Cursor <a href="https://en.wikipedia.org/wiki/Integrated_development_environment">IDE</a> has gained some popularity. Of course, if you are using a different IDE than VS Code, I suspect you already have the tools listed below (or equivalent) installed and can skip down to cloning my repo <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60a.png" alt="😊" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<p>OK, let&#8217;s get started.</p>
+
+
+
+<h3 class="wp-block-heading" id="tools">Tools</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Download and install <a href="https://git-scm.com/downloads">Git</a>.</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Don&#8217;t be intimidated by the Git installer: it has many screens with different options (or at least the Windows one does), but the defaults ought to be fine in most cases. Like good defaults should be!</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>Download and install <a href="https://code.visualstudio.com/download">Visual Studio Code (VS Code)</a> (or your preferred IDE)</li>
+</ul>
+
+
+
+<ul class="wp-block-list">
+<li>Download and install <a href="https://nodejs.org/en/download">Node.js</a></li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>I can vouch for Node.js major version 22 working fine with the tools we will use in these tests, but thankfully you can install multiple versions of Node if you need to use an older version for some reason.</p>
+</blockquote>
+
+
+
+<h3 class="wp-block-heading" id="code">Code</h3>
+
+
+
+<ul class="wp-block-list">
+<li><a href="https://git-scm.com/docs/git-clone">Clone</a> my <a href="https://github.com/jtasse/docsastests-demo">docsastests-demo</a> repository</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>This process will put a copy of my docsastests-demo repo on your machine. I&#8217;ll provide steps that should work in any environment.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>Open a command prompt or terminal of some kind</li>
+
+
+
+<li>Navigate to the directory where you want to store the code repository (note that this is totally arbitrary). I believe there are some slight differences in syntax depending on the OS and/or terminal, but let&#8217;s suppose you keep (or want to keep) your git projects within the <code>C:/git</code> directory. In this case you would run the command:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>cd c:/git</code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>You&#8217;ll know you&#8217;re in the right place if you see something like following left of the blinking cursor in the terminal: </li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code><code>c:\git&gt;</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>OK, now go ahead  and copy the following command and run it in your terminal:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>git clone https://github.com/jtasse/docsastests-demo.git</code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>You should see <code>Cloning into 'docsastests-demo'…</code> and some other messages appear in your terminal. If there are no errors, you can move on to installing dependencies.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading" id="dependencies">Dependencies</h3>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Dependencies are software (often referred to as <strong>packages</strong>) that we can include in a project if we don&#8217;t want to write the code for the corresponding functions ourselves. For example, since I do not want to write a tool that can auto-detect assertions in markdown and test them, we are going to install Doc Detective as a dependency.</p>
+</blockquote>
+
+
+
+<p>One nice thing about dependencies is that it is generally quite easy to install them once they are defined in your project.</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Further reading: if you&#8217;d like to see the dependencies for the <code>docsastests-demo</code> repo (or any other node-based project), open the <a href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json">package.json</a> file at the root of the repo.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>OK, now open a terminal (or use an existing one) and navigate to the root of the now-cloned <code>docsastests-demo</code> repo. For example, if you put it in the location I used above, the command would be:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>cd C:\git\docsastests-demo</code></pre>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Tip: modern IDEs like VS Code tend to have built-in <a href="https://code.visualstudio.com/docs/terminal/getting-started">terminal</a> functionality. Although it&#8217;s not required to use it, you might find that it cuts down on context-switching and helps you ensure you are in the right place (when running commands that are directory-sensitive)</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>Now run the following command:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>npm install</code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>You should see some activity in your terminal. This command can take a long time to run in bigger projects, but we only have a few packages so it shouldn&#8217;t take more than a couple minutes.</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>NOTE: after the package install is complete you might see a message in your output that looks like this: </p>
+
+
+
+<pre class="wp-block-code"><code>19 vulnerabilities (6 moderate, 13 high) </code></pre>
+
+
+
+<p>Unless you plan on creating and releasing production software from your current project/code, these vulnerabilities won&#8217;t affect you. <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f479.png" alt="👹" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+</blockquote>
+
+
+
+<h2 class="wp-block-heading" id="structure-of-the-docsastests-demo-project">Structure of the docsastests-demo project</h2>
+
+
+
+<p>We&#8217;ve installed all the stuff! However, before we jump into testing a quick tour of the project is in order. </p>
+
+
+
+<p>You can think of <code>docsastests-demo</code> as a Frankenstein  application that has one purpose—helping you learning how Docs as Test-ing (ugh, I know) works. After you go through the demo you are free to copy it, extend it, or delete it as you see fit. But for now, here&#8217;s a reference image and corresponding docs for how things are laid out:</p>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow" style="flex-basis:50%">
+<figure class="wp-block-image size-large"><img loading="lazy" width="313" height="751" data-attachment-id="1157" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-36/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png" data-orig-size="313,751" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=125" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=313" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=313" alt="Annotated screenshot of the docsastests-demo project's files as viewed in VS Code" class="wp-image-1157" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png 313w, https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=63 63w, https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=125 125w" sizes="(max-width: 313px) 100vw, 313px" /></figure>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow" style="flex-basis:50%">
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: the content of this project workspace screenshot will become out of date almost immediately, as some folders (like the test results)  will update with every test. However, I will try not to change the <strong>structure </strong>of the project more than is necessary</p>
+</blockquote>
+
+
+
+<ol class="wp-block-list">
+<li><strong>product</strong>: folder containing the files for the web application we are testing</li>
+
+
+
+<li><strong>readthedocs</strong>: folder containing our <a href="https://about.readthedocs.com/">Read the Docs</a> implementation</li>
+
+
+
+<li><strong>source</strong>: this is the folder where I am storing markdown files to be tested (we will use the highlighted <code>account-setup.md</code> file for our first test)</li>
+
+
+
+<li><strong>results</strong>: this is the folder where <code>Doc Detective</code> will store test results (you can change this in <code>.doc-detective.json</code>)</li>
+
+
+
+<li><strong>.markdown-doctest-setup.js</strong>: contains required setup code for markdown-doctest.</li>
+
+
+
+<li><strong>.doc-detective.json</strong>: the configuration file for Doc Detective (see the Doc Detective <a href="https://doc-detective.com/docs/category/configuration">config docs</a> for more info)</li>
+
+
+
+<li><strong>package.json</strong>: this file manages packages for the project (see the <a href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json">npm docs</a> for more info)</li>
+</ol>
+</div>
+</div>
+
+
+
+<h2 class="wp-block-heading" id="running-the-tests">Running the tests</h2>
+
+
+
+<h3 class="wp-block-heading" id="ui-test-doc-detective">UI Test (<a href="https://doc-detective.com/">Doc Detective</a>)</h3>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>In this test we are going to use Doc Detective to run the test described in the <a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#demo">demo</a> portion of the <a href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/">previous blog post</a>. After confirming that the test fails, we are going to make the required change in our docs and run the tests again to verify the issue is resolved.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>Begin by opening the <code>account-setup.md</code> file, which lives at the path <code>readthedocs/docs/source/account-setup.md</code>. (This file is also highlighted in my workspace screenshot above).</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: paths can be a bit confusing depending on the use case, but I usually mean &#8220;path if starting from the workspace root&#8221;. If I mean something else, I will try to call it out.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>OK, so you should see markdown match what I have here:</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="716" height="175" data-attachment-id="1066" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-8/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png" data-orig-size="716,175" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=716" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=716" alt="Screenshot of the account-setup.md markdown file" class="wp-image-1066" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png 716w, https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=300 300w" sizes="(max-width: 716px) 100vw, 716px" /></figure>
+
+
+
+<details class="wp-block-details is-layout-flow wp-block-details-is-layout-flow"><summary>(Optional &#8211; VS Code Only) see detected Doc Detective tests before they run</summary>
+<ul class="wp-block-list">
+<li>I didn&#8217;t want to lengthen the critical path of this post, but if you have a minute to spare I think you&#8217;ll find the Doc Detective extension useful. To get it, do the following:</li>
+</ul>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<figure class="wp-block-image size-large"><img loading="lazy" width="478" height="326" data-attachment-id="1075" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-12/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png" data-orig-size="478,326" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=478" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=478" alt="Image calling out steps for getting the Doc Detective VS Code extension" class="wp-image-1075" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png 478w, https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=300 300w" sizes="(max-width: 478px) 100vw, 478px" /></figure>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<ol class="wp-block-list">
+<li>Click the extensions icon on the left sidebar (it looks like a block being added to 3 existing blocks)</li>
+
+
+
+<li>Search for Doc Detective</li>
+
+
+
+<li>Install the extension via the pane that appears (not shown)</li>
+</ol>
+</div>
+</div>
+
+
+
+<ul class="wp-block-list">
+<li>Once the installation is complete, you can access the Doc Detective extension by clicking its icon in the sidebar</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="476" height="346" data-attachment-id="1077" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-13/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png" data-orig-size="476,346" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=476" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=476" alt="Shows what the Doc Detective VS Code extension looks like in the VS Code sidebar" class="wp-image-1077" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png 476w, https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=300 300w" sizes="(max-width: 476px) 100vw, 476px" /></figure>
+
+
+
+<ul class="wp-block-list">
+<li>You should now see the tests that Doc Detective found in the <code>account-setup.md</code> file.</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: if you do not see any content, go back and make sure you have <code>account-setup.md</code> open</p>
+</blockquote>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="587" height="328" data-attachment-id="1068" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-9/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png" data-orig-size="587,328" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=587" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=587" alt="" class="wp-image-1068" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png 587w, https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=300 300w" sizes="(max-width: 587px) 100vw, 587px" /></figure>
+</details>
+
+
+
+<ul class="wp-block-list">
+<li>Before we can test our docs against our product, we need to bring the product page (located at <code>product/index.html</code>) online. To do this, open a terminal and run the command:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>node server.js</code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>You should get a confirmation in the terminal that the server is running:</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="386" height="62" data-attachment-id="1124" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-25/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png" data-orig-size="386,62" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=386" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=386" alt="" class="wp-image-1124" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png 386w, https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=300 300w" sizes="(max-width: 386px) 100vw, 386px" /></figure>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>NOTE about terminals: when you run a process like a Node server in a terminal, the process essentially takes that terminal over. So if you want to run other commands without interrupting the server, you need a new terminal instance.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>First, open a new terminal instance.</li>
+</ul>
+
+
+
+<details class="wp-block-details is-layout-flow wp-block-details-is-layout-flow"><summary>(Optional) VS Code Terminal Management</summary>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>ANOTHER note about terminals: you could manually run a new instance of Git Bash, PowerShell, etc. outside of your IDE and <code>cd</code> to the project directory; but it&#8217;s worth mentioning that VS Code does have a nice menu for adding and managing terminals.</p>
+</blockquote>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="796" height="301" data-attachment-id="1114" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-20/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png" data-orig-size="796,301" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=796" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=796" alt="" class="wp-image-1114" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png 796w, https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=300 300w, https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=768 768w" sizes="(max-width: 796px) 100vw, 796px" /></figure>
+</details>
+
+
+
+<ul class="wp-block-list">
+<li>Now, from the new terminal (not the one running the Node server), execute the following command:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>npx doc-detective --input readthedocs/docs/source/account-setup.md</code></pre>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: <code>npx</code> is a Node command that lets you run&#8230;other commands. Further reading in the <a href="https://docs.npmjs.com/cli/v8/commands/npx">npm docs</a>.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>This test might take a couple minutes, and you&#8217;ll see a lot of activity in the terminal. Keep waiting until you see the following:</li>
+</ul>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<figure class="wp-block-image size-large"><img loading="lazy" width="620" height="111" data-attachment-id="1117" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-22/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png" data-orig-size="620,111" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=620" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=620" alt="Annotated screenshot of the terminal at this step of the process" class="wp-image-1117" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png 620w, https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=300 300w" sizes="(max-width: 620px) 100vw, 620px" /></figure>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<ol class="wp-block-list">
+<li>Indicates where the test results for this run have been saved.</li>
+
+
+
+<li>Shows that the terminal is ready to accept new commands.</li>
+</ol>
+</div>
+</div>
+
+
+
+<ul class="wp-block-list">
+<li>At this point we <em>could </em>just scroll up in the terminal to see the test results, but because of all the output in the terminal I find it&#8217;s easy to get lost there. Instead, let&#8217;s go ahead and open the results file directly.</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="673" height="209" data-attachment-id="1120" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-24/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png" data-orig-size="673,209" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=673" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=673" alt="Screenshot of the top of the Doc Detective test results file" class="wp-image-1120" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png 673w, https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=300 300w" sizes="(max-width: 673px) 100vw, 673px" /></figure>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>Tip</strong>: even within the results file, there is still a lot of content! To jump to the results we care about the most, do a find (<code>Ctrl + F</code>) in the file and search for:</p>
+
+
+
+<pre class="wp-block-code"><code>"steps": &#091;</code></pre>
+</blockquote>
+
+
+
+<p>OK, we made it to our test results! But rather than relying on screenshots, let&#8217;s review each JSON result one block at a time&#8230;</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: if you see any discrepancies in your test results compared to mine, feel free to <a href="mailto:james.tasse@gmail.com">reach out to me</a>.</p>
+</blockquote>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="600" height="448" data-attachment-id="1166" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-37/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png" data-orig-size="600,448" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=600" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=600" alt="" class="wp-image-1166" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png 600w, https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=300 300w" sizes="(max-width: 600px) 100vw, 600px" /></figure>
+
+
+
+<h3 class="wp-block-heading" id="reviewing-test-results-one-by-one">Reviewing Test Results One by One</h3>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: if you installed the optional Doc Detective extension in VS Code, the structure of these results should look familiar</p>
+</blockquote>
+
+
+
+<p>Let&#8217;s start with the first block:</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>Style note</strong>: apologies for the white-themed code blocks appearing within an otherwise-dark theme (JSON does look a little better in this block style than a bare-bones dark code block). If anyone knows how to change this behavior in the WordPress block editor I would love to hear it <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60a.png" alt="😊" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+</blockquote>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+                {
+                  "result": "PASS",
+                  "resultDescription": "Opened URL.",
+                  "goTo": {
+                    "url": "http://localhost:3000/"
+                  },
+                  "stepId": "67f92b95-bae1-4c15-b9b8-4d5f3c4030b6"
+                }
+</pre></div>
+
+
+<p>Nice! With this test, Doc Detective:</p>
+
+
+
+<ol class="wp-block-list">
+<li>Saw the URL in the first step of our <code>account-setup.md</code> file </li>
+
+
+
+<li>Attempted to access the URL and succeeded</li>
+
+
+
+<li>Reported a &#8220;PASS&#8221; result for this test</li>
+</ol>
+
+
+
+<p>Let&#8217;s look at the next test:</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+{
+                  "result": "PASS",
+                  "resultDescription": "Returned 200",
+                  "checkLink": {
+                    "url": "http://localhost:3000/"
+                  },
+                  "stepId": "9681b914-1cb4-42d2-8e9e-0af1d21602f6"
+                }
+</pre></div>
+
+
+<p>If you&#8217;re not familiar with <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status">HTTP response codes</a>, a <code>200</code> means that the request has succeeded. To me, the previous test result (i.e. &#8211; successful navigation to a web page) seemingly renders this test unnecessary; but there could be a reason Doc Detective runs this test separately, and it is definitely not doing any harm!</p>
+
+
+
+<p>Next!</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+                {
+                  "outputs": {
+                    "element": {
+                      "text": "Email"
+                    }
+                  },
+                  "result": "PASS",
+                  "resultDescription": "Found an element matching selector. Found element by text.",
+                  "find": "Email",
+                  "stepId": "79fe9fb3-0843-4711-94fa-bc757493c9e5"
+                }
+</pre></div>
+
+
+<p>This is an example of Doc Detective being quite clever. Here&#8217;s what it did:</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Let&#8217;s start using DD as shorthand for Doc Detective, which delivers (at least) a double-dose of testin&#8217;</p>
+</blockquote>
+
+
+
+<ol class="wp-block-list">
+<li>DD saw that email in <code>account-setup.md</code> was wrapped in double-asterisks (so <code>**Email**</code>).</li>
+
+
+
+<li>DD does not think (as far as I know?), but if it did, it made a note of the above and thought &#8220;I&#8217;m going to go and look for an email field on the product page&#8221; mentioned in step 1.</li>
+
+
+
+<li>DD determined that the product page *indeed contained an email field, and reported that it &#8220;Found an element matching selector&#8221; (i.e. &#8211; <code>Email</code>)</li>
+
+
+
+<li>Recorded a <code>PASS </code>result for this test</li>
+</ol>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="has-text-color has-link-color wp-elements-0832f1172bbf0ba41ba579afd4a3c181" style="color:#cfcb0e">*<strong>CAUTION</strong>: I wanted to call out here that Doc Detective appears to require a field label (in this case, <code>&lt;label for="email"&gt;Email&lt;/label&gt;</code>) in order to pick up <code>Email</code> or other fields. If you are testing a web application and its syntax does not align with this approach then you might not be able to use DD autodetect in the relevant areas.</p>
+</blockquote>
+
+
+
+<p>Next test.</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+{
+                  "outputs": {
+                    "element": {
+                      "text": "New Password"
+                    }
+                  },
+                  "result": "PASS",
+                  "resultDescription": "Found an element matching selector. Found element by text.",
+                  "find": "New Password",
+                  "stepId": "7b331142-38da-46f3-b9ef-feef72202593"
+                }
+</pre></div>
+
+
+<p>This test was very similar to the test for the Email field, with DD looking for a <code>New Password</code> field instead. It passed once DD found the following label in index.html: <code>&lt;label for="password"&gt;New Password&lt;/label&gt;</code></p>
+
+
+
+<p>All right, we&#8217;ve made it to the last test of this particular demo!</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+                {
+                  "result": "FAIL",
+                  "resultDescription": "No elements matched selector or text.",
+                  "click": "Create Account",
+                  "stepId": "d942f059-bb0c-4f6a-862f-d948d976538c"
+                },
+</pre></div>
+
+
+<p>In this test, DD searched for an element with the text &#8220;Create Account&#8221;, but couldn&#8217;t find it. So the test failed.</p>
+
+
+
+<p>In a real world example, this might manifest as the Development/Engineering team changing the text of a button without informing the Docs team that the corresponding documentation needed to be updated. But we have tests now, and we just caught it before the release! <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f973.png" alt="🥳" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: I do see another <code>"Create Account not found"</code> failed test that appears identical to the one above. I am not sure why there is another one, but I am going to ignore it for now and move on.</p>
+</blockquote>
+
+
+
+<h3 class="wp-block-heading" id="making-verifying-the-fix">Making &amp; Verifying the Fix</h3>
+
+
+
+<p>OK, so Doc Detective found a discrepancy between the docs and the product. Awesome! But what happens next?</p>
+
+
+
+<p>While it&#8217;s possible that the change in the product was a mistake, it&#8217;s probably more likely that the Product team wanted to change the button language to what it is now (i.e. &#8211; <code>Sign Up</code> instead of <code>Create Account</code>) and they just forgot to tell the Docs team. (I mean hopefully they forgot and it&#8217;s no all out war between departments! <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f4a5.png" alt="💥" class="wp-smiley" style="height: 1em; max-height: 1em;" />).</p>
+
+
+
+<p>Accordingly, it would probably be a good idea for your Docs team to reach out to Product to confirm that this was indeed a misunderstanding. Let&#8217;s assume that it was, in which case there is no further action required by the Product or Engineering teams for this particular case.</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Obviously if the Docs team is implementing Docs as Tests, at some point one would expect a dialogue between the Docs team and Product, Engineering, etc. That is outside the scope of this (already long) post, but Manny Silva&#8217;s <a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation-ebook/dp/B0F1H97QSL/ref=tmm_kin_swatch_0">Docs as Tests</a> book does a good job addressing it!</p>
+</blockquote>
+
+
+
+<p>But now that we know what the &#8220;blessed&#8221; language from Product looks like, let&#8217;s go ahead and update our docs.</p>
+
+
+
+<ul class="wp-block-list">
+<li>First, open <code>readthedocs/docs/source/account-setup.md</code> in your IDE.</li>
+
+
+
+<li>Now, on line 6 where it reads: <code>4. Click <strong>**Create Account**</strong></code>&#8230;</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="493" height="175" data-attachment-id="1128" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-26/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png" data-orig-size="493,175" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=493" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=493" alt="Screenshot of the 'account-setup.md' file before correcting the button language" class="wp-image-1128" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png 493w, https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=300 300w" sizes="(max-width: 493px) 100vw, 493px" /></figure>
+
+
+
+<ul class="wp-block-list">
+<li>&#8230;change it so it reads <code>4. Click <strong>**Sign Up**</strong>.</code> (Be sure to save your changes).</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="486" height="178" data-attachment-id="1130" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-27/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png" data-orig-size="486,178" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=486" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=486" alt="Screenshot of the 'account-setup.md' file after correcting the button language" class="wp-image-1130" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png 486w, https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=300 300w" sizes="(max-width: 486px) 100vw, 486px" /></figure>
+
+
+
+<ul class="wp-block-list">
+<li>Now go ahead and run your tests again:</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>npx doc-detective --input readthedocs/docs/source/account-setup.md</code></pre>
+
+
+
+<ul class="wp-block-list">
+<li>When the test run finishes, you should see something that makes you very happy: all items passed!</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="556" height="125" data-attachment-id="1133" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-28/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png" data-orig-size="556,125" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=556" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=556" alt="Screenshot of the terminal showing all Doc Detective tests passing" class="wp-image-1133" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png 556w, https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=300 300w" sizes="(max-width: 556px) 100vw, 556px" /></figure>
+
+
+
+<p>But just to be sure, let&#8217;s take at the formerly failing test which is now passing:</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: jscript; title: ; notranslate">
+                {
+                  "outputs": {
+                    "element": {
+                      "text": "Sign Up"
+                    }
+                  },
+                  "result": "PASS",
+                  "resultDescription": "Found an element matching selector. Found element by text.",
+                  "find": "Sign Up",
+                  "stepId": "933314a7-0851-4319-ad00-355b024f9390"
+                }
+</pre></div>
+
+
+<p>Bravo—you just resolved a discrepancy between the docs and the product before it ever got out the door! <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f973.png" alt="🥳" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<h3 class="wp-block-heading" id="api-test-markdown-doctest">API Test (<a href="https://github.com/Widdershin/markdown-doctest">markdown-doctest</a>)</h3>
+
+
+
+<p>Up until now, our testing has been all about the UI. But I wanted to conclude this post by dipping into another area, and why not API testing?</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>In this test we&#8217;ll use markdown-doctest to find an issue with one of our code snippets. As with our previous test, we&#8217;ll fix the issue (this time in our code snippet) and verify our test passes.</p>
+</blockquote>
+
+
+
+<ul class="wp-block-list">
+<li>All right, since we don&#8217;t need a local web server for this test, you can (optionally) stop the Node server you ran in the previous test by opening the terminal where it&#8217;s running and pressing <code>CTRL + C</code>.</li>
+
+
+
+<li>Now go ahead and open the file <code>readthedocs/docs/source/js.md</code> in your IDE.</li>
+</ul>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<figure class="wp-block-image size-large"><img loading="lazy" width="656" height="305" data-attachment-id="1148" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-31/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png" data-orig-size="656,305" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=656" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=656" alt="Annotated screenshot of the `js.md` file" class="wp-image-1148" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png 656w, https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=300 300w" sizes="(max-width: 656px) 100vw, 656px" /></figure>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<ol class="wp-block-list">
+<li>Remember that this is a markdown file (even though it is comprised mostly of JavaScript)</li>
+
+
+
+<li>In markdown, 3 backticks (&#8216;`&#8217;) followed by a language identifier begins a code block (or code snippet).</li>
+
+
+
+<li>This is the most important line for our testing. Keep an eye on that URL <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f9d0.png" alt="🧐" class="wp-smiley" style="height: 1em; max-height: 1em;" /></li>
+</ol>
+</div>
+</div>
+</div>
+
+
+
+<p>Cool. We already did our setup earlier, so let&#8217;s go ahead and run the test!</p>
+
+
+
+<pre class="wp-block-code"><code>npx markdown-doctest</code></pre>
+
+
+
+<p>The output here is a bit misleading on account of some combination of A) the JavaScript I told Copilot to write for our snippet and B) the expected usage for markdown-doctest. <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60f.png" alt="😏" class="wp-smiley" style="height: 1em; max-height: 1em;" /> But that&#8217;s OK, as we can still get a meaningful result. As I&#8217;ve highlighted below, the test reported that it encountered an HTTP response code of <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/404">404</a> (not found) when trying to do a <code>fetch</code> from the endpoint at <code>https://jsonplaceholder.typicode.com/todoz/1</code>.</p>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="598" height="314" data-attachment-id="1150" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-32/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png" data-orig-size="598,314" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=598" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=598" alt="Screenshot of the terminal showing the expected 404 (not found) error" class="wp-image-1150" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png 598w, https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=300 300w" sizes="(max-width: 598px) 100vw, 598px" /></figure>
+
+
+
+<ul class="wp-block-list">
+<li>Wait a minute, what&#8217;s a <em>TODOz </em>list? <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f601.png" alt="😁" class="wp-smiley" style="height: 1em; max-height: 1em;" /> Let&#8217;s go back to our <code>readthedocs/docs/source/js.md</code> file and fix the code snippet.</li>
+
+
+
+<li>Change the URL on line 7 from <code>https://jsonplaceholder.typicode.com/<strong>todoz</strong>/1</code> to <code>https://jsonplaceholder.typicode.com/<strong>todos</strong>/1</code> and save your changes.</li>
+
+
+
+<li>Your js.md file should now look like this:</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="698" height="300" data-attachment-id="1154" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-34/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png" data-orig-size="698,300" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=698" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=698" alt="Screenshot showing the corrected version of the `js.md` file" class="wp-image-1154" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png 698w, https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=300 300w" sizes="(max-width: 698px) 100vw, 698px" /></figure>
+
+
+
+<ul class="wp-block-list">
+<li>Now run the test again</li>
+</ul>
+
+
+
+<pre class="wp-block-code"><code>npx markdown-doctest</code></pre>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="183" height="104" data-attachment-id="1155" data-permalink="https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/image-35/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png" data-orig-size="183,104" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png?w=183" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png?w=183" src="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png?w=183" alt="Screenshot of the terminal showing that all tests passed." class="wp-image-1155" srcset="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png 183w, https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png?w=150 150w" sizes="(max-width: 183px) 100vw, 183px" /></figure>
+
+
+
+<p>Look, no 404! Essentially, we just verified that after fixing a typo in one of our code snippets, the test suite is now able to reach the correct endpoint without errors. And because we caught it before the docs were released, we didn&#8217;t have to hear about the developers who called Support asking why their TODOz apps weren&#8217;t working. <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f602.png" alt="😂" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<p>Great job! <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f44d.png" alt="👍" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<h2 class="wp-block-heading" id="what-now">What now?</h2>
+
+
+
+<p>Since you&#8217;ve now tested a UI and API using different tools, you can officially say you have Docs as Tests experience in those areas <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60e.png" alt="😎" class="wp-smiley" style="height: 1em; max-height: 1em;" /> And seriously, give yourself credit for all of the work it took to get here. Last I checked, the widget that indicates &#8220;reading time&#8221; for this post was at 20 minutes, but I suspect it took you at least 2-3 times make it through all of that setup and testing (probably more for the less technical folks <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1fae1.png" alt="🫡" class="wp-smiley" style="height: 1em; max-height: 1em;" />).</p>
+
+
+
+<p>But obviously it doesn&#8217;t end here. For my part, I&#8217;m going to move on to making a video that covers this and the last post. I know some people vibe with learning from videos more than reading, and I also have a large video-shaped hole in my portfolio <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1fae4.png" alt="🫤" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<h3 class="wp-block-heading" id="code-coverage">Code Coverage</h3>
+
+
+
+<p>After that, there is a topic that I think deserves some attention: <a href="https://www.atlassian.com/continuous-delivery/software-testing/code-coverage">code coverage</a>. You&#8217;ve probably noticed that I have a strong preference for running tests that are auto-detected using tools like Doc Detective. Aside from the fact that these tests have high return on investment, they also scale with your docs automatically.</p>
+
+
+
+<p>However, if code coverage of documentation-based tests is taken into account, it becomes easier for us to have confidence that we are &#8220;covering&#8221; all of our products with these tests. And, crucially, this can help us prevent our hand-crafted tests from becoming out of sync with our docs.</p>
+
+
+
+<p>That&#8217;s it for now. Follow me on <a href="https://www.linkedin.com/in/jtasse/">LinkedIn</a> if you&#8217;d like to be notified when I publish a video or another blog post. </p>
+
+
+
+<p>Cheers.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://jamestasse.tech/2025/06/02/docs-as-tests-part-ii-the-how/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">978</post-id>
+		<media:thumbnail url="https://jamestasse.tech/wp-content/uploads/2025/06/doc_engineer_wide.png" />
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/doc_engineer_wide.png" medium="image">
+			<media:title type="html">doc_engineer_wide</media:title>
+		</media:content>
+
+		<media:content url="https://2.gravatar.com/avatar/2bdb39ac805d46b9891ce6cf120046ae699ebc4e9c6b1b12c7d995ae6da95617?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">jamestasse</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image.png?w=1024" medium="image">
+			<media:title type="html">Diagram showing &#039;Continuous Integration / Continuous Delivery&#039; process at a high level</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-1.png?w=1024" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/software-vs-doc-testing.drawio.png?w=813" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/testing_tools_v2.drawio.png?w=842" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-33.png?w=313" medium="image">
+			<media:title type="html">Annotated screenshot of the docsastests-demo project&#039;s files as viewed in VS Code</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-5.png?w=716" medium="image">
+			<media:title type="html">Screenshot of the account-setup.md markdown file</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-9.png?w=478" medium="image">
+			<media:title type="html">Image calling out steps for getting the Doc Detective VS Code extension</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-10.png?w=476" medium="image">
+			<media:title type="html">Shows what the Doc Detective VS Code extension looks like in the VS Code sidebar</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-6.png?w=587" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-22.png?w=386" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-17.png?w=796" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-19.png?w=620" medium="image">
+			<media:title type="html">Annotated screenshot of the terminal at this step of the process</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-21.png?w=673" medium="image">
+			<media:title type="html">Screenshot of the top of the Doc Detective test results file</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-34.png?w=600" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-23.png?w=493" medium="image">
+			<media:title type="html">Screenshot of the &#039;account-setup.md&#039; file before correcting the button language</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-24.png?w=486" medium="image">
+			<media:title type="html">Screenshot of the &#039;account-setup.md&#039; file after correcting the button language</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-25.png?w=556" medium="image">
+			<media:title type="html">Screenshot of the terminal showing all Doc Detective tests passing</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-28.png?w=656" medium="image">
+			<media:title type="html">Annotated screenshot of the `js.md` file</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-29.png?w=598" medium="image">
+			<media:title type="html">Screenshot of the terminal showing the expected 404 (not found) error</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-31.png?w=698" medium="image">
+			<media:title type="html">Screenshot showing the corrected version of the `js.md` file</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/06/image-32.png?w=183" medium="image">
+			<media:title type="html">Screenshot of the terminal showing that all tests passed.</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Docs as Tests: Part I — On a High (Level)</title>
+		<link>https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/</link>
+					<comments>https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#comments</comments>
+		
+		<dc:creator><![CDATA[James Tasse]]></dc:creator>
+		<pubDate>Thu, 29 May 2025 16:15:29 +0000</pubDate>
+				<category><![CDATA[Uncategorized]]></category>
+		<category><![CDATA[docs-as-tests]]></category>
+		<guid isPermaLink="false">http://jamestasse.tech/?p=881</guid>
+
+					<description><![CDATA[Docs as Tests: the series! OK the name needs work, but this is my first post in what I expect to be a series of [at least 2] Docs as Tests posts (and probably some videos as well) Table of Contents EDIT 6/30/25: I have created a companion video that illustrates the points of this [&#8230;]]]></description>
+										<content:encoded><![CDATA[
+<div class="wp-block-group has-nunito-font-family is-layout-flow wp-block-group-is-layout-flow">
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>Docs as Tests: the series! OK the name needs work, but this is my first post in what I expect to be a series of [at least 2] Docs as Tests posts (and probably some videos as well)</p>
+</blockquote>
+
+
+
+<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-28f84493 wp-block-columns-is-layout-flex">
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<div class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" style="border-style:none;border-width:0px">
+<p class="has-text-align-left">Table of Contents</p>
+
+
+
+<ol class="wp-elements-2e4d43c176181d8f2cc1f629196a45e6"><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#the-book">The Book</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#the-promise">The Promise</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#the-goods">The Goods</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#and-you-showed-me-the-tools-why">And You Showed Me the Tools Why?</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#what-success-looks-like">What Success Looks Like</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#demo">Demo</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#so-what">So what?</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#and-from-the-devs-come-testing-riches">And from the devs come testing riches</a></li><li><a class="wp-block-table-of-contents__entry" href="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/#what-s-next">What&#8217;s Next</a></li></ol>
+</div>
+
+
+
+<p class="has-link-color wp-elements-67984f997610dc974aaf3d0fb134c5da" style="border-width:2px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)"><strong>EDIT 6/30/25</strong>: I have created a <a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank" rel="noreferrer noopener">companion video</a> that illustrates the points of this post (and more). Just want to see a demo of Docs as Tests in action? Use <a href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=452s" target="_blank" rel="noreferrer noopener">this link</a> to jump straight there.</p>
+
+
+
+<h2 class="wp-block-heading" id="the-book">The Book</h2>
+
+
+
+<p class="has-link-color wp-elements-fc918525dc5c3fffa5c493403fde0c2c">Welcome! If you&#8217;re here, you probably heard about this phenomenon called &#8220;Docs as Tests&#8221;, which <a href="https://www.linkedin.com/in/manuelrbsilva/">Manny Silva</a> coined and then went on to write the <em><a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361/ref=sr_1_1?crid=1Q6SA5N3DV54D&amp;dib=eyJ2IjoiMSJ9.BHANakgypQEBkTIYGKXIvw.QYswUCxbp_v284WvnEibpp5TiPuh3_t9BQd99F2a3NY&amp;dib_tag=se&amp;keywords=docs+as+tests+manny+silva&amp;qid=1748558984&amp;sprefix=docs+as+tests%2Caps%2C137&amp;sr=8-1">Docs as Tests</a></em> book.</p>
+
+
+
+<p class="has-link-color wp-elements-86afd26f59aca1f728da6992b08c05bd">First off, let me be clear that I am not affiliated with the <em>Docs as Tests </em>book, but as a technical writer I read it and I <a href="https://www.amazon.com/gp/customer-reviews/R24W3IKLHWG1S6/ref=cm_cr_dp_d_rvw_ttl?ie=UTF8&amp;ASIN=B0F1H97QSL">thought it was really cool and definitely worth reading</a>. (I can vouch for the Kindle version being well put together, but there is a paperback version as well—either way, it&#8217;s worth your time!).</p>
+</div>
+
+
+
+<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
+<figure class="wp-block-image size-large is-resized"><a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation-ebook/dp/B0F1H97QSL/ref=tmm_kin_swatch_0"><img loading="lazy" width="640" height="1023" data-attachment-id="894" data-permalink="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/docs_as_tests_book/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg" data-orig-size="938,1500" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="docs_as_tests_book" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=188" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=640" src="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=640" alt="" class="wp-image-894" style="aspect-ratio:0.6256187161639598;width:430px;height:auto" srcset="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=640 640w, https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=94 94w, https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=188 188w, https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=768 768w, https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg 938w" sizes="(max-width: 640px) 100vw, 640px" /></a></figure>
+</div>
+</div>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>DISCLAIMER</strong>: I will try to make it extra clear where possible, but you can basically assume everything I am going to say in this post was either pulled directly from the Docs as Tests book or heavily inspired by it.</p>
+</blockquote>
+
+
+
+<h2 class="wp-block-heading has-text-align-left" id="the-promise">The Promise</h2>
+
+
+
+<p>After reading the <em>Docs as Tests</em> book, I am confident that the Docs as Tests discipline can solve <em>many </em>business problems related to documentation. In the book, Manny goes into great detail how <em>this </em>bit of tech can help you test with docs for <em>that </em>part of the stack.</p>
+
+
+
+<h2 class="wp-block-heading has-text-align-left" id="the-goods">The Goods</h2>
+
+
+
+<p>However, if you&#8217;re not a software engineer (or perhaps even if you are, as I was!), you might be intimidated by the amount of tools mentioned in the book. Some examples:</p>
+
+
+
+<figure class="wp-block-image size-large is-style-default wp-duotone-unset-1"><img loading="lazy" width="842" height="222" data-attachment-id="912" data-permalink="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/testing_tools-5/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png" data-orig-size="842,222" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="Testing_Tools" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=300" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=842" src="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=842" alt="" class="wp-image-912" srcset="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png 842w, https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=150 150w, https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=300 300w, https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=768 768w" sizes="(max-width: 842px) 100vw, 842px" /></figure>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>NOTES:<br>* I added Pytest because I have used it for integration testing<br>** Doc detective is kind of a unicorn in that it seems to be capable of testing in multiple areas</p>
+</blockquote>
+
+
+
+<p>I did my best to break the tools down by test surface area, but I suspect some of these tools are more versatile (i.e. &#8211; they can test more areas) than the graphic would suggest.</p>
+
+
+
+<h2 class="wp-block-heading has-text-align-left" id="and-you-showed-me-the-tools-why">And You Showed Me the Tools Why?</h2>
+
+
+
+<p>Oh, right I&#8217;m trying to make you <em>more </em>comfortable <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60a.png" alt="😊" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<p class="has-link-color wp-elements-9f1bf7ba72db702c579bdaa26f23195c">First, before going anywhere with Docs as Tests, one helpful strategy is to <a href="https://youtu.be/SkpXpvTk6iU?si=wCqnfOazZm1OLhtj&amp;t=422">redirect your overwhelm into curiosity</a>. Another way to put this is to acknowledge you are going to have &#8220;What the heck is <em>that</em>?&#8221; moments, and focus on the stuff that you <em>can </em>understand.</p>
+
+
+
+<p>Second, if there&#8217;s one thing I learned as a developer it&#8217;s that scope matters. A lot. Don&#8217;t bite off more than you can chew!</p>
+
+
+
+<p>In the book, Manny suggests (and I agree completely) that you need to decide which areas (e.g. &#8211; UI, API, etc.) that you want to begin improving with documentation testing. (You might have multiple areas that can be improved, but you should start with a small win and go from there).</p>
+
+
+
+<h2 class="wp-block-heading" id="what-success-looks-like">What Success Looks Like</h2>
+
+
+
+<p>You may have already clocked it based on the tooling discussion above, but one frustrating thing about Docs as Tests is that a successful testing implementation for Company A might look very different from Company B&#8217;s implementation. In other words, it depends on your environment and answers to questions like:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Do your docs describe the behavior of a UI, an API, or both? </li>
+
+
+
+<li>Do you have code samples that developers can run?</li>
+</ul>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p><strong>NOTE</strong>: this isn&#8217;t a complete list of guiding questions, but hopefully these are enough enough to get your docs testing gears turning <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/2699.png" alt="⚙" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+</blockquote>
+
+
+
+<h2 class="wp-block-heading" id="demo">Demo</h2>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="has-link-color wp-elements-967dfac0d978bed03e8214ebe89ae7fe">Before going any further, I wanted to mention that Manny Silva recently showed off v3 of his <a href="https://doc-detective.com/">Doc Detective</a> tool in <a href="https://www.youtube.com/watch?v=zQ4_1vBW_QY&amp;t=28s">this video</a>, which includes some examples like the one I&#8217;m about to show.</p>
+</blockquote>
+
+
+
+<p>Although there is often a place for a deep dive showing how something works (stay tuned for more Docs as Tests content here), I also think there&#8217;s value in distilling one potential approach down to a few screenshots. So let&#8217;s begin!</p>
+
+
+
+<p>First, consider the sign-up page below for a product: </p>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" width="555" height="575" data-attachment-id="915" data-permalink="https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/image-2/" data-orig-file="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png" data-orig-size="555,575" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;,&quot;orientation&quot;:&quot;0&quot;}" data-image-title="image" data-image-description="" data-image-caption="" data-medium-file="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=290" data-large-file="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=555" src="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=555" alt="" class="wp-image-915" srcset="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png 555w, https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=145 145w, https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=290 290w" sizes="(max-width: 555px) 100vw, 555px" /></figure>
+
+
+
+<p>Now suppose that we have the following documentation (in markdown) instructing end users how to sign up using this page:</p>
+
+
+
+<pre class="wp-block-code"><code>1. Navigate to &#091;Product Home](https://jtasse.github.io/docsastests-demo/index.html)
+
+2. Enter your address in the **Email** field.
+
+3. Enter a password in the **New Password** field.
+
+4. Click **Create Account**.</code></pre>
+
+
+
+<p>Have you spotted the problem yet? <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f914.png" alt="🤔" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+
+
+
+<p>No worries if not. Let&#8217;s see what Doc Detective can find.</p>
+
+
+
+<pre class="wp-block-code has-text-color has-link-color wp-elements-18fce643e2c1af687f00b6fe82e0ad5d" style="color:#c51616"><code>"result": "FAIL",
+"resultDescription": 
+     "No elements matched selector or text.",    
+     "find": "<strong><mark style="background-color:rgba(0, 0, 0, 0);color:#9c2a9e" class="has-inline-color">Create Account</mark></strong>",</code></pre>
+
+
+
+<p>Oh no, it looks like that blasted development team has done it again! <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f92c.png" alt="🤬" class="wp-smiley" style="height: 1em; max-height: 1em;" /> As the above Doc Detective test result shows, <strong>the test failed because the text of the button on the product page no longer matches the documentation</strong>.</p>
+
+
+
+<h2 class="wp-block-heading" id="so-what">So what?</h2>
+
+
+
+<p>Isn&#8217;t this cool?! OK, I hear you, failing tests are a bummer. But think about what this means (again, just repeating the logic from the <em>Docs as Tests</em> book): </p>
+
+
+
+<p class="has-background" style="background-color:#8328eb"><strong>You can use tools like Doc Detective to catch discrepancies between your product and docs before the product even releases! </strong></p>
+
+
+
+<h2 class="wp-block-heading" id="and-from-the-devs-come-testing-riches">And from the devs come testing riches</h2>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p>DISCLAIMER: below is probably an oversimplification of how software testing works (and how messy it can be), but hopefully it communicates the power of what documentarians can now access</p>
+</blockquote>
+
+
+
+<p>Let me try to put the above revelation into a different context. I worked as a software developer for about 7 years. For probably every product I worked on, myself and other devs would write tests that would run every time a new change is introduced to the software.</p>
+
+
+
+<p>If a test failed, it meant that a developer had made a change that didn&#8217;t play nice with some existing functionality. They broke something.</p>
+
+
+
+<p>I don&#8217;t recall documentarians/technical writers ever having access to <em>anything </em>like that. Sure there are lots of tools to check spelling, grammar, style; and those are still important.</p>
+
+
+
+<p>But now technical writers armed with tests like the one I demoed above can say:</p>
+
+
+
+<figure class="wp-block-pullquote"><blockquote><p>Hey, dev team: <strong>you broke my docs*</strong></p></blockquote></figure>
+
+
+
+<p class="has-link-color wp-elements-72e6ee8ee10dcf03b15a7ecca39b594b">* you might want to say it a little nicer than that, as developers are people just trying to get their stuff done, too (see: the <a href="https://retrospectivewiki.org/index.php?title=The_Prime_Directive">Agile Prime Directive</a>)</p>
+
+
+
+<h2 class="wp-block-heading" id="what-s-next">What&#8217;s Next</h2>
+
+
+
+<p class="has-link-color wp-elements-361a1bd041116d9d70f8664dcd668cf1">If you&#8217;re feeling brave, you can <a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository">clone</a> the <a href="https://github.com/jtasse/docsastests-demo/tree/main">GitHub repository</a> that I used for the demo in this post.</p>
+
+
+
+<p class="has-link-color wp-elements-1ed2c5905605b4a29a0584c330e61a62">But fear not if you stopped learning about cloning with <a href="https://www.imdb.com/title/tt0117108/">Multiplicity</a> (Michael Keaton&#8217;s best work?). I intend to do a deeper dive into how Doc Detective (and maybe other testing tools) work in my next post.</p>
+
+
+
+<p>I also plan produce a related video or two, if that&#8217;s more your speed.</p>
+
+
+
+<p>Until then, happy testing. <img src="https://s0.wp.com/wp-content/mu-plugins/wpcom-smileys/twemoji/2/72x72/1f60e.png" alt="😎" class="wp-smiley" style="height: 1em; max-height: 1em;" /></p>
+</div>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://jamestasse.tech/2025/05/29/docs-as-tests-on-a-high-level/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">881</post-id>
+		<media:thumbnail url="https://jamestasse.tech/wp-content/uploads/2025/05/docs_running_tests.png" />
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/05/docs_running_tests.png" medium="image">
+			<media:title type="html">docs_running_tests</media:title>
+		</media:content>
+
+		<media:content url="https://2.gravatar.com/avatar/2bdb39ac805d46b9891ce6cf120046ae699ebc4e9c6b1b12c7d995ae6da95617?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">jamestasse</media:title>
+		</media:content>
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/05/docs_as_tests_book.jpg?w=640" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/05/testing_tools-4.png?w=842" medium="image" />
+
+		<media:content url="https://jamestasse.tech/wp-content/uploads/2025/05/image-1.png?w=555" medium="image" />
+	</item>
+	</channel>
+</rss>

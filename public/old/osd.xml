@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+	<ShortName>James.Tasse</ShortName>
+	<Description>Search James.Tasse - Technical.Writer.</Description>
+	<Contact>help@wordpress.com</Contact>
+	<Url type="application/atom+xml" template="https://jamestasse.tech/?s={searchTerms}&amp;feed=atom" />
+	<Url type="rss+xml" template="https://jamestasse.tech/?s={searchTerms}&amp;feed=rss2" />
+	<Url type="text/html" template="https://jamestasse.tech/?s={searchTerms}" method="GET" />
+	<Url type="application/opensearchdescription+xml" rel="self" template="https://jamestasse.tech/osd.xml" />
+	<LongName>James.Tasse</LongName>
+	<Image height="16" width="16" type="image/vnd.microsoft.icon">https://jamestasse.tech/wp-content/uploads/2024/04/headshot_small.jpg?w=12</Image>
+	<Image height="64" width="64" type="image/jpeg">https://jamestasse.tech/wp-content/uploads/2024/04/headshot_small.jpg?w=48</Image>
+	<Query role="example" searchTerms="photography" />
+	<Tags>docs-as-tests ai</Tags>
+	<Developer>Automattic</Developer>
+	<SyndicationRight>open</SyndicationRight>
+	<AdultContent>false</AdultContent>
+	<Language>en</Language>
+	<OutputEncoding>UTF-8</OutputEncoding>
+	<InputEncoding>UTF-8</InputEncoding>
+	<moz:SearchForm>https://jamestasse.tech</moz:SearchForm>
+</OpenSearchDescription>
