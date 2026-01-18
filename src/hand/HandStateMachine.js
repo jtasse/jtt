@@ -8,6 +8,7 @@ import {
 	LEO_FLICK_CONFIG,
 	MOLNIYA_SLAP_CONFIG,
 	getOrbitTiming,
+	PALM_WIDTH,
 } from "./HandConfig.js"
 import {
 	transitionToGesture,
@@ -87,12 +88,6 @@ export class HandStateMachine {
 	}
 
 	transition(newState, data = {}) {
-		// Log with orbit-specific phase names for clarity
-		let displayState = newState
-		if (this.stateData.isLeoFlick) {
-			if (newState === HandState.WINDING_UP) displayState = "PREPARING"
-			else if (newState === HandState.CONTACTING) displayState = "FLICKING"
-		}
 		this.state = newState
 		this.stateStartTime = performance.now()
 
@@ -102,8 +97,29 @@ export class HandStateMachine {
 		this.onEnterState(newState)
 	}
 
+	// Get orbit type string for logging
+	getOrbitTypeString() {
+		if (this.stateData.isGeoPunch) return "GEO (PUNCH)"
+		if (this.stateData.isLeoFlick) return "LEO (FLICK)"
+		return "MOLNIYA (SLAP)"
+	}
+
 	onEnterState(state) {
-		console.log(`[HandStateMachine] Transitioned to state: ${state}`)
+		// Get orbit-specific display name for state
+		let displayState = state
+		const orbitType = this.getOrbitTypeString()
+		if (this.stateData.isLeoFlick) {
+			if (state === HandState.WINDING_UP) displayState = "PREPARING (LEO)"
+			else if (state === HandState.CONTACTING) displayState = "FLICKING (LEO)"
+		} else if (this.stateData.isGeoPunch) {
+			if (state === HandState.WINDING_UP) displayState = "WINDING_UP (GEO)"
+			else if (state === HandState.CONTACTING) displayState = "PUNCHING (GEO)"
+		} else if (state === HandState.CONTACTING) {
+			displayState = "SLAPPING (MOLNIYA)"
+		}
+
+		console.log(`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`)
+
 		switch (state) {
 			case HandState.POINTING:
 				console.log(`[HandStateMachine] POINTING at target satellite.`)
@@ -116,29 +132,31 @@ export class HandStateMachine {
 				this.stateData.startPosition = this.hand.position.clone()
 				break
 			case HandState.WINDING_UP:
-				console.log(`[HandStateMachine] WINDING_UP started.`)
+				console.log(`[HandStateMachine] ${this.stateData.isLeoFlick ? 'PREPARING (LEO FLICK)' : this.stateData.isGeoPunch ? 'WINDING_UP (GEO PUNCH)' : 'WINDING_UP (MOLNIYA SLAP)'} started.`)
 				this.stateData.windUpStartRotation = this.hand.rotation.y
 				// LEO uses flickReady gesture (thumb and index finger pressed together)
 				if (this.stateData.isLeoFlick) {
 					console.log(
-						`[HandStateMachine] LEO Flick detected: Transitioning to 'flickReady' gesture.`
+						`[HandStateMachine] LEO FLICK: Transitioning to 'flickReady' gesture.`
 					)
 					transitionToGesture(this.hand, "flickReady", 300)
 				}
 				break
 			case HandState.CONTACTING:
-				console.log(`[HandStateMachine] CONTACTING started.`)
+				console.log(`[HandStateMachine] ${this.stateData.isLeoFlick ? 'FLICKING (LEO)' : this.stateData.isGeoPunch ? 'PUNCHING (GEO)' : 'SLAPPING (MOLNIYA)'} started.`)
 				// Use appropriate gesture for each orbit type
 				if (this.stateData.isGeoPunch) {
+					console.log(`[HandStateMachine] GEO PUNCH: Using 'fist' gesture.`)
 					transitionToGesture(this.hand, "fist", 100)
 				} else if (this.stateData.isLeoFlick) {
 					// LEO: transition to flickRelease (finger extends)
 					console.log(
-						`[HandStateMachine] LEO Flick: Transitioning to 'flickRelease' gesture.`
+						`[HandStateMachine] LEO FLICK: Transitioning to 'flickRelease' gesture.`
 					)
 					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
 					// Molniya: backhand slap
+					console.log(`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`)
 					transitionToGesture(this.hand, "backhand", 100)
 				}
 				this.stateData.contactApplied = false
@@ -435,15 +453,51 @@ export class HandStateMachine {
 				// Hand must stay on punch line regardless of camera view
 				clampToPlanetSurface(interpolatedPos)
 			} else {
-				// LEO/Molniya: Original slap behavior - approach from front
+				// LEO/Molniya: approach from BEYOND satellite (further from Earth)
+				// Satellite will be sandwiched between Earth and hand
 				this.stateData.isGeoPunch = false
 
-				const isLEO = satDistance < 0.8
+				// Use userData for reliable orbit type detection
+				// LEO has orbitRadius in userData, Molniya has eccentricity
+				const satUserData = this.targetSatellite.userData || {}
+				const isLEO = satUserData.orbitRadius !== undefined && satUserData.eccentricity === undefined
+				const isMolniya = satUserData.eccentricity !== undefined
 				this.stateData.isLeoFlick = isLEO
+
+				// Log orbit type detection on first frame of approach
+				if (!this.stateData.orbitTypeLogged) {
+					this.stateData.orbitTypeLogged = true
+					console.log(`[HandStateMachine] ORBIT TYPE DETECTION:`)
+					console.log(`  - satDistance=${satDistance.toFixed(3)}`)
+					console.log(`  - userData.orbitRadius=${satUserData.orbitRadius}`)
+					console.log(`  - userData.eccentricity=${satUserData.eccentricity}`)
+					console.log(`  - userData.name=${satUserData.name}`)
+					console.log(`  - isLEO=${isLEO}, isMolniya=${isMolniya}`)
+					console.log(`  - isLeoFlick=${this.stateData.isLeoFlick}`)
+					if (isLEO) {
+						console.log(`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`)
+					} else if (isMolniya) {
+						console.log(`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`)
+					} else {
+						console.log(`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`)
+					}
+				}
+
+				let actualTargetPos = targetPos.clone()
+				if (isLEO) {
+					// LEO FLICK: Position hand BEYOND satellite (radially outward from Earth)
+					// so satellite is sandwiched between Earth and hand
+					const earthToSat = targetPos.clone().normalize()
+					const standoff = LEO_FLICK_CONFIG.standoffDistance || 0.35
+					actualTargetPos.add(earthToSat.multiplyScalar(standoff))
+
+					// Store direction for later use in flick
+					this.stateData.flickDirection = earthToSat.clone().negate() // toward Earth/satellite
+				}
 
 				// Guard against undefined/NaN startPos or targetPos
 				const startValid = startPos && !isNaN(startPos.x)
-				const targetValid = !isNaN(targetPos.x)
+				const targetValid = !isNaN(actualTargetPos.x)
 
 				if (!startValid || !targetValid) {
 					// Invalid start or target position
@@ -454,9 +508,9 @@ export class HandStateMachine {
 				} else {
 					// Simple linear interpolation
 					interpolatedPos = new THREE.Vector3(
-						startPos.x + (targetPos.x - startPos.x) * eased,
-						startPos.y + (targetPos.y - startPos.y) * eased,
-						startPos.z + (targetPos.z - startPos.z) * eased
+						startPos.x + (actualTargetPos.x - startPos.x) * eased,
+						startPos.y + (actualTargetPos.y - startPos.y) * eased,
+						startPos.z + (actualTargetPos.z - startPos.z) * eased
 					)
 				}
 
@@ -466,7 +520,7 @@ export class HandStateMachine {
 					isNaN(interpolatedPos.y) ||
 					isNaN(interpolatedPos.z)
 				) {
-					interpolatedPos = targetPos.clone()
+					interpolatedPos = actualTargetPos.clone()
 				}
 
 				// For LEO/Molniya, use a smaller clamp distance since they orbit
@@ -487,13 +541,13 @@ export class HandStateMachine {
 					isNaN(interpolatedPos.y) ||
 					isNaN(interpolatedPos.z)
 				) {
-					interpolatedPos = targetPos.clone()
+					interpolatedPos = actualTargetPos.clone()
 				}
 			}
 
 			// Final safety check before setting position
 			if (!interpolatedPos || isNaN(interpolatedPos.x)) {
-				interpolatedPos = targetPos.clone()
+				interpolatedPos = targetPos.clone() // Fallback to raw target
 			}
 
 			this.hand.position.copy(interpolatedPos)
@@ -524,15 +578,25 @@ export class HandStateMachine {
 				// LEO FLICK: Orient hand so fingers (local +Y) point toward satellite
 				// Like flicking a paper football - fingers aim at target
 				const dirToSat = targetPos.clone().sub(this.hand.position)
-				const dirLength = dirToSat.length()
+				if (dirToSat.lengthSq() > 0.0001) {
+					const localY = dirToSat.normalize()
+					// Use same stable basis as position calculation: Palm (+Z) faces Camera (+Z)
+					const globalZ = new THREE.Vector3(0, 0, 1)
+					const localX = new THREE.Vector3()
+						.crossVectors(localY, globalZ)
+						.normalize()
+					if (localX.lengthSq() < 0.001) localX.set(1, 0, 0)
+					const localZ = new THREE.Vector3()
+						.crossVectors(localX, localY)
+						.normalize()
 
-				// Only update orientation if we have a valid direction (not at satellite yet)
-				if (dirLength > 0.01) {
-					const directionToSat = dirToSat.divideScalar(dirLength) // normalize safely
-					const localFingerDirection = new THREE.Vector3(0, 1, 0)
-					const targetQuat = new THREE.Quaternion().setFromUnitVectors(
-						localFingerDirection,
-						directionToSat
+					const rotMatrix = new THREE.Matrix4().makeBasis(
+						localX,
+						localY,
+						localZ
+					)
+					const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+						rotMatrix
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.1)
 				}
@@ -699,15 +763,26 @@ export class HandStateMachine {
 					const satPos = new THREE.Vector3()
 					this.targetSatellite.getWorldPosition(satPos)
 					const dirToSat = satPos.clone().sub(this.hand.position)
-					const dirLength = dirToSat.length()
 
-					// Use current rotation if too close, otherwise point at satellite
-					if (dirLength > 0.01) {
-						const directionToSat = dirToSat.divideScalar(dirLength)
-						const localFingerDirection = new THREE.Vector3(0, 1, 0)
-						const flickQuat = new THREE.Quaternion().setFromUnitVectors(
-							localFingerDirection,
-							directionToSat
+					if (dirToSat.lengthSq() > 0.0001) {
+						const localY = dirToSat.normalize()
+						// Stable basis: Palm (+Z) faces Camera (+Z)
+						const globalZ = new THREE.Vector3(0, 0, 1)
+						const localX = new THREE.Vector3()
+							.crossVectors(localY, globalZ)
+							.normalize()
+						if (localX.lengthSq() < 0.001) localX.set(1, 0, 0)
+						const localZ = new THREE.Vector3()
+							.crossVectors(localX, localY)
+							.normalize()
+
+						const rotMatrix = new THREE.Matrix4().makeBasis(
+							localX,
+							localY,
+							localZ
+						)
+						const flickQuat = new THREE.Quaternion().setFromRotationMatrix(
+							rotMatrix
 						)
 						this.stateData.flickLockedRotation = flickQuat
 					} else {
@@ -899,11 +974,22 @@ export class HandStateMachine {
 			}
 		}
 
-		// Non-GEO path (LEO/Molniya slap)
+		// Non-GEO path (LEO Flick or Molniya Slap)
 		const elapsed = this.getElapsedTime()
 		const contactDuration = this.getPhaseDuration("contactDuration")
 		t = Math.min(elapsed / contactDuration, 1)
 		eased = t
+
+		// Log which contact path we're taking on first frame
+		if (!this.stateData.contactPathLogged) {
+			this.stateData.contactPathLogged = true
+			console.log(`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`)
+			if (this.stateData.isLeoFlick) {
+				console.log(`[HandStateMachine] *** EXECUTING LEO FLICK CODE PATH ***`)
+			} else {
+				console.log(`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`)
+			}
+		}
 
 		if (this.targetSatellite) {
 			const satPos = new THREE.Vector3()
@@ -916,7 +1002,7 @@ export class HandStateMachine {
 				// This branch shouldn't be reached anymore for GEO
 				return
 			} else if (this.stateData.isLeoFlick) {
-				// LEO FLICK: Hand stays mostly stationary, finger does the work
+				// LEO FLICK: Hand moves forward so extended finger contacts satellite
 				// The gesture transition to 'flickRelease' is already playing (triggered in onEnterState)
 
 				// Keep orientation locked to what we set in PREPARING
@@ -924,25 +1010,46 @@ export class HandStateMachine {
 					this.hand.quaternion.copy(this.stateData.flickLockedRotation)
 				}
 
-				// Small recoil/impulse effect
-				// The flick happens fast. Let's add a tiny forward jerk.
-				const impulse = Math.sin(t * Math.PI) * 0.03 // Small movement
-
 				const basePos =
 					this.stateData.flickLockedPosition || this.hand.position.clone()
-				const dirToSat = satPos.clone().sub(basePos).normalize()
+				const dirToSat = satPos.clone().sub(basePos)
+				const distToSat = dirToSat.length()
+				const dirNormalized = distToSat > 0.001 ? dirToSat.divideScalar(distToSat) : new THREE.Vector3(0, -1, 0)
 
-				this.hand.position.copy(basePos).add(dirToSat.multiplyScalar(impulse))
+				// Move hand forward during flick so finger contacts satellite
+				// Use smooth ease-out curve: fast start (finger snap), slow end
+				const flickEased = 1 - Math.pow(1 - t, 3)
+				const flickForward = LEO_FLICK_CONFIG.flickForwardDistance || 0.25
+				const forwardMove = flickEased * flickForward
 
-				// Trigger contact early in the animation (snap)
-				if (t > 0.2 && !this.stateData.contactApplied) {
-					console.log(`[HandStateMachine] Flick contact!`)
+				// Calculate new position
+				const newPos = basePos.clone().add(dirNormalized.clone().multiplyScalar(forwardMove))
+
+				// Ensure we don't clip into the planet
+				const planetRadius = HAND_ORBIT_CONFIG.planetRadius || 0.5
+				const minDist = planetRadius + 0.15 // Buffer to avoid clipping
+				if (newPos.length() < minDist) {
+					newPos.normalize().multiplyScalar(minDist)
+				}
+
+				this.hand.position.copy(newPos)
+
+				// Trigger contact at peak of flick motion (around 40% through)
+				if (t > 0.4 && !this.stateData.contactApplied) {
 					this.stateData.contactApplied = true
 					if (this.onSatelliteBurn) {
 						this.onSatelliteBurn(this.targetSatellite)
 					}
-					// Transition to celebrating happens at t >= 1 below
 				}
+
+				// Transition to celebrating at end
+				if (t >= 1) {
+					this.transition(HandState.CELEBRATING, {
+						burnStartTime: performance.now(),
+					})
+				}
+				// LEO flick handles its own contact and transitions - don't fall through
+				return
 			} else {
 				// LEO/Molniya: Original slap behavior - swing through satellite
 				moveDirection = satPos.clone().sub(this.hand.position)

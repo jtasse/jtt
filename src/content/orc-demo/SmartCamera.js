@@ -75,9 +75,9 @@ export class SmartCamera {
 			}
 
 			// === Occlusion Avoidance ===
-			// Check if the planet is blocking the view of the satellite
+			// Check if the planet is blocking the view of the hand/satellite
 			const currentCamPos = this.camera.position.clone()
-			const camToSat = satPos.clone().sub(currentCamPos)
+			const camToSat = handPos.clone().sub(currentCamPos)
 			const camToPlanet = planetCenter.clone().sub(currentCamPos)
 			const camToSatLength = camToSat.length()
 			const projLength = camToPlanet.dot(camToSat.normalize())

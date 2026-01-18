@@ -205,11 +205,9 @@ export function setOrcHand(hand, camera) {
 		if (!satellite.userData.flameParticles) {
 			satellite.userData.flameParticles = createFlameTrail(satellite)
 		}
-		satellite.userData.handSlapped = true
+		// Generic flag for all orbit types (LEO=flick, GEO=punch, Molniya=slap)
+		satellite.userData.handContacted = true
 		satellite.userData.burnStartTime = performance.now()
-
-		// Clear waitForPunch flag so satellite can start moving
-		satellite.userData.waitForPunch = false
 		// Reset decommission start time for proper animation timing
 		satellite.userData.decommissionStartTime = Date.now()
 
@@ -611,8 +609,8 @@ export function animateOrcScene(animateNormal = true) {
 			? orcHandStateMachine.timeScale
 			: 1.0
 
-		// 1. Hand Slap Physics
-		if (data.handSlapped) {
+		// 1. Post-Contact Physics (after hand flick/punch/slap)
+		if (data.handContacted) {
 			if (sat.parent) {
 				const burnElapsed = performance.now() - data.burnStartTime
 				const burnDuration = 4000
@@ -670,9 +668,11 @@ export function animateOrcScene(animateNormal = true) {
 
 		// 2. Decommissioning
 		if (data.decommissioning) {
-			// GEO satellites wait for hand to punch before moving
-			if (data.waitForPunch) {
-				// Don't auto-approach, satellite stays in place
+			// ALL satellites stay in place until hand makes contact
+			// This prevents drift/spiral that could clip satellite into planet
+			// Contact phase: LEO=flick, GEO=punch, Molniya=slap
+			if (!data.handContacted) {
+				// Satellite frozen in place - hand is still approaching/preparing
 				return
 			}
 

@@ -5,6 +5,21 @@
 // It controls hand geometry, animation timing, camera behavior, and gestures.
 //
 // -----------------------------------------
+// DECOMMISSION PHASE TERMINOLOGY (IMPORTANT!)
+// -----------------------------------------
+// The decommission sequence has GENERIC phases that apply to ALL orbit types:
+//
+//   POINTING → APPROACHING → WINDING_UP → CONTACTING → CELEBRATING → RETURNING
+//
+// The CONTACTING phase has orbit-specific implementations:
+//   - LEO (Leona):    FLICKING  - index finger flick like a paper football
+//   - GEO (George):   PUNCHING  - fist punch toward Earth
+//   - Molniya (Moltar): SLAPPING - backhand slap
+//
+// When writing generic code, ALWAYS use "contact" terminology.
+// Only use flick/punch/slap when writing orbit-specific code.
+//
+// -----------------------------------------
 // CAMERA CONTROLS QUICK REFERENCE
 // -----------------------------------------
 // Each orbit type (GEO, LEO, Molniya) has camera settings per phase:
@@ -255,6 +270,18 @@ export const LEO_FLICK_CONFIG = {
 	slowMotionFactor: 0.5,
 
 	// -----------------------------------------
+	// LEO Flick Positioning (3D scene units)
+	// -----------------------------------------
+	// The hand is positioned BEYOND the satellite (further from Earth).
+	// Satellite is sandwiched between Earth and hand.
+	//
+	// These values position the hand so the index fingertip contacts the satellite.
+	// standoffDistance: How far hand center is from satellite during PREPARING
+	// flickForwardDistance: How far hand moves toward satellite during FLICKING
+	standoffDistance: 0.02, // Hand center very close to satellite
+	flickForwardDistance: 0.0, // No forward motion - finger extension does the work
+
+	// -----------------------------------------
 	// Camera Settings Per Phase
 	// -----------------------------------------
 	// LEO satellites are close to Earth. Camera stays relatively stable.
@@ -267,12 +294,12 @@ export const LEO_FLICK_CONFIG = {
 
 	// Preparing phase (WINDING_UP state - hand gets ready to flick)
 	preparingCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
-	preparingCameraDistance: 3.5,
+	preparingCameraDistance: 2.5,
 	preparingCameraLookAt: { x: 0, y: 0, z: 0 },
 	preparingCameraSpeed: 0.02,
 
 	// Flicking phase (SLAPPING state - the actual flick motion)
-	flickingCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	flickingCameraOffset: { x: 1.0, y: 0.8, z: -2.0 },
 	flickingCameraDistance: 3.5,
 	flickingCameraLookAt: { x: 0, y: 0, z: 0 },
 	flickingCameraSpeed: 0.02,
