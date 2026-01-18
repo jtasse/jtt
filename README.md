@@ -2,13 +2,13 @@
 
 Hi there. Welcome to the **jamestasse.tech** repo, which powers my personal website. This project leverages Three.js to create an immersive navigation experience, blending WebGL graphics with standard DOM-based content for accessibility.
 
-## 📖 Portfolio Docs
+## 📂 Portfolio Docs
 
 My portfolio lives in `src\content\portfolio`. However, you can find my technical (Astro) docs under `packages\docs\src\content\docs`.
 
-## 📖 Design Docs
+## 📐 Design Docs
 
-The following docs contain information about how the codebase is designed and maintained:
+The following docs contain information about how the website is designed and maintained:
 
 - [**ARCHITECTURE.md**](./ARCHITECTURE.md)  
   Explains the project structure, the hybrid rendering model (WebGL + DOM), and how content is organized.
