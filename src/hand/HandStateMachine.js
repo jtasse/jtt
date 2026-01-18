@@ -6,7 +6,7 @@ import {
 	HAND_ORBIT_CONFIG,
 	GEO_PUNCH_CONFIG,
 	LEO_FLICK_CONFIG,
-	MOLNIYA_SLAP_CONFIG,
+	MOL_SLAP_CONFIG,
 	getOrbitTiming,
 	PALM_WIDTH,
 } from "./HandConfig.js"
@@ -118,7 +118,9 @@ export class HandStateMachine {
 			displayState = "SLAPPING (MOLNIYA)"
 		}
 
-		console.log(`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`)
+		console.log(
+			`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`
+		)
 
 		switch (state) {
 			case HandState.POINTING:
@@ -132,7 +134,15 @@ export class HandStateMachine {
 				this.stateData.startPosition = this.hand.position.clone()
 				break
 			case HandState.WINDING_UP:
-				console.log(`[HandStateMachine] ${this.stateData.isLeoFlick ? 'PREPARING (LEO FLICK)' : this.stateData.isGeoPunch ? 'WINDING_UP (GEO PUNCH)' : 'WINDING_UP (MOLNIYA SLAP)'} started.`)
+				console.log(
+					`[HandStateMachine] ${
+						this.stateData.isLeoFlick
+							? "PREPARING (LEO FLICK)"
+							: this.stateData.isGeoPunch
+							? "WINDING_UP (GEO PUNCH)"
+							: "WINDING_UP (MOLNIYA SLAP)"
+					} started.`
+				)
 				this.stateData.windUpStartRotation = this.hand.rotation.y
 				// LEO uses flickReady gesture (thumb and index finger pressed together)
 				if (this.stateData.isLeoFlick) {
@@ -143,7 +153,15 @@ export class HandStateMachine {
 				}
 				break
 			case HandState.CONTACTING:
-				console.log(`[HandStateMachine] ${this.stateData.isLeoFlick ? 'FLICKING (LEO)' : this.stateData.isGeoPunch ? 'PUNCHING (GEO)' : 'SLAPPING (MOLNIYA)'} started.`)
+				console.log(
+					`[HandStateMachine] ${
+						this.stateData.isLeoFlick
+							? "FLICKING (LEO)"
+							: this.stateData.isGeoPunch
+							? "PUNCHING (GEO)"
+							: "SLAPPING (MOLNIYA)"
+					} started.`
+				)
 				// Use appropriate gesture for each orbit type
 				if (this.stateData.isGeoPunch) {
 					console.log(`[HandStateMachine] GEO PUNCH: Using 'fist' gesture.`)
@@ -156,7 +174,9 @@ export class HandStateMachine {
 					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
 					// Molniya: backhand slap
-					console.log(`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`)
+					console.log(
+						`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`
+					)
 					transitionToGesture(this.hand, "backhand", 100)
 				}
 				this.stateData.contactApplied = false
@@ -197,7 +217,7 @@ export class HandStateMachine {
 		} else if (this.stateData.isLeoFlick) {
 			return LEO_FLICK_CONFIG
 		} else {
-			return MOLNIYA_SLAP_CONFIG
+			return MOL_SLAP_CONFIG
 		}
 	}
 
@@ -460,7 +480,9 @@ export class HandStateMachine {
 				// Use userData for reliable orbit type detection
 				// LEO has orbitRadius in userData, Molniya has eccentricity
 				const satUserData = this.targetSatellite.userData || {}
-				const isLEO = satUserData.orbitRadius !== undefined && satUserData.eccentricity === undefined
+				const isLEO =
+					satUserData.orbitRadius !== undefined &&
+					satUserData.eccentricity === undefined
 				const isMolniya = satUserData.eccentricity !== undefined
 				this.stateData.isLeoFlick = isLEO
 
@@ -475,11 +497,17 @@ export class HandStateMachine {
 					console.log(`  - isLEO=${isLEO}, isMolniya=${isMolniya}`)
 					console.log(`  - isLeoFlick=${this.stateData.isLeoFlick}`)
 					if (isLEO) {
-						console.log(`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`)
+						console.log(
+							`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`
+						)
 					} else if (isMolniya) {
-						console.log(`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`)
+						console.log(
+							`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`
+						)
 					} else {
-						console.log(`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`)
+						console.log(
+							`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`
+						)
 					}
 				}
 
@@ -495,6 +523,14 @@ export class HandStateMachine {
 					this.stateData.flickDirection = earthToSat.clone().negate() // toward Earth/satellite
 				}
 
+				// Molniya/Default: Also approach from BEYOND satellite
+				// This ensures "satellite is positioned between the earth and the hand"
+				if (!isLEO && !isGEO) {
+					const earthToSat = targetPos.clone().normalize()
+					const standoff = 0.5
+					actualTargetPos.add(earthToSat.multiplyScalar(standoff))
+				}
+
 				// Guard against undefined/NaN startPos or targetPos
 				const startValid = startPos && !isNaN(startPos.x)
 				const targetValid = !isNaN(actualTargetPos.x)
@@ -506,12 +542,60 @@ export class HandStateMachine {
 						? startPos.clone()
 						: new THREE.Vector3(0, 0, 2)
 				} else {
-					// Simple linear interpolation
-					interpolatedPos = new THREE.Vector3(
-						startPos.x + (actualTargetPos.x - startPos.x) * eased,
-						startPos.y + (actualTargetPos.y - startPos.y) * eased,
-						startPos.z + (actualTargetPos.z - startPos.z) * eased
-					)
+					// Check for planet collision during approach
+					const midPoint = startPos.clone().lerp(actualTargetPos, 0.5)
+					const distToCenter = midPoint.length()
+					// Use a generous safety distance to ensure wide berth
+					const safeDistance =
+						(HAND_ORBIT_CONFIG.minPlanetDistance || 0.7) + 0.2
+
+					if (distToCenter < safeDistance) {
+						// Collision detected - use Bezier arc to fly around planet
+
+						// Determine best direction to arc around
+						let avoidDir = new THREE.Vector3(0, 0, 1)
+						if (this.camera) {
+							avoidDir = this.camera.position.clone().normalize()
+						}
+
+						// If path is parallel to avoidance direction (e.g. moving straight away from camera through planet),
+						// we must pick a different direction (Up or Right) to create a valid arc.
+						const pathDir = actualTargetPos.clone().sub(startPos).normalize()
+						if (Math.abs(pathDir.dot(avoidDir)) > 0.9) {
+							const up = new THREE.Vector3(0, 1, 0)
+							const right = new THREE.Vector3(1, 0, 0)
+							avoidDir =
+								Math.abs(pathDir.dot(up)) < Math.abs(pathDir.dot(right))
+									? up
+									: right
+						}
+
+						// Calculate control point for arc
+						const controlPoint = midPoint.clone()
+						if (controlPoint.lengthSq() < 0.1) {
+							controlPoint.copy(avoidDir)
+						} else {
+							// Blend radial direction with avoidance direction
+							controlPoint.normalize().add(avoidDir).normalize()
+						}
+						// High arc to clear planet
+						controlPoint.multiplyScalar(safeDistance * 1.8)
+
+						// Quadratic Bezier: (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+						const oneMinusT = 1 - eased
+						interpolatedPos = startPos
+							.clone()
+							.multiplyScalar(oneMinusT * oneMinusT)
+							.add(controlPoint.multiplyScalar(2 * oneMinusT * eased))
+							.add(actualTargetPos.clone().multiplyScalar(eased * eased))
+					} else {
+						// Simple linear interpolation
+						interpolatedPos = new THREE.Vector3(
+							startPos.x + (actualTargetPos.x - startPos.x) * eased,
+							startPos.y + (actualTargetPos.y - startPos.y) * eased,
+							startPos.z + (actualTargetPos.z - startPos.z) * eased
+						)
+					}
 				}
 
 				// Validate and fix any NaN values
@@ -523,17 +607,8 @@ export class HandStateMachine {
 					interpolatedPos = actualTargetPos.clone()
 				}
 
-				// For LEO/Molniya, use a smaller clamp distance since they orbit
-				// closer to the planet than GEO. Just ensure Z stays positive.
-				if (interpolatedPos.z < 0.3) {
-					interpolatedPos.z = 0.3
-				}
-				// Also ensure we don't go inside the planet
-				const dist = interpolatedPos.length()
-				if (dist < 0.55) {
-					const scale = 0.55 / dist
-					interpolatedPos.multiplyScalar(scale)
-				}
+				// Ensure we don't go inside the planet, but allow going behind it (negative Z)
+				clampToPlanetSurface(interpolatedPos, 0.15)
 
 				// Validate after clamping
 				if (
@@ -804,27 +879,21 @@ export class HandStateMachine {
 				}
 				return
 			} else {
-				// Molniya: Original slap behavior
-				const windUpDist = 0.8
+				// Molniya: Tangential slap behavior
+				// Position hand to the side of the satellite for a sweeping strike
+				const sideDir = new THREE.Vector3()
+					.crossVectors(earthToSat, new THREE.Vector3(0, 1, 0))
+					.normalize()
+				if (sideDir.lengthSq() < 0.01) sideDir.set(1, 0, 0)
+
+				// Wind up to the side and slightly out
+				const windUpDist = 0.5
 				windUpPos = satPos
 					.clone()
-					.add(earthToSat.clone().multiplyScalar(windUpDist))
+					.add(sideDir.multiplyScalar(windUpDist))
+					.add(earthToSat.clone().multiplyScalar(0.3)) // Slight outward clearance
 
-				if (windUpPos.z < 0.5) {
-					const swingDir = new THREE.Vector3(satPos.x, satPos.y, 0)
-					if (swingDir.lengthSq() > 0.01) {
-						swingDir.normalize()
-					} else {
-						swingDir.set(1, 0, 0)
-					}
-					windUpPos = new THREE.Vector3(
-						satPos.x + swingDir.x * windUpDist,
-						satPos.y + swingDir.y * windUpDist * 0.5,
-						Math.max(0.5 + 0.3, satPos.z + 0.5)
-					)
-				}
-
-				clampToFrontOfPlanet(windUpPos)
+				clampToPlanetSurface(windUpPos, 0.2)
 			}
 
 			// For GEO punch, position is set directly in staged code above
@@ -983,11 +1052,15 @@ export class HandStateMachine {
 		// Log which contact path we're taking on first frame
 		if (!this.stateData.contactPathLogged) {
 			this.stateData.contactPathLogged = true
-			console.log(`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`)
+			console.log(
+				`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`
+			)
 			if (this.stateData.isLeoFlick) {
 				console.log(`[HandStateMachine] *** EXECUTING LEO FLICK CODE PATH ***`)
 			} else {
-				console.log(`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`)
+				console.log(
+					`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`
+				)
 			}
 		}
 
@@ -1014,7 +1087,10 @@ export class HandStateMachine {
 					this.stateData.flickLockedPosition || this.hand.position.clone()
 				const dirToSat = satPos.clone().sub(basePos)
 				const distToSat = dirToSat.length()
-				const dirNormalized = distToSat > 0.001 ? dirToSat.divideScalar(distToSat) : new THREE.Vector3(0, -1, 0)
+				const dirNormalized =
+					distToSat > 0.001
+						? dirToSat.divideScalar(distToSat)
+						: new THREE.Vector3(0, -1, 0)
 
 				// Move hand forward during flick so finger contacts satellite
 				// Use smooth ease-out curve: fast start (finger snap), slow end
@@ -1023,7 +1099,9 @@ export class HandStateMachine {
 				const forwardMove = flickEased * flickForward
 
 				// Calculate new position
-				const newPos = basePos.clone().add(dirNormalized.clone().multiplyScalar(forwardMove))
+				const newPos = basePos
+					.clone()
+					.add(dirNormalized.clone().multiplyScalar(forwardMove))
 
 				// Ensure we don't clip into the planet
 				const planetRadius = HAND_ORBIT_CONFIG.planetRadius || 0.5
@@ -1051,31 +1129,55 @@ export class HandStateMachine {
 				// LEO flick handles its own contact and transitions - don't fall through
 				return
 			} else {
-				// LEO/Molniya: Original slap behavior - swing through satellite
-				moveDirection = satPos.clone().sub(this.hand.position)
-				if (moveDirection.lengthSq() < 0.0001) {
-					moveDirection.set(0, -1, 0)
-				} else {
-					moveDirection.normalize()
+				// Molniya: Slap behavior - swing THROUGH satellite
+				if (!this.stateData.slapStartPos) {
+					this.stateData.slapStartPos = this.hand.position.clone()
 				}
 
-				this.hand.position.add(
-					moveDirection.clone().multiplyScalar(moveSpeed * dt)
-				)
-				clampToFrontOfPlanet(this.hand.position)
+				const startPos = this.stateData.slapStartPos
+
+				// Calculate target: swing PAST the satellite to ensure follow-through
+				// We update this every frame in case satellite moves, but base it on startPos
+				const attackVector = satPos.clone().sub(startPos)
+				// Target is 1.4x the distance to ensure we swing through it
+				const targetPos = startPos.clone().add(attackVector.multiplyScalar(1.4))
+
+				// Use simple linear interpolation for the strike
+				// The tangential setup in WindingUp ensures we clear the planet
+				this.hand.position.lerpVectors(startPos, targetPos, eased)
+
+				clampToPlanetSurface(this.hand.position, 0.1)
+
+				// Debug logging for slap positioning
+				if (!this.stateData.contactApplied) {
+					const d = this.hand.position.distanceTo(satPos)
+					console.log(
+						`[HandStateMachine] Slap Update - Dist: ${d.toFixed(
+							3
+						)} | Hand: ${this.hand.position
+							.toArray()
+							.map((v) => v.toFixed(2))} | Sat: ${satPos
+							.toArray()
+							.map((v) => v.toFixed(2))}`
+					)
+				}
 			}
 
 			// Check for contact
 			const dist = this.hand.position.distanceTo(satPos)
-			const CONTACT_THRESHOLD = 0.5
+			const CONTACT_THRESHOLD = 1.2
 
-			if (dist < CONTACT_THRESHOLD && !this.stateData.contactApplied) {
+			if (
+				(dist < CONTACT_THRESHOLD || this.stateData.forceContact) &&
+				!this.stateData.contactApplied
+			) {
 				console.log(
 					`[HandStateMachine] Contact made with satellite! Distance: ${dist.toFixed(
 						3
 					)}`
 				)
 				this.stateData.contactApplied = true
+				this.stateData.forceContact = false
 
 				// Trigger satellite burn / launch EXACTLY on contact
 				if (this.onSatelliteBurn) {
@@ -1091,6 +1193,15 @@ export class HandStateMachine {
 
 		// Failsafe transition if missed
 		if (t >= 1 && !this.stateData.contactApplied) {
+			if (this.targetSatellite) {
+				console.log(
+					`[HandStateMachine] Slap failsafe triggered - forcing burn.`
+				)
+				this.stateData.contactApplied = true
+				if (this.onSatelliteBurn) {
+					this.onSatelliteBurn(this.targetSatellite)
+				}
+			}
 			this.transition(HandState.CELEBRATING, {
 				burnStartTime: performance.now(),
 			})
@@ -1105,7 +1216,7 @@ export class HandStateMachine {
 			return LEO_FLICK_CONFIG.celebration
 		} else {
 			// Default to Molniya slap config
-			return MOLNIYA_SLAP_CONFIG.celebration
+			return MOL_SLAP_CONFIG.celebration
 		}
 	}
 

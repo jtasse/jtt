@@ -3,7 +3,7 @@ import {
 	HandState,
 	GEO_PUNCH_CONFIG,
 	LEO_FLICK_CONFIG,
-	MOLNIYA_SLAP_CONFIG,
+	MOL_SLAP_CONFIG,
 } from "../../hand/HandConfig.js"
 import {
 	orcHandStateMachine,
@@ -120,7 +120,7 @@ export function getDecommissionState() {
 		} else if (orcHandStateMachine?.stateData?.isLeoFlick) {
 			return LEO_FLICK_CONFIG.celebration
 		} else {
-			return MOLNIYA_SLAP_CONFIG.celebration
+			return MOL_SLAP_CONFIG.celebration
 		}
 	}
 
@@ -196,7 +196,7 @@ export function getDecommissionState() {
 		}
 	} else {
 		// Molniya Slap camera handling (default for non-GEO, non-LEO)
-		const config = MOLNIYA_SLAP_CONFIG
+		const config = MOL_SLAP_CONFIG
 
 		if (
 			handState === HandState.POINTING ||

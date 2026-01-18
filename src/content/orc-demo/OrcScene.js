@@ -605,9 +605,10 @@ export function animateOrcScene(animateNormal = true) {
 	satellites.forEach((sat) => {
 		const data = sat.userData
 		// Use timeScale from state machine if available, otherwise default to 1.0
-		const timeScale = (orcHandStateMachine && typeof orcHandStateMachine.timeScale === 'number')
-			? orcHandStateMachine.timeScale
-			: 1.0
+		const timeScale =
+			orcHandStateMachine && typeof orcHandStateMachine.timeScale === "number"
+				? orcHandStateMachine.timeScale
+				: 1.0
 
 		// 1. Post-Contact Physics (after hand flick/punch/slap)
 		if (data.handContacted) {
@@ -636,19 +637,6 @@ export function animateOrcScene(animateNormal = true) {
 					const speed = 0.08 * timeScale
 					const movement = earthDir.clone().multiplyScalar(speed)
 					const newWorldPos = worldPos.clone().add(movement)
-
-					if (newWorldPos.z < MIN_FRONT_Z) {
-						const xyDist = Math.sqrt(
-							newWorldPos.x * newWorldPos.x + newWorldPos.y * newWorldPos.y
-						)
-						if (xyDist > 0.15) {
-							newWorldPos.z = MIN_FRONT_Z
-							newWorldPos.x *= 0.98
-							newWorldPos.y *= 0.98
-						} else {
-							newWorldPos.z = MIN_FRONT_Z
-						}
-					}
 
 					if (sat.parent) sat.parent.worldToLocal(newWorldPos)
 					sat.position.copy(newWorldPos)

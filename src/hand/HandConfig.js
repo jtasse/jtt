@@ -325,7 +325,7 @@ export const LEO_FLICK_CONFIG = {
 // For Molniya orbit satellites (highly elliptical orbit, varies from ~0.6 to ~2.3 units).
 // Animation: POINTING -> APPROACHING -> WINDING_UP -> CONTACT (slap) -> CELEBRATING
 // Uses a backhand slap motion - the only orbit type that actually slaps!
-export const MOLNIYA_SLAP_CONFIG = {
+export const MOL_SLAP_CONFIG = {
 	// -----------------------------------------
 	// Phase Durations (milliseconds)
 	// -----------------------------------------
@@ -349,21 +349,21 @@ export const MOLNIYA_SLAP_CONFIG = {
 	// Larger distances and look-at offsets toward planet center (negative z).
 
 	// Approach phase (POINTING, APPROACHING)
-	approachCameraOffset: { x: 0.3, y: 0.8, z: 1.5 },
+	approachCameraOffset: { x: 0.3, y: 0.8, z: 0 },
 	approachCameraDistance: 5.0,
 	approachCameraLookAt: { x: 0, y: -0.3, z: -1.0 }, // Look toward planet
 	approachCameraSpeed: 0.02,
 
 	// Wind-up phase (arm pulls back for slap)
-	windUpCameraOffset: { x: 0.3, y: 0.8, z: 5 },
-	windUpCameraDistance: 5.0,
-	windUpCameraLookAt: { x: 0, y: -0.3, z: -1.0 },
+	windUpCameraOffset: { x: 0.3, y: 0.8, z: 0 },
+	windUpCameraDistance: 4.0,
+	windUpCameraLookAt: { x: 0, y: -0.3, z: 0 },
 	windUpCameraSpeed: 0.02,
 
 	// Contact phase (the actual slap motion)
-	slapCameraOffset: { x: 0.3, y: 0.8, z: 1.5 },
-	slapCameraDistance: 5.0,
-	slapCameraLookAt: { x: 2, y: -0.3, z: 1.0 },
+	slapCameraOffset: { x: 0.3, y: 0.8, z: 0 },
+	slapCameraDistance: 3.0,
+	slapCameraLookAt: { x: 0, y: -0.3, z: 0 },
 	slapCameraSpeed: 0.02,
 
 	// -----------------------------------------
