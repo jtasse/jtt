@@ -370,6 +370,30 @@ function updateCameraTracking() {
 			targetCamPos.y += frameDistance * 0.3
 
 			if (targetCamPos.z < 0.3) targetCamPos.z = 0.3
+		} else if (
+			(decommState.isLeoFlick ||
+				(decommState.satellite &&
+					decommState.satellite.userData.id.startsWith("leo"))) &&
+			decommState.hand
+		) {
+			// LEO Flick: Side view to see finger extension
+			// Hand is radially outward from satellite. We want a view tangent to the surface.
+			const dist = decommState.cameraDistance || targetDistance
+
+			// Calculate radial vector (Planet -> Satellite)
+			const radial = satPos.clone().sub(planetCenter).normalize()
+			const up = new THREE.Vector3(0, 1, 0)
+
+			// Calculate side vector (tangent to surface)
+			const side = new THREE.Vector3().crossVectors(radial, up).normalize()
+			if (side.lengthSq() < 0.001) side.set(0, 0, 1)
+
+			// Position camera: Satellite Pos + Side * Dist + Up * Offset
+			targetCamPos = satPos.clone().add(side.multiplyScalar(dist))
+			targetCamPos.y += dist * 0.2 // Slight look down
+
+			adjustedTarget = satPos.clone()
+			adjustedTarget.x += sidebarCompensation
 		} else {
 			// LEO/Molniya: Default camera tracking (follows satellite)
 			adjustedTarget = satPos.clone()

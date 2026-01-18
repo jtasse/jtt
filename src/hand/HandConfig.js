@@ -287,19 +287,19 @@ export const LEO_FLICK_CONFIG = {
 	// LEO satellites are close to Earth. Camera stays relatively stable.
 
 	// Approach phase (POINTING, APPROACHING)
-	approachCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	approachCameraOffset: null, // Use dynamic side view
 	approachCameraDistance: 3.5,
 	approachCameraLookAt: { x: 0, y: 0, z: 0 },
 	approachCameraSpeed: 0.02,
 
 	// Preparing phase (WINDING_UP state - hand gets ready to flick)
-	preparingCameraOffset: { x: 1.0, y: 0.8, z: 2.0 },
+	preparingCameraOffset: null, // Use dynamic side view
 	preparingCameraDistance: 2.5,
 	preparingCameraLookAt: { x: 0, y: 0, z: 0 },
 	preparingCameraSpeed: 0.02,
 
 	// Flicking phase (SLAPPING state - the actual flick motion)
-	flickingCameraOffset: { x: 1.0, y: 0.8, z: -2.0 },
+	flickingCameraOffset: null, // Use dynamic side view
 	flickingCameraDistance: 3.5,
 	flickingCameraLookAt: { x: 0, y: 0, z: 0 },
 	flickingCameraSpeed: 0.02,
