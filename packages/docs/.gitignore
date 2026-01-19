@@ -1,0 +1,6 @@
+# Build output
+dist/
+
+# Vale - Ignore downloaded styles, but keep custom Vocab
+vale-styles/*
+!vale-styles/Vocab/

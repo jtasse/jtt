@@ -96,7 +96,7 @@ This project uses a **hybrid architecture**:
 const texture = createCanvasTexture(htmlContent)
 const plane = new THREE.Mesh(
 	geometry,
-	new THREE.MeshBasicMaterial({ map: texture })
+	new THREE.MeshBasicMaterial({ map: texture }),
 )
 
 // CORRECT - Use DOM overlays:
@@ -223,7 +223,7 @@ function getViewportPosition(percentX, percentY, camera) {
 	return new THREE.Vector3(
 		(percentX - 0.5) * width,
 		(percentY - 0.5) * height,
-		0
+		0,
 	)
 }
 
@@ -384,6 +384,30 @@ Priority areas for testing:
 1. Layout calculations (frustum math, responsive positioning)
 2. State machine transitions (hand states, navigation states)
 3. DOM visibility states (content overlay show/hide)
+
+---
+
+## Documentation Linting
+
+We use [Vale](https://vale.sh/) to lint documentation for style and consistency.
+
+### Setup
+
+1. **Install the Engine**: Install Vale on your machine (see installation docs).
+   - Windows: `choco install vale`
+   - macOS: `brew install vale`
+2. **Sync Shared Rules**: Navigate to `packages/docs` and run the sync command. This downloads the style guides defined in `.vale.ini` so your local setup matches the team's configuration.
+   ```bash
+   cd packages/docs
+   npm run lint:sync
+   ```
+
+### Running Vale
+
+```bash
+cd packages/docs
+npm run lint
+```
 
 ---
 
