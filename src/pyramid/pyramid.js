@@ -39,6 +39,7 @@ import "../content/about/about.css"
 import "../content/blog/blog.css"
 import "../content/blog/blog.js"
 import "../content/portfolio/portfolio.css"
+import "../content/portfolio/portfolio.js"
 import "../content/orc-demo/orc-demo.css"
 import "../content/overlay.css"
 import {

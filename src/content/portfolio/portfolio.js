@@ -44,6 +44,18 @@
 
 			// 1. Handle Links (Global) - Intercept PDFs, Drive, Docs, Resume
 			if (link) {
+				// Handle anchor links (Jump to...)
+				const hrefAttr = link.getAttribute("href")
+				if (hrefAttr && hrefAttr.startsWith("#")) {
+					e.preventDefault()
+					const targetId = hrefAttr.substring(1)
+					const target = document.getElementById(targetId)
+					if (target) {
+						target.scrollIntoView({ behavior: "smooth", block: "start" })
+					}
+					return
+				}
+
 				const href = link.href
 				let shouldIntercept = false
 

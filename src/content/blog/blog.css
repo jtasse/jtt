@@ -107,6 +107,12 @@ header {
 	margin-bottom: 1rem;
 }
 
+/* Image link wrapper */
+.blog-content:not(.single-post) .post-image a {
+	display: block;
+	text-decoration: none;
+}
+
 /* Blog list view images - constrained for consistent cover look */
 .blog-content:not(.single-post) .post-image img {
 	width: 100%;
@@ -115,6 +121,13 @@ header {
 	border: 1px solid #335555;
 	border-radius: 4px;
 	margin-bottom: 15px;
+	transition: all 0.2s ease;
+}
+
+.blog-content:not(.single-post) .post-image a:hover img {
+	border-color: #00ffff;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 255, 255, 0.1);
 }
 
 /* Single post styles */
