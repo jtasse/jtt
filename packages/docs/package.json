@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "lint": "vale src/content/docs",
+    "lint:errors": "vale --minAlertLevel=error src/content/docs",
     "lint:sync": "vale sync"
   },
   "dependencies": {
