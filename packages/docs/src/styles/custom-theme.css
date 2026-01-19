@@ -3,6 +3,10 @@
 :root {
 	/* Accent colors - cyan to match site */
 	--sl-font: Helvetica, sans-serif;
+}
+
+/* Dark Theme (Default JTT Look) */
+[data-theme="dark"] {
 	--sl-color-accent-low: #002040;
 	--sl-color-accent: #00aaff;
 	--sl-color-accent-high: #00ffff;
@@ -26,11 +30,52 @@
 	/* Borders */
 	--sl-color-hairline: rgba(255, 255, 255, 0.1);
 	--sl-color-hairline-light: rgba(255, 255, 255, 0.05);
+
+	/* Code blocks styling */
+	--sl-color-bg-inline-code: rgba(0, 255, 255, 0.1);
+
+	/* Custom vars */
+	--jtt-link-hover: #ffffff;
+	--jtt-home-link-bg: rgba(14, 2, 78, 0.1);
+	--jtt-home-link-hover-bg: rgba(0, 255, 255, 0.2);
+	--jtt-home-link-hover-text: #ffffff;
 }
 
-/* Code blocks styling */
-:root {
-	--sl-color-bg-inline-code: rgba(0, 255, 255, 0.1);
+/* Light Theme */
+[data-theme="light"] {
+	/* Darker accents for contrast on white */
+	--sl-color-accent-low: #e0f7ff;
+	--sl-color-accent: #0077cc;
+	--sl-color-accent-high: #0055aa;
+	--sl-color-text-accent: #0066bb;
+
+	/* Light theme backgrounds */
+	--sl-color-bg: #ffffff;
+	--sl-color-bg-nav: #f8f9fa;
+	--sl-color-bg-sidebar: #f1f5f9;
+
+	/* Dark text */
+	--sl-color-white: #101010;
+	--sl-color-gray-1: #202020;
+	--sl-color-gray-2: #404040;
+	--sl-color-gray-3: #606060;
+	--sl-color-gray-4: #808080;
+	--sl-color-gray-5: #c0c0c0;
+	--sl-color-gray-6: #e0e0e0;
+	--sl-color-black: #ffffff;
+
+	/* Borders */
+	--sl-color-hairline: rgba(0, 0, 0, 0.1);
+	--sl-color-hairline-light: rgba(0, 0, 0, 0.05);
+
+	/* Code blocks styling */
+	--sl-color-bg-inline-code: rgba(0, 100, 200, 0.1);
+
+	/* Custom vars */
+	--jtt-link-hover: #0055aa;
+	--jtt-home-link-bg: rgba(0, 0, 0, 0.05);
+	--jtt-home-link-hover-bg: rgba(0, 100, 200, 0.1);
+	--jtt-home-link-hover-text: #000000;
 }
 
 /* Links */
@@ -39,41 +84,41 @@ a {
 }
 
 a:hover {
-	color: #ffffff;
+	color: var(--jtt-link-hover);
 }
 
 /* Sidebar active item */
 [data-current="true"] {
-	background: rgba(0, 255, 255, 0.1);
+	background: var(--sl-color-bg-inline-code);
 	border-left: 2px solid var(--sl-color-accent-high);
 }
 
 /* Callouts/Admonitions */
 .starlight-aside--note {
 	border-color: var(--sl-color-accent);
-	background: rgba(0, 170, 255, 0.1);
+	background: color-mix(in srgb, var(--sl-color-accent), transparent 90%);
 }
 
 .starlight-aside--tip {
 	border-color: #00ff88;
-	background: rgba(0, 255, 136, 0.1);
+	background: color-mix(in srgb, #00ff88, transparent 90%);
 }
 
 .starlight-aside--caution {
 	border-color: #ffaa00;
-	background: rgba(255, 170, 0, 0.1);
+	background: color-mix(in srgb, #ffaa00, transparent 90%);
 }
 
 .starlight-aside--danger {
 	border-color: #ff4444;
-	background: rgba(255, 68, 68, 0.1);
+	background: color-mix(in srgb, #ff4444, transparent 90%);
 }
 
 /* Differentiate the "Back to home" link in the sidebar */
 .sidebar-content a.home-link {
 	display: block;
-	color: white;
-	background: rgba(14, 2, 78, 0.1);
+	color: var(--sl-color-white);
+	background: var(--jtt-home-link-bg);
 	border: 1px solid;
 	border-color: var(--sl-color-gray-2);
 	margin-bottom: 1.5rem;
@@ -84,8 +129,8 @@ a:hover {
 }
 
 .sidebar-content a.home-link:hover {
-	background: rgba(0, 255, 255, 0.2);
-	color: #ffffff !important;
+	background: var(--jtt-home-link-hover-bg);
+	color: var(--jtt-home-link-hover-text) !important;
 	text-decoration: none;
 	border-color: var(--sl-color-accent-high);
 }
