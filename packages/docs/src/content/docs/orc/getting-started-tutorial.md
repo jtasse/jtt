@@ -12,7 +12,7 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Locate the **Available Satellites** list in the sidebar on the left.
 
-   Click on any satellite name (e.g., `Sat-Alpha` or `Sat-Beta`).
+   Click on any satellite name (For example `Sat-Alpha` or `Sat-Beta`).
 
    _Observe:_ The camera automatically moves to focus on the selected satellite, and its details appear in the **Satellite Info** pane.
 

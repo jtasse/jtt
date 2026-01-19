@@ -22,7 +22,7 @@ The ORC unit is a semi-autonomous spacecraft built on a modular bus. Its primary
 
 - **The Hand:** A multi-jointed robotic manipulator with adaptive grip technology. It can conform to irregular shapes, allowing it to grasp solar panels, antennas, or main bodies of debris.
 
-- **Sensor Suite:** A combination of Lidar, optical cameras, and infrared sensors provides real-time telemetry and 3D mapping of the target object.
+- **Sensor Suite:** A combination of LIDAR, optical cameras, and infrared sensors provides real-time telemetry and 3D mapping of the target object.
 
 - **Power Generation:** An S9G reactor nuclear acts as the primary power source, with solar panels serving as a backup.
 
@@ -38,7 +38,7 @@ Ground stations upload target vectors to the Hand, and its onboard AI verifies t
 
 ### Phase 2: Intercept
 
-The Hand calculates an intercept solution that minimizes power usage and approaches the satellite until it is within deorbiting range.
+The Hand calculates an intercept solution that minimizes power usage and approaches the satellite until it's within deorbiting range.
 
 ### Phase 3: Deorbit
 
@@ -46,11 +46,11 @@ The deorbitnig methodology used is determined by the target satellite's orbit ty
 
 #### Low Earth Orbit (LEO)
 
-The Hand closes to within pincer range and joins its thumb and index finger, building tension as it forms the 'OK' gesture. Next, the Hand releases this tension and uses its index finger to flick the satellite into the Earth's atmosphere at an angle sufficient to faciliate vaporizing the satellite in its entirety.
+The Hand closes to within pincer range and joins its thumb and index finger, building tension as it forms the 'OK' gesture. Next, the Hand releases this tension and uses its index finger to flick the satellite into the Earth's atmosphere at an angle sufficient to facilitate vaporizing the satellite in its entirety.
 
 #### Geostationary Orbit (GEO)
 
-After placing its target between itself in and the Earth, the Hand closes into a fist. After a short period of reverse thrust, the Hand closes the distance to the target, punching it into Earth's mesosphere, where it is physically disincorporated.
+After placing its target between itself in and the Earth, the Hand closes into a fist. After a short period of reverse thrust, the Hand closes the distance to the target, punching it into Earth's mesosphere, where it's physically disincorporated.
 
 #### Molniyan Orbit (MOL)
 
