@@ -1,0 +1,53 @@
+:root {
+	/* Default Dark Theme */
+	--bg-color: rgba(0, 0, 0, 0.85);
+	--bg-color-solid: #0a0a1a;
+	--bg-gradient: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+
+	--text-color: #e0e0e0;
+	--text-muted: #cccccc;
+
+	--heading-color: #00ffff;
+	--subheading-color: #00aaff;
+	--heading-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+
+	--link-color: #00ffff;
+	--link-hover-color: #ffffff;
+
+	--border-color: rgba(255, 255, 255, 0.2);
+	--border-color-strong: #335555;
+
+	--item-bg: rgba(0, 0, 0, 0.6);
+	--code-bg: rgba(0, 0, 0, 0.4);
+
+	--shadow-color: rgba(0, 255, 255, 0.1);
+
+	--accent-color: #00ffff;
+}
+
+[data-theme="light"] {
+	/* Light Theme Overrides */
+	--bg-color: rgba(255, 255, 255, 0.95);
+	--bg-color-solid: #f0f4f8;
+	--bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+
+	--text-color: #333333;
+	--text-muted: #555555;
+
+	--heading-color: #0066cc;
+	--subheading-color: #0055aa;
+	--heading-shadow: none;
+
+	--link-color: #0066cc;
+	--link-hover-color: #003366;
+
+	--border-color: rgba(0, 0, 0, 0.15);
+	--border-color-strong: #cccccc;
+
+	--item-bg: rgba(255, 255, 255, 0.8);
+	--code-bg: rgba(0, 0, 0, 0.05);
+
+	--shadow-color: rgba(0, 0, 0, 0.1);
+
+	--accent-color: #0066cc;
+}

@@ -23,27 +23,27 @@
    Main Content Page Styles (from orc-demo.html)
    ============================================ */
 .orc-demo-page {
-	color: #e0f0ff;
+	color: var(--text-color);
 	max-width: 800px;
 	margin: 0 auto;
 }
 
 .orc-demo-page h1 {
-	color: #00ffff;
+	color: var(--heading-color);
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
 .orc-subtitle {
-	color: #00aaff;
+	color: var(--subheading-color);
 	font-size: 1.2rem;
 	margin-bottom: 2rem;
 	font-style: italic;
 }
 
 .orc-info {
-	background: rgba(0, 30, 60, 0.6);
+	background: var(--item-bg);
 	border: 0;
-	border-left: 2px solid #00aaff;
+	border-left: 2px solid var(--accent-color);
 	padding: 1.5rem;
 	margin-bottom: 1.5rem;
 }
@@ -63,26 +63,26 @@
 }
 
 .orc-api-preview {
-	background: rgba(0, 40, 80, 0.5);
+	background: var(--item-bg);
 	border: 0;
-	border-left: 2px solid #00ffaa;
+	border-left: 2px solid var(--accent-color);
 	padding: 1.5rem;
 }
 
 .orc-api-preview h2 {
-	color: #00ffaa;
+	color: var(--subheading-color);
 	margin-bottom: 0.5rem;
 	font-size: 1.3rem;
 }
 
 .orc-api-preview a {
-	color: #00ffff;
+	color: var(--link-color);
 	text-decoration: none;
 	transition: color 0.3s ease;
 }
 
 .orc-api-preview a:hover {
-	color: #66ffff;
+	color: var(--link-hover-color);
 	text-decoration: underline;
 }
 
@@ -122,13 +122,9 @@
 	right: 0;
 	width: var(--orc-info-pane-width);
 	height: 100vh;
-	background: linear-gradient(
-		180deg,
-		rgba(0, 20, 40, 0.95) 0%,
-		rgba(0, 30, 50, 0.9) 100%
-	);
+	background: var(--bg-color);
 	border: 0;
-	border-left: 2px solid #00aaff;
+	border-left: 2px solid var(--accent-color);
 	padding: 12px 14px;
 	box-shadow: -10px 0 40px rgba(0, 170, 255, 0.2);
 	z-index: 50;
@@ -146,14 +142,14 @@
    Info Pane Content Styles
    ============================================ */
 .orc-pane-title {
-	color: #00ffff;
+	color: var(--heading-color);
 	margin: 0 0 10px 0;
 	font-size: 1.4em;
 	text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .orc-pane-content {
-	color: #aaddff;
+	color: var(--text-color);
 	font-size: 1em;
 	line-height: 1.5;
 }
@@ -164,13 +160,13 @@
 }
 
 .orc-pane-section {
-	border-top: 1px solid rgba(0, 170, 255, 0.3);
+	border-top: 1px solid var(--border-color);
 	padding-top: 10px;
 	margin-top: 10px;
 }
 
 .orc-pane-section h3 {
-	color: #00aaff;
+	color: var(--subheading-color);
 	font-size: 1em;
 	margin-bottom: 8px;
 }
@@ -210,14 +206,14 @@
    API Documentation Link
    ============================================ */
 .docs-link {
-	color: #00ffff;
+	color: var(--link-color);
 	text-decoration: none;
 	display: block;
 	width: 100%;
 	box-sizing: border-box;
 	padding: 10px 15px;
-	border: 1px solid rgba(0, 170, 255, 0.4);
-	background: rgba(0, 40, 60, 0.3);
+	border: 1px solid var(--border-color);
+	background: var(--item-bg);
 	border-radius: 6px;
 	transition: all 0.2s ease;
 	font-size: 0.95em;
@@ -234,9 +230,9 @@ ul:has(.docs-link) {
 }
 
 .docs-link:hover {
-	background: rgba(0, 60, 90, 0.6);
-	border-color: #00ffff;
-	color: #ffffff;
+	background: var(--border-color);
+	border-color: var(--link-color);
+	color: var(--link-hover-color);
 	transform: translateX(4px);
 	box-shadow: -2px 0 10px rgba(0, 255, 255, 0.2);
 }
@@ -249,7 +245,7 @@ ul:has(.docs-link) {
 
 .docs-subject {
 	font-size: 1.1em;
-	color: #ffffff;
+	color: var(--text-color);
 	margin-bottom: 4px;
 }
 
@@ -257,8 +253,8 @@ ul:has(.docs-link) {
    Available Satellites Pane
    ============================================ */
 #available-satellites-pane {
-	background: rgba(0, 60, 100, 0.5);
-	border: 1px solid rgba(0, 170, 255, 0.4);
+	background: var(--item-bg);
+	border: 1px solid var(--border-color);
 	border-radius: 6px;
 	padding: 10px 12px;
 	margin-bottom: 12px;
@@ -266,7 +262,7 @@ ul:has(.docs-link) {
 }
 
 #available-satellites-pane h3 {
-	color: #00ddff;
+	color: var(--subheading-color);
 	margin-top: 0;
 	margin-bottom: 8px;
 	font-size: 1.15em;
@@ -282,14 +278,16 @@ ul:has(.docs-link) {
 .satellite-list-item {
 	padding: 5px 8px;
 	margin-bottom: 3px;
-	background: rgba(0, 40, 60, 0.3);
-	border: 1px solid rgba(0, 150, 200, 0.15);
+	background: var(--code-bg);
+	border: 1px solid var(--border-color);
 	border-radius: 3px;
 	cursor: pointer;
-	transition: background 0.2s, border-color 0.2s;
+	transition:
+		background 0.2s,
+		border-color 0.2s;
 	text-align: center;
 	font-weight: normal;
-	color: #99ccee;
+	color: var(--text-muted);
 	font-size: 0.95em;
 }
 
@@ -307,20 +305,20 @@ ul:has(.docs-link) {
 }
 
 .satellite-list-item:hover {
-	background: rgba(0, 60, 90, 0.5);
-	border-color: rgba(0, 170, 255, 0.4);
-	color: #bbddff;
+	background: var(--border-color);
+	border-color: var(--link-color);
+	color: var(--text-color);
 }
 
 .satellite-list-item.selected {
-	background: rgba(0, 80, 110, 0.6);
-	border-color: rgba(0, 200, 255, 0.5);
-	color: #ffffff;
+	background: var(--border-color-strong);
+	border-color: var(--link-color);
+	color: var(--text-color);
 	font-weight: bold;
 }
 
 #satellite-help-text {
-	color: #00aaff;
+	color: var(--subheading-color);
 	font-style: italic;
 	text-align: left;
 	margin: 0 0 6px 2px;
@@ -354,8 +352,8 @@ ul:has(.docs-link) {
    Actions Pane
    ============================================ */
 #actions-pane {
-	background: rgba(0, 60, 100, 0.5);
-	border: 1px solid rgba(0, 170, 255, 0.4);
+	background: var(--item-bg);
+	border: 1px solid var(--border-color);
 	border-radius: 6px;
 	padding: 10px 12px;
 	margin-bottom: 12px;
@@ -363,7 +361,7 @@ ul:has(.docs-link) {
 }
 
 #actions-pane h3 {
-	color: #00ddff;
+	color: var(--subheading-color);
 	margin-top: 0;
 	margin-bottom: 8px;
 	font-size: 1.15em;
@@ -396,7 +394,9 @@ ul:has(.docs-link) {
 	text-transform: none;
 	color: #555566;
 	/* 3D raised effect */
-	box-shadow: 0 4px 0 rgba(30, 30, 40, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3),
+	box-shadow:
+		0 4px 0 rgba(30, 30, 40, 0.8),
+		0 6px 10px rgba(0, 0, 0, 0.3),
 		inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	position: relative;
 	top: 0;
@@ -410,22 +410,31 @@ ul:has(.docs-link) {
 	cursor: pointer;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	/* 3D raised effect with red "sides" */
-	box-shadow: 0 6px 0 #881111, 0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 20px rgba(255, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2),
+	box-shadow:
+		0 6px 0 #881111,
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(255, 68, 68, 0.4),
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item:not(.disabled):hover {
 	background: linear-gradient(180deg, #ee5555 0%, #bb3333 100%);
-	box-shadow: 0 6px 0 #991515, 0 10px 20px rgba(0, 0, 0, 0.5),
-		0 0 30px rgba(255, 68, 68, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25),
+	box-shadow:
+		0 6px 0 #991515,
+		0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(255, 68, 68, 0.6),
+		inset 0 1px 0 rgba(255, 255, 255, 0.25),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item:not(.disabled):active {
 	top: 4px;
-	box-shadow: 0 2px 0 #881111, 0 3px 5px rgba(0, 0, 0, 0.3),
-		0 0 15px rgba(255, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1),
+	box-shadow:
+		0 2px 0 #881111,
+		0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(255, 68, 68, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -453,22 +462,31 @@ ul:has(.docs-link) {
 	cursor: pointer;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	/* 3D raised effect with green "sides" */
-	box-shadow: 0 6px 0 #115522, 0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 20px rgba(0, 255, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2),
+	box-shadow:
+		0 6px 0 #115522,
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 20px rgba(0, 255, 136, 0.4),
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item.cancel-action:hover {
 	background: linear-gradient(180deg, #44cc77 0%, #339955 100%);
-	box-shadow: 0 6px 0 #117728, 0 10px 20px rgba(0, 0, 0, 0.5),
-		0 0 30px rgba(0, 255, 136, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25),
+	box-shadow:
+		0 6px 0 #117728,
+		0 10px 20px rgba(0, 0, 0, 0.5),
+		0 0 30px rgba(0, 255, 136, 0.6),
+		inset 0 1px 0 rgba(255, 255, 255, 0.25),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-list-item.cancel-action:active {
 	top: 4px;
-	box-shadow: 0 2px 0 #115522, 0 3px 5px rgba(0, 0, 0, 0.3),
-		0 0 15px rgba(0, 255, 136, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1),
+	box-shadow:
+		0 2px 0 #115522,
+		0 3px 5px rgba(0, 0, 0, 0.3),
+		0 0 15px rgba(0, 255, 136, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1),
 		inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -492,14 +510,12 @@ ul:has(.docs-link) {
 
 /* Custom style for the Reset Scene button to make it generic/bluish */
 #orc-reset-button {
-	background: linear-gradient(
-		180deg,
-		rgba(0, 60, 100, 0.6) 0%,
-		rgba(0, 40, 80, 0.7) 100%
-	);
-	border: 1px solid rgba(0, 170, 255, 0.3);
-	color: #00ffff;
-	box-shadow: 0 4px 0 rgba(0, 30, 50, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3);
+	background: var(--item-bg);
+	border: 1px solid var(--border-color);
+	color: var(--link-color);
+	box-shadow:
+		0 4px 0 rgba(0, 30, 50, 0.8),
+		0 6px 10px rgba(0, 0, 0, 0.3);
 	padding: 0 12px;
 	height: 100%;
 	display: flex;
@@ -508,13 +524,11 @@ ul:has(.docs-link) {
 }
 
 #orc-reset-button:hover {
-	background: linear-gradient(
-		180deg,
-		rgba(0, 80, 130, 0.7) 0%,
-		rgba(0, 50, 90, 0.8) 100%
-	);
-	box-shadow: 0 4px 0 rgba(0, 40, 60, 0.9), 0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 15px rgba(0, 255, 255, 0.2);
+	background: var(--border-color);
+	box-shadow:
+		0 4px 0 rgba(0, 40, 60, 0.9),
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 15px var(--shadow-color);
 }
 
 #orc-reset-button:active {
@@ -526,8 +540,8 @@ ul:has(.docs-link) {
    Satellite Info Pane (prominent status display)
    ============================================ */
 #satellite-info-pane {
-	background: rgba(0, 60, 100, 0.5);
-	border: 1px solid rgba(0, 170, 255, 0.4);
+	background: var(--item-bg);
+	border: 1px solid var(--border-color);
 	border-radius: 6px;
 	padding: 10px 12px;
 	margin-bottom: 12px;
@@ -535,7 +549,7 @@ ul:has(.docs-link) {
 }
 
 #satellite-info-pane h3 {
-	color: #00ddff;
+	color: var(--subheading-color);
 	margin-top: 0;
 	margin-bottom: 8px;
 	font-size: 1.15em;
@@ -543,7 +557,7 @@ ul:has(.docs-link) {
 }
 
 #no-satellite-selected {
-	color: #668899;
+	color: var(--text-muted);
 	font-style: italic;
 	text-align: center;
 	margin: 0;
@@ -555,7 +569,7 @@ ul:has(.docs-link) {
 	justify-content: space-between;
 	align-items: center;
 	padding: 6px 0;
-	border-bottom: 1px solid rgba(0, 170, 255, 0.15);
+	border-bottom: 1px solid var(--border-color);
 }
 
 .satellite-info-row:last-child {
@@ -563,7 +577,7 @@ ul:has(.docs-link) {
 }
 
 .info-label {
-	color: #ffffff;
+	color: var(--text-color);
 	font-size: 0.95em;
 	font-weight: bold;
 	text-transform: uppercase;
@@ -571,7 +585,7 @@ ul:has(.docs-link) {
 }
 
 .info-value {
-	color: #ffffff;
+	color: var(--text-color);
 	font-weight: bold;
 }
 
@@ -612,11 +626,11 @@ ul:has(.docs-link) {
 	left: 0;
 	width: calc(100vw - var(--orc-info-pane-width));
 	height: 100vh;
-	background: #0f172a;
+	background: var(--bg-color-solid);
 	z-index: 60;
 	display: none;
 	flex-direction: column;
-	border-right: 2px solid #00aaff;
+	border-right: 2px solid var(--accent-color);
 	pointer-events: auto;
 }
 
@@ -626,19 +640,19 @@ ul:has(.docs-link) {
 
 .orc-doc-controls {
 	height: 48px;
-	background: #1e293b;
+	background: var(--bg-color);
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
 	padding: 0 16px;
-	border-bottom: 1px solid #334155;
+	border-bottom: 1px solid var(--border-color);
 	gap: 16px;
 }
 
 .orc-doc-control-btn {
 	background: transparent;
 	border: none;
-	color: #00ffff;
+	color: var(--link-color);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -652,7 +666,7 @@ ul:has(.docs-link) {
 }
 
 .orc-doc-control-btn:hover {
-	background: rgba(0, 255, 255, 0.1);
+	background: var(--border-color);
 }
 
 .orc-doc-iframe {
@@ -688,29 +702,25 @@ ul:has(.docs-link) {
 	padding: 0 12px;
 	height: 100%;
 	box-sizing: border-box;
-	background: linear-gradient(
-		180deg,
-		rgba(0, 60, 100, 0.6) 0%,
-		rgba(0, 40, 80, 0.7) 100%
-	);
-	border: 1px solid rgba(0, 170, 255, 0.3);
+	background: var(--item-bg);
+	border: 1px solid var(--border-color);
 	border-radius: 8px;
-	color: #00ffff;
+	color: var(--link-color);
 	cursor: pointer;
-	box-shadow: 0 4px 0 rgba(0, 30, 50, 0.8), 0 6px 10px rgba(0, 0, 0, 0.3);
+	box-shadow:
+		0 4px 0 rgba(0, 30, 50, 0.8),
+		0 6px 10px rgba(0, 0, 0, 0.3);
 	position: relative;
 	top: 0;
 	transition: all 0.1s ease;
 }
 
 .scene-control-button:hover {
-	background: linear-gradient(
-		180deg,
-		rgba(0, 80, 130, 0.7) 0%,
-		rgba(0, 50, 90, 0.8) 100%
-	);
-	box-shadow: 0 4px 0 rgba(0, 40, 60, 0.9), 0 8px 15px rgba(0, 0, 0, 0.4),
-		0 0 15px rgba(0, 255, 255, 0.2);
+	background: var(--border-color);
+	box-shadow:
+		0 4px 0 rgba(0, 40, 60, 0.9),
+		0 8px 15px rgba(0, 0, 0, 0.4),
+		0 0 15px var(--shadow-color);
 }
 
 .scene-control-button:active {
@@ -748,10 +758,10 @@ ul:has(.docs-link) {
 #orc-doc-new-tab {
 	display: flex;
 	align-items: center;
-	color: #00ffff;
+	color: var(--link-color);
 	text-decoration: none;
 	font-size: 0.95rem;
-	border: 1px solid rgba(0, 170, 255, 0.4);
+	border: 1px solid var(--border-color);
 	transition: color 0.2s ease;
 }
 
@@ -766,15 +776,15 @@ ul:has(.docs-link) {
 }
 
 #orc-info-pane::-webkit-scrollbar-track {
-	background: rgba(0, 0, 0, 0.3);
+	background: var(--code-bg);
 }
 
 #orc-info-pane::-webkit-scrollbar-thumb {
-	background: rgba(0, 255, 255, 0.3);
+	background: var(--border-color);
 	border-radius: 5px;
-	border: 2px solid rgba(0, 0, 0, 0.3);
+	border: 2px solid var(--code-bg);
 }
 
 #orc-info-pane::-webkit-scrollbar-thumb:hover {
-	background: rgba(0, 255, 255, 0.8);
+	background: var(--link-color);
 }

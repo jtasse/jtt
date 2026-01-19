@@ -1,5 +1,4 @@
 import * as THREE from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { LayoutManager } from "../core/LayoutManager.js"
 import {
 	scene,
@@ -34,6 +33,8 @@ import {
 	showBlogPost,
 	hideAllPlanes,
 } from "../content/ContentManager.js"
+import "../theme/theme.css"
+import "../theme/ThemeManager.js"
 import "../content/home/home.css"
 import "../content/about/about.css"
 import "../content/blog/blog.css"
