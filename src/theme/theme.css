@@ -56,7 +56,7 @@
 #theme-control {
 	position: fixed;
 	top: 0;
-	right: 0;
+	right: 0px;
 	z-index: 10002;
 	display: flex;
 	flex-direction: column;

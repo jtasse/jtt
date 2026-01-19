@@ -1,4 +1,6 @@
 import * as THREE from "three"
+import { createOrcHand } from "../../hand/HandMesh.js"
+import { applyGesture, updatePlumeAnimation } from "../../hand/HandBehaviors.js"
 
 // Showcase state (completely isolated from the main ORC demo)
 let showcaseRenderer = null
@@ -10,15 +12,16 @@ let showcaseGroup = null
 let showcaseSatellites = []
 let isRunning = false
 let cachedPlanetCanvas = null
+let showcaseHandEntryDelay = 0 // Delay before hand appears
+// eslint-disable-next-line no-unused-vars
+let geoTether = null
+// eslint-disable-next-line no-unused-vars
+let geoSatelliteRef = null
 
 // Hand animation state
 let showcaseHand = null
 let handAnimationTime = 0
-const HAND_ANIMATION_SPEED = 0.008
-
-// GEO tether reference for animation
-let geoTether = null
-let geoSatelliteRef = null
+const HAND_ANIMATION_SPEED = 0.0037
 
 // Constants matching OrcScene.js
 const PLANET_RADIUS = 0.5
@@ -55,6 +58,9 @@ export function createOrcShowcase(container) {
 
 	showcaseContainer = container
 	isRunning = true
+
+	// Set entry delay relative to current time (0.5s delay)
+	showcaseHandEntryDelay = performance.now() + 500
 
 	const rect = container.getBoundingClientRect()
 	const width = rect.width || container.clientWidth || 800
@@ -155,7 +161,7 @@ function createShowcaseOrcScene() {
 		markerLatitude,
 		markerLongitude,
 		GEO_ALTITUDE,
-		0xff00ff
+		0xff00ff,
 	)
 	planet.add(geoRing)
 
@@ -188,8 +194,11 @@ function createShowcaseOrcScene() {
 	group.userData.planet = planet
 
 	// Create animated hand
-	showcaseHand = createShowcaseHand()
+	showcaseHand = createOrcHand()
+	applyGesture(showcaseHand, "fist")
+	showcaseHand.scale.setScalar(0.22) // Scale down to fit showcase scene
 	showcaseHand.position.set(1.5, 0.5, 1)
+	showcaseHand.visible = false
 	group.add(showcaseHand)
 
 	return group
@@ -233,18 +242,42 @@ function animateShowcase() {
 
 	// Animate hand - circular motion around the scene
 	if (showcaseHand) {
-		handAnimationTime += HAND_ANIMATION_SPEED
-		const handRadius = 2.0
-		const verticalOffset = Math.sin(handAnimationTime * 0.7) * 0.4
-		const x = Math.cos(handAnimationTime) * handRadius
-		const z = Math.sin(handAnimationTime) * handRadius * 0.5 + 1.5
-		showcaseHand.position.set(x, verticalOffset + 0.3, z)
+		const now = performance.now()
 
-		// Make hand face the direction of movement
-		showcaseHand.rotation.y = -handAnimationTime + Math.PI / 2
+		if (now > showcaseHandEntryDelay) {
+			showcaseHand.visible = true
 
-		// Subtle finger wiggle animation
-		animateHandFingers(showcaseHand, handAnimationTime)
+			// Fly-in effect
+			const flyInDuration = 1500
+			const flyInTime = Math.min(
+				(now - showcaseHandEntryDelay) / flyInDuration,
+				1,
+			)
+			const easeOut = 1 - Math.pow(1 - flyInTime, 3)
+
+			const targetRadius = 2.0
+			const startRadius = 6.0
+			const currentRadius = startRadius + (targetRadius - startRadius) * easeOut
+
+			handAnimationTime += HAND_ANIMATION_SPEED
+			const verticalOffset = Math.sin(handAnimationTime * 0.7) * 0.4
+			const x = -Math.cos(handAnimationTime) * currentRadius
+			// Adjusted Z to avoid camera clipping (Camera Z is 2.5)
+			const z = Math.sin(handAnimationTime) * currentRadius * 0.3 + 1.2
+			showcaseHand.position.set(x, verticalOffset, z)
+
+			// Make hand face the direction of movement
+			showcaseHand.rotation.y = handAnimationTime + Math.PI / 2
+
+			// Animate plume
+			if (showcaseHand.userData.plume) {
+				updatePlumeAnimation(
+					showcaseHand.userData.plume,
+					0.6,
+					performance.now(),
+				)
+			}
+		}
 	}
 
 	// Render
@@ -288,7 +321,7 @@ export function cleanupOrcShowcase() {
 	if (showcaseRenderer) {
 		if (showcaseRenderer.domElement && showcaseRenderer.domElement.parentNode) {
 			showcaseRenderer.domElement.parentNode.removeChild(
-				showcaseRenderer.domElement
+				showcaseRenderer.domElement,
 			)
 		}
 		showcaseRenderer.dispose()
@@ -360,7 +393,7 @@ function createPlanet() {
 	const atmosphereGeometry = new THREE.SphereGeometry(
 		PLANET_RADIUS * 1.1,
 		64,
-		64
+		64,
 	)
 	const atmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
@@ -394,7 +427,7 @@ function createPlanet() {
 	// Outer glow
 	const outerAtmosphereGeometry = new THREE.SphereGeometry(
 		PLANET_RADIUS * 1.4,
-		32
+		32,
 	)
 	const outerAtmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
@@ -431,20 +464,20 @@ function createSatellite(color) {
 		new THREE.BoxGeometry(
 			SATELLITE_SIZE,
 			SATELLITE_SIZE * 0.5,
-			SATELLITE_SIZE * 0.5
+			SATELLITE_SIZE * 0.5,
 		),
 		new THREE.MeshStandardMaterial({
 			color: 0x888888,
 			metalness: 0.8,
 			roughness: 0.2,
-		})
+		}),
 	)
 	group.add(body)
 
 	const panelGeo = new THREE.BoxGeometry(
 		SATELLITE_SIZE * 0.1,
 		SATELLITE_SIZE * 1.5,
-		SATELLITE_SIZE * 0.02
+		SATELLITE_SIZE * 0.02,
 	)
 	const panelMat = new THREE.MeshStandardMaterial({
 		color: color,
@@ -483,7 +516,7 @@ function createOrbitalRing(xRadius, zRadius, color) {
 			0,
 			2 * Math.PI,
 			false,
-			0
+			0,
 		)
 		const points = curve.getPoints(128)
 		const geometry = new THREE.BufferGeometry().setFromPoints(points)
@@ -538,124 +571,6 @@ function createGeoTether(surfacePos, satellitePos) {
 	return new THREE.Line(geometry, material)
 }
 
-/**
- * Creates a simplified hand for the showcase animation
- */
-function createShowcaseHand() {
-	const hand = new THREE.Group()
-	hand.name = "showcaseHand"
-
-	// Palm
-	const palmGeometry = new THREE.BoxGeometry(0.15, 0.08, 0.2)
-	const palmMaterial = new THREE.MeshStandardMaterial({
-		color: 0x00ffff,
-		emissive: 0x004444,
-		metalness: 0.3,
-		roughness: 0.6,
-	})
-	const palm = new THREE.Mesh(palmGeometry, palmMaterial)
-	hand.add(palm)
-
-	// Create fingers
-	const fingerMaterial = new THREE.MeshStandardMaterial({
-		color: 0x00ffff,
-		emissive: 0x004444,
-		metalness: 0.3,
-		roughness: 0.6,
-	})
-
-	const fingerPositions = [
-		{ x: -0.05, name: "pinky" },
-		{ x: -0.025, name: "ring" },
-		{ x: 0, name: "middle" },
-		{ x: 0.025, name: "index" },
-	]
-
-	fingerPositions.forEach((fp, i) => {
-		const fingerGroup = new THREE.Group()
-		fingerGroup.name = fp.name
-
-		// Base segment
-		const baseGeo = new THREE.BoxGeometry(0.02, 0.02, 0.08)
-		const base = new THREE.Mesh(baseGeo, fingerMaterial)
-		base.position.z = -0.14
-		fingerGroup.add(base)
-
-		// Mid segment
-		const midGroup = new THREE.Group()
-		midGroup.name = fp.name + "_mid"
-		midGroup.position.z = -0.18
-		const midGeo = new THREE.BoxGeometry(0.018, 0.018, 0.06)
-		const mid = new THREE.Mesh(midGeo, fingerMaterial)
-		mid.position.z = -0.03
-		midGroup.add(mid)
-		fingerGroup.add(midGroup)
-
-		// Tip segment
-		const tipGroup = new THREE.Group()
-		tipGroup.name = fp.name + "_tip"
-		tipGroup.position.z = -0.06
-		const tipGeo = new THREE.BoxGeometry(0.015, 0.015, 0.04)
-		const tip = new THREE.Mesh(tipGeo, fingerMaterial)
-		tip.position.z = -0.02
-		tipGroup.add(tip)
-		midGroup.add(tipGroup)
-
-		fingerGroup.position.x = fp.x
-		hand.add(fingerGroup)
-	})
-
-	// Thumb (positioned on the side)
-	const thumbGroup = new THREE.Group()
-	thumbGroup.name = "thumb"
-	const thumbGeo = new THREE.BoxGeometry(0.025, 0.025, 0.06)
-	const thumb = new THREE.Mesh(thumbGeo, fingerMaterial)
-	thumb.position.z = -0.03
-	thumbGroup.add(thumb)
-	thumbGroup.position.set(0.09, 0, -0.05)
-	thumbGroup.rotation.y = -Math.PI / 4
-	hand.add(thumbGroup)
-
-	// Scale hand appropriately for the showcase
-	hand.scale.setScalar(0.6)
-
-	return hand
-}
-
-/**
- * Animates the hand fingers with subtle wiggle
- */
-function animateHandFingers(hand, time) {
-	if (!hand) return
-
-	const fingerNames = ["pinky", "ring", "middle", "index"]
-	fingerNames.forEach((name, i) => {
-		const finger = hand.getObjectByName(name)
-		if (finger) {
-			// Subtle curl animation, each finger slightly offset in phase
-			const phase = i * 0.5
-			const curl = Math.sin(time * 2 + phase) * 0.1
-			finger.rotation.x = curl
-
-			const mid = finger.getObjectByName(name + "_mid")
-			if (mid) {
-				mid.rotation.x = curl * 1.2
-
-				const tip = mid.getObjectByName(name + "_tip")
-				if (tip) {
-					tip.rotation.x = curl * 1.4
-				}
-			}
-		}
-	})
-
-	// Thumb subtle movement
-	const thumb = hand.getObjectByName("thumb")
-	if (thumb) {
-		thumb.rotation.z = Math.sin(time * 1.5) * 0.1
-	}
-}
-
 // Continent drawing helpers (simplified for the showcase)
 function latLonToCanvas(lat, lon, width, height) {
 	const x = ((lon + 180) / 360) * width
@@ -669,7 +584,7 @@ function drawContinentPath(
 	width,
 	height,
 	closePath = true,
-	fillColor = "#5A5840"
+	fillColor = "#5A5840",
 ) {
 	if (coords.length < 2) return
 	ctx.beginPath()
@@ -682,7 +597,7 @@ function drawContinentPath(
 			coords[i - 1][1],
 			coords[i - 1][0],
 			width,
-			height
+			height,
 		)
 
 		if (Math.abs(point.x - prevPoint.x) > width / 2) {

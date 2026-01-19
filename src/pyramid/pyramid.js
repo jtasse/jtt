@@ -188,7 +188,6 @@ function morphFromOrcScene() {
 
 		if (hand) {
 			hand.position.set(10, 0, -2)
-			scene.add(hand)
 			setCurrentHandPage("orc-demo")
 		}
 

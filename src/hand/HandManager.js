@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { createOrcHand } from "./HandMesh.js"
-import { scene } from "../core/SceneManager.js"
 
 // === Roaming Hand of ORC ===
 // The website is one continuous horizontal scene. Pages exist at different x-coordinates.
@@ -24,7 +23,6 @@ export function initRoamingHand() {
 	roamingHand.position.set(10, 0, -2)
 	// Orient the hand so it looks like it's flying (palm facing down, fingers forward)
 	roamingHand.rotation.set(0, -Math.PI / 2, 0)
-	scene.add(roamingHand)
 }
 
 // Get the roaming hand for ORC demo to use
