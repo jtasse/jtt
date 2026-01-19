@@ -1,0 +1,2 @@
+# Accepted terms for JTT documentation
+# Words and phrases that should be recognized and not flagged by Vale linters
