@@ -141,12 +141,18 @@ export class HandStateMachine {
 					} started.`,
 				)
 				this.stateData.windUpStartRotation = this.hand.rotation.y
+				this.stateData.windUpStartPosition = this.hand.position.clone()
 				// LEO uses flickReady gesture (thumb and index finger pressed together)
 				if (this.stateData.isLeoFlick) {
 					console.log(
 						`[HandStateMachine] LEO FLICK: Transitioning to 'flickReady' gesture.`,
 					)
 					transitionToGesture(this.hand, "flickReady", 300)
+				} else if (!this.stateData.isGeoPunch) {
+					console.log(
+						`[HandStateMachine] MOLNIYA SLAP: Transitioning to 'flat' gesture.`,
+					)
+					transitionToGesture(this.hand, "flat", 400)
 				}
 				break
 			case HandState.CONTACTING:
@@ -170,11 +176,9 @@ export class HandStateMachine {
 					)
 					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
-					// Molniya: backhand slap
-					console.log(
-						`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`,
-					)
-					transitionToGesture(this.hand, "backhand", 100)
+					// Molniya: Palm slap (baseball bat style)
+					// Gesture transition handled in WINDING_UP
+					console.log(`[HandStateMachine] MOLNIYA SLAP: Executing slap.`)
 				}
 				this.stateData.contactApplied = false
 				break
@@ -436,6 +440,11 @@ export class HandStateMachine {
 		if (this.targetSatellite) {
 			const targetPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(targetPos)
+
+			// Convert target to local space of the hand's parent (orcGroup)
+			if (this.hand.parent) {
+				this.hand.parent.worldToLocal(targetPos)
+			}
 
 			const satDistance = targetPos.length()
 			// GEO satellites are at altitude ~2.0, LEO at ~0.65, Molniya varies (elliptical)
@@ -711,6 +720,10 @@ export class HandStateMachine {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
 
+			if (this.hand.parent) {
+				this.hand.parent.worldToLocal(satPos)
+			}
+
 			const earthToSat = satPos.clone()
 			if (earthToSat.lengthSq() < 0.0001) {
 				earthToSat.set(0, 1, 0)
@@ -873,27 +886,31 @@ export class HandStateMachine {
 				}
 				return
 			} else {
-				// Molniya: Tangential slap behavior
-				// Position hand to the side of the satellite for a sweeping strike
-				const sideDir = new THREE.Vector3()
-					.crossVectors(earthToSat, new THREE.Vector3(0, 1, 0))
-					.normalize()
-				if (sideDir.lengthSq() < 0.01) sideDir.set(1, 0, 0)
+				// Molniya: Radial Palm Slap (Baseball bat style windup)
+				// "palm of its hand should be centered behind Moltar"
+				// "moving away from the earth and back toward it"
 
-				// Wind up to the side and slightly out
-				const windUpDist = 0.5
+				// Wind up: Pull back away from Earth (behind satellite)
+				const windUpDist = 1.0
 				windUpPos = satPos
 					.clone()
-					.add(sideDir.multiplyScalar(windUpDist))
-					.add(earthToSat.clone().multiplyScalar(0.3)) // Slight outward clearance
+					.add(earthToSat.clone().multiplyScalar(windUpDist))
 
 				clampToPlanetSurface(windUpPos, 0.2)
 			}
 
 			// For GEO punch, position is set directly in staged code above
-			// For Molniya, use lerp
+			// For Molniya, use explicit interpolation over time
 			if (!this.stateData.isGeoPunch && !this.stateData.isLeoFlick) {
-				this.hand.position.lerp(windUpPos, 0.1)
+				if (this.stateData.windUpStartPosition) {
+					this.hand.position.lerpVectors(
+						this.stateData.windUpStartPosition,
+						windUpPos,
+						eased,
+					)
+				} else {
+					this.hand.position.lerp(windUpPos, 0.1)
+				}
 			} else if (this.stateData.isGeoPunch) {
 				this.hand.position.copy(windUpPos)
 			}
@@ -902,28 +919,36 @@ export class HandStateMachine {
 			if (this.stateData.isGeoPunch || this.stateData.isLeoFlick) {
 				// Rotation already handled above
 			} else {
-				// For Molniya slap: face toward satellite
-				let faceDirection = satPos.clone().sub(this.hand.position).normalize()
-				if (faceDirection.lengthSq() < 0.0001) {
-					faceDirection.set(0, 0, 1)
-				}
+				// Molniya: Face palm toward satellite (Palm is +Z)
+				const dirToSat = satPos.clone().sub(this.hand.position).normalize()
+				if (dirToSat.lengthSq() < 0.001) dirToSat.copy(earthToSat).negate()
 
+				// Construct basis: Z=Forward(toSat), Y=Up, X=Right
 				const up = new THREE.Vector3(0, 1, 0)
-				const rotMatrix = new THREE.Matrix4().lookAt(
-					new THREE.Vector3(),
-					faceDirection,
-					up,
+				const right = new THREE.Vector3().crossVectors(up, dirToSat).normalize()
+				if (right.lengthSq() < 0.001) right.set(1, 0, 0)
+				const reUp = new THREE.Vector3()
+					.crossVectors(dirToSat, right)
+					.normalize()
+
+				// Hand Y (Fingers) -> Right (Horizontal)
+				// Hand X (Thumb) -> -reUp (Down)
+				const rotMatrix = new THREE.Matrix4().makeBasis(
+					reUp.clone().negate(),
+					right,
+					dirToSat,
 				)
 				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
 					rotMatrix,
 				)
 
-				// Add wind-up rotation (pull arm back)
-				const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
-					new THREE.Vector3(0, 1, 0),
-					-eased * Math.PI * 0.4,
+				// Add "baseball bat" windup rotation (cock wrist back)
+				// Rotate around local X axis
+				const windUpTilt = new THREE.Quaternion().setFromAxisAngle(
+					new THREE.Vector3(1, 0, 0),
+					-eased * Math.PI * 0.3, // Tilt back ~54 degrees
 				)
-				targetQuat.multiply(windUpQuat)
+				targetQuat.multiply(windUpTilt)
 
 				this.hand.quaternion.slerp(targetQuat, 0.06)
 			}
@@ -1040,7 +1065,7 @@ export class HandStateMachine {
 		const elapsed = this.getElapsedTime()
 		const contactDuration = this.getPhaseDuration("contactDuration")
 		t = Math.min(elapsed / contactDuration, 1)
-		eased = t
+		eased = this.stateData.isLeoFlick ? t : t * t * t // Cubic accelerate for slap
 
 		// Log which contact path we're taking on first frame
 		if (!this.stateData.contactPathLogged) {
@@ -1060,6 +1085,10 @@ export class HandStateMachine {
 		if (this.targetSatellite) {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
+
+			if (this.hand.parent) {
+				this.hand.parent.worldToLocal(satPos)
+			}
 
 			if (this.stateData.isGeoPunch) {
 				// This branch shouldn't be reached anymore for GEO
@@ -1082,7 +1111,7 @@ export class HandStateMachine {
 				// Move hand forward during flick so finger contacts satellite
 				// Use smooth ease-out curve: fast start (finger snap), slow end
 				const flickEased = 1 - Math.pow(1 - t, 3)
-				const flickForward = LEO_FLICK_CONFIG.flickForwardDistance || 0.25
+				const flickForward = LEO_FLICK_CONFIG.flickForwardDistance ?? 0.25
 				const forwardMove = flickEased * flickForward
 
 				// Calculate new position
@@ -1092,7 +1121,7 @@ export class HandStateMachine {
 
 				// Ensure we don't clip into the planet
 				const planetRadius = HAND_ORBIT_CONFIG.planetRadius || 0.5
-				const minDist = planetRadius + 0.15 // Buffer to avoid clipping
+				const minDist = planetRadius + 0.22 // Reduced buffer to allow contact
 				if (newPos.length() < minDist) {
 					newPos.normalize().multiplyScalar(minDist)
 				}
@@ -1116,24 +1145,57 @@ export class HandStateMachine {
 				// LEO flick handles its own contact and transitions - don't fall through
 				return
 			} else {
-				// Molniya: Slap behavior - swing THROUGH satellite
-				if (!this.stateData.slapStartPos) {
-					this.stateData.slapStartPos = this.hand.position.clone()
-				}
+				// Molniya: Radial Slap - move through satellite toward Earth
+				// RELATIVE POSITIONING STRATEGY to guarantee contact
 
-				const startPos = this.stateData.slapStartPos
+				// 1. Calculate direction vector (Earth -> Satellite)
+				const earthToSat = satPos.clone().normalize()
+				if (earthToSat.lengthSq() < 0.001) earthToSat.set(0, 1, 0)
 
-				// Calculate target: swing PAST the satellite to ensure follow-through
-				// We update this every frame in case satellite moves, but base it on startPos
-				const attackVector = satPos.clone().sub(startPos)
-				// Target is 1.4x the distance to ensure we swing through it
-				const targetPos = startPos.clone().add(attackVector.multiplyScalar(1.4))
+				// 2. Define path relative to satellite
+				// Start: where we wound up (behind satellite)
+				const windUpDist = 1.0 // Must match updateWindingUp
+				const startOffset = earthToSat.clone().multiplyScalar(windUpDist)
 
-				// Use simple linear interpolation for the strike
-				// The tangential setup in WindingUp ensures we clear the planet
-				this.hand.position.lerpVectors(startPos, targetPos, eased)
+				// End: deep into the planet (follow through)
+				const followThroughDist = 2.0
+				const endOffset = earthToSat.clone().multiplyScalar(-followThroughDist)
 
-				clampToPlanetSurface(this.hand.position, 0.1)
+				// 3. Interpolate offset
+				const currentOffset = new THREE.Vector3().lerpVectors(
+					startOffset,
+					endOffset,
+					eased,
+				)
+
+				// 4. Apply to current satellite position
+				this.hand.position.copy(satPos).add(currentOffset)
+
+				// Allow driving through - minimal/no buffer to allow penetrating satellite space
+				clampToPlanetSurface(this.hand.position, -0.1)
+
+				// Orientation: Palm facing forward (attackDir = -earthToSat)
+				const attackDir = earthToSat.clone().negate()
+				const up = new THREE.Vector3(0, 1, 0)
+				const right = new THREE.Vector3()
+					.crossVectors(up, attackDir)
+					.normalize()
+				if (right.lengthSq() < 0.001) right.set(1, 0, 0)
+				const reUp = new THREE.Vector3()
+					.crossVectors(attackDir, right)
+					.normalize()
+				// Hand Y (Fingers) -> Right (Horizontal)
+				// Hand X (Thumb) -> -reUp (Down)
+				const rotMatrix = new THREE.Matrix4().makeBasis(
+					reUp.clone().negate(),
+					right,
+					attackDir,
+				)
+				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
+					rotMatrix,
+				)
+
+				this.hand.quaternion.slerp(targetQuat, 0.2)
 
 				// Debug logging for slap positioning
 				if (!this.stateData.contactApplied) {
@@ -1152,7 +1214,7 @@ export class HandStateMachine {
 
 			// Check for contact
 			const dist = this.hand.position.distanceTo(satPos)
-			const CONTACT_THRESHOLD = 1.2
+			const CONTACT_THRESHOLD = 0.4
 
 			if (
 				(dist < CONTACT_THRESHOLD || this.stateData.forceContact) &&

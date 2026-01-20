@@ -278,8 +278,8 @@ export const LEO_FLICK_CONFIG = {
 	// These values position the hand so the index fingertip contacts the satellite.
 	// standoffDistance: How far hand center is from satellite during PREPARING
 	// flickForwardDistance: How far hand moves toward satellite during FLICKING
-	standoffDistance: 0.02, // Hand center very close to satellite
-	flickForwardDistance: 0.0, // No forward motion - finger extension does the work
+	standoffDistance: 0.22, // Closer to ensure contact
+	flickForwardDistance: 0.12, // Move hand forward during flick to impact
 
 	// -----------------------------------------
 	// Camera Settings Per Phase
@@ -334,8 +334,8 @@ export const MOL_SLAP_CONFIG = {
 		pointDuration: 800, // Point at satellite
 		pointPause: 400, // Pause before approach
 		approachDuration: 2200, // Longer approach (elliptical orbit = variable distance)
-		windUpDuration: 1200, // Dramatic wind-up for backhand slap
-		contactDuration: 1000, // The backhand slap motion
+		windUpDuration: 1500, // Dramatic wind-up for backhand slap
+		contactDuration: 800, // The backhand slap motion
 		returnDuration: 2200, // Return to orbit
 	},
 
