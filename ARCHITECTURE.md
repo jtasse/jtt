@@ -64,64 +64,22 @@ Manages the 3D labels and their transition to the top navigation bar:
 | GSAP            | Animation library for smooth transitions      |
 | Path2D Polyfill | Canvas API support for legacy environments    |
 | Astro           | Documentation site generator                  |
+| Vale            | Docs linter                                   |
 | Vitest          | Unit testing framework                        |
 | jsdom           | DOM implementation for testing environments   |
-
-# Refactor
-
-> **Status**: Phase 3 Complete (as of 1/7/26)
-> Remove this section once the refactor is complete.
-
-## Background
-
-On 1/4/26 I began a refactor project working with Claude Code and Gemini Code Assist. This document tracks progress and remaining work.
-
-## Refactor Progress
-
-### Phase 4: Testing - IN PROGRESS
-
-- No unit tests yet
-- No visual regression tests
-
----
-
-## Known Issues (as of 1/10/26)
-
-- navigation:
-
-  - pyramid under nav labels is still sometimes misaligned
-
-- orc-demo:
-
-  - after decommissioning a satellite, the hand of ORC should only give a thumbs up for 2 seconds before returning to idle mode
-  - going from orc-demo to the blog or other pages is bugged--the labels don't fill the screen and pyramid is off
-
-- Docs:
-  - When documentation is displayed, the top of the document viewer should end just below the top nav labels (to ensure they are always visible)
-  - Portfolio doc viewer places content on the left side of the screen. It should be centered.
-
-## Nice to have features
-
-- Hand of ORC
-  - When the user clicks "decommission satellite", the hand's thruster should change from blue to red
-  - As the hand is giving a thumbs up after a successful decommission, the thruster color should switch back to blue
-
-## Next Steps (Priority Order)
-
----
 
 ## Architecture Principles
 
 ### Hybrid Rendering
 
-| Layer            | Technology | Content                               |
-| ---------------- | ---------- | ------------------------------------- |
-| WebGL (Three.js) | Canvas     | Pyramid, starfield, Hand, nav labels  |
-| DOM Overlay      | HTML/CSS   | Page content (About, Portfolio, Blog) |
+| Layer            | Technology | Content                                                 |
+| ---------------- | ---------- | ------------------------------------------------------- |
+| WebGL (Three.js) | Canvas     | Pyramid, starfield, Hand, nav labels                    |
+| DOM Overlay      | HTML/CSS   | Page content (About, Portfolio, Blog, ORC Demo sidebar) |
 
 ### Key Rules
 
-1. **Maintain separation of concerns (where possible)**: although this has been more challening for 3D scenes, in places where pages follow a more traditional approach, we have tried to keep:
+1. **Maintain separation of concerns (where possible)**: although this has been more challenging for 3D scenes, in places where pages follow a more traditional approach, we have tried to keep:
 
 - _Content_ in HTML
 - _Styles_ in CSS
@@ -136,7 +94,8 @@ On 1/4/26 I began a refactor project working with Claude Code and Gemini Code As
 - The following items **MUST** be displayed on every page _except_ those that live under `portfolio/docs/`
   - The same 'Home', 'About', 'Blog', and 'Portfolio' navigation elements as can be seen on the home screen
   - The same 'Contact Info' pane as can be seen on the home screen
-- While these items should be present on every page, if you believe you need manually add them (instead of using existing navl label and contact pane logic), _ask me first_.
+  - The light/dark/auto theme control
+- While these items should be present on every page, if you believe you need manually add them (instead of using existing logic), _ask me first_.
 
 ### Import Conventions
 

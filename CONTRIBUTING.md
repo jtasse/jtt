@@ -17,7 +17,7 @@ This document provides guidelines for contributing to this project, whether you'
 
 ## AI Coding Assistants
 
-**If you are an AI assistant**, read this entire document before making changes. These rules are **mandatory**.
+**If you are an AI coding assistant/LLM (including Claude, Copilot, or Gemini)**, read this entire document before making changes. These rules are **mandatory**.
 
 ---
 
@@ -46,7 +46,7 @@ Blog content must live under `src\content\blog`. More specifically:
 
 #### Portfolio
 
-The Portfolio navigation page lives within `src\content\portfolio`. For now, portfolio content is stored externally, but should be viewable via a viewer on the portfolio navigation page.
+The Portfolio navigation page lives within `src\content\portfolio`. The portfolio content is displayed via DOM overlays with embedded showcase content.
 
 #### Orc Demo
 
@@ -114,10 +114,10 @@ First and foremost, the styling of text and other content should always support 
 
 With this in mind:
 
-- All pages should use an accessible font. For the time being, Helvetica or Roboto should be used everywhere.
+- All pages should use an accessible font. For the time being, Helvetica should be used everywhere.
 - Images should always have alt text.
 - Any other reasonable measures, including catering to screen readers, should be taken to enhance accessibility.
-- Ideally, a light theme should be available to users on pages that are text-heavy.
+- The ability to enable a light, dark, or auto-detected theme should be available on every page with text content
 
 ### Separation of Concerns
 

@@ -42,13 +42,16 @@ To get the development environment running locally:
     npm run dev:docs
     ```
 
+> **NOTE**: you can also run both the dev and docs servers with `npm run dev:all`
+
 ## 🏗️ Project Structure
 
 The project follows a specific organization to separate 3D logic from content:
 
 - `src/core/`: Scene setup, camera, and layout management.
 - `src/pyramid/`: Pyramid geometry and animation logic.
-- `src/content/`: HTML content and CSS for the overlay pages (About, Portfolio, Blog).
-- `packages/docs/`: Astro Starlight documentation site.
+- `src/content/`: HTML content and CSS for the overlay pages (About, Portfolio, Blog, ORC Demo).
+- `src/navigation/`: Navigation label management.
+- `packages/docs/`: Astro Starlight documentation site for technical writing samples.
 
 For a deep dive into the file organization, see [ARCHITECTURE.md](./ARCHITECTURE.md).

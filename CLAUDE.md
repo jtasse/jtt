@@ -9,11 +9,19 @@ A 3D interactive personal website built with Three.js featuring a rotating pyram
 ## Commands
 
 ```bash
-npm run dev        # Start Vite dev server (hot reload)
-npm run dev:docs   # Start Astro Starlight docs dev server
+#build
 npm run build      # Build both main site and docs
 npm run build:main # Build main site only
 npm run build:docs # Build docs only
+
+#run
+npm run dev        # Start Vite dev server (hot reload)
+npm run dev:docs   # Start Astro Starlight docs dev server
+npm run dev:all # Start Vite dev server and Astro Starlight docs dev server
+
+#lint
+npm run lint       # Run ESLINT against code
+cd packages/docs && npm run lint # Run Vale against docs
 ```
 
 ## Architecture
@@ -23,26 +31,24 @@ npm run build:docs # Build docs only
 - **src/main.js** - Application entry point. Initializes labels, handles click/hover detection via raycasting, manages route changes, and coordinates between pyramid animations and content display.
 
 - **src/pyramid/pyramid.js** - The heart of the 3D scene. Contains:
-
   - Three.js scene setup (camera, renderer, lighting, starfield)
   - Pyramid geometry with three labeled faces (About, Portfolio, Blog)
   - Animation functions: `animatePyramid()`, `spinPyramidToSection()`, `resetPyramidToHome()`
-  - Content plane display: `showAboutPlane()`, `showPortfolioPlane()`, `showBlogPlane()`
+  - Content overlay display logic
   - Label management and positioning
 
-  - **src/planes.js** - Canvas-based text rendering for 3D planes. Provides `makeLabelPlane()` for face labels.
+- **src/router.js** - Simple client-side router using History API. Routes: `/`, `/about`, `/portfolio`, `/blog`
 
-  - **src/router.js** - Simple client-side router using History API. Routes: `/`, `/about`, `/portfolio`, `/blog`
-
-- **src/contentLoader.js** - Fetches and parses HTML content files into structured data for rendering.
+- **src/content/ContentManager.js** - Loads and displays content from HTML files, handles portfolio item clicks and embeds
 
 ### Content Layer
 
-Content is stored as HTML in `src/content/` and rendered to canvas textures (not DOM):
+Content is stored as HTML in `src/content/` and rendered as DOM overlays:
 
 - `src/content/about/about.html` - About page markup
-- `src/content/portfolio.html` - Portfolio items
-- `src/content/blog.html` - Blog posts as JSON in script tag
+- `src/content/portfolio/portfolio.html` - Portfolio items and showcase
+- `src/content/blog/blog.html` - Blog posts
+- `src/content/orc-demo/` - ORC demo interactive content
 
 See `ARCHITECTURE.md` for detailed content editing instructions.
 
@@ -200,17 +206,18 @@ The Hand is treated as an **actor** with high-level behaviors, not a mesh to man
 **When creating new functionality:**
 
 - Create new modules rather than expanding existing large files
-- `pyramid.js` (2800+ lines) is a known issue - prefer adding to other files
 
-**Planned structure** (work in progress):
+**structure**:
 
 ```
 src/
+├── contact/         # contact info
+├── content/        # HTML content and styles
 ├── core/           # Scene, camera, layout management
-├── pyramid/        # Pyramid geometry and animations
-├── navigation/     # Nav labels and transitions
 ├── hand/           # Hand of ORC (self-contained)
-├── content/        # HTML content and styles (existing)
+├── navigation/     # Navigation labels and transitions
+├── pyramid/        # Pyramid geometry and animations
+├── theme/           # light/dark/auto theme control
 └── main.js         # Wiring only
 ```
 
