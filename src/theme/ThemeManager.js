@@ -82,6 +82,11 @@ export class ThemeManager {
 
 		// Update UI
 		this.updateUI()
+
+		// Notify iframes (e.g. docs viewer)
+		document.querySelectorAll("iframe").forEach((iframe) => {
+			iframe.contentWindow?.postMessage({ type: "THEME_CHANGE", theme }, "*")
+		})
 	}
 
 	updateUI() {

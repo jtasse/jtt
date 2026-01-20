@@ -9,33 +9,38 @@ head: []
 The Orbital Refuse Collector (ORC) demo showcases a fictional 3D satellite management interface. You can select satellites orbiting Earth, view their telemetry data, and simulate decommissioning procedures.
 
 :::note[Enjoy the demo without fear!]
-This is a demonstration interface. No actual satellites are affected by your actions.
+This is a demonstration interface. No actual satellites will be harmed by your actions.
 :::
 
 ## Interface Guide
 
+### Orbit Types
+
+The ORC system supports decommission of satellites with the following orbit types:
+
+| Orbit Type      | Shorthand | Color   | Altitude (km)                                 | Eccentricity |
+| :-------------- | :-------- | :------ | :-------------------------------------------- | ------------ |
+| Low Earth Orbit | LEO       | Green   | 160–2,000                                     | Low          |
+| Geostationary   | GEO       | Magenta | 35,786                                        | None         |
+| Molniyan        | MOL       | Orange  | - perigee: 500–600<br>- apogee: 39,000–40,000 | High         |
+
 ### 3D Viewport
 
-The main viewport displays Earth with orbiting satellites and the robotic hand actuator. Satellites are color-coded by status:
-
-- **Green** - Operational satellite
-- **Orange** - Selected satellite
-- **Red** - Decommissioned debris
+The main viewport displays Earth with orbiting satellites and the robotic hand actuator.
 
 ### Satellite List
 
-The sidebar displays all trackable satellites. Click any satellite to:
+The `Orbital Refuse Collector Demo` sidebar displays all trackable satellites. Click any satellite to:
 
 - Highlight it in the 3D view
-- Move the camera to focus on it
-- Display its telemetry in the info panel
+- Display its telemetry in the `Satellite Info` panel
 
 ### Satellite Info Panel
 
 Shows details about the selected satellite:
 
 - **ID** - Unique satellite identifier
-- **Orbit Type** - LEO (Low Earth Orbit) or GEO (Geostationary)
+- **Orbit Type** - Low Earth Orbit, Geostationary, or Molniyan
 - **Status** - Current operational status
 
 ## Actions
@@ -46,11 +51,11 @@ Simulates the satellite decommissioning process:
 
 1. **Select Target**
 
-   Click a satellite from the list to select it as the decommission target.
+   Click a satellite from the `Available Satellites` list to select it as the decommission target.
 
 2. **Initiate Decommission**
 
-   Click the `Decommission Satellite` button in the Actions panel.
+   Click the `Decommission Satellite` button in the `Actions` panel.
 
 3. **Watch the Sequence**
 
@@ -85,14 +90,14 @@ POST /api/satellites/{id}/decommission
 See the [API Reference](/portfolio/docs/orc/api-reference/) for complete endpoint documentation.
 
 :::caution[Rate Limiting]
-API requests are limited to 100 requests per minute in demo mode.
+API requests are limited to 100 requests per minute.
 :::
 
 ## Troubleshooting
 
 ### Satellite not responding to selection
 
-Ensure you're clicking the satellite name in the sidebar list, not the 3D object directly.
+While you _can_ select a satellite by clicking on it in the 3D interface, you'll likely find it easier to select it from the `Available Satellites` list in the sidebar.
 
 ### Camera stuck or not moving
 

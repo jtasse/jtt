@@ -313,6 +313,15 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 		})
 	})
 
+	// Handle external links (like Wikipedia links)
+	contentEl.querySelectorAll("a[href^='http']").forEach((link) => {
+		link.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			window.open(link.getAttribute("href"), "_blank")
+		})
+	})
+
 	// Resume link handler (in intro text)
 	const resumeLink = contentEl.querySelector(".resume-link")
 	if (resumeLink) {

@@ -5,18 +5,18 @@ head: []
 ---
 
 :::note[Abstract]
-The Orbital Refuse Collector (ORC) is a satellite deorbiting solution designed to address the growing threat of satellite congestion (see also: [Kessler Syndrome](https://en.wikipedia.org/wiki/Kessler_syndrome)). By utilizing a high-dexterity robotic actuator ("The Hand or ORC") and proprietary targeting capabilities; ORC can identify, capture, and deorbit defunct satellites and debris without creating additional fragments.
+The Orbital Refuse Collector (ORC) is a satellite deorbiting solution designed to address the growing threat of satellite congestion (see also: [Kessler Syndrome](https://en.wikipedia.org/wiki/Kessler_syndrome){.external-link}). By utilizing a high-dexterity robotic actuator ("The Hand or ORC") and proprietary targeting capabilities; ORC can identify and deorbit defunct satellites without creating additional fragments.
 :::
 
 ## 1. Introduction
 
-Space debris poses a critical threat to the sustainability of orbital operations. With thousands of satellites launched annually, the density of objects in Low Earth Orbit (LEO) is approaching a tipping point. Traditional deorbiting methods rely on the satellite's own propulsion, which is ineffective for defunct hardware.
+Space debris poses a critical threat to the sustainability of orbital operations. With thousands of satellites launched annually, the density of orbital objects—especially those in Low Earth Orbit (LEO)—is approaching a tipping point. Traditional deorbiting methods rely on a satellite's own propulsion, but this is ineffective for satellites that have run out of fuel or sustained critical damage.
 
-The ORC system provides an active removal solution, capable of servicing multiple targets in a single mission profile.
+The ORC system provides an active removal solution capable of servicing targets in multiple orbits.
 
 ## 2. System Overview
 
-The ORC unit is a semi-autonomous spacecraft built on a modular bus. Its primary payload is the Debris Capture System (DCS), colloquially known as "The Hand."
+The ORC System uses a network of sensors to track customer satellites. When a customer initiates decommission for a satellite, this request is queued until the Debris Capture System—commonly known as "The Hand of ORC"—becomes available to complete the decommission process.
 
 ### Core Components
 

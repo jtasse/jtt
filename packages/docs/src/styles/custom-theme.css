@@ -142,3 +142,16 @@ a.portfolio-link:hover {
 .pagination-links a[href="../.."] {
 	display: none !important;
 }
+
+/* External links with icon */
+a.external-link::after {
+	content: " ↗";
+	display: inline;
+	margin-left: 0.25rem;
+	font-size: 0.9em;
+	opacity: 0.7;
+}
+
+a.external-link:hover::after {
+	opacity: 1;
+}

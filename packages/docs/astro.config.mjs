@@ -7,6 +7,11 @@ export default defineConfig({
 	devToolbar: {
 		enabled: false,
 	},
+	server: {
+		watch: {
+			usePolling: true,
+		},
+	},
 	integrations: [
 		starlight({
 			title: "Portfolio Documentation",
@@ -17,6 +22,31 @@ export default defineConfig({
 				{
 					tag: "script",
 					content: `
+						// Theme synchronization
+						(function() {
+							function applyTheme(theme) {
+								if (!theme || theme === 'auto') {
+									const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+									document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+								} else {
+									document.documentElement.dataset.theme = theme;
+								}
+							}
+
+							window.addEventListener('storage', (e) => {
+								if (e.key === 'starlight-theme') {
+									applyTheme(e.newValue);
+								}
+							});
+
+							window.addEventListener('message', (e) => {
+								if (e.data && e.data.type === 'THEME_CHANGE') {
+									localStorage.setItem('starlight-theme', e.data.theme);
+									applyTheme(e.data.theme);
+								}
+							});
+						})();
+
 						document.addEventListener("DOMContentLoaded", () => {
 							const targets = document.querySelectorAll("a[rel='prev']");
 							targets.forEach(el => {
@@ -32,7 +62,7 @@ export default defineConfig({
 				{
 					label: "← jamestasse.tech portfolio",
 					link: "/../../portfolio",
-					attrs: { class: "home-link" },
+					attrs: { class: "portfolio-link" },
 				},
 				{
 					label: "ORC",

@@ -4,7 +4,11 @@ description: API docs that describe how to control the Orbital Refuse Collector 
 head: []
 ---
 
+The Orbital Refuse Collector (ORC) system is designed reduce the congestion of satellites orbiting the Earth.
+
 ## Satellites
+
+> **NOTE**: you will only receive `200 (OK)` responses when you make API calls for satellites that your organization owns.
 
 ### List All Satellites
 
@@ -100,20 +104,20 @@ GET /api/jobs/{jobId}
 ```json
 {
 	"jobId": "job-12345",
-	"status": "in_progress",
-	"phase": "capture",
+	"status": "decommissioning",
+	"phase": "approach",
 	"progress": 0.65
 }
 ```
 
 #### Job Statuses
 
-| Status        | Description                      |
-| ------------- | -------------------------------- |
-| `initiated`   | Job created, awaiting processing |
-| `in_progress` | Decommission sequence active     |
-| `completed`   | Target successfully deorbited    |
-| `failed`      | Operation aborted or failed      |
+| Status            | Description                      |
+| ----------------- | -------------------------------- |
+| `initiated`       | Job created, awaiting processing |
+| `decommissioning` | Decommission sequence active     |
+| `completed`       | Target successfully deorbited    |
+| `failed`          | Operation aborted or failed      |
 
 ## Error Codes
 
