@@ -1,4 +1,3 @@
-import * as THREE from "three"
 import { createOrcHand } from "./HandMesh.js"
 
 // === Roaming Hand of ORC ===

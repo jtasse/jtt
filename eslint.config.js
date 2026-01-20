@@ -6,7 +6,13 @@ import prettier from "eslint-config-prettier"
 export default [
 	// 1. Global ignores
 	{
-		ignores: ["dist/**", "node_modules/**", "public/**"],
+		ignores: [
+			"**/dist/**",
+			"**/node_modules/**",
+			"public/**",
+			"temp/**",
+			"packages/**/dist/**",
+		],
 	},
 	// 2. Base JavaScript configuration
 	js.configs.recommended,
@@ -21,6 +27,16 @@ export default [
 				THREE: "readonly", // If you use THREE as a global, otherwise remove this
 			},
 		},
+		rules: {
+			"no-unused-vars": [
+				"error",
+				{
+					argsIgnorePattern: "^_",
+					varsIgnorePattern: "^_",
+					caughtErrorsIgnorePattern: "^_",
+				},
+			],
+		},
 	},
 	// 4. Node.js scripts configuration
 	{
@@ -32,7 +48,11 @@ export default [
 			// Error prevention
 			"no-unused-vars": [
 				"warn",
-				{ argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+				{
+					argsIgnorePattern: "^_",
+					varsIgnorePattern: "^_",
+					caughtErrorsIgnorePattern: "^_",
+				},
 			],
 			"no-undef": "error",
 			"no-duplicate-imports": "error",
@@ -43,7 +63,7 @@ export default [
 			"prefer-const": "warn",
 
 			// Three.js specific safety (prevents common performance killers)
-			"no-console": ["warn", { allow: ["warn", "error", "info"] }],
+			"no-console": ["warn", { allow: ["warn", "error", "info", "log"] }],
 		},
 	},
 	// 5. Prettier config (must be last to override formatting rules)

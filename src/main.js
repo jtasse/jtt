@@ -25,7 +25,6 @@ import {
 	setLabelManager,
 	pyramidGroup,
 	layoutManager,
-	screenToWorld,
 	initialPyramidState,
 } from "./pyramid/pyramid.js"
 import { handleContentLink } from "./content/ContentManager.js"
@@ -82,7 +81,7 @@ function animateLabels() {
 		let target
 		if (label.userData.fixedNav) {
 			target = new THREE.Vector3(navScale, navScale, 1).multiplyScalar(
-				targetScaleScalar
+				targetScaleScalar,
 			)
 		} else {
 			target = label.userData.originalScale
@@ -103,8 +102,6 @@ window.dispatchEvent(new Event("resize"))
 // Initialize DOM-based contact pane (bottom-right corner)
 initContactPane()
 
-let currentContentVisible = null // Track which content plane is showing (about/portfolio/blog or null)
-
 // Hover detection
 inputManager.addHoverHandler((raycaster) => {
 	if (document.body.classList.contains("orc-doc-active")) {
@@ -116,12 +113,12 @@ inputManager.addHoverHandler((raycaster) => {
 	const portfolioPlane = scene.getObjectByName("portfolioPlane")
 	if (portfolioPlane) {
 		const portfolioClickables = portfolioPlane.children.filter(
-			(c) => c && c.userData && c.userData.link
+			(c) => c && c.userData && c.userData.link,
 		)
 		if (portfolioClickables.length > 0) {
 			const portfolioHits = raycaster.intersectObjects(
 				portfolioClickables,
-				false
+				false,
 			)
 			if (portfolioHits.length > 0) {
 				inputManager.setCursor("pointer")
@@ -216,7 +213,7 @@ function centerAndOpenLabel(labelManager, labelName) {
 	// Clicking a label should reveal the corner Home control
 	try {
 		labelManager.showHomeLabel()
-	} catch (e) {
+	} catch (_e) {
 		/* showHomeLabel might not be available yet */
 	}
 
@@ -237,7 +234,7 @@ function centerAndOpenLabel(labelManager, labelName) {
 					stopLoading()
 				}, 500)
 			},
-			600
+			600,
 		)
 	} else if (!isAtTop) {
 		// animate pyramid to top and flatten labels - content will be shown when animation completes
@@ -300,11 +297,9 @@ router.onRouteChange((route) => {
 				triggerHandPageTransition("orc-demo", "about")
 				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "About")
-				currentContentVisible = "about"
 			}, 1300)
 		} else {
 			centerAndOpenLabel(labelManager, "About")
-			currentContentVisible = "about"
 		}
 	} else if (route === "/portfolio") {
 		if (controls) controls.enabled = false
@@ -315,11 +310,9 @@ router.onRouteChange((route) => {
 				triggerHandPageTransition("orc-demo", "portfolio")
 				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "Portfolio")
-				currentContentVisible = "portfolio"
 			}, 1300)
 		} else {
 			centerAndOpenLabel(labelManager, "Portfolio")
-			currentContentVisible = "portfolio"
 		}
 	} else if (route === "/blog") {
 		if (controls) controls.enabled = false
@@ -330,11 +323,9 @@ router.onRouteChange((route) => {
 				triggerHandPageTransition("orc-demo", "blog")
 				resetPyramidToHome(labelManager)
 				centerAndOpenLabel(labelManager, "Blog")
-				currentContentVisible = "blog"
 			}, 1300)
 		} else {
 			centerAndOpenLabel(labelManager, "Blog")
-			currentContentVisible = "blog"
 		}
 	} else if (route.includes("/blog/posts/")) {
 		if (controls) controls.enabled = false
@@ -368,7 +359,7 @@ router.onRouteChange((route) => {
 							stopLoading()
 						}, 600)
 					},
-					600
+					600,
 				)
 			}
 		}
@@ -383,7 +374,6 @@ router.onRouteChange((route) => {
 				startLoading()
 				setTimeout(() => {
 					morphToOrcScene()
-					currentContentVisible = "orc-demo"
 					window.centeredLabelName = null
 					stopLoading()
 				}, 600)
@@ -393,7 +383,6 @@ router.onRouteChange((route) => {
 				startLoading()
 				setTimeout(() => {
 					morphToOrcScene()
-					currentContentVisible = "orc-demo"
 					window.centeredLabelName = null
 					stopLoading()
 				}, 600)
@@ -426,13 +415,13 @@ router.onRouteChange((route) => {
 				pyramidGroup.position.set(
 					initialPyramidState.positionX,
 					initialPyramidState.positionY,
-					0
+					0,
 				)
 				pyramidGroup.rotation.set(0, initialPyramidState.rotationY, 0)
 				pyramidGroup.scale.set(
 					initialPyramidState.scale,
 					initialPyramidState.scale,
-					initialPyramidState.scale
+					initialPyramidState.scale,
 				)
 			}
 
@@ -449,7 +438,6 @@ router.onRouteChange((route) => {
 				}
 			})
 		}
-		currentContentVisible = null
 		window.centeredLabelName = null
 	}
 })
@@ -463,13 +451,11 @@ inputManager.addClickHandler((raycaster) => {
 	// Check if contact label was clicked - only block if a click region was actually hit
 
 	// Track which label is centered
-	const centeredLabelName = window.centeredLabelName || null
-	// If a content plane is visible, prefer handling clickable overlays on it first
 	try {
 		const portfolioPlaneEarly = scene.getObjectByName("portfolioPlane")
 		if (portfolioPlaneEarly) {
 			const clickablesEarly = portfolioPlaneEarly.children.filter(
-				(c) => c && c.userData && c.userData.link
+				(c) => c && c.userData && c.userData.link,
 			)
 			if (clickablesEarly.length > 0) {
 				const hitsEarly = raycaster.intersectObjects(clickablesEarly, true)
@@ -488,7 +474,7 @@ inputManager.addClickHandler((raycaster) => {
 				}
 			}
 		}
-	} catch (e) {
+	} catch (_e) {
 		// ignore early plane detection errors
 	}
 	// Check generous hover targets first (so clicks near a label register even if a centered label is in front)
@@ -506,7 +492,7 @@ inputManager.addClickHandler((raycaster) => {
 	if (!obj) {
 		const labelIntersects = raycaster.intersectObjects(
 			Object.values(labels),
-			true
+			true,
 		)
 		if (labelIntersects.length > 0) {
 			// Find the root label object from the intersection
@@ -542,7 +528,7 @@ inputManager.addClickHandler((raycaster) => {
 	if (portfolioPlane) {
 		// Prefer to raycast against the explicit clickable overlays added as children
 		const clickables = portfolioPlane.children.filter(
-			(c) => c && c.userData && c.userData.link
+			(c) => c && c.userData && c.userData.link,
 		)
 		if (clickables.length > 0) {
 			const hits = raycaster.intersectObjects(clickables, true)
@@ -582,7 +568,7 @@ inputManager.addClickHandler((raycaster) => {
 
 	const pyramidIntersects = raycaster.intersectObjects(
 		pyramidGroup.children,
-		true
+		true,
 	)
 	if (pyramidIntersects.length > 0) {
 		const firstHit = pyramidIntersects[0]

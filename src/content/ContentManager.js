@@ -1,7 +1,6 @@
-import * as THREE from "three"
 import { loadContentHTML, parseBlogPosts } from "../contentLoader.js"
 import { router } from "../router.js"
-import { scene, controls, camera } from "../core/SceneManager.js"
+import { scene, controls } from "../core/SceneManager.js"
 import { getPyramidAnimToken } from "../pyramid/state.js"
 import { pyramidGroup } from "../pyramid/state.js"
 import { ScrollManager } from "./ScrollManager.js"
@@ -529,7 +528,7 @@ export function handleContentLink(link, router) {
 	return true
 }
 
-function showFullScreenEmbed(contentEl, url, type) {
+function showFullScreenEmbed(contentEl, url, _type) {
 	if (!contentEl) return
 
 	contentEl.scrollTop = 0

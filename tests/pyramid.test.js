@@ -63,7 +63,7 @@ vi.mock("three", () => {
 
 	class Quaternion {
 		constructor() {}
-		copy(q) {
+		copy(_q) {
 			return this
 		}
 		clone() {
@@ -377,7 +377,7 @@ vi.mock("three/examples/jsm/controls/OrbitControls.js", () => ({
 // Mock contentLoader so show*Plane resolves predictable HTML
 vi.mock("../src/contentLoader.js", () => ({
 	loadContentHTML: vi.fn((name) =>
-		Promise.resolve(`<div class="test-${name}">${name} content</div>`)
+		Promise.resolve(`<div class="test-${name}">${name} content</div>`),
 	),
 	parseBioContent: vi.fn(() => ({})),
 	parseBlogPosts: vi.fn(() => []),

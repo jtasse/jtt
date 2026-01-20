@@ -52,7 +52,7 @@ export class InputManager {
 			const rect = this.renderer.domElement.getBoundingClientRect()
 			this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
 			this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-		} catch (e) {
+		} catch (_e) {
 			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1
 			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 		}
@@ -60,7 +60,7 @@ export class InputManager {
 		this.processHover(event)
 	}
 
-	onPointerUp(event) {
+	onPointerUp(_event) {
 		this.isPointerDown = false
 		// Don't reset isDragging here; we need it for the click handler
 		// It will be reset on the next pointer down
@@ -103,7 +103,7 @@ export class InputManager {
 			const rect = this.renderer.domElement.getBoundingClientRect()
 			this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
 			this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-		} catch (e) {
+		} catch (_e) {
 			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1
 			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 		}
@@ -120,7 +120,7 @@ export class InputManager {
 			const rect = this.renderer.domElement.getBoundingClientRect()
 			this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
 			this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-		} catch (e) {
+		} catch (_e) {
 			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1
 			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 		}

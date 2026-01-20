@@ -70,7 +70,7 @@
 						if (urlObj.pathname.toLowerCase().endsWith(".pdf")) {
 							shouldIntercept = true
 						}
-					} catch (err) {
+					} catch {
 						// Fallback if URL parsing fails
 						if (href.toLowerCase().split("?")[0].endsWith(".pdf")) {
 							shouldIntercept = true

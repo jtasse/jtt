@@ -172,7 +172,7 @@ const MIN_FRONT_Z = 0.5
 
 // Generate smooth, free-flowing movement using layered sine waves
 // No orbiting - just graceful, free-willed flight
-export function calculateIrregularOrbitPosition(time, _currentPos = null) {
+export function calculateIrregularOrbitPosition(time) {
 	// Convert to seconds for smoother calculations
 	const t = time * 0.0001
 
@@ -204,15 +204,15 @@ export function calculateIrregularOrbitPosition(time, _currentPos = null) {
 	// Keep within camera view bounds
 	targetPos.x = Math.max(
 		VIEW_BOUNDS.minX,
-		Math.min(VIEW_BOUNDS.maxX, targetPos.x)
+		Math.min(VIEW_BOUNDS.maxX, targetPos.x),
 	)
 	targetPos.y = Math.max(
 		VIEW_BOUNDS.minY,
-		Math.min(VIEW_BOUNDS.maxY, targetPos.y)
+		Math.min(VIEW_BOUNDS.maxY, targetPos.y),
 	)
 	targetPos.z = Math.max(
 		VIEW_BOUNDS.minZ,
-		Math.min(VIEW_BOUNDS.maxZ, targetPos.z)
+		Math.min(VIEW_BOUNDS.maxZ, targetPos.z),
 	)
 
 	// Ensure minimum distance from planet AND stay in front
@@ -224,7 +224,7 @@ export function calculateIrregularOrbitPosition(time, _currentPos = null) {
 export function avoidSatellites(
 	handPosition,
 	satellites,
-	avoidanceRadius = HAND_ORBIT_CONFIG.avoidanceRadius
+	avoidanceRadius = HAND_ORBIT_CONFIG.avoidanceRadius,
 ) {
 	const avoidanceVector = new THREE.Vector3()
 
@@ -252,7 +252,7 @@ export function avoidSatellites(
 // Avoid flying through the planet
 export function avoidPlanet(
 	position,
-	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance,
 ) {
 	const avoidanceVector = new THREE.Vector3()
 	const distanceFromCenter = position.length()
@@ -270,7 +270,7 @@ export function avoidPlanet(
 // Ensure a position stays outside the planet
 export function clampOutsidePlanet(
 	position,
-	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance,
 ) {
 	const distanceFromCenter = position.length()
 	if (distanceFromCenter < minDistance) {
@@ -285,10 +285,7 @@ export function clampOutsidePlanet(
 
 // Clamp position to stay outside planet surface (allows going behind planet)
 // Used for LEO punch animation where hand needs to go behind satellite
-export function clampToPlanetSurface(
-	position,
-	buffer = 0.1
-) {
+export function clampToPlanetSurface(position, buffer = 0.1) {
 	// Guard against NaN input
 	if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
 		position.set(0, 0, HAND_ORBIT_CONFIG.planetRadius + buffer)
@@ -314,7 +311,7 @@ export function clampToPlanetSurface(
 // This function ensures the hand never goes behind the planet and stays visible.
 export function clampToFrontOfPlanet(
 	position,
-	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance
+	minDistance = HAND_ORBIT_CONFIG.minPlanetDistance,
 ) {
 	// Guard against NaN input
 	if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
@@ -344,7 +341,7 @@ export function clampToFrontOfPlanet(
 		if (xyDist < minDistance * 0.8) {
 			// Push straight forward to maintain minimum distance
 			const requiredZ = Math.sqrt(
-				Math.max(0, minDistance * minDistance - xyDist * xyDist)
+				Math.max(0, minDistance * minDistance - xyDist * xyDist),
 			)
 			position.z = Math.max(MIN_FRONT_Z, requiredZ)
 		} else {

@@ -58,7 +58,7 @@ export function updateMarkerPosition(lat, lon) {
 		const pos = latLonTo3D(
 			markerLatitude,
 			markerLongitude,
-			PLANET_RADIUS * 1.01
+			PLANET_RADIUS * 1.01,
 		)
 		surfaceMarker.position.set(pos.x, pos.y, pos.z)
 	}
@@ -81,7 +81,7 @@ export function hideGeoTether() {
 
 // === Scene Creation ===
 
-export function createOrcScene(camera) {
+export function createOrcScene() {
 	orcGroup = new THREE.Group()
 	orcGroup.name = "orcScene"
 
@@ -99,7 +99,7 @@ export function createOrcScene(camera) {
 		markerLatitude,
 		markerLongitude,
 		GEO_ALTITUDE,
-		0xff00ff
+		0xff00ff,
 	)
 
 	geoSatellite.userData = {
@@ -176,7 +176,7 @@ export function createOrcScene(camera) {
 	const markerPos = latLonTo3D(
 		markerLatitude,
 		markerLongitude,
-		PLANET_RADIUS * 1.01
+		PLANET_RADIUS * 1.01,
 	)
 	marker.position.set(markerPos.x, markerPos.y, markerPos.z)
 	planet.add(marker)
@@ -198,7 +198,7 @@ export function setOrcHand(hand, camera) {
 		orcHand,
 		orcGroup,
 		satellites,
-		camera
+		camera,
 	)
 
 	orcHandStateMachine.onSatelliteBurn = (satellite) => {
@@ -289,7 +289,7 @@ export function removeSatelliteFromScene(satellite) {
 	})
 
 	window.dispatchEvent(
-		new CustomEvent("satelliteRemoved", { detail: { satelliteId: satId } })
+		new CustomEvent("satelliteRemoved", { detail: { satelliteId: satId } }),
 	)
 }
 
@@ -325,7 +325,7 @@ function createPlanet() {
 	const innerAtmosphereGeometry = new THREE.SphereGeometry(
 		PLANET_RADIUS * 1.1,
 		64,
-		64
+		64,
 	)
 	const innerAtmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
@@ -360,7 +360,7 @@ function createPlanet() {
 	// Add outer atmosphere glow
 	const outerAtmosphereGeometry = new THREE.SphereGeometry(
 		PLANET_RADIUS * 1.4,
-		32
+		32,
 	)
 	const outerAtmosphereMaterial = new THREE.ShaderMaterial({
 		uniforms: {
@@ -422,20 +422,20 @@ function createSatellite(color) {
 		new THREE.BoxGeometry(
 			SATELLITE_SIZE,
 			SATELLITE_SIZE * 0.5,
-			SATELLITE_SIZE * 0.5
+			SATELLITE_SIZE * 0.5,
 		),
 		new THREE.MeshStandardMaterial({
 			color: 0x888888,
 			metalness: 0.8,
 			roughness: 0.2,
-		})
+		}),
 	)
 	group.add(body)
 
 	const panelGeo = new THREE.BoxGeometry(
 		SATELLITE_SIZE * 0.1,
 		SATELLITE_SIZE * 1.5,
-		SATELLITE_SIZE * 0.02
+		SATELLITE_SIZE * 0.02,
 	)
 	const panelMat = new THREE.MeshStandardMaterial({
 		color: color,
@@ -474,7 +474,7 @@ function createOrbitalRing(xRadius, zRadius, color) {
 			0,
 			2 * Math.PI,
 			false,
-			0
+			0,
 		)
 		const points = curve.getPoints(128)
 		const geometry = new THREE.BufferGeometry().setFromPoints(points)
@@ -535,18 +535,18 @@ function createSurfaceCircle() {
 		const angularDistance = (MARKER_CIRCLE_RADIUS_DEG * Math.PI) / 180
 		const lat2 = Math.asin(
 			Math.sin(lat1) * Math.cos(angularDistance) +
-				Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+				Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing),
 		)
 		const lon2 =
 			lon1 +
 			Math.atan2(
 				Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
-				Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+				Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2),
 			)
 		const pos = latLonTo3D(
 			(lat2 * 180) / Math.PI,
 			(lon2 * 180) / Math.PI,
-			PLANET_RADIUS * 1.005
+			PLANET_RADIUS * 1.005,
 		)
 		points.push(new THREE.Vector3(pos.x, pos.y, pos.z))
 	}
@@ -566,7 +566,7 @@ function createGeoTether() {
 	const surfacePos = latLonTo3D(
 		markerLatitude,
 		markerLongitude,
-		PLANET_RADIUS * 1.01
+		PLANET_RADIUS * 1.01,
 	)
 	const geoPos = latLonTo3D(markerLatitude, markerLongitude, GEO_ALTITUDE)
 	const points = [
@@ -685,7 +685,7 @@ export function animateOrcScene(animateNormal = true) {
 				const burnElapsed = Date.now() - data.exosphereTime
 				burnProgress = Math.min(
 					burnElapsed / DECOMMISSION_CONFIG.burnDuration,
-					1
+					1,
 				)
 			}
 
@@ -717,8 +717,8 @@ export function animateOrcScene(animateNormal = true) {
 					? 1
 					: Math.min(
 							EXOSPHERE_RADIUS / startRadius,
-							currentDistance / startRadius
-					  )
+							currentDistance / startRadius,
+						)
 				const innerMultiplier = INNER_ATMOSPHERE_RADIUS / startRadius
 				const easedBurnProgress = smoothEase(burnProgress)
 				radiusMultiplier =
@@ -751,7 +751,7 @@ export function animateOrcScene(animateNormal = true) {
 				const { r: currentR } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				const speed =
 					data.orbitSpeed * (1.5 / (currentR * currentR)) * speedMultiplier
@@ -759,14 +759,14 @@ export function animateOrcScene(animateNormal = true) {
 				const { x, y } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				sat.position.set(x * radiusMultiplier, y * radiusMultiplier, 0)
 				sat.rotation.z = data.angle + Math.PI / 2
 				orbitDirection = new THREE.Vector3(
 					-Math.sin(data.angle),
 					Math.cos(data.angle),
-					0
+					0,
 				)
 			} else if (data.originalOrbitRadiusX) {
 				data.orbitRadiusX = data.originalOrbitRadiusX * radiusMultiplier
@@ -780,7 +780,7 @@ export function animateOrcScene(animateNormal = true) {
 				orbitDirection = new THREE.Vector3(
 					-Math.sin(data.angle),
 					Math.cos(data.angle),
-					0
+					0,
 				)
 			} else {
 				data.orbitRadius = data.originalOrbitRadius * radiusMultiplier
@@ -793,7 +793,10 @@ export function animateOrcScene(animateNormal = true) {
 					const xyDist = Math.sqrt(x * x + y * y)
 					if (xyDist < data.orbitRadius * 0.8) {
 						const requiredZ = Math.sqrt(
-							Math.max(0, data.orbitRadius * data.orbitRadius - xyDist * xyDist)
+							Math.max(
+								0,
+								data.orbitRadius * data.orbitRadius - xyDist * xyDist,
+							),
 						)
 						z = Math.max(MIN_FRONT_Z, requiredZ)
 					} else {
@@ -806,7 +809,7 @@ export function animateOrcScene(animateNormal = true) {
 				orbitDirection = new THREE.Vector3(
 					-Math.sin(data.angle),
 					0,
-					Math.cos(data.angle)
+					Math.cos(data.angle),
 				)
 				if (data.orbitSpeed < 0) orbitDirection.negate()
 			}
@@ -845,7 +848,7 @@ export function animateOrcScene(animateNormal = true) {
 				data.orbitalRing.material.color.setRGB(
 					color.r * intensity,
 					color.g * intensity,
-					color.b * intensity
+					color.b * intensity,
 				)
 			}
 
@@ -853,14 +856,14 @@ export function animateOrcScene(animateNormal = true) {
 				const { r: currentR } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				const speed = data.originalOrbitSpeed * (1.5 / (currentR * currentR))
 				data.angle += speed
 				const { x, y } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				sat.position.set(x * radiusMultiplier, y * radiusMultiplier, 0)
 				sat.rotation.z = data.angle + Math.PI / 2
@@ -909,7 +912,7 @@ export function animateOrcScene(animateNormal = true) {
 					const geoPos = latLonTo3D(
 						markerLatitude,
 						markerLongitude,
-						GEO_ALTITUDE
+						GEO_ALTITUDE,
 					)
 					sat.position.set(geoPos.x, geoPos.y, geoPos.z)
 					sat.lookAt(0, 0, 0)
@@ -933,14 +936,14 @@ export function animateOrcScene(animateNormal = true) {
 				const { r } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				const instantaneousSpeed = data.orbitSpeed * (1.5 / (r * r)) * timeScale
 				data.angle += instantaneousSpeed
 				const { x, y } = updateKeplerianPosition(
 					data.angle,
 					data.semiMajorAxis,
-					data.eccentricity
+					data.eccentricity,
 				)
 				sat.position.set(x, y, 0)
 				sat.rotation.z = data.angle + Math.PI / 2
@@ -965,7 +968,7 @@ export function animateOrcScene(animateNormal = true) {
 		window.dispatchEvent(
 			new CustomEvent("satelliteDecommissioned", {
 				detail: { satelliteId: sat.userData.id, satellite: sat },
-			})
+			}),
 		)
 	}
 }
@@ -992,7 +995,7 @@ function drawContinentPath(
 	width,
 	height,
 	closePath = true,
-	fillColor = "#5A5840"
+	fillColor = "#5A5840",
 ) {
 	if (coords.length < 2) return
 
@@ -1007,7 +1010,7 @@ function drawContinentPath(
 			coords[i - 1][1],
 			coords[i - 1][0],
 			width,
-			height
+			height,
 		)
 
 		// Handle longitude wraparound

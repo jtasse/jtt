@@ -1,17 +1,13 @@
 import * as THREE from "three"
 import {
 	HandState,
-	SEQUENCE_TIMINGS,
-	SLAP_SLOW_MOTION_FACTOR,
-	HAND_ORBIT_CONFIG,
-	GEO_PUNCH_CONFIG,
 	LEO_FLICK_CONFIG,
 	MOL_SLAP_CONFIG,
+	GEO_PUNCH_CONFIG,
+	HAND_ORBIT_CONFIG,
 	getOrbitTiming,
-	PALM_WIDTH,
 } from "./HandConfig.js"
 import {
-	transitionToGesture,
 	updateGestureAnimation,
 	updatePlumeAnimation,
 	calculateIrregularOrbitPosition,
@@ -19,6 +15,7 @@ import {
 	avoidPlanet,
 	clampToFrontOfPlanet,
 	clampToPlanetSurface,
+	transitionToGesture,
 } from "./HandBehaviors.js"
 
 // Helper: Interpolate rotation keyframes and apply to base orientation
@@ -33,7 +30,7 @@ function applyRotationKeyframe(baseQuat, rotations, phase, t) {
 
 	// Create rotation from interpolated Euler angles
 	const offsetQuat = new THREE.Quaternion().setFromEuler(
-		new THREE.Euler(x, y, z, "XYZ")
+		new THREE.Euler(x, y, z, "XYZ"),
 	)
 
 	// Apply offset to base orientation
@@ -119,7 +116,7 @@ export class HandStateMachine {
 		}
 
 		console.log(
-			`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`
+			`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`,
 		)
 
 		switch (state) {
@@ -139,15 +136,15 @@ export class HandStateMachine {
 						this.stateData.isLeoFlick
 							? "PREPARING (LEO FLICK)"
 							: this.stateData.isGeoPunch
-							? "WINDING_UP (GEO PUNCH)"
-							: "WINDING_UP (MOLNIYA SLAP)"
-					} started.`
+								? "WINDING_UP (GEO PUNCH)"
+								: "WINDING_UP (MOLNIYA SLAP)"
+					} started.`,
 				)
 				this.stateData.windUpStartRotation = this.hand.rotation.y
 				// LEO uses flickReady gesture (thumb and index finger pressed together)
 				if (this.stateData.isLeoFlick) {
 					console.log(
-						`[HandStateMachine] LEO FLICK: Transitioning to 'flickReady' gesture.`
+						`[HandStateMachine] LEO FLICK: Transitioning to 'flickReady' gesture.`,
 					)
 					transitionToGesture(this.hand, "flickReady", 300)
 				}
@@ -158,9 +155,9 @@ export class HandStateMachine {
 						this.stateData.isLeoFlick
 							? "FLICKING (LEO)"
 							: this.stateData.isGeoPunch
-							? "PUNCHING (GEO)"
-							: "SLAPPING (MOLNIYA)"
-					} started.`
+								? "PUNCHING (GEO)"
+								: "SLAPPING (MOLNIYA)"
+					} started.`,
 				)
 				// Use appropriate gesture for each orbit type
 				if (this.stateData.isGeoPunch) {
@@ -169,13 +166,13 @@ export class HandStateMachine {
 				} else if (this.stateData.isLeoFlick) {
 					// LEO: transition to flickRelease (finger extends)
 					console.log(
-						`[HandStateMachine] LEO FLICK: Transitioning to 'flickRelease' gesture.`
+						`[HandStateMachine] LEO FLICK: Transitioning to 'flickRelease' gesture.`,
 					)
 					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
 					// Molniya: backhand slap
 					console.log(
-						`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`
+						`[HandStateMachine] MOLNIYA SLAP: Using 'backhand' gesture.`,
 					)
 					transitionToGesture(this.hand, "backhand", 100)
 				}
@@ -359,7 +356,7 @@ export class HandStateMachine {
 				// Create quaternion that rotates local +Y to point at satellite
 				const targetQuat = new THREE.Quaternion().setFromUnitVectors(
 					localFingerDirection,
-					worldDirectionToSat
+					worldDirectionToSat,
 				)
 
 				// Check for valid quaternion
@@ -411,7 +408,7 @@ export class HandStateMachine {
 				const worldDirectionToSat = dirToSat.divideScalar(dirLength)
 				const targetQuat = new THREE.Quaternion().setFromUnitVectors(
 					localFingerDirection,
-					worldDirectionToSat
+					worldDirectionToSat,
 				)
 
 				if (!isNaN(targetQuat.x)) {
@@ -498,15 +495,15 @@ export class HandStateMachine {
 					console.log(`  - isLeoFlick=${this.stateData.isLeoFlick}`)
 					if (isLEO) {
 						console.log(
-							`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`
+							`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`,
 						)
 					} else if (isMolniya) {
 						console.log(
-							`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`
+							`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`,
 						)
 					} else {
 						console.log(
-							`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`
+							`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`,
 						)
 					}
 				}
@@ -593,7 +590,7 @@ export class HandStateMachine {
 						interpolatedPos = new THREE.Vector3(
 							startPos.x + (actualTargetPos.x - startPos.x) * eased,
 							startPos.y + (actualTargetPos.y - startPos.y) * eased,
-							startPos.z + (actualTargetPos.z - startPos.z) * eased
+							startPos.z + (actualTargetPos.z - startPos.z) * eased,
 						)
 					}
 				}
@@ -636,7 +633,7 @@ export class HandStateMachine {
 				const rotMatrix = new THREE.Matrix4().lookAt(
 					new THREE.Vector3(),
 					awayFromEarth,
-					up
+					up,
 				)
 				const baseQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
 
@@ -646,7 +643,7 @@ export class HandStateMachine {
 					baseQuat,
 					rotations,
 					"approach",
-					eased
+					eased,
 				)
 				this.hand.quaternion.slerp(targetQuat, 0.1)
 			} else if (this.stateData.isLeoFlick) {
@@ -668,10 +665,10 @@ export class HandStateMachine {
 					const rotMatrix = new THREE.Matrix4().makeBasis(
 						localX,
 						localY,
-						localZ
+						localZ,
 					)
 					const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
-						rotMatrix
+						rotMatrix,
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.1)
 				}
@@ -687,10 +684,10 @@ export class HandStateMachine {
 					const rotMatrix = new THREE.Matrix4().lookAt(
 						new THREE.Vector3(),
 						direction,
-						up
+						up,
 					)
 					const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
-						rotMatrix
+						rotMatrix,
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.1)
 				}
@@ -721,12 +718,9 @@ export class HandStateMachine {
 				earthToSat.normalize()
 			}
 
-			const satDistance = satPos.length()
-			const isLEO = satDistance < 0.8
 			let windUpPos
 
 			if (this.stateData.isGeoPunch) {
-				// GEO PUNCH: Staged animation with explicit positioning
 				// The hand is BEHIND the satellite (further from Earth)
 				// Pull-back moves AWAY from Earth (increasing distance)
 				// Punch moves TOWARD Earth (decreasing distance)
@@ -747,7 +741,7 @@ export class HandStateMachine {
 					const rotMatrix = new THREE.Matrix4().lookAt(
 						new THREE.Vector3(),
 						awayFromEarth,
-						up
+						up,
 					)
 					this.stateData.lockedPunchOrientation =
 						new THREE.Quaternion().setFromRotationMatrix(rotMatrix)
@@ -772,7 +766,7 @@ export class HandStateMachine {
 						this.stateData.lockedPunchOrientation,
 						rotations,
 						"approach",
-						1.0 // t=1 means end keyframe
+						1.0, // t=1 means end keyframe
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.2)
 
@@ -785,7 +779,7 @@ export class HandStateMachine {
 					// Distance increases from initialPunchDist to initialPunchDist + pullBackDistance
 					const pullT = Math.min(
 						stageElapsed / GEO_PUNCH_CONFIG.pullBackDuration,
-						1
+						1,
 					)
 					const pullEased =
 						pullT < 0.5
@@ -806,7 +800,7 @@ export class HandStateMachine {
 						this.stateData.lockedPunchOrientation,
 						rotations,
 						"pullBack",
-						pullEased
+						pullEased,
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.15)
 
@@ -830,7 +824,7 @@ export class HandStateMachine {
 				// Lock position at start of preparing phase
 				if (!this.stateData.flickLockedPosition) {
 					console.log(
-						`[HandStateMachine] LEO Flick: Locking position for flick preparation.`
+						`[HandStateMachine] LEO Flick: Locking position for flick preparation.`,
 					)
 					this.stateData.flickLockedPosition = this.hand.position.clone()
 
@@ -854,10 +848,10 @@ export class HandStateMachine {
 						const rotMatrix = new THREE.Matrix4().makeBasis(
 							localX,
 							localY,
-							localZ
+							localZ,
 						)
 						const flickQuat = new THREE.Quaternion().setFromRotationMatrix(
-							rotMatrix
+							rotMatrix,
 						)
 						this.stateData.flickLockedRotation = flickQuat
 					} else {
@@ -873,7 +867,7 @@ export class HandStateMachine {
 				// Transition to FLICKING after preparing duration
 				if (t >= 1) {
 					console.log(
-						`[HandStateMachine] LEO Flick: Preparation complete. Transitioning to CONTACTING.`
+						`[HandStateMachine] LEO Flick: Preparation complete. Transitioning to CONTACTING.`,
 					)
 					this.transition(HandState.CONTACTING)
 				}
@@ -918,16 +912,16 @@ export class HandStateMachine {
 				const rotMatrix = new THREE.Matrix4().lookAt(
 					new THREE.Vector3(),
 					faceDirection,
-					up
+					up,
 				)
 				const targetQuat = new THREE.Quaternion().setFromRotationMatrix(
-					rotMatrix
+					rotMatrix,
 				)
 
 				// Add wind-up rotation (pull arm back)
 				const windUpQuat = new THREE.Quaternion().setFromAxisAngle(
 					new THREE.Vector3(0, 1, 0),
-					-eased * Math.PI * 0.4
+					-eased * Math.PI * 0.4,
 				)
 				targetQuat.multiply(windUpQuat)
 
@@ -941,12 +935,11 @@ export class HandStateMachine {
 		}
 	}
 
-	updateSlapping(dt) {
+	updateSlapping() {
 		let t, eased
 
 		if (this.stateData.isGeoPunch) {
-			// GEO PUNCH: Staged PUNCH and FOLLOW_THROUGH
-			// Uses explicit distance-based positioning along the punch line
+			// GEO PUNCH:taged PUNCH and FOLLOW_THROUGH
 			const stageElapsed = performance.now() - this.stateData.geoPunchStageStart
 			const punchLine = this.stateData.earthToSat
 			const satDist = this.stateData.satelliteDistance
@@ -978,7 +971,7 @@ export class HandStateMachine {
 						this.stateData.lockedPunchOrientation,
 						rotations,
 						"punch",
-						eased
+						eased,
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.3)
 				}
@@ -1027,7 +1020,7 @@ export class HandStateMachine {
 						this.stateData.lockedPunchOrientation,
 						rotations,
 						"followThrough",
-						eased
+						eased,
 					)
 					this.hand.quaternion.slerp(targetQuat, 0.3)
 				}
@@ -1053,13 +1046,13 @@ export class HandStateMachine {
 		if (!this.stateData.contactPathLogged) {
 			this.stateData.contactPathLogged = true
 			console.log(
-				`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`
+				`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`,
 			)
 			if (this.stateData.isLeoFlick) {
 				console.log(`[HandStateMachine] *** EXECUTING LEO FLICK CODE PATH ***`)
 			} else {
 				console.log(
-					`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`
+					`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`,
 				)
 			}
 		}
@@ -1068,16 +1061,10 @@ export class HandStateMachine {
 			const satPos = new THREE.Vector3()
 			this.targetSatellite.getWorldPosition(satPos)
 
-			let moveDirection
-			const moveSpeed = 0.025 // units per ms
-
 			if (this.stateData.isGeoPunch) {
 				// This branch shouldn't be reached anymore for GEO
 				return
 			} else if (this.stateData.isLeoFlick) {
-				// LEO FLICK: Hand moves forward so extended finger contacts satellite
-				// The gesture transition to 'flickRelease' is already playing (triggered in onEnterState)
-
 				// Keep orientation locked to what we set in PREPARING
 				if (this.stateData.flickLockedRotation) {
 					this.hand.quaternion.copy(this.stateData.flickLockedRotation)
@@ -1153,12 +1140,12 @@ export class HandStateMachine {
 					const d = this.hand.position.distanceTo(satPos)
 					console.log(
 						`[HandStateMachine] Slap Update - Dist: ${d.toFixed(
-							3
+							3,
 						)} | Hand: ${this.hand.position
 							.toArray()
 							.map((v) => v.toFixed(2))} | Sat: ${satPos
 							.toArray()
-							.map((v) => v.toFixed(2))}`
+							.map((v) => v.toFixed(2))}`,
 					)
 				}
 			}
@@ -1173,8 +1160,8 @@ export class HandStateMachine {
 			) {
 				console.log(
 					`[HandStateMachine] Contact made with satellite! Distance: ${dist.toFixed(
-						3
-					)}`
+						3,
+					)}`,
 				)
 				this.stateData.contactApplied = true
 				this.stateData.forceContact = false
@@ -1195,7 +1182,7 @@ export class HandStateMachine {
 		if (t >= 1 && !this.stateData.contactApplied) {
 			if (this.targetSatellite) {
 				console.log(
-					`[HandStateMachine] Slap failsafe triggered - forcing burn.`
+					`[HandStateMachine] Slap failsafe triggered - forcing burn.`,
 				)
 				this.stateData.contactApplied = true
 				if (this.onSatelliteBurn) {
@@ -1278,7 +1265,7 @@ export class HandStateMachine {
 			const rotationProgress = Math.min(
 				(performance.now() - this.stateData.thumbsUpStartTime) /
 					rotationDuration,
-				1
+				1,
 			)
 			// Cubic ease-in-out for smooth rotation
 			const eased =
@@ -1332,7 +1319,7 @@ export class HandStateMachine {
 			}
 
 			const arcMidPoint = pushDirection.multiplyScalar(
-				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5,
 			)
 			// Ensure arc stays in front
 			arcMidPoint.z = Math.max(arcMidPoint.z, 0.5 + 0.3) // MIN_FRONT_Z + buffer
@@ -1403,7 +1390,7 @@ export class HandStateMachine {
 			}
 
 			const arcMidPoint = pushDirection.multiplyScalar(
-				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5
+				HAND_ORBIT_CONFIG.minPlanetDistance * 1.5,
 			)
 			// Ensure arc stays in front
 			arcMidPoint.z = Math.max(arcMidPoint.z, 0.5 + 0.3) // MIN_FRONT_Z + buffer

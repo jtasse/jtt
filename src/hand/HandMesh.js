@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import {
-	HAND_SCALE_FACTOR,
 	PALM_WIDTH,
 	PALM_HEIGHT,
 	PALM_DEPTH,
@@ -103,7 +102,7 @@ function createFinger(config, materials) {
 			FINGER_WIDTH * 0.4,
 			FINGER_WIDTH * 0.45,
 			segmentLength,
-			8
+			8,
 		)
 		const phalanx = new THREE.Mesh(phalanxGeo, materials.metal)
 		phalanx.position.y = segmentLength / 2
@@ -116,7 +115,7 @@ function createFinger(config, materials) {
 				FINGER_WIDTH * 0.15,
 				FINGER_WIDTH * 0.15,
 				segmentLength * 0.6,
-				6
+				6,
 			)
 			const pistonL = new THREE.Mesh(pistonGeo, materials.accent)
 			pistonL.position.set(FINGER_WIDTH * 0.35, segmentLength / 2, 0)
@@ -167,12 +166,12 @@ function createFinger(config, materials) {
 	fingerGroup.position.set(
 		config.position[0],
 		config.position[1],
-		config.position[2]
+		config.position[2],
 	)
 	fingerGroup.rotation.set(
 		config.rotation[0],
 		config.rotation[1],
-		config.rotation[2]
+		config.rotation[2],
 	)
 
 	return fingerGroup
@@ -210,7 +209,7 @@ function createPalm(materials) {
 	const knucklePlateGeo = new THREE.BoxGeometry(
 		PALM_WIDTH * 0.9,
 		PALM_HEIGHT * 0.15,
-		PALM_DEPTH * 1.1
+		PALM_DEPTH * 1.1,
 	)
 	const knucklePlate = new THREE.Mesh(knucklePlateGeo, materials.accent)
 	knucklePlate.position.y = PALM_HEIGHT * 0.35
@@ -228,7 +227,7 @@ function createWristWithPlume(materials) {
 		PALM_DEPTH * 0.8,
 		PALM_DEPTH * 0.9,
 		PALM_WIDTH * 0.3,
-		12
+		12,
 	)
 	const wristJoint = new THREE.Mesh(wristJointGeo, materials.joint)
 	wristJoint.rotation.z = Math.PI / 2
@@ -239,7 +238,7 @@ function createWristWithPlume(materials) {
 	const forearmGeo = new THREE.BoxGeometry(
 		PALM_WIDTH * 0.6,
 		PALM_HEIGHT * 0.6,
-		PALM_DEPTH * 1.2
+		PALM_DEPTH * 1.2,
 	)
 	const forearm = new THREE.Mesh(forearmGeo, materials.metal)
 	forearm.position.y = -PALM_HEIGHT * 0.65
@@ -251,7 +250,7 @@ function createWristWithPlume(materials) {
 		PALM_DEPTH * 0.8,
 		PALM_DEPTH * 1.0,
 		PALM_HEIGHT * 0.35,
-		12
+		12,
 	)
 	const thrusterHousing = new THREE.Mesh(thrusterHousingGeo, materials.accent)
 	// Position at bottom of forearm, pointing down (-Y direction)
@@ -279,7 +278,7 @@ function createPropulsionPlume(materials) {
 	const innerConeGeo = new THREE.ConeGeometry(
 		PALM_DEPTH * 0.4,
 		PALM_HEIGHT * 0.6,
-		12
+		12,
 	)
 	const innerCone = new THREE.Mesh(innerConeGeo, materials.plumeInner)
 	innerCone.rotation.x = -Math.PI / 2 // Point backward
@@ -290,7 +289,7 @@ function createPropulsionPlume(materials) {
 	const outerConeGeo = new THREE.ConeGeometry(
 		PALM_DEPTH * 0.7,
 		PALM_HEIGHT * 0.9,
-		12
+		12,
 	)
 	const outerCone = new THREE.Mesh(outerConeGeo, materials.plumeOuter)
 	outerCone.rotation.x = -Math.PI / 2
@@ -317,7 +316,7 @@ function createPropulsionPlume(materials) {
 // Main Hand Creation
 // ============================================
 
-export function createOrcHand(_scaleFactor = HAND_SCALE_FACTOR) {
+export function createOrcHand() {
 	const handGroup = new THREE.Group()
 	handGroup.name = "orcHand"
 

@@ -554,23 +554,6 @@ function createGeoRing(latitude, longitude, altitude, color) {
 	return new THREE.LineLoop(geometry, material)
 }
 
-/**
- * Creates the GEO tether line connecting the surface marker to the satellite
- */
-function createGeoTether(surfacePos, satellitePos) {
-	const points = [
-		new THREE.Vector3(surfacePos.x, surfacePos.y, surfacePos.z),
-		new THREE.Vector3(satellitePos.x, satellitePos.y, satellitePos.z),
-	]
-	const geometry = new THREE.BufferGeometry().setFromPoints(points)
-	const material = new THREE.LineBasicMaterial({
-		color: 0xff00ff,
-		transparent: true,
-		opacity: 0.7,
-	})
-	return new THREE.Line(geometry, material)
-}
-
 // Continent drawing helpers (simplified for the showcase)
 function latLonToCanvas(lat, lon, width, height) {
 	const x = ((lon + 180) / 360) * width

@@ -1,6 +1,10 @@
 import { defineConfig } from "vite"
-import { resolve, join } from "path"
+import { resolve, join, dirname } from "path"
 import fs from "fs"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 export default defineConfig(({ mode }) => {
 	const alias = {}
@@ -11,7 +15,7 @@ export default defineConfig(({ mode }) => {
 	const handleProxyError = (err, req, res) => {
 		console.error(
 			"\n\x1b[33m%s\x1b[0m\n",
-			"Proxy Error: Docs server not running. Run 'npm run dev:docs' in a separate terminal."
+			"Proxy Error: Docs server not running. Run 'npm run dev:docs' in a separate terminal.",
 		)
 		res.writeHead(502, {
 			"Content-Type": "text/plain",

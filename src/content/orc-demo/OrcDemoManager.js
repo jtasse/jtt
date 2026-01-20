@@ -197,7 +197,7 @@ function createOrcDemo() {
 		50,
 		rect.width / rect.height,
 		0.1,
-		100
+		100,
 	)
 
 	const styles = getComputedStyle(document.documentElement)
@@ -257,7 +257,7 @@ function updatePauseButtonUI() {
 		button.title = "Pause Scene (Spacebar)"
 		path.setAttribute(
 			"d",
-			"M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z"
+			"M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z",
 		)
 	}
 }
@@ -321,7 +321,7 @@ function updateCameraTracking() {
 			const offsetDir = new THREE.Vector3(
 				decommState.cameraOffset.x,
 				decommState.cameraOffset.y,
-				decommState.cameraOffset.z
+				decommState.cameraOffset.z,
 			)
 
 			// If cameraDistance is provided, normalize the offset and scale by distance
@@ -339,8 +339,8 @@ function updateCameraTracking() {
 					new THREE.Vector3(
 						decommState.cameraLookAt.x,
 						decommState.cameraLookAt.y,
-						decommState.cameraLookAt.z
-					)
+						decommState.cameraLookAt.z,
+					),
 				)
 
 			// Apply sidebar compensation
@@ -550,7 +550,7 @@ function createSelectionIndicator() {
 	return sprite
 }
 
-function updateSelectedSatelliteInfo(satelliteId) {
+function updateSelectedSatelliteInfo() {
 	const statusEl = document.getElementById("selected-satellite-status")
 	const idEl = document.getElementById("selected-satellite-display-id")
 	const orbitTypeEl = document.getElementById("selected-satellite-orbit-type")
@@ -653,7 +653,7 @@ async function showAvailableSatellitesPane() {
 		const list = orcInfoPane.querySelector("#satellite-list")
 		if (list) {
 			const sortedSatellites = [...satellites].sort(
-				(a, b) => a.userData.orbitIndex - b.userData.orbitIndex
+				(a, b) => a.userData.orbitIndex - b.userData.orbitIndex,
 			)
 			sortedSatellites.forEach((sat) => {
 				const listItem = document.createElement("li")
@@ -669,7 +669,7 @@ async function showAvailableSatellitesPane() {
 
 				listItem.setAttribute(
 					"onclick",
-					`window.orcSelectSatellite('${sat.userData.id}')`
+					`window.orcSelectSatellite('${sat.userData.id}')`,
 				)
 				list.appendChild(listItem)
 			})
@@ -679,7 +679,7 @@ async function showAvailableSatellitesPane() {
 		if (decommissionAction) {
 			decommissionAction.addEventListener(
 				"click",
-				window.orcDecommissionSatellite
+				window.orcDecommissionSatellite,
 			)
 		}
 
@@ -780,11 +780,11 @@ async function showAvailableSatellitesPane() {
 						if (e.key === "Escape") {
 							// Dispatch to main window handler
 							document.dispatchEvent(
-								new KeyboardEvent("keydown", { key: "Escape" })
+								new KeyboardEvent("keydown", { key: "Escape" }),
 							)
 						}
 					})
-				} catch (err) {
+				} catch {
 					// Ignore cross-origin errors in dev if they occur
 				}
 			})
@@ -864,7 +864,7 @@ function handleSatelliteRemoved(satelliteId) {
 	// Remove the satellite from the available satellites list
 	if (orcInfoPane) {
 		const listItem = orcInfoPane.querySelector(
-			`.satellite-list-item[data-satellite-id="${satelliteId}"]`
+			`.satellite-list-item[data-satellite-id="${satelliteId}"]`,
 		)
 		if (listItem) {
 			listItem.remove()
