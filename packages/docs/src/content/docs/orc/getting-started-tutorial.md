@@ -10,11 +10,11 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
 1. **Select a Target Satellite**
 
-   Locate the **Available Satellites** list in the sidebar on the left.
+   Locate the **Available Satellites** list in the `Orbital Refuse Collector Demo` sidebar.
 
-   Click on any satellite name (For example `Sat-Alpha` or `Sat-Beta`).
+   Click on any satellite name (For example: `Leona` or `Moltar`).
 
-   _Observe:_ The camera automatically moves to focus on the selected satellite, and its details appear in the **Satellite Info** pane.
+   _Observe:_ A light blue box surrounds the selected satellite within the scene, and its details appear in the **Satellite Info** pane.
 
 2. **Initiate Decommission**
 
@@ -22,21 +22,23 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Click the **Decommission Satellite** button.
 
-   _Observe:_ The robotic hand activates and begins moving toward the target satellite to capture it.
+   _Observe:_ The robotic hand activates and moves toward the target satellite before decommissioning it.
 
 3. **Cancel the Operation**
 
    If you realize you have selected the wrong target or wish to stop the simulation, you can abort the process immediately.
 
-   Locate the **Reset Scene** button at the very top of the sidebar.
+   Locate the **Cancel Decommission** button.
 
-   Click **Reset Scene**.
+   > **NOTE**: the `Decommission` button becomes the `Cancel Decommission` button once decommission is initiated.
 
-   _Result:_ The robotic hand retracts, the camera resets, and the satellite returns to its operational state.
+   Click **Cancel Decommission**.
+
+   _Result:_ The robotic hand disengages and the satellite returns to its operational state.
 
 ## Conclusion
 
-You have successfully performed a decommission cycle and learned how to reset the simulation. You can repeat these steps for any satellite in the list to practice managing orbital debris.
+You have successfully performed a satellite decommission and learned how to cancel the decommission operation. You can repeat these steps for any satellite in the list to practice managing satellites in need of decommission.
 
 :::tip[Next Steps]
 Now that you know the basics, try exploring the User Guide to learn about the different satellite status indicators.

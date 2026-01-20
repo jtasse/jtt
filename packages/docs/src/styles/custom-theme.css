@@ -36,9 +36,9 @@
 
 	/* Custom vars */
 	--jtt-link-hover: #ffffff;
-	--jtt-home-link-bg: rgba(14, 2, 78, 0.1);
-	--jtt-home-link-hover-bg: rgba(0, 255, 255, 0.2);
-	--jtt-home-link-hover-text: #ffffff;
+	--jtt-portfolio-link-bg: rgba(14, 2, 78, 0.1);
+	--jtt-portfolio-link-hover-bg: rgba(0, 255, 255, 0.2);
+	--jtt-portfolio-link-hover-text: #ffffff;
 }
 
 /* Light Theme */
@@ -73,9 +73,9 @@
 
 	/* Custom vars */
 	--jtt-link-hover: #0055aa;
-	--jtt-home-link-bg: rgba(0, 0, 0, 0.05);
-	--jtt-home-link-hover-bg: rgba(0, 100, 200, 0.1);
-	--jtt-home-link-hover-text: #000000;
+	--jtt-portfolio-link-bg: rgba(0, 0, 0, 0.05);
+	--jtt-portfolio-link-hover-bg: rgba(0, 100, 200, 0.1);
+	--jtt-portfolio-link-hover-text: #000000;
 }
 
 /* Links */
@@ -115,10 +115,10 @@ a:hover {
 }
 
 /* Differentiate the "Back to home" link in the sidebar */
-.sidebar-content a.home-link {
+a.portfolio-link {
 	display: block;
 	color: var(--sl-color-white);
-	background: var(--jtt-home-link-bg);
+	background: var(--jtt-portfolio-link-bg);
 	border: 1px solid;
 	border-color: var(--sl-color-gray-2);
 	margin-bottom: 1.5rem;
@@ -128,9 +128,9 @@ a:hover {
 	text-decoration: none;
 }
 
-.sidebar-content a.home-link:hover {
-	background: var(--jtt-home-link-hover-bg);
-	color: var(--jtt-home-link-hover-text) !important;
+a.portfolio-link:hover {
+	background: var(--jtt-portfolio-link-hover-bg);
+	color: var(--jtt-portfolio-link-hover-text) !important;
 	text-decoration: none;
 	border-color: var(--sl-color-accent-high);
 }

@@ -104,10 +104,10 @@
    ============================================ */
 #orc-demo-container {
 	position: fixed;
-	top: 0;
+	top: var(--orc-nav-height);
 	left: var(--orc-container-left);
 	width: var(--orc-container-width);
-	height: 100vh;
+	height: calc(100vh - var(--orc-nav-height));
 	z-index: 40;
 	opacity: 0;
 	transition: opacity 0.5s ease-in;

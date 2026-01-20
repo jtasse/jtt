@@ -60,7 +60,7 @@ export function createOrcShowcase(container) {
 	isRunning = true
 
 	// Set entry delay relative to current time (0.5s delay)
-	showcaseHandEntryDelay = performance.now() + 500
+	showcaseHandEntryDelay = performance.now()
 
 	const rect = container.getBoundingClientRect()
 	const width = rect.width || container.clientWidth || 800
