@@ -15,6 +15,10 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: "Portfolio Documentation",
+			tableOfContents: {
+				minHeadingLevel: 2, // Skip h1, start from h2
+				maxHeadingLevel: 4,
+			},
 			social: {
 				github: "https://github.com/jtasse/jtt",
 			},
@@ -67,7 +71,7 @@ export default defineConfig({
 				{
 					label: "ORC",
 					items: [
-						{ label: "Overview", slug: "orc" },
+						{ label: "Introduction", slug: "orc" },
 						{
 							label: "Getting Started Tutorial",
 							slug: "orc/getting-started-tutorial",

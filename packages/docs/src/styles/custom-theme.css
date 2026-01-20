@@ -155,3 +155,45 @@ a.external-link::after {
 a.external-link:hover::after {
 	opacity: 1;
 }
+
+/* Breadcrumbs - ensure visibility across all browsers including Chrome */
+nav[aria-label="Breadcrumbs"],
+[class*="breadcrumb"] {
+	display: flex !important;
+	visibility: visible !important;
+	width: 100%;
+}
+
+/* Breadcrumbs - ensure visibility across all browsers */
+.breadcrumbs {
+	display: flex !important;
+	visibility: visible !important;
+}
+
+/* On this page - ensure only headings are listed, not sidebar labels */
+.right-sidebar .heading-list {
+	display: block !important;
+}
+
+/* Hide Overview link in desktop TOC */
+.right-sidebar nav ul li a[href="#_top"],
+starlight-toc nav ul li a[href="#_top"] {
+	display: none !important;
+}
+
+/* Hide Overview link in mobile TOC */
+mobile-starlight-toc nav ul li a[href="#_top"] {
+	display: none !important;
+}
+
+/* Hide the "Overview" text in mobile TOC summary */
+mobile-starlight-toc summary span.display-current {
+	display: none !important;
+}
+
+/* Hide empty list items */
+.right-sidebar nav ul li:has(> a[href="#_top"]:only-child),
+starlight-toc nav ul li:has(> a[href="#_top"]:only-child),
+mobile-starlight-toc nav ul li:has(> a[href="#_top"]:only-child) {
+	display: none !important;
+}
