@@ -9,7 +9,7 @@ export const camera = new THREE.PerspectiveCamera(
 	50,
 	window.innerWidth / window.innerHeight,
 	0.1,
-	2000
+	2000,
 )
 camera.position.set(0, 0, 6)
 camera.lookAt(0, 0, 0)
@@ -49,16 +49,69 @@ key.position.set(5, 8, 5)
 scene.add(key)
 
 // === Starfield ===
-const starCount = 1500
+export const STAR_CONFIG = {
+	count: 3500,
+	size: 3.5, // Increased size for brightness
+	opacity: 1.0,
+}
+
 const starGeo = new THREE.BufferGeometry()
-const positions = new Float32Array(starCount * 3)
-for (let i = 0; i < starCount; i++) {
-	positions[i * 3 + 0] = (Math.random() - 0.5) * 800
-	positions[i * 3 + 1] = (Math.random() - 0.5) * 800
-	positions[i * 3 + 2] = (Math.random() - 0.5) * 800
+const positions = new Float32Array(STAR_CONFIG.count * 3)
+const colors = new Float32Array(STAR_CONFIG.count * 3)
+const color = new THREE.Color()
+
+for (let i = 0; i < STAR_CONFIG.count; i++) {
+	// Spherical distribution for more natural background
+	const r = 400 + Math.random() * 400
+	const theta = 2 * Math.PI * Math.random()
+	const phi = Math.acos(2 * Math.random() - 1)
+
+	positions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta)
+	positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
+	positions[i * 3 + 2] = r * Math.cos(phi)
+
+	// Color variation
+	const starType = Math.random()
+	if (starType > 0.9) {
+		color.setHex(0xaaaaaa) // Dimmer white
+	} else if (starType > 0.7) {
+		color.setHex(0xffdddd) // Reddish
+	} else if (starType > 0.5) {
+		color.setHex(0xddddff) // Blueish
+	} else {
+		color.setHex(0xffffff) // Bright white
+	}
+
+	colors[i * 3 + 0] = color.r
+	colors[i * 3 + 1] = color.g
+	colors[i * 3 + 2] = color.b
 }
 starGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3))
-const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6 })
+starGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+
+// Create soft circle texture programmatically
+const canvas = document.createElement("canvas")
+canvas.width = 32
+canvas.height = 32
+const ctx = canvas.getContext("2d")
+const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16)
+gradient.addColorStop(0, "rgba(255,255,255,1)")
+gradient.addColorStop(0.4, "rgba(255,255,255,0.9)") // Extended bright core
+gradient.addColorStop(0.6, "rgba(255,255,255,0.4)")
+gradient.addColorStop(1, "rgba(255,255,255,0)")
+ctx.fillStyle = gradient
+ctx.fillRect(0, 0, 32, 32)
+const starTexture = new THREE.CanvasTexture(canvas)
+
+const starMat = new THREE.PointsMaterial({
+	size: STAR_CONFIG.size,
+	map: starTexture,
+	transparent: true,
+	opacity: STAR_CONFIG.opacity,
+	vertexColors: true,
+	blending: THREE.AdditiveBlending,
+	depthWrite: false,
+})
 export const stars = new THREE.Points(starGeo, starMat)
 scene.add(stars)
 
