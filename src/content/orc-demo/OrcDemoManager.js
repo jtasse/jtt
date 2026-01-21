@@ -81,17 +81,28 @@ export const OrcDemoManager = {
 
 		// Fade in
 		if (orcDemoContainer) {
+			console.log(
+				"[OrcDemo] Setting container visibility - current opacity:",
+				orcDemoContainer.style.opacity,
+			)
 			orcDemoContainer.style.opacity = "0"
 			orcDemoContainer.style.transition = "opacity 0.6s ease-in"
+			orcDemoContainer.style.display = "block !important"
 			// Force reflow to ensure transition plays
 			void orcDemoContainer.offsetWidth
 			requestAnimationFrame(() => {
+				console.log("[OrcDemo] RAF: Setting opacity to 1")
 				orcDemoContainer.style.opacity = "1"
 			})
 			// Fallback: Make visible immediately in case requestAnimationFrame doesn't work
 			setTimeout(() => {
+				console.log(
+					"[OrcDemo] Timeout fallback: opacity =",
+					orcDemoContainer.style.opacity,
+				)
 				if (orcDemoContainer.style.opacity === "0") {
 					orcDemoContainer.style.opacity = "1"
+					console.log("[OrcDemo] Timeout: Set opacity to 1")
 				}
 			}, 100)
 		}
