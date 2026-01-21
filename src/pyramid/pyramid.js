@@ -1,4 +1,5 @@
 import * as THREE from "three"
+console.log("[pyramid.js] Module loading...")
 import { LayoutManager } from "../core/LayoutManager.js"
 import {
 	scene,
