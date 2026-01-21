@@ -414,7 +414,8 @@ function updateCameraTracking() {
 		const planetCenter = new THREE.Vector3(orcGroup.position.x, 0, 0)
 		satPos.x += orcGroup.position.x
 
-		const sidebarCompensation = 0.4
+		const isMobile = window.innerWidth <= 768
+		const sidebarCompensation = isMobile ? 0 : 0.4
 		const targetDistance = decommState.targetZoomDistance
 		let targetCamPos
 		let adjustedTarget
@@ -457,6 +458,11 @@ function updateCameraTracking() {
 
 			// Apply sidebar compensation
 			adjustedTarget.x += sidebarCompensation
+
+			if (isMobile) {
+				// On mobile, look up to push scene down (clear the top toolbar)
+				adjustedTarget.y += 1.2
+			}
 		} else if (decommState.isGeoPunch && decommState.hand) {
 			// Fallback for GEO: Camera to the SIDE, framing BOTH hand AND satellite
 			const handWorldPos = new THREE.Vector3()
@@ -476,6 +482,9 @@ function updateCameraTracking() {
 
 			adjustedTarget = midPoint.clone()
 			adjustedTarget.x += sidebarCompensation
+			if (isMobile) {
+				adjustedTarget.y += 1.2
+			}
 
 			targetCamPos = midPoint.clone()
 			targetCamPos.add(sideDir.multiplyScalar(frameDistance * 1.5))
@@ -506,10 +515,16 @@ function updateCameraTracking() {
 
 			adjustedTarget = satPos.clone()
 			adjustedTarget.x += sidebarCompensation
+			if (isMobile) {
+				adjustedTarget.y += 1.2
+			}
 		} else {
 			// LEO/Molniya: Default camera tracking (follows satellite)
 			adjustedTarget = satPos.clone()
 			adjustedTarget.x += sidebarCompensation
+			if (isMobile) {
+				adjustedTarget.y += 1.2
+			}
 
 			const dirFromCenter = satPos.clone().sub(planetCenter).normalize()
 			const cameraOffset = dirFromCenter.clone().multiplyScalar(targetDistance)
@@ -760,10 +775,10 @@ async function showAvailableSatellitesPane() {
 			const container = docsLinks[0].parentElement
 			if (container) {
 				container.classList.add("docs-container-responsive")
-				// Force 2-column grid layout for all screen sizes
-				container.style.display = "grid"
-				container.style.gridTemplateColumns = "1fr 1fr"
-				container.style.gap = "10px"
+				// Note: Layout is now handled by CSS (orc-demo.css)
+				// Desktop: Grid (via CSS if needed, or default block)
+				// Mobile: Flex row (via media query)
+				// We removed inline styles to allow CSS overrides
 			}
 		}
 
@@ -772,6 +787,21 @@ async function showAvailableSatellitesPane() {
 			const sortedSatellites = [...satellites].sort(
 				(a, b) => a.userData.orbitIndex - b.userData.orbitIndex,
 			)
+
+			// Populate mobile dropdown
+			const mobileSelect = orcInfoPane.querySelector("#mobile-satellite-select")
+			if (mobileSelect) {
+				mobileSelect.innerHTML = '<option value="">Select a Satellite</option>'
+				mobileSelect.addEventListener("change", (e) => {
+					const satId = e.target.value
+					if (satId) {
+						window.orcSelectSatellite(satId)
+					} else {
+						deselectSatellite()
+					}
+				})
+			}
+
 			sortedSatellites.forEach((sat) => {
 				const listItem = document.createElement("li")
 				listItem.textContent = sat.userData.name
@@ -789,6 +819,14 @@ async function showAvailableSatellitesPane() {
 					`window.orcSelectSatellite('${sat.userData.id}')`,
 				)
 				list.appendChild(listItem)
+
+				// Add to dropdown
+				if (mobileSelect) {
+					const option = document.createElement("option")
+					option.value = sat.userData.id
+					option.textContent = sat.userData.name
+					mobileSelect.appendChild(option)
+				}
 			})
 		}
 
@@ -804,6 +842,18 @@ async function showAvailableSatellitesPane() {
 		const playPauseButton = orcInfoPane.querySelector("#orc-play-pause-button")
 		if (playPauseButton) {
 			playPauseButton.addEventListener("click", togglePause)
+		}
+
+		// Info pane toggle
+		const infoToggle = orcInfoPane.querySelector("#info-pane-toggle")
+		const infoPane = orcInfoPane.querySelector("#satellite-info-pane")
+		if (infoToggle && infoPane) {
+			infoToggle.addEventListener("click", () => {
+				infoPane.classList.toggle("expanded")
+				infoToggle.textContent = infoPane.classList.contains("expanded")
+					? "Tap to collapse info"
+					: "Tap to expand info"
+			})
 		}
 
 		updateAvailableSatellitesHighlight()
@@ -861,6 +911,8 @@ async function showAvailableSatellitesPane() {
 						fetchUrl = "/portfolio/docs/orc/api-reference/"
 					} else if (link.id === "whitepaper-link") {
 						fetchUrl = "/portfolio/docs/orc/whitepaper/"
+					} else if (link.id === "mobile-docs-link") {
+						fetchUrl = "/portfolio/docs/orc/"
 					} else {
 						return
 					}
@@ -946,6 +998,12 @@ function updateAvailableSatellitesHighlight() {
 		}
 	})
 
+	// Update mobile dropdown selection
+	const mobileSelect = orcInfoPane.querySelector("#mobile-satellite-select")
+	if (mobileSelect) {
+		mobileSelect.value = selectedSatellite ? selectedSatellite.userData.id : ""
+	}
+
 	const helpText = document.getElementById("satellite-help-text")
 	if (helpText) helpText.style.display = showHelp ? "block" : "none"
 }
@@ -985,6 +1043,14 @@ function handleSatelliteRemoved(satelliteId) {
 		)
 		if (listItem) {
 			listItem.remove()
+		}
+
+		const mobileSelect = orcInfoPane.querySelector("#mobile-satellite-select")
+		if (mobileSelect) {
+			const option = mobileSelect.querySelector(
+				`option[value="${satelliteId}"]`,
+			)
+			if (option) option.remove()
 		}
 	}
 

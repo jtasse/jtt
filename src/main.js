@@ -69,6 +69,8 @@ function animateLabels() {
 
 	const labels = labelManager.getLabels()
 	const navScale = labelManager.getNavLabelScale()
+	const isMobile = window.innerWidth <= 768
+	const mobileScaleMult = isMobile ? 2.6 : 1.0
 
 	Object.values(labels).forEach((label) => {
 		if (!label.visible) return
@@ -80,9 +82,11 @@ function animateLabels() {
 
 		let target
 		if (label.userData.fixedNav) {
-			target = new THREE.Vector3(navScale, navScale, 1).multiplyScalar(
-				targetScaleScalar,
-			)
+			target = new THREE.Vector3(
+				navScale * mobileScaleMult,
+				navScale * mobileScaleMult,
+				1,
+			).multiplyScalar(targetScaleScalar)
 		} else {
 			target = label.userData.originalScale
 				.clone()

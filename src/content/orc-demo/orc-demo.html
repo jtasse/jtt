@@ -3,112 +3,152 @@
 	<h2 class="orc-pane-title">Orbital Refuse Collector Demo</h2>
 
 	<div class="orc-pane-content">
-		<!-- Scene Controls -->
-		<div class="scene-controls-container">
-			<button
-				id="orc-play-pause-button"
-				class="scene-control-button"
-				title="Play/Pause"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					height="24px"
-					viewBox="0 -960 960 960"
-					width="24px"
-					fill="currentColor"
+		<div class="orc-toolbar-group-1">
+			<!-- Scene Controls -->
+			<div class="scene-controls-container">
+				<button
+					id="orc-play-pause-button"
+					class="scene-control-button"
+					title="Play/Pause"
 				>
-					<path
-						d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z"
-					/>
-				</svg>
-			</button>
-			<button
-				id="orc-reset-button"
-				class="action-list-item"
-				onclick="window.location.reload()"
-			>
-				Reset Scene
-			</button>
-		</div>
-
-		<!-- Available Satellites List -->
-		<div id="available-satellites-pane">
-			<h3>Available Satellites</h3>
-			<p id="satellite-help-text">Select a satellite</p>
-			<ul id="satellite-list">
-				<!-- Populated by JavaScript -->
-			</ul>
-		</div>
-
-		<!-- Actions List -->
-		<div id="actions-pane">
-			<h3>Actions</h3>
-			<button id="decommission-action" class="action-list-item disabled">
-				Decommission Satellite
-			</button>
-		</div>
-
-		<!-- Satellite Info Section -->
-		<div id="satellite-info-pane">
-			<h3>Satellite Info</h3>
-			<p id="no-satellite-selected">No satellite selected</p>
-			<div id="satellite-info-content">
-				<div class="satellite-info-row">
-					<span class="info-label">ID</span>
-					<span id="selected-satellite-display-id" class="info-value">N/A</span>
-				</div>
-				<div class="satellite-info-row">
-					<span class="info-label">Orbit Type</span>
-					<span id="selected-satellite-orbit-type" class="info-value">N/A</span>
-				</div>
-				<div class="satellite-info-row">
-					<span class="info-label">Status</span>
-					<span
-						id="selected-satellite-status"
-						class="info-value status-operational"
-						>Operational</span
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						height="24px"
+						viewBox="0 -960 960 960"
+						width="24px"
+						fill="currentColor"
 					>
-				</div>
+						<path
+							d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z"
+						/>
+					</svg>
+				</button>
+				<button
+					id="orc-reset-button"
+					class="action-list-item"
+					onclick="window.location.reload()"
+					title="Reset Scene"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						height="20px"
+						viewBox="0 -960 960 960"
+						width="20px"
+						fill="currentColor"
+					>
+						<path
+							d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-38-60-97-95t-111-35q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<!-- Available Satellites List -->
+			<div id="available-satellites-pane">
+				<h3>Available Satellites</h3>
+				<p id="satellite-help-text">Select a satellite</p>
+				<ul id="satellite-list">
+					<!-- Populated by JavaScript -->
+				</ul>
+				<!-- Mobile Dropdown -->
+				<select
+					id="mobile-satellite-select"
+					class="mobile-only"
+					style="display: none"
+				>
+					<option value="">Select a Satellite</option>
+				</select>
+			</div>
+
+			<!-- Actions List -->
+			<div id="actions-pane">
+				<h3>Actions</h3>
+				<button id="decommission-action" class="action-list-item disabled">
+					Decommission Satellite
+				</button>
 			</div>
 		</div>
 
-		<!-- Documentation Section -->
-		<div class="orc-pane-section">
-			<h3>ORC Documentation</h3>
-			<ul>
-				<a
-					id="decommission-tutorial-link"
-					href="/portfolio/docs/orc/getting-started-tutorial/"
-					class="docs-link"
-				>
-					<span class="docs-action">Learn</span
-					><span class="docs-subject">: Getting Started Tutorial</span>
-				</a>
-				<a
-					id="user-guide-link"
-					href="/portfolio/docs/orc/user-guide/"
-					class="docs-link"
-				>
-					<span class="docs-action">Do</span
-					><span class="docs-subject">: User Guide</span>
-				</a>
-				<a
-					id="whitepaper-link"
-					href="/portfolio/docs/orc/whitepaper/"
-					class="docs-link"
-				>
-					<span class="docs-action">Understand</span
-					><span class="docs-subject">: Whitepaper</span>
-				</a>
-				<a
-					id="api-docs-link"
-					href="/portfolio/docs/orc/api-reference/"
-					class="docs-link"
-				>
-					<span class="docs-action">Reference</span
-					><span class="docs-subject">: API Docs</span>
-				</a>
-			</ul>
+		<div class="orc-toolbar-group-2">
+			<!-- Satellite Info Section -->
+			<div id="satellite-info-pane">
+				<h3>Satellite Info</h3>
+				<div id="info-pane-toggle" class="mobile-only" style="display: none">
+					Tap to expand info
+				</div>
+				<p id="no-satellite-selected">No satellite selected</p>
+				<div id="satellite-info-content">
+					<div class="satellite-info-row">
+						<span class="info-label">ID</span>
+						<span id="selected-satellite-display-id" class="info-value"
+							>N/A</span
+						>
+					</div>
+					<div class="satellite-info-row">
+						<span class="info-label">Orbit Type</span>
+						<span id="selected-satellite-orbit-type" class="info-value"
+							>N/A</span
+						>
+					</div>
+					<div class="satellite-info-row">
+						<span class="info-label">Status</span>
+						<span
+							id="selected-satellite-status"
+							class="info-value status-operational"
+							>Operational</span
+						>
+					</div>
+				</div>
+			</div>
+
+			<!-- Mobile Docs Button -->
+			<a
+				id="mobile-docs-link"
+				href="/portfolio/docs/orc"
+				target="_blank"
+				class="mobile-docs-btn docs-link mobile-only"
+				style="display: none"
+				>Read the Docs</a
+			>
+
+			<!-- Documentation Section -->
+			<div class="orc-pane-section desktop-only">
+				<h3>ORC Documentation</h3>
+				<ul>
+					<a
+						id="decommission-tutorial-link"
+						href="/portfolio/docs/orc/getting-started-tutorial/"
+						class="docs-link"
+					>
+						<span class="docs-action">Learn</span
+						><span class="docs-subject">: Getting Started Tutorial</span>
+					</a>
+					<a
+						id="user-guide-link"
+						href="/portfolio/docs/orc/user-guide/"
+						class="docs-link"
+					>
+						<span class="docs-action">Do</span
+						><span class="docs-subject">: User Guide</span>
+					</a>
+					<a
+						id="whitepaper-link"
+						href="/portfolio/docs/orc/whitepaper/"
+						class="docs-link"
+					>
+						<span class="docs-action">Understand</span
+						><span class="docs-subject">: Whitepaper</span>
+					</a>
+					<a
+						id="api-docs-link"
+						href="/portfolio/docs/orc/api-reference/"
+						class="docs-link"
+					>
+						<span class="docs-action">Reference</span
+						><span class="docs-subject">: API Docs</span>
+					</a>
+				</ul>
+			</div>
 		</div>
 	</div>
 </div>

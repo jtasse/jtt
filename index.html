@@ -47,7 +47,7 @@
 
 			// Local dev fallback for legacy tag URL (simulates netlify.toml redirect)
 			if (window.location.pathname.includes("/tag/docs-as-tests")) {
-				window.location.href = "/blog?tag=docs-as-tests"
+				window.history.replaceState(null, "", "/blog?tag=docs-as-tests")
 			}
 		</script>
 	</head>

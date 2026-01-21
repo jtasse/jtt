@@ -139,6 +139,11 @@ function morphToOrcScene() {
 	// Update layout now that ORC is active (affects margins for sidebar)
 	updateNavLayout()
 
+	// On mobile, override portfolio position to be under the Portfolio label (which will be at 1.4)
+	if (window.innerWidth <= 768) {
+		pyramidXPositions.portfolio = 1.4
+	}
+
 	// Show pyramid in flattened state under Portfolio label
 	pyramidGroup.visible = true
 	pyramidGroup.position.x = pyramidXPositions.portfolio
@@ -164,6 +169,24 @@ function morphToOrcScene() {
 			labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
 			labelMesh.rotation.set(0, 0, 0)
 			labelMesh.scale.set(navLabelScale, navLabelScale, 1)
+
+			// Mobile Override: Force labels to edges
+			if (window.innerWidth <= 768) {
+				labelMesh.scale.set(navLabelScale * 2.6, navLabelScale * 2.6, 1)
+
+				// Spread labels wider on mobile
+				// Home (Left), Portfolio (Right), Others (Distributed)
+				if (key === "Home") {
+					labelMesh.position.x = -1.9 // Push left (avoid edge)
+				} else if (key === "Portfolio") {
+					labelMesh.position.x = 1.4 // Push right (avoid theme toggle)
+				} else if (key === "About") {
+					labelMesh.position.x = -0.8
+				} else if (key === "Blog") {
+					labelMesh.position.x = 0.3
+				}
+			}
+
 			labelMesh.visible = true // Make visible (including Home label)
 			labelMesh.userData.fixedNav = true
 			if (labelMesh.material) {
@@ -462,6 +485,21 @@ window.addEventListener("resize", () => {
 				label.position.x = flatPos.x
 				label.position.y = flatPos.y
 				label.scale.set(navLabelScale, navLabelScale, 1)
+
+				// Mobile Override: Force labels to edges
+				if (window.innerWidth <= 768) {
+					label.scale.set(navLabelScale * 2.6, navLabelScale * 2.6, 1)
+
+					if (key === "Home") {
+						label.position.x = -1.9
+					} else if (key === "Portfolio") {
+						label.position.x = 1.4
+					} else if (key === "About") {
+						label.position.x = -0.8
+					} else if (key === "Blog") {
+						label.position.x = 0.3
+					}
+				}
 			}
 		}
 		// Update pyramid position to match new layout
@@ -475,7 +513,14 @@ window.addEventListener("resize", () => {
 			getCurrentSection() &&
 			pyramidXPositions[getCurrentSection()] !== undefined
 		) {
-			pyramidGroup.position.x = pyramidXPositions[getCurrentSection()]
+			if (
+				window.innerWidth <= 768 &&
+				(getCurrentSection() === "portfolio" || isOrcSceneActive())
+			) {
+				pyramidGroup.position.x = 1.4
+			} else {
+				pyramidGroup.position.x = pyramidXPositions[getCurrentSection()]
+			}
 		}
 	}
 })
