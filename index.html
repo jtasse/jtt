@@ -53,6 +53,23 @@
 		<div id="content-floor"></div>
 		<div id="scene-container"></div>
 
+		<script>
+			window.__indexHtmlLoaded = true
+			console.log("[index.html] Page loaded at", new Date().toISOString())
+			window.addEventListener("error", (e) => {
+				console.error(
+					"[Window error]",
+					e.message,
+					"at",
+					e.filename,
+					":",
+					e.lineno,
+				)
+			})
+			window.addEventListener("unhandledrejection", (e) => {
+				console.error("[Unhandled promise rejection]", e.reason)
+			})
+		</script>
 		<script type="module" src="./src/main.js"></script>
 	</body>
 </html>
