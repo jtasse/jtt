@@ -111,7 +111,11 @@ function morphToOrcScene() {
 	setCurrentSection("portfolio")
 
 	// Start ORC Demo first so isActive is true for layout calculations
-	OrcDemoManager.start()
+	try {
+		OrcDemoManager.start()
+	} catch (error) {
+		console.error("Failed to start ORC Demo scene:", error)
+	}
 
 	// Update layout now that ORC is active (affects margins for sidebar)
 	updateNavLayout()
