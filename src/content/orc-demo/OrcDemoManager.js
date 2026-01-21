@@ -88,6 +88,12 @@ export const OrcDemoManager = {
 			requestAnimationFrame(() => {
 				orcDemoContainer.style.opacity = "1"
 			})
+			// Fallback: Make visible immediately in case requestAnimationFrame doesn't work
+			setTimeout(() => {
+				if (orcDemoContainer.style.opacity === "0") {
+					orcDemoContainer.style.opacity = "1"
+				}
+			}, 100)
 		}
 
 		// Transfer hand to ORC demo scene
