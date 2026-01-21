@@ -268,182 +268,200 @@ function routeToPage(route) {
 }
 
 router.onRouteChange((route) => {
-	// Handle hand transitions
-	const newPage = routeToPage(route)
-	const currentPage = getCurrentHandPage()
+	console.log("[main.js] Route change listener called with route:", route)
+	try {
+		// Handle hand transitions
+		const newPage = routeToPage(route)
+		const currentPage = getCurrentHandPage()
+		console.log("[main.js] Current page:", currentPage, "New page:", newPage)
 
-	if (newPage !== currentPage) {
-		// Cancel any pending hand entry if navigating away from home
-		cancelHandEntry()
+		if (newPage !== currentPage) {
+			// Cancel any pending hand entry if navigating away from home
+			cancelHandEntry()
 
-		// Don't trigger hand page transition when going to/from ORC demo
-		// - morphToOrcScene handles entry into ORC demo (hand flies in from left)
-		// - morphFromOrcScene handles exit from ORC demo (releases hand to main scene)
-		const isOrcTransition = newPage === "orc-demo" || currentPage === "orc-demo"
-		if (!isOrcTransition) {
-			triggerHandPageTransition(currentPage, newPage)
+			// Don't trigger hand page transition when going to/from ORC demo
+			// - morphToOrcScene handles entry into ORC demo (hand flies in from left)
+			// - morphFromOrcScene handles exit from ORC demo (releases hand to main scene)
+			const isOrcTransition =
+				newPage === "orc-demo" || currentPage === "orc-demo"
+			if (!isOrcTransition) {
+				triggerHandPageTransition(currentPage, newPage)
+			}
 		}
-	}
 
-	if (route === "/bio" || route === "/about") {
-		if (controls) controls.enabled = false
-		// If coming from ORC scene, morph back first
-		if (isOrcSceneActive()) {
-			hideAllPlanes()
-			morphFromOrcScene()
-			setTimeout(() => {
-				// After ORC scene fade out, trigger hand entry from the right
-				// (ORC demo is rightmost, so leaving it means entering from right)
-				triggerHandPageTransition("orc-demo", "about")
-				resetPyramidToHome(labelManager)
-				centerAndOpenLabel(labelManager, "About")
-			}, 1300)
-		} else {
-			centerAndOpenLabel(labelManager, "About")
-		}
-	} else if (route === "/portfolio") {
-		if (controls) controls.enabled = false
-		if (isOrcSceneActive()) {
-			hideAllPlanes()
-			morphFromOrcScene()
-			setTimeout(() => {
-				triggerHandPageTransition("orc-demo", "portfolio")
-				resetPyramidToHome(labelManager)
-				centerAndOpenLabel(labelManager, "Portfolio")
-			}, 1300)
-		} else {
-			centerAndOpenLabel(labelManager, "Portfolio")
-		}
-	} else if (route === "/blog") {
-		if (controls) controls.enabled = false
-		if (isOrcSceneActive()) {
-			hideAllPlanes()
-			morphFromOrcScene()
-			setTimeout(() => {
-				triggerHandPageTransition("orc-demo", "blog")
-				resetPyramidToHome(labelManager)
-				centerAndOpenLabel(labelManager, "Blog")
-			}, 1300)
-		} else {
-			centerAndOpenLabel(labelManager, "Blog")
-		}
-	} else if (route.includes("/blog/posts/")) {
-		if (controls) controls.enabled = false
-		// Handle individual blog posts - keep pyramid at top but don't reload content
-		if (isOrcSceneActive()) {
-			hideAllPlanes()
-			morphFromOrcScene()
-			setTimeout(() => {
-				triggerHandPageTransition("orc-demo", "blog")
-				resetPyramidToHome(labelManager)
-				animatePyramid(labelManager, true, "blog")
-				showBlogPost(route)
-			}, 1300)
-		} else {
-			const isAtTop = pyramidGroup.position.y >= 1.5
-			if (!isAtTop) {
-				animatePyramid(labelManager, true, "blog", () => {
-					startLoading()
-					setTimeout(async () => {
-						await showBlogPost(route)
-						stopLoading()
-					}, 500)
-				})
+		if (route === "/bio" || route === "/about") {
+			if (controls) controls.enabled = false
+			// If coming from ORC scene, morph back first
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					// After ORC scene fade out, trigger hand entry from the right
+					// (ORC demo is rightmost, so leaving it means entering from right)
+					triggerHandPageTransition("orc-demo", "about")
+					resetPyramidToHome(labelManager)
+					centerAndOpenLabel(labelManager, "About")
+				}, 1300)
 			} else {
-				spinPyramidToSection(
-					"blog",
-					() => {
+				centerAndOpenLabel(labelManager, "About")
+			}
+		} else if (route === "/portfolio") {
+			if (controls) controls.enabled = false
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "portfolio")
+					resetPyramidToHome(labelManager)
+					centerAndOpenLabel(labelManager, "Portfolio")
+				}, 1300)
+			} else {
+				centerAndOpenLabel(labelManager, "Portfolio")
+			}
+		} else if (route === "/blog") {
+			if (controls) controls.enabled = false
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "blog")
+					resetPyramidToHome(labelManager)
+					centerAndOpenLabel(labelManager, "Blog")
+				}, 1300)
+			} else {
+				centerAndOpenLabel(labelManager, "Blog")
+			}
+		} else if (route.includes("/blog/posts/")) {
+			if (controls) controls.enabled = false
+			// Handle individual blog posts - keep pyramid at top but don't reload content
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "blog")
+					resetPyramidToHome(labelManager)
+					animatePyramid(labelManager, true, "blog")
+					showBlogPost(route)
+				}, 1300)
+			} else {
+				const isAtTop = pyramidGroup.position.y >= 1.5
+				if (!isAtTop) {
+					animatePyramid(labelManager, true, "blog", () => {
 						startLoading()
 						setTimeout(async () => {
 							await showBlogPost(route)
 							stopLoading()
-						}, 600)
-					},
-					600,
-				)
-			}
-		}
-		window.centeredLabelName = "Blog"
-	} else if (route === "/portfolio/orc-demo") {
-		if (controls) controls.enabled = false
-
-		hideAllPlanes()
-		const isAtTop = pyramidGroup.position.y >= 1.5
-		if (!isAtTop) {
-			animatePyramid(labelManager, true, "portfolio", () => {
-				startLoading()
-				setTimeout(() => {
-					morphToOrcScene()
-					window.centeredLabelName = null
-					stopLoading()
-				}, 600)
-			})
-		} else {
-			spinPyramidToSection("portfolio", () => {
-				startLoading()
-				setTimeout(() => {
-					morphToOrcScene()
-					window.centeredLabelName = null
-					stopLoading()
-				}, 600)
-			})
-		}
-	} else {
-		// For non-content routes (home), reset pyramid, hide all content, and hide contact
-		if (isOrcSceneActive && isOrcSceneActive()) {
-			// morphFromOrcScene handles its own cleanup with fade animation
-			// Don't call hideAllPlanes() here as it would remove elements before fade completes
-			morphFromOrcScene()
-			// After transition, animate hand from right (ORC demo is rightmost)
-			setTimeout(() => {
-				triggerHandPageTransition("orc-demo", "home")
-			}, 1300)
-		} else {
-			resetPyramidToHome(labelManager)
-			hideAllPlanes()
-			// Schedule hand entry on home page (2 second delay) only if not coming from ORC
-			scheduleHandEntry(2000)
-
-			// Ensure controls are enabled
-			if (controls) controls.enabled = true
-
-			// Ensure pyramid is visible and opaque (fix for home page regression)
-			pyramidGroup.visible = true
-
-			// Force reset position/scale if it looks wrong (e.g. stuck in nav state)
-			if (pyramidGroup.position.y > 1.0) {
-				pyramidGroup.position.set(
-					initialPyramidState.positionX,
-					initialPyramidState.positionY,
-					0,
-				)
-				pyramidGroup.rotation.set(0, initialPyramidState.rotationY, 0)
-				pyramidGroup.scale.set(
-					initialPyramidState.scale,
-					initialPyramidState.scale,
-					initialPyramidState.scale,
-				)
-			}
-
-			const labels = labelManager.getLabels()
-			const labelMeshes = Object.values(labels)
-
-			pyramidGroup.children.forEach((c) => {
-				if (labelMeshes.includes(c)) return
-				c.visible = true
-				if (c.material) {
-					c.material.opacity = 1
-					c.material.transparent = false
-					c.material.needsUpdate = true
+						}, 500)
+					})
+				} else {
+					spinPyramidToSection(
+						"blog",
+						() => {
+							startLoading()
+							setTimeout(async () => {
+								await showBlogPost(route)
+								stopLoading()
+							}, 600)
+						},
+						600,
+					)
 				}
-			})
+			}
+			window.centeredLabelName = "Blog"
+		} else if (route === "/portfolio/orc-demo") {
+			if (controls) controls.enabled = false
+
+			hideAllPlanes()
+			const isAtTop = pyramidGroup.position.y >= 1.5
+			if (!isAtTop) {
+				animatePyramid(labelManager, true, "portfolio", () => {
+					startLoading()
+					setTimeout(() => {
+						morphToOrcScene()
+						window.centeredLabelName = null
+						stopLoading()
+					}, 600)
+				})
+			} else {
+				spinPyramidToSection("portfolio", () => {
+					startLoading()
+					setTimeout(() => {
+						morphToOrcScene()
+						window.centeredLabelName = null
+						stopLoading()
+					}, 600)
+				})
+			}
+		} else {
+			// For non-content routes (home), reset pyramid, hide all content, and hide contact
+			if (isOrcSceneActive && isOrcSceneActive()) {
+				// morphFromOrcScene handles its own cleanup with fade animation
+				// Don't call hideAllPlanes() here as it would remove elements before fade completes
+				morphFromOrcScene()
+				// After transition, animate hand from right (ORC demo is rightmost)
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "home")
+				}, 1300)
+			} else {
+				resetPyramidToHome(labelManager)
+				hideAllPlanes()
+				// Schedule hand entry on home page (2 second delay) only if not coming from ORC
+				scheduleHandEntry(2000)
+
+				// Ensure controls are enabled
+				if (controls) controls.enabled = true
+
+				// Ensure pyramid is visible and opaque (fix for home page regression)
+				pyramidGroup.visible = true
+
+				// Force reset position/scale if it looks wrong (e.g. stuck in nav state)
+				if (pyramidGroup.position.y > 1.0) {
+					pyramidGroup.position.set(
+						initialPyramidState.positionX,
+						initialPyramidState.positionY,
+						0,
+					)
+					pyramidGroup.rotation.set(0, initialPyramidState.rotationY, 0)
+					pyramidGroup.scale.set(
+						initialPyramidState.scale,
+						initialPyramidState.scale,
+						initialPyramidState.scale,
+					)
+				}
+
+				const labels = labelManager.getLabels()
+				const labelMeshes = Object.values(labels)
+
+				pyramidGroup.children.forEach((c) => {
+					if (labelMeshes.includes(c)) return
+					c.visible = true
+					if (c.material) {
+						c.material.opacity = 1
+						c.material.transparent = false
+						c.material.needsUpdate = true
+					}
+				})
+			}
+			window.centeredLabelName = null
 		}
-		window.centeredLabelName = null
+	} catch (routeError) {
+		console.error("[main.js] ERROR in route change handler:", routeError)
+		console.error("[main.js] Stack:", routeError.stack)
 	}
 })
 
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
-router.notify()
+console.log(
+	"[main.js] Calling router.notify() for initial route:",
+	router.getCurrentRoute(),
+)
+try {
+	router.notify()
+	console.log("[main.js] router.notify() completed successfully")
+} catch (error) {
+	console.error("[main.js] ERROR in router.notify():", error)
+	console.error("[main.js] Stack:", error.stack)
+}
 
 inputManager.addClickHandler((raycaster) => {
 	if (document.body.classList.contains("orc-doc-active")) return

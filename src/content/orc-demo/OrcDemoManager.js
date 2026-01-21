@@ -19,6 +19,8 @@ import {
 } from "./orc-demo.js"
 import { getRoamingHand } from "../../hand/HandManager.js"
 
+console.log("[OrcDemoManager] Module loading...")
+
 // ORC scene state
 let orcDemoContainer = null
 let orcDemoRenderer = null
@@ -55,8 +57,15 @@ export const OrcDemoManager = {
 		this.isActive = true
 
 		console.log("[OrcDemoManager] Calling createOrcDemo()")
-		createOrcDemo()
-		console.log("[OrcDemoManager] createOrcDemo() completed")
+		try {
+			createOrcDemo()
+			console.log("[OrcDemoManager] createOrcDemo() completed successfully")
+		} catch (error) {
+			console.error("[OrcDemoManager] ERROR in createOrcDemo():", error)
+			console.error("[OrcDemoManager] Stack:", error.stack)
+			this.isActive = false
+			return
+		}
 		console.log("[OrcDemoManager] orcDemoContainer:", orcDemoContainer)
 		console.log("[OrcDemoManager] orcDemoRenderer:", orcDemoRenderer)
 		console.log("[OrcDemoManager] orcDemoScene:", orcDemoScene)
@@ -192,139 +201,155 @@ function flyHandIntoOrcScene() {
 }
 
 function createOrcDemo() {
-	console.log("[createOrcDemo] Starting...")
-	if (orcDemoContainer) {
-		console.log("[createOrcDemo] Container already exists, returning")
-		return
+	try {
+		console.log("[createOrcDemo] Starting...")
+		if (orcDemoContainer) {
+			console.log("[createOrcDemo] Container already exists, returning")
+			return
+		}
+
+		// 1. Create container
+		console.log("[createOrcDemo] Creating container element")
+		orcDemoContainer = document.createElement("div")
+		orcDemoContainer.id = "orc-demo-container"
+		console.log("[createOrcDemo] Appending container to body")
+		document.body.appendChild(orcDemoContainer)
+		console.log(
+			"[createOrcDemo] Container appended. Body has",
+			document.body.children.length,
+			"children",
+		)
+
+		// Safety check: Apply fallback styles if CSS didn't load or variables are missing
+		const computed = window.getComputedStyle(orcDemoContainer)
+		console.log(
+			"[createOrcDemo] Computed styles - position:",
+			computed.position,
+			"width:",
+			computed.width,
+			"height:",
+			computed.height,
+		)
+		if (computed.position !== "fixed" || computed.width === "0px") {
+			console.warn("[createOrcDemo] CSS not loaded? Applying fallbacks.")
+			orcDemoContainer.style.position = "fixed"
+			orcDemoContainer.style.top = "85px"
+			orcDemoContainer.style.left = "0"
+			orcDemoContainer.style.width = "calc(100vw - 300px)"
+			orcDemoContainer.style.height = "calc(100vh - 85px)"
+			orcDemoContainer.style.zIndex = "40"
+		}
+
+		// Add click listener
+		orcDemoContainer.addEventListener("mousedown", onContainerMouseDown)
+
+		// 2. Create renderer
+		console.log("[createOrcDemo] Getting container dimensions")
+		const rect = orcDemoContainer.getBoundingClientRect()
+		// Fallback to window dimensions if container has no size yet (common in prod race conditions)
+		const width = rect.width || window.innerWidth
+		const height = rect.height || window.innerHeight
+		console.log(
+			"[createOrcDemo] Container dimensions - width:",
+			width,
+			"height:",
+			height,
+		)
+
+		if (width === 0 || height === 0) {
+			console.error("[createOrcDemo] CRITICAL: Container has zero dimensions!")
+		}
+
+		console.log("[createOrcDemo] Creating WebGLRenderer")
+		orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+		orcDemoRenderer.setPixelRatio(window.devicePixelRatio)
+		orcDemoRenderer.setSize(width, height)
+		orcDemoRenderer.outputColorSpace = THREE.SRGBColorSpace
+		console.log("[createOrcDemo] Renderer created and configured")
+
+		console.log("[createOrcDemo] Appending canvas to container")
+		orcDemoContainer.appendChild(orcDemoRenderer.domElement)
+		console.log(
+			"[createOrcDemo] Canvas appended. Container now has",
+			orcDemoContainer.children.length,
+			"children",
+		)
+
+		// 3. Create scene and camera
+		console.log("[createOrcDemo] Creating scene and camera")
+		orcDemoScene = new THREE.Scene()
+		orcDemoCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100)
+
+		const styles = getComputedStyle(document.documentElement)
+		const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
+		const camY = parseFloat(styles.getPropertyValue("--orc-camera-y")) || 7
+		const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
+		const sceneOffsetX =
+			parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
+
+		console.log(
+			"[createOrcDemo] Camera config - x:",
+			camX,
+			"y:",
+			camY,
+			"z:",
+			camZ,
+			"sceneOffsetX:",
+			sceneOffsetX,
+		)
+
+		orcDemoCamera.position.set(camX, camY, camZ)
+		orcDemoCamera.lookAt(sceneOffsetX, 0, 0)
+
+		orcDemoControls = new OrbitControls(
+			orcDemoCamera,
+			orcDemoRenderer.domElement,
+		)
+		orcDemoControls.enableDamping = true
+		orcDemoControls.dampingFactor = 0.05
+		orcDemoControls.screenSpacePanning = false
+		orcDemoControls.minDistance = 1
+		orcDemoControls.maxDistance = 15
+		orcDemoControls.maxPolarAngle = Math.PI / 2
+		orcDemoControls.target.set(sceneOffsetX, 0, 0)
+
+		// 4. Add content
+		console.log("[createOrcDemo] Adding scene content")
+		orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
+		const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
+		keyLight.position.set(3, 3, 3)
+		orcDemoScene.add(keyLight)
+
+		const orcGroupForDemo = createOrcScene(orcDemoCamera)
+		orcGroupForDemo.position.x = sceneOffsetX
+		orcDemoScene.add(orcGroupForDemo)
+		console.log("[createOrcDemo] ORC scene created and added")
+
+		selectionIndicator = createSelectionIndicator()
+		orcDemoScene.add(selectionIndicator)
+
+		// 5. Start animation loop
+		console.log("[createOrcDemo] Starting animation loop")
+		animateOrcDemo()
+		console.log("[createOrcDemo] Complete!")
+
+		// 6. Watch for size changes (CSS loading race conditions)
+		orcDemoResizeObserver = new ResizeObserver(() => {
+			OrcDemoManager.onResize()
+		})
+		orcDemoResizeObserver.observe(orcDemoContainer)
+	} catch (error) {
+		console.error("[createOrcDemo] EXCEPTION:", error)
+		console.error("[createOrcDemo] Stack:", error.stack)
+		// Clean up on error
+		if (orcDemoContainer && orcDemoContainer.parentNode) {
+			orcDemoContainer.parentNode.removeChild(orcDemoContainer)
+		}
+		orcDemoContainer = null
+		orcDemoRenderer = null
+		orcDemoScene = null
+		throw error // Re-throw so start() can catch it
 	}
-
-	// 1. Create container
-	console.log("[createOrcDemo] Creating container element")
-	orcDemoContainer = document.createElement("div")
-	orcDemoContainer.id = "orc-demo-container"
-	console.log("[createOrcDemo] Appending container to body")
-	document.body.appendChild(orcDemoContainer)
-	console.log(
-		"[createOrcDemo] Container appended. Body has",
-		document.body.children.length,
-		"children",
-	)
-
-	// Safety check: Apply fallback styles if CSS didn't load or variables are missing
-	const computed = window.getComputedStyle(orcDemoContainer)
-	console.log(
-		"[createOrcDemo] Computed styles - position:",
-		computed.position,
-		"width:",
-		computed.width,
-		"height:",
-		computed.height,
-	)
-	if (computed.position !== "fixed" || computed.width === "0px") {
-		console.warn("[createOrcDemo] CSS not loaded? Applying fallbacks.")
-		orcDemoContainer.style.position = "fixed"
-		orcDemoContainer.style.top = "85px"
-		orcDemoContainer.style.left = "0"
-		orcDemoContainer.style.width = "calc(100vw - 300px)"
-		orcDemoContainer.style.height = "calc(100vh - 85px)"
-		orcDemoContainer.style.zIndex = "40"
-	}
-
-	// Add click listener
-	orcDemoContainer.addEventListener("mousedown", onContainerMouseDown)
-
-	// 2. Create renderer
-	console.log("[createOrcDemo] Getting container dimensions")
-	const rect = orcDemoContainer.getBoundingClientRect()
-	// Fallback to window dimensions if container has no size yet (common in prod race conditions)
-	const width = rect.width || window.innerWidth
-	const height = rect.height || window.innerHeight
-	console.log(
-		"[createOrcDemo] Container dimensions - width:",
-		width,
-		"height:",
-		height,
-	)
-
-	if (width === 0 || height === 0) {
-		console.error("[createOrcDemo] CRITICAL: Container has zero dimensions!")
-	}
-
-	console.log("[createOrcDemo] Creating WebGLRenderer")
-	orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-	orcDemoRenderer.setPixelRatio(window.devicePixelRatio)
-	orcDemoRenderer.setSize(width, height)
-	orcDemoRenderer.outputColorSpace = THREE.SRGBColorSpace
-	console.log("[createOrcDemo] Renderer created and configured")
-
-	console.log("[createOrcDemo] Appending canvas to container")
-	orcDemoContainer.appendChild(orcDemoRenderer.domElement)
-	console.log(
-		"[createOrcDemo] Canvas appended. Container now has",
-		orcDemoContainer.children.length,
-		"children",
-	)
-
-	// 3. Create scene and camera
-	console.log("[createOrcDemo] Creating scene and camera")
-	orcDemoScene = new THREE.Scene()
-	orcDemoCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100)
-
-	const styles = getComputedStyle(document.documentElement)
-	const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
-	const camY = parseFloat(styles.getPropertyValue("--orc-camera-y")) || 7
-	const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
-	const sceneOffsetX =
-		parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
-
-	console.log(
-		"[createOrcDemo] Camera config - x:",
-		camX,
-		"y:",
-		camY,
-		"z:",
-		camZ,
-		"sceneOffsetX:",
-		sceneOffsetX,
-	)
-
-	orcDemoCamera.position.set(camX, camY, camZ)
-	orcDemoCamera.lookAt(sceneOffsetX, 0, 0)
-
-	orcDemoControls = new OrbitControls(orcDemoCamera, orcDemoRenderer.domElement)
-	orcDemoControls.enableDamping = true
-	orcDemoControls.dampingFactor = 0.05
-	orcDemoControls.screenSpacePanning = false
-	orcDemoControls.minDistance = 1
-	orcDemoControls.maxDistance = 15
-	orcDemoControls.maxPolarAngle = Math.PI / 2
-	orcDemoControls.target.set(sceneOffsetX, 0, 0)
-
-	// 4. Add content
-	console.log("[createOrcDemo] Adding scene content")
-	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
-	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
-	keyLight.position.set(3, 3, 3)
-	orcDemoScene.add(keyLight)
-
-	const orcGroupForDemo = createOrcScene(orcDemoCamera)
-	orcGroupForDemo.position.x = sceneOffsetX
-	orcDemoScene.add(orcGroupForDemo)
-	console.log("[createOrcDemo] ORC scene created and added")
-
-	selectionIndicator = createSelectionIndicator()
-	orcDemoScene.add(selectionIndicator)
-
-	// 5. Start animation loop
-	console.log("[createOrcDemo] Starting animation loop")
-	animateOrcDemo()
-	console.log("[createOrcDemo] Complete!")
-
-	// 6. Watch for size changes (CSS loading race conditions)
-	orcDemoResizeObserver = new ResizeObserver(() => {
-		OrcDemoManager.onResize()
-	})
-	orcDemoResizeObserver.observe(orcDemoContainer)
 }
 
 function togglePause() {
