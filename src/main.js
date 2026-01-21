@@ -1,6 +1,4 @@
 import * as THREE from "three"
-window.__mainJsLoading = true
-console.log("[main.js] Module loading...")
 import "./content/overlay.css"
 import "./contact/contact-pane.css"
 import { initContactPane } from "./contact/ContactPane.js"
@@ -40,9 +38,6 @@ import {
 	getCurrentHandPage,
 } from "./hand/HandManager.js"
 import { router } from "./router.js"
-
-console.log("[main.js] All imports complete, starting initialization...")
-window.__mainJsInitializing = true
 
 // === Managers ===
 // Force initial layout calculation BEFORE creating labels to ensure they are positioned correctly
@@ -272,15 +267,11 @@ function routeToPage(route) {
 	return routeMap[route] || "home"
 }
 
-console.log("[main.js] About to register router.onRouteChange listener...")
-window.__mainJsRouterRegistering = true
 router.onRouteChange((route) => {
-	console.log("[main.js] Route change listener called with route:", route)
 	try {
 		// Handle hand transitions
 		const newPage = routeToPage(route)
 		const currentPage = getCurrentHandPage()
-		console.log("[main.js] Current page:", currentPage, "New page:", newPage)
 
 		if (newPage !== currentPage) {
 			// Cancel any pending hand entry if navigating away from home
@@ -456,24 +447,15 @@ router.onRouteChange((route) => {
 		console.error("[main.js] Stack:", routeError.stack)
 	}
 })
-window.__mainJsRouterRegistered = true
 
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
-console.log(
-	"[main.js] Calling router.notify() for initial route:",
-	router.getCurrentRoute(),
-)
 try {
 	router.notify()
-	console.log("[main.js] router.notify() completed successfully")
-	window.__mainJsNotified = true
 } catch (error) {
 	console.error("[main.js] ERROR in router.notify():", error)
-	console.error("[main.js] Stack:", error.stack)
-	window.__mainJsNotifyError = error.message
 }
 
-window.__mainJsInitComplete = trueinputManager.addClickHandler((raycaster) => {
+inputManager.addClickHandler((raycaster) => {
 	if (document.body.classList.contains("orc-doc-active")) return
 
 	// Check if contact label was clicked - only block if a click region was actually hit

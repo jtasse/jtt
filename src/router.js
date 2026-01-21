@@ -25,25 +25,13 @@ class Router {
 	}
 
 	onRouteChange(callback) {
-		console.log(
-			"[router] onRouteChange registered, total listeners:",
-			this.listeners.length + 1,
-		)
 		this.listeners.push(callback)
 	}
 
 	notify() {
-		console.log(
-			"[router] notify() called, listeners count:",
-			this.listeners.length,
-			"route:",
-			this.currentRoute,
-		)
 		this.listeners.forEach((cb) => {
 			try {
-				console.log("[router] calling listener for route:", this.currentRoute)
 				cb(this.currentRoute)
-				console.log("[router] listener completed")
 			} catch (e) {
 				console.error("[router] listener threw error:", e.message)
 			}

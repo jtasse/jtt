@@ -19,8 +19,6 @@ import {
 } from "./orc-demo.js"
 import { getRoamingHand } from "../../hand/HandManager.js"
 
-console.log("[OrcDemoManager] Module loading...")
-
 // ORC scene state
 let orcDemoContainer = null
 let orcDemoRenderer = null
@@ -48,27 +46,18 @@ export const OrcDemoManager = {
 	keydownListener: null,
 
 	start() {
-		console.log("[OrcDemoManager] Starting...")
-		console.log("[OrcDemoManager] isActive:", this.isActive)
 		if (this.isActive) {
-			console.warn("[OrcDemoManager] Already active, returning")
 			return
 		}
 		this.isActive = true
 
-		console.log("[OrcDemoManager] Calling createOrcDemo()")
 		try {
 			createOrcDemo()
-			console.log("[OrcDemoManager] createOrcDemo() completed successfully")
 		} catch (error) {
 			console.error("[OrcDemoManager] ERROR in createOrcDemo():", error)
-			console.error("[OrcDemoManager] Stack:", error.stack)
 			this.isActive = false
 			return
 		}
-		console.log("[OrcDemoManager] orcDemoContainer:", orcDemoContainer)
-		console.log("[OrcDemoManager] orcDemoRenderer:", orcDemoRenderer)
-		console.log("[OrcDemoManager] orcDemoScene:", orcDemoScene)
 
 		showAvailableSatellitesPane()
 
@@ -81,28 +70,18 @@ export const OrcDemoManager = {
 
 		// Fade in
 		if (orcDemoContainer) {
-			console.log(
-				"[OrcDemo] Setting container visibility - current opacity:",
-				orcDemoContainer.style.opacity,
-			)
 			orcDemoContainer.style.opacity = "0"
 			orcDemoContainer.style.transition = "opacity 0.6s ease-in"
 			orcDemoContainer.style.display = "block !important"
 			// Force reflow to ensure transition plays
 			void orcDemoContainer.offsetWidth
 			requestAnimationFrame(() => {
-				console.log("[OrcDemo] RAF: Setting opacity to 1")
 				orcDemoContainer.style.opacity = "1"
 			})
 			// Fallback: Make visible immediately in case requestAnimationFrame doesn't work
 			setTimeout(() => {
-				console.log(
-					"[OrcDemo] Timeout fallback: opacity =",
-					orcDemoContainer.style.opacity,
-				)
 				if (orcDemoContainer.style.opacity === "0") {
 					orcDemoContainer.style.opacity = "1"
-					console.log("[OrcDemo] Timeout: Set opacity to 1")
 				}
 			}, 100)
 		}

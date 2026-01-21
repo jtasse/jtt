@@ -1,5 +1,4 @@
 import * as THREE from "three"
-console.log("[pyramid.js] Module loading...")
 import { LayoutManager } from "../core/LayoutManager.js"
 import {
 	scene,
@@ -86,7 +85,6 @@ export function setLabelManager(lm) {
 
 // Layout manager for responsive 3D positioning
 export const layoutManager = new LayoutManager(camera)
-console.log("[pyramid.js] layoutManager created")
 
 camera.position.set(0, -0.36, 6)
 controls.target.set(0, -0.36, 0)
@@ -94,7 +92,6 @@ controls.update()
 setInitialCameraState(camera.position, new THREE.Vector3(0, -0.36, 0))
 
 scene.add(pyramidGroup)
-console.log("[pyramid.js] Module initialization complete")
 
 let navLabelScale = 1.0
 
