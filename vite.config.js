@@ -57,6 +57,17 @@ export default defineConfig(({ mode }) => {
 						}
 						copyRecursive(srcDir, destDir)
 						console.log("[copy-content] Copied src/content to dist/src/content")
+
+						// Copy Draco decoders from node_modules to dist/draco
+						const dracoSrc = resolve(
+							__dirname,
+							"node_modules/three/examples/jsm/libs/draco",
+						)
+						const dracoDest = resolve(__dirname, "dist/draco")
+						if (fs.existsSync(dracoSrc)) {
+							copyRecursive(dracoSrc, dracoDest)
+							console.log("[copy-content] Copied draco decoders to dist/draco")
+						}
 					}
 				},
 			},

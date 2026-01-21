@@ -29,6 +29,7 @@ let orcDemoControls = null
 let orcInfoPane = null
 let selectionIndicator = null
 let selectedSatellite = null
+let orcDemoResizeObserver = null
 
 // Camera tracking state
 let originalCameraState = null
@@ -139,6 +140,7 @@ export const OrcDemoManager = {
 	onResize() {
 		if (orcDemoRenderer && orcDemoCamera && orcDemoContainer) {
 			const rect = orcDemoContainer.getBoundingClientRect()
+			if (rect.width === 0 || rect.height === 0) return
 			orcDemoCamera.aspect = rect.width / rect.height
 			orcDemoCamera.updateProjectionMatrix()
 			orcDemoRenderer.setSize(rect.width, rect.height)
@@ -185,20 +187,19 @@ function createOrcDemo() {
 
 	// 2. Create renderer
 	const rect = orcDemoContainer.getBoundingClientRect()
+	// Fallback to window dimensions if container has no size yet (common in prod race conditions)
+	const width = rect.width || window.innerWidth
+	const height = rect.height || window.innerHeight
+
 	orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
 	orcDemoRenderer.setPixelRatio(window.devicePixelRatio)
-	orcDemoRenderer.setSize(rect.width, rect.height)
+	orcDemoRenderer.setSize(width, height)
 	orcDemoRenderer.outputColorSpace = THREE.SRGBColorSpace
 	orcDemoContainer.appendChild(orcDemoRenderer.domElement)
 
 	// 3. Create scene and camera
 	orcDemoScene = new THREE.Scene()
-	orcDemoCamera = new THREE.PerspectiveCamera(
-		50,
-		rect.width / rect.height,
-		0.1,
-		100,
-	)
+	orcDemoCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100)
 
 	const styles = getComputedStyle(document.documentElement)
 	const camX = parseFloat(styles.getPropertyValue("--orc-camera-x")) || 0
@@ -234,6 +235,12 @@ function createOrcDemo() {
 
 	// 5. Start animation loop
 	animateOrcDemo()
+
+	// 6. Watch for size changes (CSS loading race conditions)
+	orcDemoResizeObserver = new ResizeObserver(() => {
+		OrcDemoManager.onResize()
+	})
+	orcDemoResizeObserver.observe(orcDemoContainer)
 }
 
 function togglePause() {
@@ -459,6 +466,11 @@ function destroyOrcDemo() {
 	if (orcDemoRequestId) {
 		cancelAnimationFrame(orcDemoRequestId)
 		orcDemoRequestId = null
+	}
+
+	if (orcDemoResizeObserver) {
+		orcDemoResizeObserver.disconnect()
+		orcDemoResizeObserver = null
 	}
 
 	disposeOrcScene()
