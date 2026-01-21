@@ -86,7 +86,19 @@ export function setLabelManager(lm) {
 // Layout manager for responsive 3D positioning
 export const layoutManager = new LayoutManager(camera)
 
-camera.position.set(0, -0.36, 6)
+function getResponsiveCameraZ() {
+	const aspect = window.innerWidth / window.innerHeight
+	// Fit pyramid width (approx 3.4) with generous margin -> ~5.5
+	// visible_width = 2 * Z * tan(25deg) * aspect
+	// 5.5 = Z * 0.9326 * aspect
+	// Z = 5.5 / (0.9326 * aspect)
+	if (aspect < 1) {
+		return Math.min(5.5 / (0.9326 * aspect), 15)
+	}
+	return 6
+}
+
+camera.position.set(0, -0.36, getResponsiveCameraZ())
 controls.target.set(0, -0.36, 0)
 controls.update()
 setInitialCameraState(camera.position, new THREE.Vector3(0, -0.36, 0))
@@ -406,8 +418,21 @@ window.addEventListener("resize", () => {
 	camera.aspect = window.innerWidth / window.innerHeight
 	camera.updateProjectionMatrix()
 	renderer.setSize(window.innerWidth, window.innerHeight)
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 	layoutManager.onResize()
+
+	// Update responsive camera Z for home state
+	const targetZ = getResponsiveCameraZ()
+	setInitialCameraState(
+		new THREE.Vector3(0, -0.36, targetZ),
+		new THREE.Vector3(0, -0.36, 0),
+	)
+
+	// If at home (pyramid low) and not in ORC, update immediately
+	if (pyramidGroup.position.y < 1.0 && !isOrcSceneActive()) {
+		camera.position.z = targetZ
+	}
 
 	// ORC demo resize handled by its own internal logic if we exposed it,
 	// but currently it's inside OrcDemoManager.
