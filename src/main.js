@@ -1,4 +1,5 @@
 import * as THREE from "three"
+console.log("[main.js] Module loading...")
 import "./content/overlay.css"
 import "./contact/contact-pane.css"
 import { initContactPane } from "./contact/ContactPane.js"
@@ -38,6 +39,8 @@ import {
 	getCurrentHandPage,
 } from "./hand/HandManager.js"
 import { router } from "./router.js"
+
+console.log("[main.js] All imports complete, starting initialization...")
 
 // === Managers ===
 // Force initial layout calculation BEFORE creating labels to ensure they are positioned correctly
@@ -267,6 +270,7 @@ function routeToPage(route) {
 	return routeMap[route] || "home"
 }
 
+console.log("[main.js] About to register router.onRouteChange listener...")
 router.onRouteChange((route) => {
 	console.log("[main.js] Route change listener called with route:", route)
 	try {
