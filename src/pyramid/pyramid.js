@@ -112,7 +112,12 @@ function morphToOrcScene() {
 
 	// Start ORC Demo first so isActive is true for layout calculations
 	try {
-		OrcDemoManager.start()
+		const result = OrcDemoManager.start()
+		if (result && typeof result.then === "function") {
+			result.catch((error) => {
+				console.error("Failed to start ORC Demo scene (async):", error)
+			})
+		}
 	} catch (error) {
 		console.error("Failed to start ORC Demo scene:", error)
 	}
