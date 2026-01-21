@@ -92,7 +92,10 @@
 	border-radius: 8px;
 	overflow: hidden;
 	text-decoration: none;
-	transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		transform 0.2s,
+		box-shadow 0.2s;
 	height: 100%;
 	box-sizing: border-box;
 	position: relative;
@@ -599,7 +602,7 @@ header nav a:not(:hover) {
 }
 
 /* Scroll margin for jump links to ensure headers aren't obscured */
-.portfolio-page h2, .portfolio-page h3 {
+.portfolio-page h2,
+.portfolio-page h3 {
 	scroll-margin-top: 100px;
-}
 }
