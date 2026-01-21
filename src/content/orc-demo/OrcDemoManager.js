@@ -46,10 +46,21 @@ export const OrcDemoManager = {
 	keydownListener: null,
 
 	start() {
-		if (this.isActive) return
+		console.log("[OrcDemoManager] Starting...")
+		console.log("[OrcDemoManager] isActive:", this.isActive)
+		if (this.isActive) {
+			console.warn("[OrcDemoManager] Already active, returning")
+			return
+		}
 		this.isActive = true
 
+		console.log("[OrcDemoManager] Calling createOrcDemo()")
 		createOrcDemo()
+		console.log("[OrcDemoManager] createOrcDemo() completed")
+		console.log("[OrcDemoManager] orcDemoContainer:", orcDemoContainer)
+		console.log("[OrcDemoManager] orcDemoRenderer:", orcDemoRenderer)
+		console.log("[OrcDemoManager] orcDemoScene:", orcDemoScene)
+
 		showAvailableSatellitesPane()
 
 		// Increase contact pane opacity
@@ -63,6 +74,8 @@ export const OrcDemoManager = {
 		if (orcDemoContainer) {
 			orcDemoContainer.style.opacity = "0"
 			orcDemoContainer.style.transition = "opacity 0.6s ease-in"
+			// Force reflow to ensure transition plays
+			void orcDemoContainer.offsetWidth
 			requestAnimationFrame(() => {
 				orcDemoContainer.style.opacity = "1"
 			})
@@ -140,10 +153,14 @@ export const OrcDemoManager = {
 	onResize() {
 		if (orcDemoRenderer && orcDemoCamera && orcDemoContainer) {
 			const rect = orcDemoContainer.getBoundingClientRect()
-			if (rect.width === 0 || rect.height === 0) return
-			orcDemoCamera.aspect = rect.width / rect.height
+			// Fallback to window dimensions if container is collapsed (e.g. CSS loading issue)
+			const width = rect.width || window.innerWidth
+			const height = rect.height || window.innerHeight
+
+			if (width === 0 || height === 0) return
+			orcDemoCamera.aspect = width / height
 			orcDemoCamera.updateProjectionMatrix()
-			orcDemoRenderer.setSize(rect.width, rect.height)
+			orcDemoRenderer.setSize(width, height)
 		}
 	},
 }
@@ -175,29 +192,81 @@ function flyHandIntoOrcScene() {
 }
 
 function createOrcDemo() {
-	if (orcDemoContainer) return
+	console.log("[createOrcDemo] Starting...")
+	if (orcDemoContainer) {
+		console.log("[createOrcDemo] Container already exists, returning")
+		return
+	}
 
 	// 1. Create container
+	console.log("[createOrcDemo] Creating container element")
 	orcDemoContainer = document.createElement("div")
 	orcDemoContainer.id = "orc-demo-container"
+	console.log("[createOrcDemo] Appending container to body")
 	document.body.appendChild(orcDemoContainer)
+	console.log(
+		"[createOrcDemo] Container appended. Body has",
+		document.body.children.length,
+		"children",
+	)
+
+	// Safety check: Apply fallback styles if CSS didn't load or variables are missing
+	const computed = window.getComputedStyle(orcDemoContainer)
+	console.log(
+		"[createOrcDemo] Computed styles - position:",
+		computed.position,
+		"width:",
+		computed.width,
+		"height:",
+		computed.height,
+	)
+	if (computed.position !== "fixed" || computed.width === "0px") {
+		console.warn("[createOrcDemo] CSS not loaded? Applying fallbacks.")
+		orcDemoContainer.style.position = "fixed"
+		orcDemoContainer.style.top = "85px"
+		orcDemoContainer.style.left = "0"
+		orcDemoContainer.style.width = "calc(100vw - 300px)"
+		orcDemoContainer.style.height = "calc(100vh - 85px)"
+		orcDemoContainer.style.zIndex = "40"
+	}
 
 	// Add click listener
 	orcDemoContainer.addEventListener("mousedown", onContainerMouseDown)
 
 	// 2. Create renderer
+	console.log("[createOrcDemo] Getting container dimensions")
 	const rect = orcDemoContainer.getBoundingClientRect()
 	// Fallback to window dimensions if container has no size yet (common in prod race conditions)
 	const width = rect.width || window.innerWidth
 	const height = rect.height || window.innerHeight
+	console.log(
+		"[createOrcDemo] Container dimensions - width:",
+		width,
+		"height:",
+		height,
+	)
 
+	if (width === 0 || height === 0) {
+		console.error("[createOrcDemo] CRITICAL: Container has zero dimensions!")
+	}
+
+	console.log("[createOrcDemo] Creating WebGLRenderer")
 	orcDemoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
 	orcDemoRenderer.setPixelRatio(window.devicePixelRatio)
 	orcDemoRenderer.setSize(width, height)
 	orcDemoRenderer.outputColorSpace = THREE.SRGBColorSpace
+	console.log("[createOrcDemo] Renderer created and configured")
+
+	console.log("[createOrcDemo] Appending canvas to container")
 	orcDemoContainer.appendChild(orcDemoRenderer.domElement)
+	console.log(
+		"[createOrcDemo] Canvas appended. Container now has",
+		orcDemoContainer.children.length,
+		"children",
+	)
 
 	// 3. Create scene and camera
+	console.log("[createOrcDemo] Creating scene and camera")
 	orcDemoScene = new THREE.Scene()
 	orcDemoCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100)
 
@@ -207,6 +276,17 @@ function createOrcDemo() {
 	const camZ = parseFloat(styles.getPropertyValue("--orc-camera-z")) || 2
 	const sceneOffsetX =
 		parseFloat(styles.getPropertyValue("--orc-scene-offset-x")) || 0
+
+	console.log(
+		"[createOrcDemo] Camera config - x:",
+		camX,
+		"y:",
+		camY,
+		"z:",
+		camZ,
+		"sceneOffsetX:",
+		sceneOffsetX,
+	)
 
 	orcDemoCamera.position.set(camX, camY, camZ)
 	orcDemoCamera.lookAt(sceneOffsetX, 0, 0)
@@ -221,6 +301,7 @@ function createOrcDemo() {
 	orcDemoControls.target.set(sceneOffsetX, 0, 0)
 
 	// 4. Add content
+	console.log("[createOrcDemo] Adding scene content")
 	orcDemoScene.add(new THREE.AmbientLight(0xffffff, 0.6))
 	const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
 	keyLight.position.set(3, 3, 3)
@@ -229,12 +310,15 @@ function createOrcDemo() {
 	const orcGroupForDemo = createOrcScene(orcDemoCamera)
 	orcGroupForDemo.position.x = sceneOffsetX
 	orcDemoScene.add(orcGroupForDemo)
+	console.log("[createOrcDemo] ORC scene created and added")
 
 	selectionIndicator = createSelectionIndicator()
 	orcDemoScene.add(selectionIndicator)
 
 	// 5. Start animation loop
+	console.log("[createOrcDemo] Starting animation loop")
 	animateOrcDemo()
+	console.log("[createOrcDemo] Complete!")
 
 	// 6. Watch for size changes (CSS loading race conditions)
 	orcDemoResizeObserver = new ResizeObserver(() => {

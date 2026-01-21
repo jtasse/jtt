@@ -108,9 +108,10 @@
 	left: var(--orc-container-left);
 	width: var(--orc-container-width);
 	height: calc(100vh - var(--orc-nav-height));
-	z-index: 40;
+	z-index: 30;
 	opacity: 0;
 	transition: opacity 0.5s ease-in;
+	pointer-events: auto;
 }
 
 /* ============================================
@@ -136,6 +137,31 @@
 	text-size-adjust: 100%;
 	/* Base font size for info pane content */
 	font-size: 14px;
+	pointer-events: auto;
+}
+
+/* Responsive: Hide info pane on small screens */
+@media (max-width: 1024px) {
+	:root {
+		--orc-info-pane-width: 250px;
+		--orc-container-width: calc(100vw - 250px);
+	}
+
+	#orc-info-pane {
+		font-size: 12px;
+		padding: 10px 12px;
+	}
+}
+
+@media (max-width: 768px) {
+	:root {
+		--orc-info-pane-width: 0px;
+		--orc-container-width: 100vw;
+	}
+
+	#orc-info-pane {
+		display: none !important;
+	}
 }
 
 /* ============================================
