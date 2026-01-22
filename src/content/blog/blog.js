@@ -59,14 +59,16 @@ async function initReadingTime() {
 			updatePostMeta(meta, range)
 		} else {
 			// Blog List View
-			const articles = document.querySelectorAll(".blog-content article")
+			const articles = document.querySelectorAll(
+				".blog-content article, .blog-content .blog-post-item",
+			)
 
 			for (const article of articles) {
 				// Check if already processed
 				if (article.dataset.readingTimeProcessed) continue
 				article.dataset.readingTimeProcessed = "true"
 
-				const link = article.querySelector("h3 a")
+				const link = article.querySelector("a")
 				const meta = article.querySelector(".post-meta")
 
 				if (link && meta) {
@@ -100,7 +102,9 @@ function filterPostsByTag() {
 	const tag = params.get("tag")
 	if (!tag) return
 
-	const articles = document.querySelectorAll(".blog-content article")
+	const articles = document.querySelectorAll(
+		".blog-content article, .blog-content .blog-post-item",
+	)
 	articles.forEach((article) => {
 		const tags = article.dataset.tags ? article.dataset.tags.split(",") : []
 		if (tags.includes(tag)) {

@@ -145,14 +145,17 @@ export function showBlogPlane() {
 					const route = post.url
 						.replace(/^(\/)?src\/content/, "")
 						.replace(/\.html$/, "")
-					return `<a href="${route}" class="blog-post-link">
-						<div class="blog-post">
-							<h2>${post.title}</h2>
-							<div class="blog-meta">${post.date} | ${post.author}</div>
-							${post.image ? `<img src="${post.image}" alt="${post.title}">` : ""}
-							<p>${post.summary}</p>
-						</div>
-					</a>`
+					const tags = post.tags || post.keywords || ""
+					return `<article class="blog-post-item" data-tags="${tags}">
+						<a href="${route}" class="blog-post-link">
+							<div class="blog-post">
+								<h2>${post.title}</h2>
+								<div class="blog-meta">${post.date} | ${post.author}</div>
+								${post.image ? `<div class="post-image"><img src="${post.image}" alt="${post.title}"></div>` : ""}
+								<p>${post.summary}</p>
+							</div>
+						</a>
+					</article>`
 				})
 				.join("")
 		} else {
