@@ -110,11 +110,6 @@ export function showPortfolioPlane(onCloseCallback) {
 			setTimeout(() => {
 				createOrcShowcase(showcaseContainer)
 			}, 0)
-			showcaseContainer.addEventListener("click", (e) => {
-				e.preventDefault()
-				e.stopPropagation()
-				window.open("/portfolio/orc-demo", "_blank")
-			})
 		}
 
 		setupPortfolioClickHandlers(contentEl, onCloseCallback)

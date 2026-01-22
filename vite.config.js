@@ -68,6 +68,20 @@ export default defineConfig(({ mode }) => {
 							copyRecursive(dracoSrc, dracoDest)
 							console.log("[copy-content] Copied draco decoders to dist/draco")
 						}
+
+						// Fix for Netlify redirect loop on /portfolio
+						// Ensure dist/portfolio/index.html exists so /portfolio/ serves it instead of redirecting
+						const indexSrc = resolve(__dirname, "dist/index.html")
+						const portfolioDir = resolve(__dirname, "dist/portfolio")
+
+						if (fs.existsSync(indexSrc)) {
+							if (!fs.existsSync(portfolioDir))
+								fs.mkdirSync(portfolioDir, { recursive: true })
+							fs.copyFileSync(indexSrc, join(portfolioDir, "index.html"))
+							console.log(
+								"[copy-content] Copied index.html to dist/portfolio/index.html",
+							)
+						}
 					}
 				},
 			},

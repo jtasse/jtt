@@ -54,7 +54,7 @@ export default defineConfig({
 						document.addEventListener("DOMContentLoaded", () => {
 							const targets = document.querySelectorAll("a[rel='prev']");
 							targets.forEach(el => {
-								if (el.textContent.includes("← jamestasse.tech portfolio")) {
+								if (el.textContent.includes("← jamestasse.tech/portfolio")) {
 									el.remove();
 								}
 							});
@@ -64,7 +64,7 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
-					label: "← jamestasse.tech portfolio",
+					label: "← jamestasse.tech/portfolio",
 					link: "/../../portfolio",
 					attrs: { class: "portfolio-link" },
 				},

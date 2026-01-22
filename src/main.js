@@ -258,6 +258,10 @@ function centerAndOpenLabel(labelManager, labelName) {
 
 // Helper to map routes to page names for hand transitions
 function routeToPage(route) {
+	// Normalize trailing slash
+	if (route && route.length > 1 && route.endsWith("/"))
+		route = route.slice(0, -1)
+
 	const routeMap = {
 		"/": "home",
 		"/about": "about",
@@ -271,8 +275,14 @@ function routeToPage(route) {
 	return routeMap[route] || "home"
 }
 
-router.onRouteChange((route) => {
+router.onRouteChange((rawRoute) => {
 	try {
+		// Normalize trailing slash
+		const route =
+			rawRoute && rawRoute.length > 1 && rawRoute.endsWith("/")
+				? rawRoute.slice(0, -1)
+				: rawRoute
+
 		// Handle hand transitions
 		const newPage = routeToPage(route)
 		const currentPage = getCurrentHandPage()
