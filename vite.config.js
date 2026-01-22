@@ -334,14 +334,9 @@ export default defineConfig(({ mode }) => {
 							if (!fs.existsSync(portfolioDir))
 								fs.mkdirSync(portfolioDir, { recursive: true })
 
-							let content = fs.readFileSync(indexSrc, "utf8")
-							const ogImage =
-								"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png"
-							const metaTags = `<meta property="og:image" content="${ogImage}" />\n<meta name="twitter:image" content="${ogImage}" />`
-							content = content.replace("</head>", `${metaTags}\n</head>`)
-							fs.writeFileSync(join(portfolioDir, "index.html"), content)
+							fs.copyFileSync(indexSrc, join(portfolioDir, "index.html"))
 							console.info(
-								"[copy-content] Copied index.html to dist/portfolio/index.html with custom OG image",
+								"[copy-content] Copied index.html to dist/portfolio/index.html",
 							)
 						}
 
