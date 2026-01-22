@@ -1,4 +1,4 @@
-name: Conditional Netlify Deploy
+name: Conditional Netlify Publish
 
 on:
   push:
@@ -6,9 +6,9 @@ on:
       - main
 
 jobs:
-  deploy:
-    # Only run if the commit message contains "[deploy]"
-    if: contains(github.event.head_commit.message, '[deploy]')
+  publish:
+    # Only run if the commit message contains "[publish]"
+    if: contains(github.event.head_commit.message, '[publish]')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build and Deploy to Netlify
+      - name: Build and Publish to Netlify
         run: npx netlify-cli deploy --build --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
