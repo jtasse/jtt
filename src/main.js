@@ -44,6 +44,51 @@ if (import.meta.env.PROD) {
 	console.debug = () => {}
 }
 
+// Set copyright year
+const yearSpan = document.getElementById("copyright-year")
+if (yearSpan) {
+	yearSpan.textContent = new Date().getFullYear()
+}
+
+// Footer visibility logic
+const contentEl = document.getElementById("content")
+const footerEl = document.getElementById("site-footer")
+
+if (contentEl && footerEl) {
+	const checkFooter = () => {
+		// If content is not showing, always show footer (Home, ORC Demo)
+		if (!contentEl.classList.contains("show")) {
+			footerEl.style.opacity = "1"
+			return
+		}
+
+		// If content is showing, check if it's scrollable
+		const isScrollable = contentEl.scrollHeight > contentEl.clientHeight + 1
+
+		if (!isScrollable) {
+			footerEl.style.opacity = "1"
+			return
+		}
+
+		// It is scrollable, check if at bottom
+		const isAtBottom =
+			contentEl.scrollTop + contentEl.clientHeight >=
+			contentEl.scrollHeight - 20
+		footerEl.style.opacity = isAtBottom ? "1" : "0"
+	}
+
+	contentEl.addEventListener("scroll", checkFooter)
+	// Check when content changes (navigation) or window resizes
+	const observer = new MutationObserver(checkFooter)
+	observer.observe(contentEl, {
+		attributes: true,
+		childList: true,
+		subtree: true,
+		attributeFilter: ["class"],
+	})
+	window.addEventListener("resize", checkFooter)
+}
+
 // === Managers ===
 // Force initial layout calculation BEFORE creating labels to ensure they are positioned correctly
 layoutManager.onResize()
