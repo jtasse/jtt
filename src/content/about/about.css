@@ -74,44 +74,34 @@
 	}
 }
 
-/* Tech stack table */
-.tech-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin: 1.5rem 0;
-	font-size: 1.1rem;
-	color: var(--text-color);
-}
-
-.tech-table th,
-.tech-table td {
-	text-align: left;
-	padding: 12px;
-	border-bottom: 1px solid var(--border-color);
-}
-
-.tech-table th {
-	color: var(--subheading-color);
-	font-weight: bold;
-	border-bottom: 2px solid var(--accent-color);
-}
-
-.tech-table tr:hover {
-	background: var(--border-color);
-}
-
-.tech-table a {
+.about-content p a {
 	color: var(--link-color);
-	text-decoration: none;
+	text-decoration: underline;
+	transition: all 0.2s ease;
 }
 
-.tech-table a:hover {
+.about-content p a:hover {
 	color: var(--link-hover-color);
+	text-shadow: var(--heading-shadow);
+}
+
+.webring-action {
+	color: var(--link-color);
 	text-decoration: underline;
+	transition: all 0.2s ease;
+}
+
+.webring-action:hover {
+	color: var(--link-hover-color);
 }
 
 .external-link-icon {
 	vertical-align: middle;
 	margin-left: 4px;
 	opacity: 0.8;
+}
+
+.external-link-icon:hover {
+	color: var(--link-hover-color);
+	text-shadow: var(--heading-shadow);
 }

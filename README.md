@@ -23,7 +23,9 @@ The following docs contain information about how the website is designed and mai
 
 ## ⚡ Quick Start
 
-To get the development environment running locally:
+Why does my personal website's repo have a quickstart? For the insanely curious, of course!
+
+If you'd like to tinker with the pyramid, /orc-demo functionality, or anything else on the site; do the following to get the development environment running locally:
 
 1.  **Install dependencies:**
 

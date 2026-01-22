@@ -20,27 +20,6 @@
   to = "/blog?tag=docs-as-tests"
   status = 301
 
-# Strip trailing slashes from main content pages
-[[redirects]]
-  from = "/about/"
-  to = "/about"
-  status = 301
-
-[[redirects]]
-  from = "/portfolio/"
-  to = "/portfolio"
-  status = 301
-
-[[redirects]]
-  from = "/blog/"
-  to = "/blog"
-  status = 301
-
-[[redirects]]
-  from = "/orc-demo/"
-  to = "/orc-demo"
-  status = 301
-
 # Preserve old WordPress site (static export)
 [[redirects]]
   from = "/old"
