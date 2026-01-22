@@ -6,19 +6,20 @@ on:
       - main
 
 jobs:
-  publish:
-    # Only run if the commit message contains "[publish]"
-    if: contains(github.event.head_commit.message, '[publish]')
+  check-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm install
+      - name: Check for [publish] in commit message
+        id: check
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MESSAGE"
 
-      - name: Build and Publish to Netlify
-        run: npx netlify-cli deploy --build --prod
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          if echo "$COMMIT_MESSAGE" | grep -iq "\[publish\]"; then
+            echo "✓ Found [publish] tag - Netlify will build and deploy this commit"
+          else
+            echo "ℹ No [publish] tag found - Netlify will skip this build (to save credits)"
+          fi

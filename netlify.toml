@@ -4,6 +4,8 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Only build if commit message contains [publish] - saves credits during development
+  ignore = "git log -1 --pretty=%B | grep -iq '\\[publish\\]' && exit 1 || exit 0"
 
 [build.environment]
   NODE_VERSION = "20"
