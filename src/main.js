@@ -46,21 +46,18 @@ function updateMetaTags(route) {
 			title: "Portfolio - James Tasse",
 			description:
 				"My portfolio of technical writing and software projects, including interactive 3D demos.",
-			image:
-				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+			image: "https://jamestasse.tech/orc_page_thumbnail.png",
 		},
 		"/portfolio/orc-demo": {
 			title: "ORC Demo - Interactive 3D Visualization",
 			description:
 				"Experience an interactive 3D demonstration of the ORC system with hand gesture controls.",
-			image:
-				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+			image: "https://jamestasse.tech/orc_page_thumbnail.png",
 		},
 		"/portfolio/docs": {
 			title: "Technical Documentation - James Tasse",
 			description: "Comprehensive technical documentation and guides.",
-			image:
-				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+			image: "https://jamestasse.tech/orc_page_thumbnail.png",
 		},
 	}
 

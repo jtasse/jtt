@@ -8,6 +8,11 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Edge function for injecting meta tags based on route
+[[edge_functions]]
+  function = "inject-meta-tags"
+  path = "/portfolio*"
+
 # Handle docs routing (Astro generates static HTML)
 [[redirects]]
   from = "/portfolio/docs/*"
