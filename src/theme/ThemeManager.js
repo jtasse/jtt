@@ -109,7 +109,7 @@ export class ThemeManager {
 	}
 
 	updateVisibility(route) {
-		console.log(`[ThemeManager] Updating visibility for route: ${route}`)
+		console.debug(`[ThemeManager] Updating visibility for route: ${route}`)
 		if (!this.control) return
 
 		// Hide on home page, show on content pages

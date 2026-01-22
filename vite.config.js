@@ -19,7 +19,7 @@ function getGitLastUpdated(filePath) {
 			}).trim().length > 0
 
 		if (isDirty) {
-			console.log(
+			console.info(
 				`[getGitLastUpdated] Local changes detected for ${relativePath}`,
 			)
 			return new Date().toISOString().split("T")[0]
@@ -222,7 +222,7 @@ export default defineConfig(({ mode }) => {
 																	metaDiv &&
 																	!metaDiv.innerHTML.includes("Date updated")
 																) {
-																	console.log(
+																	console.info(
 																		`[copy-content] Updating blog listing for ${href} with date ${lastUpdated}`,
 																	)
 																	timeEl.before(
@@ -260,7 +260,7 @@ export default defineConfig(({ mode }) => {
 															metaDiv &&
 															!metaDiv.innerHTML.includes("Date updated")
 														) {
-															console.log(
+															console.info(
 																`[copy-content] Updating post ${file} with date ${lastUpdated}`,
 															)
 															timeEl.before(
@@ -310,7 +310,9 @@ export default defineConfig(({ mode }) => {
 							})
 						}
 						copyRecursive(srcDir, destDir)
-						console.log("[copy-content] Copied src/content to dist/src/content")
+						console.info(
+							"[copy-content] Copied src/content to dist/src/content",
+						)
 
 						// Copy Draco decoders from node_modules to dist/draco
 						const dracoSrc = resolve(
@@ -320,7 +322,7 @@ export default defineConfig(({ mode }) => {
 						const dracoDest = resolve(__dirname, "dist/draco")
 						if (fs.existsSync(dracoSrc)) {
 							copyRecursive(dracoSrc, dracoDest)
-							console.log("[copy-content] Copied draco decoders to dist/draco")
+							console.info("[copy-content] Copied draco decoders to dist/draco")
 						}
 
 						// Fix for Netlify redirect loop on /portfolio
@@ -332,7 +334,7 @@ export default defineConfig(({ mode }) => {
 							if (!fs.existsSync(portfolioDir))
 								fs.mkdirSync(portfolioDir, { recursive: true })
 							fs.copyFileSync(indexSrc, join(portfolioDir, "index.html"))
-							console.log(
+							console.info(
 								"[copy-content] Copied index.html to dist/portfolio/index.html",
 							)
 						}
@@ -342,7 +344,7 @@ export default defineConfig(({ mode }) => {
 							blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date))
 							const rssXml = generateRssXml(blogPosts)
 							fs.writeFileSync(resolve(__dirname, "dist/rss.xml"), rssXml)
-							console.log(
+							console.info(
 								`[copy-content] Generated dist/rss.xml with ${blogPosts.length} posts`,
 							)
 						}

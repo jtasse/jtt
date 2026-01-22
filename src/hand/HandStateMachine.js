@@ -115,23 +115,23 @@ export class HandStateMachine {
 			displayState = "SLAPPING (MOLNIYA)"
 		}
 
-		console.log(
+		console.debug(
 			`[HandStateMachine] Transitioned to: ${displayState} | Orbit: ${orbitType} | isLeoFlick=${this.stateData.isLeoFlick}, isGeoPunch=${this.stateData.isGeoPunch}`,
 		)
 
 		switch (state) {
 			case HandState.POINTING:
-				console.log(`[HandStateMachine] POINTING at target satellite.`)
+				console.debug(`[HandStateMachine] POINTING at target satellite.`)
 				transitionToGesture(this.hand, "point", 400)
 				transitionToGesture(this.hand, "fist", 400)
 				break
 			case HandState.APPROACHING:
-				console.log(`[HandStateMachine] APPROACHING target.`)
+				console.debug(`[HandStateMachine] APPROACHING target.`)
 				transitionToGesture(this.hand, "fist", 200)
 				this.stateData.startPosition = this.hand.position.clone()
 				break
 			case HandState.WINDING_UP:
-				console.log(
+				console.debug(
 					`[HandStateMachine] ${
 						this.stateData.isLeoFlick
 							? "PREPARING (LEO FLICK)"
@@ -144,19 +144,19 @@ export class HandStateMachine {
 				this.stateData.windUpStartPosition = this.hand.position.clone()
 				// LEO uses flickReady gesture (thumb and index finger pressed together)
 				if (this.stateData.isLeoFlick) {
-					console.log(
+					console.debug(
 						`[HandStateMachine] LEO FLICK: Transitioning to 'flickReady' gesture.`,
 					)
 					transitionToGesture(this.hand, "flickReady", 300)
 				} else if (!this.stateData.isGeoPunch) {
-					console.log(
+					console.debug(
 						`[HandStateMachine] MOLNIYA SLAP: Transitioning to 'flat' gesture.`,
 					)
 					transitionToGesture(this.hand, "flat", 400)
 				}
 				break
 			case HandState.CONTACTING:
-				console.log(
+				console.debug(
 					`[HandStateMachine] ${
 						this.stateData.isLeoFlick
 							? "FLICKING (LEO)"
@@ -167,23 +167,23 @@ export class HandStateMachine {
 				)
 				// Use appropriate gesture for each orbit type
 				if (this.stateData.isGeoPunch) {
-					console.log(`[HandStateMachine] GEO PUNCH: Using 'fist' gesture.`)
+					console.debug(`[HandStateMachine] GEO PUNCH: Using 'fist' gesture.`)
 					transitionToGesture(this.hand, "fist", 100)
 				} else if (this.stateData.isLeoFlick) {
 					// LEO: transition to flickRelease (finger extends)
-					console.log(
+					console.debug(
 						`[HandStateMachine] LEO FLICK: Transitioning to 'flickRelease' gesture.`,
 					)
 					transitionToGesture(this.hand, "flickRelease", 100)
 				} else {
 					// Molniya: Palm slap (baseball bat style)
 					// Gesture transition handled in WINDING_UP
-					console.log(`[HandStateMachine] MOLNIYA SLAP: Executing slap.`)
+					console.debug(`[HandStateMachine] MOLNIYA SLAP: Executing slap.`)
 				}
 				this.stateData.contactApplied = false
 				break
 			case HandState.CELEBRATING:
-				console.log(`[HandStateMachine] CELEBRATING started.`)
+				console.debug(`[HandStateMachine] CELEBRATING started.`)
 				// LOCK the hand position RIGHT NOW
 				this.stateData.lockedPosition = this.hand.position.clone()
 				this.stateData.lockedRotation = this.hand.quaternion.clone()
@@ -495,23 +495,23 @@ export class HandStateMachine {
 				// Log orbit type detection on first frame of approach
 				if (!this.stateData.orbitTypeLogged) {
 					this.stateData.orbitTypeLogged = true
-					console.log(`[HandStateMachine] ORBIT TYPE DETECTION:`)
-					console.log(`  - satDistance=${satDistance.toFixed(3)}`)
-					console.log(`  - userData.orbitRadius=${satUserData.orbitRadius}`)
-					console.log(`  - userData.eccentricity=${satUserData.eccentricity}`)
-					console.log(`  - userData.name=${satUserData.name}`)
-					console.log(`  - isLEO=${isLEO}, isMolniya=${isMolniya}`)
-					console.log(`  - isLeoFlick=${this.stateData.isLeoFlick}`)
+					console.debug(`[HandStateMachine] ORBIT TYPE DETECTION:`)
+					console.debug(`  - satDistance=${satDistance.toFixed(3)}`)
+					console.debug(`  - userData.orbitRadius=${satUserData.orbitRadius}`)
+					console.debug(`  - userData.eccentricity=${satUserData.eccentricity}`)
+					console.debug(`  - userData.name=${satUserData.name}`)
+					console.debug(`  - isLEO=${isLEO}, isMolniya=${isMolniya}`)
+					console.debug(`  - isLeoFlick=${this.stateData.isLeoFlick}`)
 					if (isLEO) {
-						console.log(
+						console.debug(
 							`[HandStateMachine] *** DETECTED LEO SATELLITE "${satUserData.name}" - WILL USE FLICK ***`,
 						)
 					} else if (isMolniya) {
-						console.log(
+						console.debug(
 							`[HandStateMachine] *** DETECTED MOLNIYA SATELLITE "${satUserData.name}" - WILL USE SLAP ***`,
 						)
 					} else {
-						console.log(
+						console.warn(
 							`[HandStateMachine] *** UNKNOWN ORBIT TYPE - DEFAULTING TO SLAP ***`,
 						)
 					}
@@ -836,7 +836,7 @@ export class HandStateMachine {
 				// LEO FLICK: Hand stays in place, only fingers move
 				// Lock position at start of preparing phase
 				if (!this.stateData.flickLockedPosition) {
-					console.log(
+					console.debug(
 						`[HandStateMachine] LEO Flick: Locking position for flick preparation.`,
 					)
 					this.stateData.flickLockedPosition = this.hand.position.clone()
@@ -879,7 +879,7 @@ export class HandStateMachine {
 
 				// Transition to FLICKING after preparing duration
 				if (t >= 1) {
-					console.log(
+					console.debug(
 						`[HandStateMachine] LEO Flick: Preparation complete. Transitioning to CONTACTING.`,
 					)
 					this.transition(HandState.CONTACTING)
@@ -1070,13 +1070,15 @@ export class HandStateMachine {
 		// Log which contact path we're taking on first frame
 		if (!this.stateData.contactPathLogged) {
 			this.stateData.contactPathLogged = true
-			console.log(
+			console.debug(
 				`[HandStateMachine] CONTACT PATH: isGeoPunch=${this.stateData.isGeoPunch}, isLeoFlick=${this.stateData.isLeoFlick}`,
 			)
 			if (this.stateData.isLeoFlick) {
-				console.log(`[HandStateMachine] *** EXECUTING LEO FLICK CODE PATH ***`)
+				console.debug(
+					`[HandStateMachine] *** EXECUTING LEO FLICK CODE PATH ***`,
+				)
 			} else {
-				console.log(
+				console.debug(
 					`[HandStateMachine] *** EXECUTING MOLNIYA SLAP CODE PATH ***`,
 				)
 			}
@@ -1200,7 +1202,7 @@ export class HandStateMachine {
 				// Debug logging for slap positioning
 				if (!this.stateData.contactApplied) {
 					const d = this.hand.position.distanceTo(satPos)
-					console.log(
+					console.debug(
 						`[HandStateMachine] Slap Update - Dist: ${d.toFixed(
 							3,
 						)} | Hand: ${this.hand.position
@@ -1220,7 +1222,7 @@ export class HandStateMachine {
 				(dist < CONTACT_THRESHOLD || this.stateData.forceContact) &&
 				!this.stateData.contactApplied
 			) {
-				console.log(
+				console.debug(
 					`[HandStateMachine] Contact made with satellite! Distance: ${dist.toFixed(
 						3,
 					)}`,
@@ -1243,7 +1245,7 @@ export class HandStateMachine {
 		// Failsafe transition if missed
 		if (t >= 1 && !this.stateData.contactApplied) {
 			if (this.targetSatellite) {
-				console.log(
+				console.warn(
 					`[HandStateMachine] Slap failsafe triggered - forcing burn.`,
 				)
 				this.stateData.contactApplied = true
@@ -1294,7 +1296,7 @@ export class HandStateMachine {
 
 		// Phase 2: Satellite is gone - now do thumbs up
 		if (!this.stateData.thumbsUpStarted) {
-			console.log(`[HandStateMachine] Starting Thumbs Up gesture.`)
+			console.debug(`[HandStateMachine] Starting Thumbs Up gesture.`)
 			this.stateData.thumbsUpStarted = true
 			this.stateData.thumbsUpStartTime = performance.now()
 

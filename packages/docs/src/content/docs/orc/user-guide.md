@@ -28,11 +28,11 @@ The ORC system supports decommission of satellites with the following orbit type
 
 The main viewport displays Earth with orbiting satellites and the robotic hand actuator.
 
+> NOTE: the application supports a wide range of screen sizes. If you are using a mobile device, you may optionally turn your screen horizontally for an improved experience.
+
 ### Satellite List
 
 The `Orbital Refuse Collector Demo` toolbar displays all trackable satellites. Click any satellite to:
-
-> **NOTE**: normally the toolbar is positioned on the right side of the page; but if your browser window is smaller (for example: if you are using a mobile device), then the toolbar will appear at the bottom of the page.
 
 - Highlight it in the 3D view
 - Display its telemetry in the `Satellite Info` panel
@@ -61,7 +61,7 @@ Simulates the satellite decommissioning process:
 
 3. **Watch the Sequence**
 
-   The robotic hand will travel to the satellite and perform the capture maneuver.
+   The robotic hand will travel to the satellite and perform the decommission.
 
 :::tip[Pro Tip]
 The camera automatically follows the hand during decommissioning. After completion, you can select another satellite to continue.
@@ -76,7 +76,6 @@ Click `Reset Scene` to restore all satellites to their original operational stat
 While in the ORC demo, camera controls are managed automatically to provide optimal viewing angles. The smart camera system:
 
 - Follows the hand during decommission sequences
-- Focuses on selected satellites
 - Provides smooth transitions between views
 
 ## API Integration

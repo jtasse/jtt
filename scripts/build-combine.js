@@ -18,9 +18,9 @@ const root = join(__dirname, "..")
 const docsSource = join(root, "packages/docs/dist")
 const docsTarget = join(root, "dist/portfolio/docs")
 
-console.log("Combining build outputs...")
-console.log(`  Source: ${docsSource}`)
-console.log(`  Target: ${docsTarget}`)
+console.info("Combining build outputs...")
+console.info(`  Source: ${docsSource}`)
+console.info(`  Target: ${docsTarget}`)
 
 if (!existsSync(docsSource)) {
 	console.error("Error: Docs build output not found at", docsSource)
@@ -34,4 +34,4 @@ mkdirSync(dirname(docsTarget), { recursive: true })
 // Copy docs to target
 cpSync(docsSource, docsTarget, { recursive: true })
 
-console.log("Docs copied successfully to dist/portfolio/docs/")
+console.info("Docs copied successfully to dist/portfolio/docs/")
