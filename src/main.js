@@ -39,6 +39,64 @@ import {
 } from "./hand/HandManager.js"
 import { router } from "./router.js"
 
+// Update Open Graph meta tags based on route
+function updateMetaTags(route) {
+	const metaConfig = {
+		"/portfolio": {
+			title: "Portfolio - James Tasse",
+			description:
+				"My portfolio of technical writing and software projects, including interactive 3D demos.",
+			image:
+				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+		},
+		"/portfolio/orc-demo": {
+			title: "ORC Demo - Interactive 3D Visualization",
+			description:
+				"Experience an interactive 3D demonstration of the ORC system with hand gesture controls.",
+			image:
+				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+		},
+		"/portfolio/docs": {
+			title: "Technical Documentation - James Tasse",
+			description: "Comprehensive technical documentation and guides.",
+			image:
+				"https://jamestasse.tech/src/content/portfolio/images/thumbnails/orc_page_thumbnail.png",
+		},
+	}
+
+	const config = metaConfig[route] || metaConfig["/"]
+
+	// Update or create og:title
+	let titleTag = document.querySelector('meta[property="og:title"]')
+	if (!titleTag) {
+		titleTag = document.createElement("meta")
+		titleTag.setAttribute("property", "og:title")
+		document.head.appendChild(titleTag)
+	}
+	titleTag.setAttribute("content", config.title || document.title)
+
+	// Update or create og:description
+	let descTag = document.querySelector('meta[property="og:description"]')
+	if (!descTag) {
+		descTag = document.createElement("meta")
+		descTag.setAttribute("property", "og:description")
+		document.head.appendChild(descTag)
+	}
+	descTag.setAttribute("content", config.description || "")
+
+	// Update or create og:image
+	let imgTag = document.querySelector('meta[property="og:image"]')
+	if (!imgTag) {
+		imgTag = document.createElement("meta")
+		imgTag.setAttribute("property", "og:image")
+		document.head.appendChild(imgTag)
+	}
+	imgTag.setAttribute("content", config.image || "")
+
+	// Update page title
+	document.title = config.title || "jamestasse.tech"
+}
+
 // Hide debug logs in production
 if (import.meta.env.PROD) {
 	console.debug = () => {}
@@ -331,6 +389,9 @@ router.onRouteChange((rawRoute) => {
 				? rawRoute.slice(0, -1)
 				: rawRoute
 
+		// Update meta tags for social sharing
+		updateMetaTags(route)
+
 		// Handle hand transitions
 		const newPage = routeToPage(route)
 		const currentPage = getCurrentHandPage()
@@ -513,6 +574,8 @@ router.onRouteChange((rawRoute) => {
 // Trigger route listeners once at startup so direct navigation to /bio, /portfolio, /blog works
 try {
 	router.notify()
+	// Update meta tags for initial route
+	updateMetaTags(router.getCurrentRoute())
 } catch (error) {
 	console.error("[main.js] ERROR in router.notify():", error)
 }
