@@ -61,37 +61,61 @@ function updateMetaTags(route) {
 		},
 	}
 
-	const config = metaConfig[route] || metaConfig["/"]
-
-	// Update or create og:title
-	let titleTag = document.querySelector('meta[property="og:title"]')
-	if (!titleTag) {
-		titleTag = document.createElement("meta")
-		titleTag.setAttribute("property", "og:title")
-		document.head.appendChild(titleTag)
+	// Provide a safe default so callers don't crash when route isn't mapped
+	const defaultConfig = {
+		title: document.title || "jamestasse.tech",
+		description: "",
+		image: "https://jamestasse.tech/orc_page_thumbnail.png",
+		url: window.location.href,
 	}
-	titleTag.setAttribute("content", config.title || document.title)
 
-	// Update or create og:description
-	let descTag = document.querySelector('meta[property="og:description"]')
-	if (!descTag) {
-		descTag = document.createElement("meta")
-		descTag.setAttribute("property", "og:description")
-		document.head.appendChild(descTag)
-	}
-	descTag.setAttribute("content", config.description || "")
+	const config = metaConfig[route] || defaultConfig
 
-	// Update or create og:image
-	let imgTag = document.querySelector('meta[property="og:image"]')
-	if (!imgTag) {
-		imgTag = document.createElement("meta")
-		imgTag.setAttribute("property", "og:image")
-		document.head.appendChild(imgTag)
+	// Helper: update or create meta tag
+	function ensureMeta(propOrName, key, value) {
+		let selector
+		let el
+		if (propOrName === "property") {
+			selector = `meta[property="${key}"]`
+			el = document.querySelector(selector)
+			if (!el) {
+				el = document.createElement("meta")
+				el.setAttribute("property", key)
+				document.head.appendChild(el)
+			}
+			el.setAttribute("content", value)
+		} else {
+			selector = `meta[name="${key}"]`
+			el = document.querySelector(selector)
+			if (!el) {
+				el = document.createElement("meta")
+				el.setAttribute("name", key)
+				document.head.appendChild(el)
+			}
+			el.setAttribute("content", value)
+		}
 	}
-	imgTag.setAttribute("content", config.image || "")
+
+	ensureMeta("property", "og:title", config.title || defaultConfig.title)
+	ensureMeta(
+		"property",
+		"og:description",
+		config.description || defaultConfig.description,
+	)
+	ensureMeta("property", "og:image", config.image || defaultConfig.image)
+	ensureMeta("property", "og:url", config.url || defaultConfig.url)
+	ensureMeta("property", "og:type", "website")
+	ensureMeta("name", "twitter:card", "summary_large_image")
+	ensureMeta("name", "twitter:title", config.title || defaultConfig.title)
+	ensureMeta(
+		"name",
+		"twitter:description",
+		config.description || defaultConfig.description,
+	)
+	ensureMeta("name", "twitter:image", config.image || defaultConfig.image)
 
 	// Update page title
-	document.title = config.title || "jamestasse.tech"
+	document.title = config.title || defaultConfig.title
 }
 
 // Hide debug logs in production
