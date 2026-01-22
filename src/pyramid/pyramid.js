@@ -125,13 +125,13 @@ async function morphToOrcScene() {
 
 	// Start ORC Demo first so isActive is true for layout calculations
 	try {
-		console.log("[Pyramid] Initializing OrcDemoManager...")
+		console.debug("[Pyramid] Initializing OrcDemoManager...")
 		if (!OrcDemoManager.start) {
 			OrcDemoManager = (await import("../content/orc-demo/OrcDemoManager.js"))
 				.OrcDemoManager
 		}
 		const result = OrcDemoManager.start()
-		console.log("[Pyramid] OrcDemoManager.start() called. Result:", result)
+		console.debug("[Pyramid] OrcDemoManager.start() called. Result:", result)
 		if (result && typeof result.then === "function") {
 			result.catch((error) => {
 				console.error("Failed to start ORC Demo scene (async):", error)

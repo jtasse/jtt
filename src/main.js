@@ -39,6 +39,11 @@ import {
 } from "./hand/HandManager.js"
 import { router } from "./router.js"
 
+// Hide debug logs in production
+if (import.meta.env.PROD) {
+	console.debug = () => {}
+}
+
 // === Managers ===
 // Force initial layout calculation BEFORE creating labels to ensure they are positioned correctly
 layoutManager.onResize()

@@ -243,15 +243,15 @@ export function startDecommission(satellite) {
 
 	// Prevent starting a new decommission if one is already in progress
 	if (activeDecommission) {
-		console.log(
-			"[Decommission] Cannot start - another decommission is in progress"
+		console.warn(
+			"[Decommission] Cannot start - another decommission is in progress",
 		)
 		return false
 	}
 
 	// Check if hand state machine is ready
 	if (orcHandStateMachine && orcHandStateMachine.state !== "IDLE_ORBIT") {
-		console.log("[Decommission] Cannot start - hand not in IDLE_ORBIT state")
+		console.warn("[Decommission] Cannot start - hand not in IDLE_ORBIT state")
 		return false
 	}
 
@@ -278,7 +278,7 @@ export function startDecommission(satellite) {
 		satellite.position.copy(worldPos)
 
 		const radiusXZ = Math.sqrt(
-			worldPos.x * worldPos.x + worldPos.z * worldPos.z
+			worldPos.x * worldPos.x + worldPos.z * worldPos.z,
 		)
 		data.orbitRadius = radiusXZ
 		data.orbitY = worldPos.y
@@ -303,7 +303,7 @@ export function startDecommission(satellite) {
 			// Hand state machine rejected the decommission, reset state
 			data.decommissioning = false
 			activeDecommission = null
-			console.log("[Decommission] Hand state machine rejected start")
+			console.warn("[Decommission] Hand state machine rejected start")
 			return false
 		}
 	}
@@ -375,7 +375,7 @@ export function createFlameTrail(satellite) {
 		const flameGeometry = new THREE.ConeGeometry(
 			0.02 + i * 0.008,
 			0.08 + i * 0.02,
-			8
+			8,
 		)
 		const flameMaterial = new THREE.MeshBasicMaterial({
 			color: new THREE.Color().setHSL(0.08 - i * 0.01, 1, 0.5 + i * 0.05),
@@ -416,7 +416,7 @@ export function updateFlameTrail(
 	satellite,
 	burnProgress,
 	orbitDirection,
-	currentDistance
+	currentDistance,
 ) {
 	const data = satellite.userData
 	if (!data.flameParticles) return
