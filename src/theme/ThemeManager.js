@@ -16,7 +16,7 @@ export class ThemeManager {
 	}
 
 	init() {
-		console.log("[ThemeManager] Initializing...")
+		console.debug("[ThemeManager] Initializing...")
 		this.applyTheme(this.theme)
 		this.createControl()
 
