@@ -10,7 +10,9 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
 1. **Select a Target Satellite**
 
-   Locate the **Available Satellites** list in the sidebar on the left.
+   Locate the **Available Satellites** list in the `Orbital Refuse Collector Demo` toolbar.
+
+   > **NOTE**: normally the toolbar is positioned on the right side of the page; but if your browser window is smaller (for example: if you are using a mobile device), then the toolbar will appear at the bottom of the page.
 
    Click on any satellite name (For example: `Sat-Alpha` or `Sat-Beta`).
 
@@ -28,7 +30,7 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    If you realize you have selected the wrong target or wish to stop the simulation, you can abort the process immediately.
 
-   Locate the **Reset Scene** button at the very top of the sidebar.
+   Locate the **Reset Scene** button at the very top of the toolbar.
 
    Click **Reset Scene**.
 

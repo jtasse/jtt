@@ -30,7 +30,9 @@ The main viewport displays Earth with orbiting satellites and the robotic hand a
 
 ### Satellite List
 
-The `Orbital Refuse Collector Demo` sidebar displays all trackable satellites. Click any satellite to:
+The `Orbital Refuse Collector Demo` toolbar displays all trackable satellites. Click any satellite to:
+
+> **NOTE**: normally the toolbar is positioned on the right side of the page; but if your browser window is smaller (for example: if you are using a mobile device), then the toolbar will appear at the bottom of the page.
 
 - Highlight it in the 3D view
 - Display its telemetry in the `Satellite Info` panel
@@ -97,7 +99,7 @@ API requests are limited to 100 requests per minute.
 
 ### Satellite not responding to selection
 
-While you _can_ select a satellite by clicking on it in the 3D interface, you'll likely find it easier to select it from the `Available Satellites` list in the sidebar.
+While you _can_ select a satellite by clicking on it in the 3D interface, you'll likely find it easier to select it from the `Available Satellites` list in the toolbar.
 
 ### Camera stuck or not moving
 
