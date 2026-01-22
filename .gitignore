@@ -1,6 +1,8 @@
 node_modules/
 dist/
 temp/
+styles/
+src/vale/styles/
 .DS_Store
 *.log
 .env

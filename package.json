@@ -12,12 +12,14 @@
     "dev": "vite",
     "dev:all": "concurrently -k -n \"MAIN,DOCS\" -c \"blue,magenta\" \"npm run dev\" \"npm run dev:docs\"",
     "dev:docs": "npm run dev -w @jtt/docs -- --host 127.0.0.1 --force",
-    "build": "npm run build:main && npm run build:docs && npm run build:combine",
-    "build:main": "vite build",
+    "build": "vite build",
     "build:docs": "npm run build -w @jtt/docs",
     "build:combine": "node scripts/build-combine.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "lint:content": "vale --config src/vale/.vale.ini src/content/about src/content/blog src/content/portfolio",
+    "lint:content:errors": "vale --config src/vale/.vale.ini --minAlertLevel error src/content/about src/content/blog src/content/portfolio",
+    "lint:sync": "vale sync --config src/vale/.vale.ini"
   },
   "keywords": [],
   "author": "",

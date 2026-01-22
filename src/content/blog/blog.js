@@ -125,9 +125,40 @@ function filterPostsByTag() {
 	}
 }
 
+function addRssLink() {
+	const heading = document.getElementById("posts-heading")
+	if (heading && !heading.querySelector('a[href="/rss.xml"]')) {
+		const rssLink = document.createElement("a")
+		rssLink.href = "/rss.xml"
+		rssLink.target = "_blank"
+		rssLink.textContent = "RSS"
+		rssLink.style.marginLeft = "12px"
+		rssLink.style.fontSize = "0.75rem"
+		rssLink.style.verticalAlign = "middle"
+		rssLink.style.color = "var(--text-muted)"
+		rssLink.style.textDecoration = "none"
+		rssLink.style.border = "1px solid var(--border-color)"
+		rssLink.style.padding = "2px 6px"
+		rssLink.style.borderRadius = "4px"
+		rssLink.style.transition = "all 0.2s ease"
+
+		rssLink.addEventListener("mouseenter", () => {
+			rssLink.style.color = "var(--link-color)"
+			rssLink.style.borderColor = "var(--link-color)"
+		})
+		rssLink.addEventListener("mouseleave", () => {
+			rssLink.style.color = "var(--text-muted)"
+			rssLink.style.borderColor = "var(--border-color)"
+		})
+
+		heading.appendChild(rssLink)
+	}
+}
+
 function init() {
 	initReadingTime()
 	filterPostsByTag()
+	addRssLink()
 }
 
 if (document.readyState === "loading") {
