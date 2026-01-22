@@ -23,7 +23,7 @@ export function animatePyramid(
 	labelManager,
 	down = true,
 	section = null,
-	onComplete = null
+	onComplete = null,
 ) {
 	// capture a local token for this animation; incrementing global token
 	// elsewhere (e.g. reset) will invalidate this animation's completion
@@ -57,11 +57,21 @@ export function animatePyramid(
 	const endPosY = down
 		? flattenedMenuState.positionY
 		: initialPyramidState.positionY
-	// Animate X position to be behind the selected label
-	const endPosX =
+
+	// Calculate endPosX with mobile overrides if needed
+	let targetPyramidX =
 		down && section && pyramidXPositions[section] !== undefined
 			? pyramidXPositions[section]
 			: initialPyramidState.positionX || 0
+
+	if (down && section && window.innerWidth <= 768) {
+		if (section === "portfolio") targetPyramidX = 1.4
+		else if (section === "about" || section === "bio") targetPyramidX = -0.8
+		else if (section === "blog") targetPyramidX = 0.3
+	}
+
+	// Animate X position to be behind the selected label
+	const endPosX = targetPyramidX
 
 	// Scaling - use non-uniform scale for flattened state
 	const startScaleX = pyramidGroup.scale.x
@@ -144,13 +154,26 @@ export function animatePyramid(
 
 			const flatPos = labelManager.getNavPosition(key)
 			const currentNavScale = labelManager.getNavLabelScale()
+
+			// Mobile overrides for labels
+			let targetX = flatPos.x
+			let targetScale = currentNavScale
+
+			if (window.innerWidth <= 768) {
+				targetScale = 0.45
+				if (key === "Home") targetX = -1.9
+				else if (key === "Portfolio") targetX = 1.4
+				else if (key === "About") targetX = -0.8
+				else if (key === "Blog") targetX = 0.3
+			}
+
 			// Target: Flat position, Face camera (identity rotation), Scale based on navLabelScale
 			labelTargetStates[key] = {
-				position: new THREE.Vector3(flatPos.x, flatPos.y, flatPos.z),
+				position: new THREE.Vector3(targetX, flatPos.y, flatPos.z),
 				quaternion: targetCamQuat
 					? targetCamQuat.clone()
 					: camera.quaternion.clone(), // Face camera
-				scale: new THREE.Vector3(currentNavScale, currentNavScale, 1),
+				scale: new THREE.Vector3(targetScale, targetScale, 1),
 			}
 		} else {
 			// Existing logic for !down or fixed labels (local space)
@@ -198,13 +221,13 @@ export function animatePyramid(
 				labelMesh.position.lerpVectors(
 					startState.position,
 					targetState.position,
-					t
+					t,
 				)
 				if (startState.quaternion && targetState.quaternion) {
 					labelMesh.quaternion.slerpQuaternions(
 						startState.quaternion,
 						targetState.quaternion,
-						t
+						t,
 					)
 				}
 				labelMesh.scale.lerpVectors(startState.scale, targetState.scale, t)
@@ -252,9 +275,20 @@ export function animatePyramid(
 					const flatPos = labelManager.getNavPosition(key)
 					if (flatPos) {
 						const currentNavScale = labelManager.getNavLabelScale()
-						labelMesh.position.set(flatPos.x, flatPos.y, flatPos.z)
+
+						// Mobile overrides for final snap
+						let targetX = flatPos.x
+						let targetScale = currentNavScale
+						if (window.innerWidth <= 768) {
+							targetScale = currentNavScale * 2.6
+							if (key === "Home") targetX = -1.9
+							else if (key === "Portfolio") targetX = 1.4
+							else if (key === "About") targetX = -0.8
+							else if (key === "Blog") targetX = 0.3
+						}
+						labelMesh.position.set(targetX, flatPos.y, flatPos.z)
 						labelMesh.quaternion.copy(targetCamQuat || camera.quaternion) // Face camera
-						labelMesh.scale.set(currentNavScale, currentNavScale, 1)
+						labelMesh.scale.set(targetScale, targetScale, 1)
 						// Mark as fixed nav so it never moves again
 						labelMesh.userData.fixedNav = true
 					}
@@ -334,7 +368,7 @@ export function spinPyramidToSection(
 	section,
 	onComplete = null,
 	duration = 600,
-	skipTokenIncrement = false
+	skipTokenIncrement = false,
 ) {
 	if (!section || pyramidXPositions[section] === undefined) return
 
@@ -345,7 +379,13 @@ export function spinPyramidToSection(
 	pyramidGroup.visible = true
 
 	const startPosX = pyramidGroup.position.x
-	const endPosX = pyramidXPositions[section]
+	let endPosX = pyramidXPositions[section]
+
+	if (window.innerWidth <= 768) {
+		if (section === "portfolio") endPosX = 1.4
+		else if (section === "about" || section === "bio") endPosX = -0.8
+		else if (section === "blog") endPosX = 0.3
+	}
 
 	const diffX = endPosX - startPosX
 	let direction = getLastSpinDirection()
@@ -493,7 +533,7 @@ export function resetPyramidToHome(labelManager) {
 				labelMesh.quaternion.slerpQuaternions(
 					startState.quaternion,
 					targetQuat,
-					eased
+					eased,
 				)
 
 				labelMesh.scale.lerpVectors(startState.scale, origScale, eased)

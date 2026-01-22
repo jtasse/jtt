@@ -4,10 +4,8 @@ import { scene, controls } from "../core/SceneManager.js"
 import { getPyramidAnimToken } from "../pyramid/state.js"
 import { pyramidGroup } from "../pyramid/state.js"
 import { ScrollManager } from "./ScrollManager.js"
-import {
-	createOrcShowcase,
-	cleanupOrcShowcase,
-} from "./orc-demo/OrcShowcase.js"
+
+let orcShowcaseModule = null
 
 // === Content Display Logic ===
 
@@ -90,7 +88,7 @@ export function showPortfolioPlane(onCloseCallback) {
 
 	const myToken = getPyramidAnimToken()
 
-	loadContentHTML("portfolio").then((html) => {
+	loadContentHTML("portfolio").then(async (html) => {
 		if (myToken !== getPyramidAnimToken()) return
 
 		const parser = new DOMParser()
@@ -107,8 +105,11 @@ export function showPortfolioPlane(onCloseCallback) {
 		const showcaseContainer = contentEl.querySelector("#orc-showcase-container")
 		if (showcaseContainer) {
 			// Small delay to ensure container has proper dimensions
-			setTimeout(() => {
-				createOrcShowcase(showcaseContainer)
+			setTimeout(async () => {
+				if (!orcShowcaseModule) {
+					orcShowcaseModule = await import("./orc-demo/OrcShowcase.js")
+				}
+				orcShowcaseModule.createOrcShowcase(showcaseContainer)
 			}, 0)
 		}
 
@@ -251,7 +252,9 @@ function hidePortfolio() {
 	const plane = scene.getObjectByName("portfolioPlane")
 
 	// Clean up ORC showcase if active
-	cleanupOrcShowcase()
+	if (orcShowcaseModule) {
+		orcShowcaseModule.cleanupOrcShowcase()
+	}
 
 	if (plane) scene.remove(plane)
 

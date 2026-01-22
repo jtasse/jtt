@@ -7,6 +7,7 @@ import {
 	createFlameTrail,
 	clearActiveDecommission,
 } from "./Decommission.js"
+import { getPlanetCanvas } from "../portfolio/PlanetTexture.js"
 
 // === Scene State ===
 export let orcGroup = null
@@ -297,18 +298,7 @@ export function removeSatelliteFromScene(satellite) {
 
 function createPlanet() {
 	const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 64, 64)
-	const canvas = document.createElement("canvas")
-	canvas.width = 1024
-	canvas.height = 512
-	const ctx = canvas.getContext("2d")
-	ctx.fillStyle = "#0c177aff"
-	ctx.fillRect(0, 0, canvas.width, canvas.height)
-	ctx.fillStyle = "#EAE9BD"
-	ctx.strokeStyle = "#EAE9BD"
-	ctx.lineWidth = 1.5
-	ctx.lineCap = "round"
-	ctx.lineJoin = "round"
-	drawAccurateContinents(ctx, canvas.width, canvas.height)
+	const canvas = getPlanetCanvas()
 
 	const texture = new THREE.CanvasTexture(canvas)
 	texture.wrapS = THREE.RepeatWrapping

@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { makeLabelPlane } from "../planes.js"
+import { makeLabelPlane } from "../navigation/planes.js"
 import { screenToWorld, camera } from "../core/SceneManager.js"
 import {
 	flattenedLabelPositions,

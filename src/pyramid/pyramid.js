@@ -48,8 +48,9 @@ import {
 	updateHandIdleMotion,
 	setCurrentHandPage,
 } from "../hand/HandManager.js"
-import { OrcDemoManager } from "../content/orc-demo/OrcDemoManager.js"
 import { ScrollManager } from "../content/ScrollManager.js"
+
+let OrcDemoManager = { isActive: false }
 
 // Re-export core scene elements for main.js
 export {
@@ -117,7 +118,7 @@ function updateNavLayout() {
 
 // === ORC Scene / Morph Functions ===
 
-function morphToOrcScene() {
+async function morphToOrcScene() {
 	incrementPyramidAnimToken()
 	hideAllPlanes()
 	setCurrentSection("portfolio")
@@ -125,6 +126,10 @@ function morphToOrcScene() {
 	// Start ORC Demo first so isActive is true for layout calculations
 	try {
 		console.log("[Pyramid] Initializing OrcDemoManager...")
+		if (!OrcDemoManager.start) {
+			OrcDemoManager = (await import("../content/orc-demo/OrcDemoManager.js"))
+				.OrcDemoManager
+		}
 		const result = OrcDemoManager.start()
 		console.log("[Pyramid] OrcDemoManager.start() called. Result:", result)
 		if (result && typeof result.then === "function") {
@@ -172,7 +177,7 @@ function morphToOrcScene() {
 
 			// Mobile Override: Force labels to edges
 			if (window.innerWidth <= 768) {
-				labelMesh.scale.set(navLabelScale * 2.6, navLabelScale * 2.6, 1)
+				labelMesh.scale.set(0.45, 0.45, 1)
 
 				// Spread labels wider on mobile
 				// Home (Left), Portfolio (Right), Others (Distributed)
@@ -462,7 +467,7 @@ window.addEventListener("resize", () => {
 	// We should probably add a resize method to OrcDemoManager if needed,
 	// but the container uses CSS so it might be fine or need a refresh.
 	// For now, let's assume it handles itself or we add a method later.
-	if (OrcDemoManager.isActive) {
+	if (OrcDemoManager.isActive && OrcDemoManager.onResize) {
 		OrcDemoManager.onResize()
 	}
 
@@ -488,7 +493,7 @@ window.addEventListener("resize", () => {
 
 				// Mobile Override: Force labels to edges
 				if (window.innerWidth <= 768) {
-					label.scale.set(navLabelScale * 2.6, navLabelScale * 2.6, 1)
+					label.scale.set(0.45, 0.45, 1)
 
 					if (key === "Home") {
 						label.position.x = -1.9
