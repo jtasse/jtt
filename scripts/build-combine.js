@@ -35,3 +35,26 @@ mkdirSync(dirname(docsTarget), { recursive: true })
 cpSync(docsSource, docsTarget, { recursive: true })
 
 console.info("Docs copied successfully to dist/portfolio/docs/")
+
+// Ensure certain root `src` files (client module scripts) are available in the final
+// `dist` publish tree so pages that reference `/src/main.js` or similar get a real file
+// instead of the SPA fallback. This copies a small set of files if they exist.
+const extraFiles = [
+	join(root, "src", "main.js"),
+	join(root, "src", "router.js"),
+	join(root, "src", "settings.json"),
+]
+
+for (const f of extraFiles) {
+	try {
+		if (existsSync(f)) {
+			const rel = f.replace(root + "/", "")
+			const target = join(root, "dist", rel)
+			mkdirSync(dirname(target), { recursive: true })
+			cpSync(f, target)
+			console.info(`Copied ${rel} -> ${target}`)
+		}
+	} catch (e) {
+		console.warn(`Failed to copy extra file ${f}:`, e)
+	}
+}
