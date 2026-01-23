@@ -58,3 +58,43 @@ for (const f of extraFiles) {
 		console.warn(`Failed to copy extra file ${f}:`, e)
 	}
 }
+
+// Find the Vite-built client entry script (index-*.js) in dist/assets
+try {
+	const assetsDir = join(root, "dist", "assets")
+	let mainScript = null
+	if (existsSync(assetsDir)) {
+		const assets = fs.readdirSync(assetsDir)
+		for (const a of assets) {
+			if (/^index-.*\.js$/.test(a)) {
+				mainScript = `/assets/${a}`
+				break
+			}
+		}
+	}
+
+	// If we found a main script, inject it into built blog post HTML files so
+	// they load the bundled client app (labels/theme) instead of referencing
+	// unbundled /src/main.js
+	if (mainScript) {
+		const postsDistDir = join(root, "dist", "src", "content", "blog", "posts")
+		if (existsSync(postsDistDir)) {
+			const postFiles = fs.readdirSync(postsDistDir).filter((f) => f.endsWith('.html'))
+			for (const pf of postFiles) {
+				const ppath = join(postsDistDir, pf)
+				let html = fs.readFileSync(ppath, 'utf8')
+				if (!html.includes(mainScript)) {
+					// Insert as module script before </head>
+					const scriptTag = `\n    <script type="module" crossorigin src="${mainScript}"></script>\n`
+					html = html.replace('</head>', scriptTag + '</head>')
+					fs.writeFileSync(ppath, html, 'utf8')
+					console.info(`Injected client bundle ${mainScript} into ${ppath}`)
+				}
+			}
+		}
+	} else {
+		console.warn('No Vite index-*.js asset found in dist/assets; skipping post bundle injection')
+	}
+} catch (e) {
+	console.warn('Error while injecting client bundle into posts:', e)
+}
