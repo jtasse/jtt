@@ -19,7 +19,8 @@
     "lint:fix": "eslint . --fix",
     "lint:content": "vale --config src/vale/.vale.ini src/content/about src/content/blog src/content/portfolio",
     "lint:content:errors": "vale --config src/vale/.vale.ini --minAlertLevel error src/content/about src/content/blog src/content/portfolio",
-    "lint:sync": "vale sync --config src/vale/.vale.ini"
+    "lint:sync": "vale sync --config src/vale/.vale.ini",
+    "check:html": "node scripts/check-html.cjs"
   },
   "keywords": [],
   "author": "",
