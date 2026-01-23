@@ -38,16 +38,16 @@
   to = "/old/:splat"
   status = 200
 
-# SPA fallback for main Vite app routes
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 # Serve generated blog post HTML files directly from their build path
 [[redirects]]
   from = "/blog/posts/*"
   to = "/src/content/blog/posts/:splat"
+  status = 200
+
+# SPA fallback for main Vite app routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
 
 # Headers for caching and security
