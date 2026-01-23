@@ -88,19 +88,39 @@ try {
 			const ppath = join(postsDistDir, pf)
 			let html = fs.readFileSync(ppath, "utf8")
 
+			// Clean up any malformed stylesheet hrefs that may have been created
+			// by earlier incorrect replacements (e.g. href="/assets/index-...css\n    /src/content/blog/blog.css").
+			const malformedBlogCssRegex =
+				/<link[^>]*href="[^"]*\/src\/content\/blog\/blog\.css"[^>]*>/g
+			html = html.replace(malformedBlogCssRegex, (m) => {
+				// If the matched tag contains whitespace/newline inside the href value,
+				// replace with two proper link tags: mainCss (if available) then blog.css.
+				if (
+					/href="[^"]*\s+[^"]*"/.test(m) ||
+					(mainCss && m.includes(mainCss))
+				) {
+					const blogLink =
+						'<link rel="stylesheet" href="/src/content/blog/blog.css">'
+					if (mainCss)
+						return `    <link rel="stylesheet" href="${mainCss}">\n    ${blogLink}`
+					return `    ${blogLink}`
+				}
+				return m
+			})
+
 			// Inject main CSS if found and not already present
 			if (mainCss && !html.includes(mainCss)) {
-				const linkTag = `\n    <link rel="stylesheet" href="${mainCss}">\n`
-				// Prefer inserting before existing blog stylesheet link if present
-				if (html.includes("/src/content/blog/blog.css")) {
+				// Insert the stylesheet BEFORE the existing blog stylesheet link if present,
+				// otherwise insert just before </head>.
+				const blogCssRegex =
+					/<link[^>]*href="\/src\/content\/blog\/blog\.css"[^>]*>/
+				if (blogCssRegex.test(html)) {
 					html = html.replace(
-						"/src/content/blog/blog.css",
-						`${mainCss}\n                /src/content/blog/blog.css`,
+						blogCssRegex,
+						`<link rel="stylesheet" href="${mainCss}">\n    $&`,
 					)
-					if (!html.includes(`<link rel="stylesheet" href="${mainCss}">`)) {
-						html = html.replace("</head>", linkTag + "</head>")
-					}
 				} else {
+					const linkTag = `\n    <link rel="stylesheet" href="${mainCss}">\n`
 					html = html.replace("</head>", linkTag + "</head>")
 				}
 				console.info(`Injected main CSS ${mainCss} into ${ppath}`)
@@ -111,6 +131,17 @@ try {
 				const scriptTag = `\n    <script type="module" crossorigin src="${mainScript}"></script>\n`
 				html = html.replace("</head>", scriptTag + "</head>")
 				console.info(`Injected client bundle ${mainScript} into ${ppath}`)
+			}
+
+			// Remove duplicate mainCss tags if they were accidentally inserted more than once
+			if (mainCss) {
+				const escaped = mainCss.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+				const linkRegex = new RegExp(`<link[^>]*href="${escaped}"[^>]*>`, "g")
+				let seen = 0
+				html = html.replace(linkRegex, (m) => {
+					seen += 1
+					return seen === 1 ? m : ""
+				})
 			}
 
 			fs.writeFileSync(ppath, html, "utf8")
