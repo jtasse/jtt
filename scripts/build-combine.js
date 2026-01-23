@@ -8,8 +8,8 @@
  * Output: dist/portfolio/docs/
  */
 
-import { cpSync, existsSync, mkdirSync } from "fs"
-import { join, dirname } from "path"
+import * as fs from "fs"
+import { join, dirname, relative } from "path"
 import { fileURLToPath } from "url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -22,17 +22,17 @@ console.info("Combining build outputs...")
 console.info(`  Source: ${docsSource}`)
 console.info(`  Target: ${docsTarget}`)
 
-if (!existsSync(docsSource)) {
+if (!fs.existsSync(docsSource)) {
 	console.error("Error: Docs build output not found at", docsSource)
 	console.error("Make sure to run 'npm run build:docs' first")
 	process.exit(1)
 }
 
 // Ensure target directory exists
-mkdirSync(dirname(docsTarget), { recursive: true })
+fs.mkdirSync(dirname(docsTarget), { recursive: true })
 
 // Copy docs to target
-cpSync(docsSource, docsTarget, { recursive: true })
+fs.cpSync(docsSource, docsTarget, { recursive: true })
 
 console.info("Docs copied successfully to dist/portfolio/docs/")
 
@@ -47,11 +47,11 @@ const extraFiles = [
 
 for (const f of extraFiles) {
 	try {
-		if (existsSync(f)) {
-			const rel = f.replace(root + "/", "")
+		if (fs.existsSync(f)) {
+			const rel = relative(root, f)
 			const target = join(root, "dist", rel)
-			mkdirSync(dirname(target), { recursive: true })
-			cpSync(f, target)
+			fs.mkdirSync(dirname(target), { recursive: true })
+			fs.cpSync(f, target)
 			console.info(`Copied ${rel} -> ${target}`)
 		}
 	} catch (e) {
@@ -63,7 +63,7 @@ for (const f of extraFiles) {
 try {
 	const assetsDir = join(root, "dist", "assets")
 	let mainScript = null
-	if (existsSync(assetsDir)) {
+	if (fs.existsSync(assetsDir)) {
 		const assets = fs.readdirSync(assetsDir)
 		for (const a of assets) {
 			if (/^index-.*\.js$/.test(a)) {
@@ -78,23 +78,27 @@ try {
 	// unbundled /src/main.js
 	if (mainScript) {
 		const postsDistDir = join(root, "dist", "src", "content", "blog", "posts")
-		if (existsSync(postsDistDir)) {
-			const postFiles = fs.readdirSync(postsDistDir).filter((f) => f.endsWith('.html'))
+		if (fs.existsSync(postsDistDir)) {
+			const postFiles = fs
+				.readdirSync(postsDistDir)
+				.filter((f) => f.endsWith(".html"))
 			for (const pf of postFiles) {
 				const ppath = join(postsDistDir, pf)
-				let html = fs.readFileSync(ppath, 'utf8')
+				let html = fs.readFileSync(ppath, "utf8")
 				if (!html.includes(mainScript)) {
 					// Insert as module script before </head>
 					const scriptTag = `\n    <script type="module" crossorigin src="${mainScript}"></script>\n`
-					html = html.replace('</head>', scriptTag + '</head>')
-					fs.writeFileSync(ppath, html, 'utf8')
+					html = html.replace("</head>", scriptTag + "</head>")
+					fs.writeFileSync(ppath, html, "utf8")
 					console.info(`Injected client bundle ${mainScript} into ${ppath}`)
 				}
 			}
 		}
 	} else {
-		console.warn('No Vite index-*.js asset found in dist/assets; skipping post bundle injection')
+		console.warn(
+			"No Vite index-*.js asset found in dist/assets; skipping post bundle injection",
+		)
 	}
 } catch (e) {
-	console.warn('Error while injecting client bundle into posts:', e)
+	console.warn("Error while injecting client bundle into posts:", e)
 }

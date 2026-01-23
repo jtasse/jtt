@@ -1,6 +1,4 @@
-<!doctype html>
-<html lang="en">
-	<head>
+<!DOCTYPE html><html lang="en"><head>
 		<script>
 			;(function () {
 				const orig = MutationObserver.prototype.observe
@@ -20,72 +18,36 @@
 				}
 			})()
 		</script>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Docs as Tests: Part II — The How - James.Tasse</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap"
-			rel="stylesheet"
-		/>
-		<link rel="stylesheet" href="/src/content/blog/blog.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+		<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="/src/content/blog/blog.css">
 		<script src="/src/content/blog/blog.js" defer=""></script>
 
-		<meta name="keywords" content="docs-as-tests" />
-		<meta
-			name="description"
-			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
-		/>
-		<link
-			rel="canonical"
-			href="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html"
-		/>
-		<link
-			rel="image_src"
-			href="/src/content/blog/nav-images/doc_engineer_wide.webp"
-		/>
-		<meta property="og:type" content="article" />
-		<meta
-			property="og:title"
-			content="Docs as Tests: Part II — The How - James.Tasse"
-		/>
-		<meta
-			property="og:description"
-			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
-		/>
-		<meta
-			property="og:image"
-			content="/src/content/blog/nav-images/doc_engineer_wide.webp"
-		/>
-		<meta
-			property="og:url"
-			content="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html"
-		/>
-		<meta property="og:site_name" content="James Tasse" />
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta
-			name="twitter:title"
-			content="Docs as Tests: Part II — The How - James.Tasse"
-		/>
-		<meta
-			name="twitter:description"
-			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
-		/>
-		<meta
-			name="twitter:image"
-			content="/src/content/blog/nav-images/doc_engineer_wide.webp"
-		/>
+		<meta name="keywords" content="docs-as-tests">
+		<meta name="description" content="This is part two in a series of posts describing the value and implementation of Docs as Tests.">
+		<link rel="canonical" href="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html">
+		<link rel="image_src" href="/src/content/blog/nav-images/doc_engineer_wide.webp">
+		<meta property="og:type" content="article">
+		<meta property="og:title" content="Docs as Tests: Part II — The How - James.Tasse">
+		<meta property="og:description" content="This is part two in a series of posts describing the value and implementation of Docs as Tests.">
+		<meta property="og:image" content="/src/content/blog/nav-images/doc_engineer_wide.webp">
+		<meta property="og:url" content="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html">
+		<meta property="og:site_name" content="James Tasse">
+		<meta name="twitter:card" content="summary_large_image">
+		<meta name="twitter:title" content="Docs as Tests: Part II — The How - James.Tasse">
+		<meta name="twitter:description" content="This is part two in a series of posts describing the value and implementation of Docs as Tests.">
+		<meta name="twitter:image" content="/src/content/blog/nav-images/doc_engineer_wide.webp">
 	</head>
 	<body>
 		<div id="content" class="container">
 			<main class="blog-content single-post">
 				<article>
 					<div class="post-image">
-						<img
-							src="/src/content/blog/nav-images/doc_engineer_wide.webp"
-							alt="Docs as Tests: Part II — The How"
-						/>
+						<img src="/src/content/blog/nav-images/doc_engineer_wide.webp" alt="Docs as Tests: Part II — The How">
 					</div>
 
 					<h1>Docs as Tests: Part II—The How</h1>
@@ -106,9 +68,7 @@
 						<p class="toc-heading">Contents</p>
 						<ol>
 							<li>
-								<a href="#previously-on-docs-as-tests"
-									>Previously On Docs as Tests</a
-								>
+								<a href="#previously-on-docs-as-tests">Previously On Docs as Tests</a>
 							</li>
 							<li><a href="#intended-audience">Intended Audience</a></li>
 							<li><a href="#technical-approach">Technical Approach</a></li>
@@ -116,9 +76,7 @@
 							<li><a href="#where-are-we">Where Are We?</a></li>
 							<li><a href="#prerequisites">Prerequisites</a></li>
 							<li>
-								<a href="#structure-of-the-docsastests-demo-project"
-									>Structure of the docsastests-demo project</a
-								>
+								<a href="#structure-of-the-docsastests-demo-project">Structure of the docsastests-demo project</a>
 							</li>
 							<li><a href="#running-the-tests">Running the tests</a></li>
 							<li><a href="#what-now">What now?</a></li>
@@ -127,45 +85,26 @@
 
 					<p class="edit-note">
 						<strong>EDIT June 30, 2025</strong>: I have created a
-						<a
-							href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
-							target="_blank"
-							rel="noreferrer noopener"
-							>companion video</a
-						>
+						<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank" rel="noreferrer noopener">companion video</a>
 						that illustrates the points of this post (and more). Just want to
 						see how to set up and run Docs as Tests? Use
-						<a
-							href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=717s"
-							target="_blank"
-							rel="noreferrer noopener"
-							>this link</a
-						>
+						<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=717s" target="_blank" rel="noreferrer noopener">this link</a>
 						to jump straight there.
 					</p>
 
 					<h2 id="previously-on-docs-as-tests">
-						<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
-							>Previously</a
-						>
+						<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html">Previously</a>
 						On Docs as Tests
 					</h2>
 
 					<ul>
 						<li>
 							I described the promise of the
-							<a href="https://www.docsastests.com/"
-								>Docs As Tests discipline</a
-							>
+							<a href="https://www.docsastests.com/">Docs As Tests discipline</a>
 							coined by
-							<a href="https://www.linkedin.com/in/manuelrbsilva"
-								>Manny Silva</a
-							>
+							<a href="https://www.linkedin.com/in/manuelrbsilva">Manny Silva</a>
 							and borrowed liberally from Manny's fantastic
-							<a
-								href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361"
-								>book of the same name</a
-							>.
+							<a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361">book of the same name</a>.
 						</li>
 						<li>
 							I then went on to categorize some of the tools mentioned in the
@@ -175,10 +114,7 @@
 						</li>
 						<li>
 							Finally, I presented a very simple
-							<a
-								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo"
-								>demo</a
-							>
+							<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo">demo</a>
 							showing how Docs as Tests (and Manny's
 							<a href="https://doc-detective.com/">Doc Detective</a> tool, in
 							this case) can catch a divergence between a product (a web
@@ -218,36 +154,27 @@
 
 					<ul>
 						<li>
-							<strong>For folks with <em>less</em> technical experience</strong
-							>: this might feel a bit like onboarding at your last job (but
+							<strong>For folks with <em>less</em> technical experience</strong>: this might feel a bit like onboarding at your last job (but
 							hopefully more fun!), as I am going to introduce you to the tools,
 							commands, etc. that you'll need to run the demo from the
-							<a
-								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
-								>last post</a
-							>
+							<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html">last post</a>
 							(and more) yourself. If at any point you feel overwhelmed, that's
 							fine—you are welcome to
 							<a href="mailto:james.tasse@gmail.com">email me</a> or take a
 							break and come back in an hour, a day, or a week.
 						</li>
 						<li>
-							<strong>For folks with <em>more</em> technical experience</strong
-							>: I'll try to structure things so you can easily skip over
+							<strong>For folks with <em>more</em> technical experience</strong>: I'll try to structure things so you can easily skip over
 							sections you might know (for example - installing VS Code).
 						</li>
 						<li>
-							<strong>For <em>everyone</em></strong
-							>: if you need help or have questions/feedback regarding this
+							<strong>For <em>everyone</em></strong>: if you need help or have questions/feedback regarding this
 							post; go ahead and
 							<a href="mailto:james.tasse@gmail.com">email me</a> or leave a
 							comment below. On the other hand, if your questions/feedback
 							relate to Doc Detective, visit the Doc Detective
 							<a href="https://discord.gg/2M7wXEThfF">Discord</a> or
-							<a
-								href="https://www.linkedin.com/company/doc-detective/posts/?feedView=all"
-								>LinkedIn</a
-							>
+							<a href="https://www.linkedin.com/company/doc-detective/posts/?feedView=all">LinkedIn</a>
 							page.
 						</li>
 					</ul>
@@ -277,16 +204,10 @@
 					<details open="">
 						<summary>CI/CD Diagram (click to collapse/expand)</summary>
 						<figure class="post-figure">
-							<img
-								src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-cicd-diagram.png?w=1024"
-								alt="Diagram showing 'Continuous Integration / Continuous Delivery' process at a high level"
-							/>
+							<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-cicd-diagram.png?w=1024" alt="Diagram showing 'Continuous Integration / Continuous Delivery' process at a high level">
 							<figcaption>
 								Image source:
-								<a
-									href="https://www.primotech.com/ci-cd-pipeline-everything-you-need-to-know/"
-									>primotech.com</a
-								>
+								<a href="https://www.primotech.com/ci-cd-pipeline-everything-you-need-to-know/">primotech.com</a>
 							</figcaption>
 						</figure>
 					</details>
@@ -300,10 +221,7 @@
 					<details open="">
 						<summary>Types of Tests</summary>
 						<figure class="post-figure">
-							<img
-								src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-software-vs-doc-testing.png?w=813"
-								alt="Types of software and documentation tests"
-							/>
+							<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-software-vs-doc-testing.png?w=813" alt="Types of software and documentation tests">
 						</figure>
 					</details>
 
@@ -328,10 +246,7 @@
 						diagram in the <code>Docs</code> section of the diagram, do you see
 						anything familiar? You might recall (or not, which is fine!) how in
 						the last post I shared
-						<a
-							href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#the-goods"
-							>an image listing some of the tools</a
-						>
+						<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#the-goods">an image listing some of the tools</a>
 						we have available for testing various parts of our docs.
 					</p>
 
@@ -343,10 +258,7 @@
 					</p>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-testing-tools-v2.png?w=842"
-							alt="Documentation testing tools"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-testing-tools-v2.png?w=842" alt="Documentation testing tools">
 					</figure>
 
 					<p>
@@ -361,12 +273,8 @@
 							You can't save the world without the right tools, especially a
 							crowbar.
 						</p>
-						<cite
-							>—<a href="https://half-life.fandom.com/wiki/Gordon_Freeman"
-								>Gordon Freeman</a
-							>
-							(probably)</cite
-						>
+						<cite>—<a href="https://half-life.fandom.com/wiki/Gordon_Freeman">Gordon Freeman</a>
+							(probably)</cite>
 					</blockquote>
 
 					<p>
@@ -380,10 +288,7 @@
 					<p>
 						Also, I know that people might prefer different tools. For example,
 						the newer Cursor
-						<a
-							href="https://en.wikipedia.org/wiki/Integrated_development_environment"
-							>IDE</a
-						>
+						<a href="https://en.wikipedia.org/wiki/Integrated_development_environment">IDE</a>
 						has gained some popularity. Of course, if you are using a different
 						IDE than VS Code, I suspect you already have the tools listed below
 						(or equivalent) installed and can skip down to cloning my repo.
@@ -412,9 +317,7 @@
 					<ul>
 						<li>
 							Download and install
-							<a href="https://code.visualstudio.com/download"
-								>Visual Studio Code (VS Code)</a
-							>
+							<a href="https://code.visualstudio.com/download">Visual Studio Code (VS Code)</a>
 							(or your preferred IDE)
 						</li>
 						<li>
@@ -437,9 +340,7 @@
 					<ul>
 						<li>
 							<a href="https://git-scm.com/docs/git-clone">Clone</a> my
-							<a href="https://github.com/jtasse/docsastests-demo"
-								>docsastests-demo</a
-							>
+							<a href="https://github.com/jtasse/docsastests-demo">docsastests-demo</a>
 							repository
 						</li>
 					</ul>
@@ -514,10 +415,7 @@
 							Further reading: if you'd like to see the dependencies for the
 							<code>docsastests-demo</code> repo (or any other node-based
 							project), open the
-							<a
-								href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json"
-								>package.json</a
-							>
+							<a href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json">package.json</a>
 							file at the root of the repo.
 						</p>
 					</blockquote>
@@ -536,10 +434,7 @@
 					<blockquote>
 						<p>
 							Tip: modern IDEs like VS Code tend to have built-in
-							<a
-								href="https://code.visualstudio.com/docs/terminal/getting-started"
-								>terminal</a
-							>
+							<a href="https://code.visualstudio.com/docs/terminal/getting-started">terminal</a>
 							functionality. Although it's not required to use it, you might
 							find that it cuts down on context-switching and helps you ensure
 							you are in the right place (when running commands that are
@@ -592,10 +487,7 @@
 					</p>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-project-structure.png?w=313"
-							alt="Annotated screenshot of the docsastests-demo project's files as viewed in VS Code"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-project-structure.png?w=313" alt="Annotated screenshot of the docsastests-demo project's files as viewed in VS Code">
 					</figure>
 
 					<blockquote>
@@ -635,18 +527,13 @@
 						<li>
 							<strong>.doc-detective.json</strong>: the configuration file for
 							Doc Detective (see the Doc Detective
-							<a href="https://doc-detective.com/docs/category/configuration"
-								>config docs</a
-							>
+							<a href="https://doc-detective.com/docs/category/configuration">config docs</a>
 							for more info)
 						</li>
 						<li>
 							<strong>package.json</strong>: this file manages packages for the
 							project (see the
-							<a
-								href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json"
-								>npm docs</a
-							>
+							<a href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json">npm docs</a>
 							for more info)
 						</li>
 					</ol>
@@ -661,15 +548,9 @@
 						<p>
 							In this test we're going to use Doc Detective to run the test
 							described in the
-							<a
-								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo"
-								>demo</a
-							>
+							<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html#demo">demo</a>
 							portion of the
-							<a
-								href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html"
-								>previous blog post</a
-							>. After confirming that the test fails, we're going to make the
+							<a href="/src/content/blog/posts/docs-as-tests-on-a-high-level.html">previous blog post</a>. After confirming that the test fails, we're going to make the
 							required change in our docs and run the tests again to verify the
 							issue is resolved.
 						</p>
@@ -697,10 +578,7 @@
 					</ul>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-account-setup-md.png?w=716"
-							alt="Screenshot of the account-setup.md markdown file"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-account-setup-md.png?w=716" alt="Screenshot of the account-setup.md markdown file">
 					</figure>
 
 					<ul>
@@ -721,10 +599,7 @@
 					</ul>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-server-running.png?w=386"
-							alt="Terminal showing server running"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-server-running.png?w=386" alt="Terminal showing server running">
 					</figure>
 
 					<blockquote>
@@ -809,10 +684,7 @@
 
 					<p>
 						If you're not familiar with
-						<a
-							href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
-							>HTTP response codes</a
-						>, a <code>200</code> means that the request has succeeded.
+						<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status">HTTP response codes</a>, a <code>200</code> means that the request has succeeded.
 					</p>
 
 					<p>Now let's see the failing test:</p>
@@ -878,10 +750,7 @@
 					</ul>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-tests-passing.png?w=556"
-							alt="Screenshot of the terminal showing all Doc Detective tests passing"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-tests-passing.png?w=556" alt="Screenshot of the terminal showing all Doc Detective tests passing">
 					</figure>
 
 					<p>
@@ -890,9 +759,7 @@
 					</p>
 
 					<h3 id="api-test-markdown-doctest">
-						API Test (<a href="https://github.com/Widdershin/markdown-doctest"
-							>markdown-doctest</a
-						>)
+						API Test (<a href="https://github.com/Widdershin/markdown-doctest">markdown-doctest</a>)
 					</h3>
 
 					<p>
@@ -933,19 +800,13 @@
 						The output here is a bit misleading, but we can still get a
 						meaningful result. As I've highlighted below, the test reported that
 						it encountered an HTTP response code of
-						<a
-							href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/404"
-							>404</a
-						>
+						<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/404">404</a>
 						(not found) when trying to do a <code>fetch</code> from the endpoint
 						at <code>https://jsonplaceholder.typicode.com/todoz/1</code>.
 					</p>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-404-error.png?w=598"
-							alt="Screenshot of the terminal showing the expected 404 (not found) error"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-404-error.png?w=598" alt="Screenshot of the terminal showing the expected 404 (not found) error">
 					</figure>
 
 					<ul>
@@ -956,13 +817,9 @@
 						</li>
 						<li>
 							Change the URL on line 7 from
-							<code
-								>https://jsonplaceholder.typicode.com/<strong>todoz</strong>/1</code
-							>
+							<code>https://jsonplaceholder.typicode.com/<strong>todoz</strong>/1</code>
 							to
-							<code
-								>https://jsonplaceholder.typicode.com/<strong>todos</strong>/1</code
-							>
+							<code>https://jsonplaceholder.typicode.com/<strong>todos</strong>/1</code>
 							and save your changes.
 						</li>
 						<li>Now run the test again</li>
@@ -971,10 +828,7 @@
 					<pre><code>npx markdown-doctest</code></pre>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-doctest-passed.png?w=183"
-							alt="Screenshot of the terminal showing that all tests passed."
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-part-ii-the-how/dat2-doctest-passed.png?w=183" alt="Screenshot of the terminal showing that all tests passed.">
 					</figure>
 
 					<p>
@@ -1010,10 +864,7 @@
 
 					<p>
 						After that, there is a topic that I think deserves some attention:
-						<a
-							href="https://www.atlassian.com/continuous-delivery/software-testing/code-coverage"
-							>code coverage</a
-						>. You've probably noticed that I have a strong preference for
+						<a href="https://www.atlassian.com/continuous-delivery/software-testing/code-coverage">code coverage</a>. You've probably noticed that I have a strong preference for
 						running tests that are autodetected using tools like Doc Detective.
 						Aside from the fact that these tests have high return on investment,
 						they also scale with your docs automatically.
@@ -1037,5 +888,6 @@
 				</article>
 			</main>
 		</div>
-	</body>
-</html>
+	
+
+</body></html>
