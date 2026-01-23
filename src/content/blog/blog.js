@@ -169,19 +169,28 @@ if (document.readyState === "loading") {
 
 // Watch for dynamic content injection (SPA navigation)
 let initTimeout
-const observer = new MutationObserver((mutations) => {
-	for (const mutation of mutations) {
-		if (mutation.addedNodes.length) {
-			// If blog content is added, re-initialize
-			if (document.querySelector(".blog-content")) {
-				if (initTimeout) clearTimeout(initTimeout)
-				initTimeout = setTimeout(() => {
-					init()
-				}, 50)
-				return
+try {
+	const observer = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			if (mutation.addedNodes.length) {
+				// If blog content is added, re-initialize
+				if (document.querySelector(".blog-content")) {
+					if (initTimeout) clearTimeout(initTimeout)
+					initTimeout = setTimeout(() => {
+						init()
+					}, 50)
+					return
+				}
 			}
 		}
-	}
-})
+	})
 
-observer.observe(document.body, { childList: true, subtree: true })
+	// Only observe if document.body is available and a Node
+	if (document && document.body && document.body.nodeType === 1) {
+		observer.observe(document.body, { childList: true, subtree: true })
+	}
+} catch (e) {
+	// Defensive: avoid uncaught errors if a third-party script or extension
+	// triggers observe against a non-Node element (some injected scripts do).
+	console.warn("Blog observer initialization failed:", e)
+}

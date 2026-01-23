@@ -36,12 +36,18 @@ function findNavImageForSlug(slug) {
 		if (lower.startsWith(slug.toLowerCase())) return f
 	}
 
-	// fallback: find any file containing a token from the slug
-	for (const token of tokens) {
-		for (const f of files) {
-			if (f.toLowerCase().includes(token.toLowerCase())) return f
+	// fallback: pick the file with the highest number of token matches
+	const scores = files.map((f) => {
+		const lower = f.toLowerCase()
+		let score = 0
+		for (const token of tokens) {
+			if (lower.includes(token.toLowerCase())) score++
 		}
-	}
+		return { file: f, score }
+	})
+
+	scores.sort((a, b) => b.score - a.score)
+	if (scores.length && scores[0].score > 0) return scores[0].file
 
 	return null
 }
