@@ -1,29 +1,21 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html><html lang="en"><head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Docs as Tests: Part I — On a High (Level) - James.Tasse</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Helvetica:wght@400..900&display=swap"
-			rel="stylesheet"
-		/>
-		<link rel="stylesheet" href="/src/content/blog/blog.css" />
-		<script src="/src/content/blog/blog.js" defer></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+		<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="/src/content/blog/blog.css">
+		<script src="/src/content/blog/blog.js" defer=""></script>
 		<script type="module" src="/src/main.js"></script>
-		<meta name="keywords" content="docs-as-tests" />
-	</head>
+		<meta name="keywords" content="docs-as-tests">
+	<meta name="description" content="Docs as Tests: the series! OK the name needs work, but this is my first post in what I expect to be a series of [at least 2] Docs as Tests posts (and probably some videos as well)."><link rel="canonical" href="https://jamestasse.tech/blog/posts/docs-as-tests-on-a-high-level.html"><link rel="image_src" href="/src/content/blog/nav-images/docs_running_tests.webp"><meta property="og:type" content="article"><meta property="og:title" content="Docs as Tests: Part I — On a High (Level) - James.Tasse"><meta property="og:description" content="Docs as Tests: the series! OK the name needs work, but this is my first post in what I expect to be a series of [at least 2] Docs as Tests posts (and probably some videos as well)."><meta property="og:image" content="/src/content/blog/nav-images/docs_running_tests.webp"><meta property="og:url" content="https://jamestasse.tech/blog/posts/docs-as-tests-on-a-high-level.html"><meta property="og:site_name" content="James Tasse"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Docs as Tests: Part I — On a High (Level) - James.Tasse"><meta name="twitter:description" content="Docs as Tests: the series! OK the name needs work, but this is my first post in what I expect to be a series of [at least 2] Docs as Tests posts (and probably some videos as well)."><meta name="twitter:image" content="/src/content/blog/nav-images/docs_running_tests.webp"></head>
 	<body>
 		<div id="content" class="container">
 			<main class="blog-content single-post">
 				<article>
 					<div class="post-image">
-						<img
-							src="/src/content/blog/nav-images/docs_running_tests.webp"
-							alt="Docs as Tests: Part I—On a High (Level)"
-						/>
+						<img src="/src/content/blog/nav-images/docs_running_tests.webp" alt="Docs as Tests: Part I—On a High (Level)">
 					</div>
 
 					<h1>Docs as Tests: Part I—On a High (Level)</h1>
@@ -42,51 +34,29 @@
 
 					<p class="edit-note">
 						<strong>EDIT 6/30/25</strong>: I have created a
-						<a
-							href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
-							target="_blank"
-							rel="noreferrer noopener"
-							>companion video</a
-						>
+						<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI" target="_blank" rel="noreferrer noopener">companion video</a>
 						that illustrates the points of this post (and more). Just want to
 						see a demo of Docs as Tests in action? Use
-						<a
-							href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=452s"
-							target="_blank"
-							rel="noreferrer noopener"
-							>this link</a
-						>
+						<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=452s" target="_blank" rel="noreferrer noopener">this link</a>
 						to jump straight there.
 					</p>
 
 					<h2 id="the-book">The Book</h2>
 
-					<div
-						style="
+					<div style="
 							float: right;
 							margin: 0 0 1rem 1rem;
 							width: 25%;
 							position: relative;
-						"
-					>
-						<a
-							href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation-ebook/dp/B0F1H97QSL/ref=tmm_kin_swatch_0"
-							target="_blank"
-							rel="noreferrer noopener"
-							style="display: block; position: relative"
-						>
-							<img
-								src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/docs_as_tests_book.avif"
-								alt="Docs as Tests book cover"
-								style="
+						">
+						<a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation-ebook/dp/B0F1H97QSL/ref=tmm_kin_swatch_0" target="_blank" rel="noreferrer noopener" style="display: block; position: relative">
+							<img src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/docs_as_tests_book.avif" alt="Docs as Tests book cover" style="
 									width: 100%;
 									height: auto;
 									border: 1px solid #333;
 									border-radius: 4px;
-								"
-							/>
-							<div
-								style="
+								">
+							<div style="
 									position: absolute;
 									bottom: 5px;
 									right: 5px;
@@ -96,19 +66,10 @@
 									display: flex;
 									align-items: center;
 									justify-content: center;
-								"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									height="16px"
-									viewBox="0 0 24 24"
-									width="16px"
-									fill="#ffffff"
-								>
-									<path d="M0 0h24v24H0z" fill="none" />
-									<path
-										d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
-									/>
+								">
+								<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 0 24 24" width="16px" fill="#ffffff">
+									<path d="M0 0h24v24H0z" fill="none"></path>
+									<path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path>
 								</svg>
 							</div>
 						</a>
@@ -119,12 +80,7 @@
 						called "Docs as Tests", which
 						<a href="https://www.linkedin.com/in/manuelrbsilva/">Manny Silva</a>
 						coined and then went on to write the
-						<em
-							><a
-								href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361/"
-								>Docs as Tests</a
-							></em
-						>
+						<em><a href="https://www.amazon.com/Docs-Tests-Resilient-Technical-Documentation/dp/0994169361/">Docs as Tests</a></em>
 						book.
 					</p>
 
@@ -132,9 +88,7 @@
 						First off, let me be clear that I am not affiliated with the
 						<em>Docs as Tests</em> book, but as a technical writer I read it and
 						I
-						<a href="https://www.amazon.com/gp/customer-reviews/R24W3IKLHWG1S6/"
-							>thought it was really cool and definitely worth reading</a
-						>. (I can vouch for the Kindle version being well put together, but
+						<a href="https://www.amazon.com/gp/customer-reviews/R24W3IKLHWG1S6/">thought it was really cool and definitely worth reading</a>. (I can vouch for the Kindle version being well put together, but
 						there is a paperback version as well—either way, it's worth your
 						time!).
 					</p>
@@ -167,16 +121,13 @@
 					</p>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-testing-tools.png"
-							alt="Testing tools diagram"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-testing-tools.png" alt="Testing tools diagram">
 					</figure>
 
 					<blockquote>
 						<p>
-							NOTES:<br />* I added Pytest because I have used it for
-							integration testing<br />** Doc Detective is kind of a unicorn in
+							NOTES:<br>* I added Pytest because I have used it for
+							integration testing<br>** Doc Detective is kind of a unicorn in
 							that it seems to be capable of testing in multiple areas
 						</p>
 					</blockquote>
@@ -196,9 +147,7 @@
 					<p>
 						First, before going anywhere with Docs as Tests, one helpful
 						strategy is to
-						<a href="https://youtu.be/SkpXpvTk6iU?si=wCqnfOazZm1OLhtj&amp;t=422"
-							>redirect your overwhelm into curiosity</a
-						>. Another way to put this is to acknowledge you are going to have
+						<a href="https://youtu.be/SkpXpvTk6iU?si=wCqnfOazZm1OLhtj&amp;t=422">redirect your overwhelm into curiosity</a>. Another way to put this is to acknowledge you are going to have
 						"What the heck is <em>that</em>?" moments, and focus on the stuff
 						that you <em>can</em> understand.
 					</p>
@@ -248,9 +197,7 @@
 							Before going any further, I wanted to mention that Manny Silva
 							recently showed off v3 of his
 							<a href="https://doc-detective.com/">Doc Detective</a> tool in
-							<a href="https://www.youtube.com/watch?v=zQ4_1vBW_QY&amp;t=28s"
-								>this video</a
-							>, which includes some examples like the one I'm about to show.
+							<a href="https://www.youtube.com/watch?v=zQ4_1vBW_QY&amp;t=28s">this video</a>, which includes some examples like the one I'm about to show.
 						</p>
 					</blockquote>
 
@@ -264,10 +211,7 @@
 					<p>First, consider the sign-up page below for a product:</p>
 
 					<figure class="post-figure">
-						<img
-							src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-signup-page.png"
-							alt="Sign-up page screenshot"
-						/>
+						<img src="/src/content/blog/posts/post-images/docs-as-tests-on-a-high-level/dat1-signup-page.png" alt="Sign-up page screenshot">
 					</figure>
 
 					<p>
@@ -295,10 +239,8 @@
 					<p>
 						Oh no, it looks like that blasted development team has done it
 						again! As the above Doc Detective test result shows,
-						<strong
-							>the test failed because the text of the button on the product
-							page no longer matches the documentation</strong
-						>.
+						<strong>the test failed because the text of the button on the product
+							page no longer matches the documentation</strong>.
 					</p>
 
 					<h2 id="so-what">So what?</h2>
@@ -310,11 +252,9 @@
 					</p>
 
 					<p class="highlight">
-						<strong
-							>You can use tools like Doc Detective to catch discrepancies
+						<strong>You can use tools like Doc Detective to catch discrepancies
 							between your product and docs before the product even
-							releases!</strong
-						>
+							releases!</strong>
 					</p>
 
 					<h2 id="and-from-the-devs-come-testing-riches">
@@ -360,24 +300,16 @@
 					<p>
 						* you might want to say it a little nicer than that, as developers
 						are people just trying to get their stuff done, too (see: the
-						<a
-							href="https://retrospectivewiki.org/index.php?title=The_Prime_Directive"
-							>Agile Prime Directive</a
-						>)
+						<a href="https://retrospectivewiki.org/index.php?title=The_Prime_Directive">Agile Prime Directive</a>)
 					</p>
 
 					<h2 id="whats-next">What's Next</h2>
 
 					<p>
 						If you're feeling brave, you can
-						<a
-							href="https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository"
-							>clone</a
-						>
+						<a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository">clone</a>
 						the
-						<a href="https://github.com/jtasse/docsastests-demo/tree/main"
-							>GitHub repository</a
-						>
+						<a href="https://github.com/jtasse/docsastests-demo/tree/main">GitHub repository</a>
 						that I used for the demo in this post.
 					</p>
 
@@ -397,5 +329,6 @@
 				</article>
 			</main>
 		</div>
-	</body>
-</html>
+	
+
+</body></html>

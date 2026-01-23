@@ -95,10 +95,12 @@ function processFile(filePath) {
 		200,
 	)
 
-	// url: map file path to site URL
-	const relPath = filePath.split(path.join("src", "content"))[1] || filePath
-	const url =
-		SITE_BASE + relPath.replace(/\\\\/g, "/").replace(/index\.html$/, "")
+	// url: map file path to site URL (normalize to POSIX-style slashes)
+	const contentRoot = path.join(process.cwd(), "src", "content")
+	let relPath = path.relative(contentRoot, filePath)
+	relPath = relPath.replace(/\\/g, "/")
+	if (!relPath.startsWith("/")) relPath = "/" + relPath
+	const url = SITE_BASE + relPath.replace(/index\.html$/, "")
 
 	// try to find an image: first look for img in article
 	let image = null
