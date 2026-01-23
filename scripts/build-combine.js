@@ -59,45 +59,64 @@ for (const f of extraFiles) {
 	}
 }
 
-// Find the Vite-built client entry script (index-*.js) in dist/assets
+// Find the Vite-built client entry script (index-*.js) and CSS (index-*.css) in dist/assets
 try {
 	const assetsDir = join(root, "dist", "assets")
 	let mainScript = null
+	let mainCss = null
 	if (fs.existsSync(assetsDir)) {
 		const assets = fs.readdirSync(assetsDir)
 		for (const a of assets) {
-			if (/^index-.*\.js$/.test(a)) {
+			if (!mainScript && /^index-.*\.js$/.test(a)) {
 				mainScript = `/assets/${a}`
-				break
 			}
+			if (!mainCss && /^index-.*\.css$/.test(a)) {
+				mainCss = `/assets/${a}`
+			}
+			if (mainScript && mainCss) break
 		}
 	}
 
-	// If we found a main script, inject it into built blog post HTML files so
-	// they load the bundled client app (labels/theme) instead of referencing
-	// unbundled /src/main.js
-	if (mainScript) {
-		const postsDistDir = join(root, "dist", "src", "content", "blog", "posts")
-		if (fs.existsSync(postsDistDir)) {
-			const postFiles = fs
-				.readdirSync(postsDistDir)
-				.filter((f) => f.endsWith(".html"))
-			for (const pf of postFiles) {
-				const ppath = join(postsDistDir, pf)
-				let html = fs.readFileSync(ppath, "utf8")
-				if (!html.includes(mainScript)) {
-					// Insert as module script before </head>
-					const scriptTag = `\n    <script type="module" crossorigin src="${mainScript}"></script>\n`
-					html = html.replace("</head>", scriptTag + "</head>")
-					fs.writeFileSync(ppath, html, "utf8")
-					console.info(`Injected client bundle ${mainScript} into ${ppath}`)
+	// If we found assets, inject them into built blog post HTML files so
+	// they load the bundled client app (labels/theme) and main stylesheet.
+	const postsDistDir = join(root, "dist", "src", "content", "blog", "posts")
+	if (fs.existsSync(postsDistDir)) {
+		const postFiles = fs
+			.readdirSync(postsDistDir)
+			.filter((f) => f.endsWith(".html"))
+		for (const pf of postFiles) {
+			const ppath = join(postsDistDir, pf)
+			let html = fs.readFileSync(ppath, "utf8")
+
+			// Inject main CSS if found and not already present
+			if (mainCss && !html.includes(mainCss)) {
+				const linkTag = `\n    <link rel="stylesheet" href="${mainCss}">\n`
+				// Prefer inserting before existing blog stylesheet link if present
+				if (html.includes("/src/content/blog/blog.css")) {
+					html = html.replace(
+						"/src/content/blog/blog.css",
+						`${mainCss}\n                /src/content/blog/blog.css`,
+					)
+					if (!html.includes(`<link rel="stylesheet" href="${mainCss}">`)) {
+						html = html.replace("</head>", linkTag + "</head>")
+					}
+				} else {
+					html = html.replace("</head>", linkTag + "</head>")
 				}
+				console.info(`Injected main CSS ${mainCss} into ${ppath}`)
 			}
+
+			// Inject main JS bundle if found and not already present
+			if (mainScript && !html.includes(mainScript)) {
+				const scriptTag = `\n    <script type="module" crossorigin src="${mainScript}"></script>\n`
+				html = html.replace("</head>", scriptTag + "</head>")
+				console.info(`Injected client bundle ${mainScript} into ${ppath}`)
+			}
+
+			fs.writeFileSync(ppath, html, "utf8")
 		}
 	} else {
-		console.warn(
-			"No Vite index-*.js asset found in dist/assets; skipping post bundle injection",
-		)
+		console.warn("Posts directory not found; skipping asset injection")
 	}
 } catch (e) {
 	console.warn("Error while injecting client bundle into posts:", e)
