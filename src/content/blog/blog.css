@@ -388,7 +388,10 @@ header {
 	z-index: 3;
 	white-space: nowrap;
 	padding: 8px 10px;
-	background: var(--bg-color);
+	background: var(
+		--bg-color-solid,
+		#ffffff
+	); /* use solid background to avoid underlying rules bleeding through */
 	color: var(--text-color);
 	font-weight: 800;
 	font-family:
@@ -445,7 +448,10 @@ header {
 	z-index: 3;
 	white-space: nowrap;
 	padding: 8px 10px;
-	background: var(--bg-color);
+	background: var(
+		--bg-color-solid,
+		#ffffff
+	); /* solid background to block underlying rule lines */
 	color: var(--text-color);
 	font-weight: 800;
 	font-family:
@@ -570,13 +576,35 @@ header {
 /* Post-specific floating TOC placed to the right of the opening section */
 .post-toc {
 	float: right;
-	width: 260px;
-	margin-left: 1.25rem;
-	margin-top: 0.5rem;
+	width: 240px;
+	margin-left: calc(
+		1.25rem + 6px
+	); /* slightly larger breathing room to ensure visibility in Chrome */
+	margin-top: 1rem;
+	padding-left: 1rem;
 	position: relative; /* allow z-index to take effect */
-	z-index: 20; /* keep TOC visually on top of headings/rules */
-	background: var(--bg-color); /* ensure opaque background */
+	z-index: 9999;
+	isolation: isolate;
+	mix-blend-mode: normal;
+	background-color: var(--bg-color-solid, #ffffff) !important;
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	border-radius: 6px;
+	border: 1px solid var(--border-color-strong);
+}
+
+/* Solid backing to prevent underlying rules bleeding through */
+.post-toc::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--bg-color-solid, #ffffff);
+	z-index: 10000;
+	border-radius: inherit;
+	pointer-events: none;
+}
+.post-toc > * {
+	position: relative;
+	z-index: 10001;
 }
 
 @media (max-width: 980px) {
@@ -584,6 +612,58 @@ header {
 		float: none;
 		width: 100%;
 		margin-left: 0;
+	}
+}
+
+/* Layout wrapper for the TOC plus the intro paragraph/blockquote */
+.toc-intro-wrap {
+	display: flex;
+	gap: 0.75rem; /* breathing room between content and TOC */
+	align-items: flex-start;
+}
+.toc-intro-wrap .toc-content {
+	flex: 1 1 auto;
+	min-width: 0; /* allow proper shrinking in flex layout */
+}
+.toc-intro-wrap .post-toc {
+	flex: 0 0 240px;
+	width: 240px;
+	margin-left: 0; /* gap handled by flex gap */
+}
+
+@media (max-width: 980px) {
+	.toc-intro-wrap {
+		display: block;
+	}
+	.toc-intro-wrap .post-toc {
+		width: 100%;
+		margin: 0 0 1rem 0;
+	}
+}
+
+/* Ensure direct children of the article (headings, paragraphs, figures, etc.)
+   avoid the floating TOC by adding a matching right margin. Exclude the TOC itself. */
+.single-post article > :not(.post-toc) {
+	margin-right: calc(240px + 1.25rem + 6px);
+}
+
+@media (max-width: 980px) {
+	.single-post article > :not(.post-toc) {
+		margin-right: 0;
+	}
+}
+
+/* Reserve space on the right side of the article so paragraphs don't flow under the floating TOC */
+.single-post .blog-content {
+	position: relative; /* anchor for positioned elements */
+	padding-right: calc(
+		240px + 1.25rem + 6px
+	); /* reserve space for TOC plus matching gap */
+}
+
+@media (max-width: 980px) {
+	.single-post .blog-content {
+		padding-right: 1.5rem; /* restore normal padding on small screens */
 	}
 }
 
@@ -767,9 +847,16 @@ header {
 	}
 }
 
-/* Large screens */
-@media (min-width: 1920px) {
-	.blog-content {
-		max-width: none;
-	}
+/* Large screens: no special absolute positioning; keep a single consistent TOC rule above */
+
+/* High-specificity safety override to prevent the TOC from expanding to full width
+   in browsers that might interpret earlier rules differently (Chrome caching
+   or conflicting selectors). Targets the TOC when it's a direct child of the
+   article content container. */
+.single-post .blog-content > .post-toc {
+	float: right !important;
+	display: block !important;
+	width: 240px !important;
+	max-width: 240px !important;
+	margin-left: calc(1.25rem + 6px) !important; /* match global TOC gap */
 }
