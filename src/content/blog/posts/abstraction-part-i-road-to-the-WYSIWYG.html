@@ -1,25 +1,76 @@
-<!DOCTYPE html><html lang="en"><head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="en">
+	<head>
+		<script>
+			;(function () {
+				const orig = MutationObserver.prototype.observe
+				MutationObserver.prototype.observe = function (target, options) {
+					try {
+						if (!(target && target.nodeType === 1)) {
+							console.warn(
+								"Ignored MutationObserver.observe with non-Node target",
+								target,
+							)
+							return
+						}
+					} catch (e) {
+						return
+					}
+					return orig.call(this, target, options)
+				}
+			})()
+		</script>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<title>Abstraction—Part I: Road to the WYSIWYG</title>
-		<meta name="description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<link rel="canonical" href="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html">
-		<link rel="image_src" href="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
+		<meta
+			name="description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<link
+			rel="canonical"
+			href="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html"
+		/>
+		<link
+			rel="image_src"
+			href="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
 
 		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="article">
-		<meta property="og:title" content="Abstraction—Part I: Road to the WYSIWYG">
-		<meta property="og:description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<meta property="og:image" content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
-		<meta property="og:url" content="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html">
-		<meta property="og:site_name" content="James Tasse">
+		<meta property="og:type" content="article" />
+		<meta
+			property="og:title"
+			content="Abstraction—Part I: Road to the WYSIWYG"
+		/>
+		<meta
+			property="og:description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<meta
+			property="og:image"
+			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
+		<meta
+			property="og:url"
+			content="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html"
+		/>
+		<meta property="og:site_name" content="James Tasse" />
 
 		<!-- Twitter -->
-		<meta name="twitter:card" content="summary_large_image">
-		<meta name="twitter:title" content="Abstraction—Part I: Road to the WYSIWYG">
-		<meta name="twitter:description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<meta name="twitter:image" content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
-		<link rel="stylesheet" href="/src/content/blog/blog.css">
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta
+			name="twitter:title"
+			content="Abstraction—Part I: Road to the WYSIWYG"
+		/>
+		<meta
+			name="twitter:description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<meta
+			name="twitter:image"
+			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
+		<link rel="stylesheet" href="/src/content/blog/blog.css" />
 		<script src="/src/content/blog/blog.js" defer=""></script>
 	</head>
 
@@ -38,23 +89,27 @@
 					<div class="toc-intro-wrap">
 						<div class="toc-content">
 							<p>
-								*Karen Thacker was looking at a Xerox Alto personal computer, which
-								her husband Chuck had designed. The machine was running Bravo, a
-								program that Chuck’s Xerox PARC colleagues Charles Simonyi and
-								Butler Lampson had created in 1974 to help users prepare documents
-								electronically. Karen turned to her husband and said, “You mean,
-								<a href="https://en.wikipedia.org/wiki/WYSIWYG">what I see is what I get?</a>
+								*Karen Thacker was looking at a Xerox Alto personal computer,
+								which her husband Chuck had designed. The machine was running
+								Bravo, a program that Chuck’s Xerox PARC colleagues Charles
+								Simonyi and Butler Lampson had created in 1974 to help users
+								prepare documents electronically. Karen turned to her husband
+								and said, “You mean,
+								<a href="https://en.wikipedia.org/wiki/WYSIWYG"
+									>what I see is what I get?</a
+								>
 								”. Although the first person pronoun ‘I’ was later replaced with
 								‘Y’ (giving us What <strong>You</strong> See is What
 								<strong>You</strong> Get), Karen had described the application's
-								interface so succinctly that we still use her phrasing to talk about
-								WYSIWYG editors today.
+								interface so succinctly that we still use her phrasing to talk
+								about WYSIWYG editors today.
 							</p>
 
 							<blockquote>
 								<p>
 									*<strong>NOTE:</strong> this account of the origin of the
-									“WYSIWYG” term is disputed, but I include it here since it's a firsthand anecdote from Chuck Thacker.
+									“WYSIWYG” term is disputed, but I include it here since it's a
+									firsthand anecdote from Chuck Thacker.
 								</p>
 							</blockquote>
 						</div>
@@ -69,7 +124,9 @@
 								<li><a href="#abstraction">Abstraction</a></li>
 								<li><a href="#next-layer">And the Next Layer</a></li>
 								<li><a href="#review">Review</a></li>
-								<li><a href="#bridging">Bridging Abstraction and the WYSIWYG</a></li>
+								<li>
+									<a href="#bridging">Bridging Abstraction and the WYSIWYG</a>
+								</li>
 								<li><a href="#how-it-works">How a WYSIWYG works</a></li>
 								<li><a href="#lets-talk">Let's Talk</a></li>
 								<li><a href="#musical-coda">Musical Coda</a></li>
@@ -82,32 +139,57 @@
 					<p>
 						But what was word processing like before Bravo arrived on the scene?
 					</p>
-                    <p>
-                        Well, there were *typewriters* of course, going all the way back to 1874. Then in 1964 IBM released the <a href="https://www.historyofinformation.com/detail.php?id=819">Magnetic Tape/Selectric Typewriter (MT/ST)</a>, which was the <a href="https://en.wikipedia.org/wiki/IBM_MT/ST">first system marketed as a Word Processor</a>. The MT/ST allowed the user to edit text without having to retype a document, which was cool, but not quite as cool as this ad that Jim Henson (yes, <em>that</em> Jim Henson) produced for the machine in 1967:
-                    </p>
+					<p>
+						Well, there were *typewriters* of course, going all the way back to
+						1874. Then in 1964 IBM released the
+						<a href="https://www.historyofinformation.com/detail.php?id=819"
+							>Magnetic Tape/Selectric Typewriter (MT/ST)</a
+						>, which was the
+						<a href="https://en.wikipedia.org/wiki/IBM_MT/ST"
+							>first system marketed as a Word Processor</a
+						>. The MT/ST allowed the user to edit text without having to retype
+						a document, which was cool, but not quite as cool as this ad that
+						Jim Henson (yes, <em>that</em> Jim Henson) produced for the machine
+						in 1967:
+					</p>
 
 					<div class="video-wrap">
-						<div style="flex: 1">
-						</div>
+						<div style="flex: 1"></div>
 
-							<div class="embed embed-full">
-								<iframe width="560" height="315" src="https://www.youtube.com/embed/_IZw2CoYztk" title="MT/ST ad" frameborder="0" allow="
-										accelerometer;
-										autoplay;
-										clipboard-write;
-										encrypted-media;
-										gyroscope;
-										picture-in-picture;
-									" allowfullscreen=""></iframe>
-							</div>
+						<div class="embed embed-full">
+							<iframe
+								width="560"
+								height="315"
+								src="https://www.youtube.com/embed/_IZw2CoYztk"
+								title="MT/ST ad"
+								frameborder="0"
+								allow="
+									accelerometer;
+									autoplay;
+									clipboard-write;
+									encrypted-media;
+									gyroscope;
+									picture-in-picture;
+								"
+								allowfullscreen=""
+							></iframe>
+						</div>
 					</div>
 
 					<p>
-						There were also mainframe editors like TECO, QED, and ED. The <a href="https://en.wikipedia.org/wiki/TECO_(text_editor)">Wikipedia article for TECO</a> (a precursor to the <a href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS">EMACS</a> editor) uses the following example to illustrate what it would have been like to edit a program written in C using the TECO editor:
+						There were also mainframe editors like TECO, QED, and ED. The
+						<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)"
+							>Wikipedia article for TECO</a
+						>
+						(a precursor to the
+						<a
+							href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS"
+							>EMACS</a
+						>
+						editor) uses the following example to illustrate what it would have
+						been like to edit a program written in C using the TECO editor:
 					</p>
-<p>
-    Given a file named hello.c with the following contents:
-</p>
+					<p>Given a file named hello.c with the following contents:</p>
 					<pre><code class="language-c"><span style="color: green;">// C ADDITION EXAMPLE</span>
 int main(int argc, char **argv)
 {
@@ -118,12 +200,15 @@ int main(int argc, char **argv)
 }
 </code></pre>
 
-<p>
-    ...one could use the following TECO session (noting that the prompt is "*" and "$" is how ESC is echoed) to change "Hello" into "Goodbye":
+					<p>
+						...one could use the following TECO session (noting that the prompt
+						is "*" and "$" is how ESC is echoed) to change "Hello" into
+						"Goodbye":
+					</p>
 
-</p>
-
-<pre class="teco"><code><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>
+					<pre
+						class="teco"
+					><code><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>
 *EBhello.c$$
 *P$$
 *SHello$0TT$$
@@ -131,132 +216,195 @@ int main(int argc, char **argv)
 *EX$$
 </code></pre>
 
-					<p>
-						To quote a ScienceBlogs post from 2006:
-                        </p><blockquote>
-                            “...it's got the most god-awful hideous syntax ever imagined”.
-                         <br>—<a href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"><em>Worlds Greatest Pathological Language: TECO</em>, goodmath</a>
-                        </blockquote>
-                        
+					<p>To quote a ScienceBlogs post from 2006:</p>
+					<blockquote>
+						“...it's got the most god-awful hideous syntax ever imagined”.
+						<br />—<a
+							href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"
+							><em>Worlds Greatest Pathological Language: TECO</em>, goodmath</a
+						>
+					</blockquote>
+
 					<p></p>
 
 					<h2 id="magic-word">The Magic Word</h2>
 					<p>
-						Wait, what is syntax? I looked at a few definitions, but I think this one
-						(which I modified slightly modified for brevity) is the most elegant:
-                        </p><blockquote>
-                            “Syntax refers to the structural rules of a language”.
-                        
-                        <br>—<a href="https://codefacture.com/blog/what-is-syntax/"><em>What is Syntax</em>, Codefacture blog</a>
-                        </blockquote>
-                        Human languages. Computer
-						languages. Without syntax humans have only words or fragmented
-						thoughts. Machines have no instructions. Or at least, limited
-						instructions. 
-                        
-                        So how did humans first communicate with computers?
+						Wait, what is syntax? I looked at a few definitions, but I think
+						this one (which I modified slightly modified for brevity) is the
+						most elegant:
+					</p>
+					<blockquote>
+						“Syntax refers to the structural rules of a language”.
+
+						<br />—<a href="https://codefacture.com/blog/what-is-syntax/"
+							><em>What is Syntax</em>, Codefacture blog</a
+						>
+					</blockquote>
+					Human languages. Computer languages. Without syntax humans have only
+					words or fragmented thoughts. Machines have no instructions. Or at
+					least, limited instructions. So how did humans first communicate with
+					computers?
 					<p></p>
-                    <h2 id="machine-code">Machine Code</h2>
+					<h2 id="machine-code">Machine Code</h2>
 					<p>
 						In the late 1940s and early 1950s, programming was commonly done in
-						machine code, which is expressed in binary form. For example (hardware-dependent):
+						machine code, which is expressed in binary form. For example
+						(hardware-dependent):
 					</p>
 					<pre><code class="language-asm">10111000 00000001 00000000 00000000 00000000
 00000101 00000010 00000000 00000000 00000000
 </code></pre>
-<blockquote>
-    *<strong>NOTE</strong>: the processing of binary/machine code is hardware-dependent, so theoretically these instructions might work on some machines but not others
-</blockquote>
+					<blockquote>
+						*<strong>NOTE</strong>: the processing of binary/machine code is
+						hardware-dependent, so theoretically these instructions might work
+						on some machines but not others
+					</blockquote>
 					<p>
-                        Not exactly easy on the eyes, I know. But let’s go through this by taking small bytes (sorry…again).
-</p>
+						Not exactly easy on the eyes, I know. But let’s go through this by
+						taking small bytes (sorry…again).
+					</p>
 
-<p>
-Starting with the first group of numbers–that is, the first byte–in the first row, we can see the opcode, which is what specifies the operation to be performed. In this case it’s equivalent to (in English per ChatGPT): 
-</p><blockquote>Copy a 32-bit immediate constant directly into a 32-bit general-purpose register</blockquote>
+					<p>
+						Starting with the first group of numbers–that is, the first byte–in
+						the first row, we can see the opcode, which is what specifies the
+						operation to be performed. In this case it’s equivalent to (in
+						English per ChatGPT):
+					</p>
+					<blockquote>
+						Copy a 32-bit immediate constant directly into a 32-bit
+						general-purpose register
+					</blockquote>
 
-<p></p>
-<p>How about the second byte? That’s much easier–it’s the binary representation for the number 1! All right, there are no more instructions in row 1, so let’s move on to row 2.</p>
+					<p></p>
+					<p>
+						How about the second byte? That’s much easier–it’s the binary
+						representation for the number 1! All right, there are no more
+						instructions in row 1, so let’s move on to row 2.
+					</p>
 
-<p>In the second row, the first byte gives us opcode with the intent of:
-    </p><blockquote>
-        Add a 32-bit immediate constant to the value in register <code>EAX</code>, and store the result back in <code>EAX</code>.
-    </blockquote>
-<p></p>
-<p>
-And then the second byte gives us the number 2 in binary.
-</p>
+					<p>
+						In the second row, the first byte gives us opcode with the intent
+						of:
+					</p>
+					<blockquote>
+						Add a 32-bit immediate constant to the value in register
+						<code>EAX</code>, and store the result back in <code>EAX</code>.
+					</blockquote>
+					<p></p>
+					<p>And then the second byte gives us the number 2 in binary.</p>
 
-<p>Can we just take a moment to appreciate <em>how the heck interacting with a computer got from this to #@!$ing TikTok</em>?
-</p>
+					<p>
+						Can we just take a moment to appreciate
+						<em
+							>how the heck interacting with a computer got from this to #@!$ing
+							TikTok</em
+						>?
+					</p>
 
-<h2 id="abstraction">Abstraction</h2>
-<p>
-    It’s a silly question, but I think one of the answers lies in abstraction. 
-    </p><blockquote>
-        “In software, an abstraction provides access while hiding details that otherwise might make access more challenging.” 
-         <br>—<a href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"><em>Abstraction_(computer_science)</em>, Wikipedia</a>
-    </blockquote> 
-<p>
-    This is for real one of the most elegant statements I have ever read (at least concerning computer science). Abstraction allows you to do the thing <em>without having to care about certain other things.</em>
-</p>
-<p></p>
-Going back to our binary example, just imagine you had to program computers (or more likely, one giant computer) like this every day. It’s no wonder they wanted a better way! And thus the first assemblers (precursors to Assembly language) appeared in the late 1940s.
-<p>
-    
-</p>
-In Assembly language, instead of having to input 2 bytes like <code>10111000 00000001</code>, you could now provide the much easier to read instruction of *<code>mov eax, 1</code>. 
-<p>
+					<h2 id="abstraction">Abstraction</h2>
+					<p>
+						It’s a silly question, but I think one of the answers lies in
+						abstraction.
+					</p>
+					<blockquote>
+						“In software, an abstraction provides access while hiding details
+						that otherwise might make access more challenging.”
+						<br />—<a
+							href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"
+							><em>Abstraction_(computer_science)</em>, Wikipedia</a
+						>
+					</blockquote>
+					<p>
+						This is for real one of the most elegant statements I have ever read
+						(at least concerning computer science). Abstraction allows you to do
+						the thing
+						<em>without having to care about certain other things.</em>
+					</p>
+					<p></p>
+					Going back to our binary example, just imagine you had to program
+					computers (or more likely, one giant computer) like this every day.
+					It’s no wonder they wanted a better way! And thus the first assemblers
+					(precursors to Assembly language) appeared in the late 1940s.
+					<p></p>
+					In Assembly language, instead of having to input 2 bytes like
+					<code>10111000 00000001</code>, you could now provide the much easier
+					to read instruction of *<code>mov eax, 1</code>.
+					<p></p>
+					<blockquote>
+						*<strong>NOTE</strong> this and other related examples are a bit
+						anachronistic in that they show encodings for 80386 architecture
+						(common in the 80s). Earlier machines used different encodings and
+						register models.
+					</blockquote>
 
-    </p><blockquote>*<strong>NOTE</strong> this and other related examples are a bit anachronistic in that they show encodings for 80386 architecture (common in the 80s). Earlier machines used different encodings and register models.
-</blockquote>
-    
-<p></p>
-<p>
-I know, it's still quite different from the English translation, which again is: 
-</p><blockquote>
-Copy a 32-bit immediate constant directly into a 32-bit general-purpose register. 
-</blockquote>
-<p></p>
-<p>
-But this was surely <em>life-changing</em> for anyone programming computers at the time.
-</p>
-<p>
-Similarly, let’s take the binary instruction of <code>00000101 00000010</code>, meaning: 
-</p><blockquote>
-Add a 32-bit immediate constant to the value in register <code>EAX</code>, and store the result back in <code>EAX</code>.
-</blockquote>
-<p></p>
-In Assembly this becomes <code>add eax, 2</code>.
-<p>
-
-</p>
-<h2 id="next-layer">And the Next Layer</h2>
-<p>
-    All right, so we’re no longer inputting binary, but we’re still having to dictate to processors precisely how each operation should be performed. What if things could be even easier for programmers? What if the assembly-level details could also be abstracted away?
-</p>
-<p>
-    Although there were earlier high-level languages (notably <a href="https://en.wikipedia.org/wiki/Plankalk%C3%BCl">Plankalkül</a>), <a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a> entered the scene around 1957 and was the first widely used *high-level language.
-</p>
-<blockquote>
-*<strong>NOTE</strong>: here “high-level” refers to its abstraction of lower level details, in this case assembly language. 
-</blockquote>
-<p> 
-So let’s see what our 1+2 example looks like in FORTRAN:
-</p>
-<pre><code class="language-fortran"><span style="color: green;">// C ADDITION EXAMPLE</span>
+					<p></p>
+					<p>
+						I know, it's still quite different from the English translation,
+						which again is:
+					</p>
+					<blockquote>
+						Copy a 32-bit immediate constant directly into a 32-bit
+						general-purpose register.
+					</blockquote>
+					<p></p>
+					<p>
+						But this was surely <em>life-changing</em> for anyone programming
+						computers at the time.
+					</p>
+					<p>
+						Similarly, let’s take the binary instruction of
+						<code>00000101 00000010</code>, meaning:
+					</p>
+					<blockquote>
+						Add a 32-bit immediate constant to the value in register
+						<code>EAX</code>, and store the result back in <code>EAX</code>.
+					</blockquote>
+					<p></p>
+					In Assembly this becomes <code>add eax, 2</code>.
+					<p></p>
+					<h2 id="next-layer">And the Next Layer</h2>
+					<p>
+						All right, so we’re no longer inputting binary, but we’re still
+						having to dictate to processors precisely how each operation should
+						be performed. What if things could be even easier for programmers?
+						What if the assembly-level details could also be abstracted away?
+					</p>
+					<p>
+						Although there were earlier high-level languages (notably
+						<a href="https://en.wikipedia.org/wiki/Plankalk%C3%BCl"
+							>Plankalkül</a
+						>),
+						<a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a> entered
+						the scene around 1957 and was the first widely used *high-level
+						language.
+					</p>
+					<blockquote>
+						*<strong>NOTE</strong>: here “high-level” refers to its abstraction
+						of lower level details, in this case assembly language.
+					</blockquote>
+					<p>So let’s see what our 1+2 example looks like in FORTRAN:</p>
+					<pre><code class="language-fortran"><span style="color: green;">// C ADDITION EXAMPLE</span>
 I = 1 + 2
 PRINT 10, I
 10 FORMAT(I2)
 STOP
 END
 </code></pre>
-<p>
-	Nuts, right? In about 10 years, <code>mov eax, 1</code> and <code>add eax, 2</code> became this! No need to specify CPU registers to use or which opcodes to emit–the compiler handles all of it.
-</p>
+					<p>
+						Nuts, right? In about 10 years, <code>mov eax, 1</code> and
+						<code>add eax, 2</code> became this! No need to specify CPU
+						registers to use or which opcodes to emit–the compiler handles all
+						of it.
+					</p>
 
-<h2 id="review">Review</h2>
-<p>So we started with raw bytes in binary like <code>10111000 00000001</code>, which became more human readable instructions like <code>mov eax, 1</code> in Assembly; and finally we’ve moved to FORTRAN, which gives us the practically English code of <code>I = 1 + 2</code>. Speaking in terms of abstraction layers, it goes something like:
+					<h2 id="review">Review</h2>
+					<p>
+						So we started with raw bytes in binary like
+						<code>10111000 00000001</code>, which became more human readable
+						instructions like <code>mov eax, 1</code> in Assembly; and finally
+						we’ve moved to FORTRAN, which gives us the practically English code
+						of <code>I = 1 + 2</code>. Speaking in terms of abstraction layers,
+						it goes something like:
 					</p>
 
 					<div class="diagram-wrap">
@@ -266,19 +414,33 @@ END
 							<div class="abstraction-label">Abstraction</div>
 						</div>
 						<div class="diagram" aria-hidden="true" align="center">
-							<div class="step">High‑level language - FORTRAN <small>(intent)</small></div>
+							<div class="step">
+								High‑level language - FORTRAN <small>(intent)</small>
+							</div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
 							<div class="step">*Assembly <small>(meaning)</small></div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
-							<div class="step">Machine code - binary <small>(bits)</small></div>
+							<div class="step">
+								Machine code - binary <small>(bits)</small>
+							</div>
 						</div>
 						<div class="implementation-arrow" aria-hidden="true">
 							<div class="implementation-line" aria-hidden="true"></div>
@@ -287,19 +449,33 @@ END
 						</div>
 					</div>
 
-                    <blockquote>
-                        *<strong>NOTE</strong>: technically Assembly is “assembled” into Object code, which is binary code that contains machine code instructions. I skipped over it for the sake of brevity.
-                    </blockquote>
-<p>
-    Now it’s worth noting that we just looked at a tiny vertical slice of the history of programming. We could have looked at a desktop programming language like C# and traced its abstraction through Intermediate Language; or we could have looked at the…honestly weird path that JavaScript takes to get to machine language. But abstraction has been a fairly universal path in the evolution of code languages. And it makes sense–because abstraction is all about making things easier on the programmer!
-</p>
+					<blockquote>
+						*<strong>NOTE</strong>: technically Assembly is “assembled” into
+						Object code, which is binary code that contains machine code
+						instructions. I skipped over it for the sake of brevity.
+					</blockquote>
+					<p>
+						Now it’s worth noting that we just looked at a tiny vertical slice
+						of the history of programming. We could have looked at a desktop
+						programming language like C# and traced its abstraction through
+						Intermediate Language; or we could have looked at the…honestly weird
+						path that JavaScript takes to get to machine language. But
+						abstraction has been a fairly universal path in the evolution of
+						code languages. And it makes sense–because abstraction is all about
+						making things easier on the programmer!
+					</p>
 					<h2 id="bridging">Bridging Abstraction and the WYSIWYG</h2>
 					<p>
-						At this point it’s fair to ask: what on Earth does this have to do with Bravo? Or WordPress? Or Photoshop? In every case, the software’s goal is to deliver on the promise of what you see is what you get. Now how does this relate to abstraction?
+						At this point it’s fair to ask: what on Earth does this have to do
+						with Bravo? Or WordPress? Or Photoshop? In every case, the
+						software’s goal is to deliver on the promise of what you see is what
+						you get. Now how does this relate to abstraction?
 					</p>
-                    <p>
-                        As I was hitting ChatGPT with questions about the path from machine code to Assembly to FORTRAN, it spit out a cool little visual aid (which I’ve slightly altered for brevity):
-                    </p>
+					<p>
+						As I was hitting ChatGPT with questions about the path from machine
+						code to Assembly to FORTRAN, it spit out a cool little visual aid
+						(which I’ve slightly altered for brevity):
+					</p>
 
 					<div class="diagram-wrap">
 						<div class="abstraction-arrow" aria-hidden="true">
@@ -308,15 +484,27 @@ END
 							<div class="abstraction-label">Abstraction</div>
 						</div>
 						<div class="diagram" aria-hidden="true" align="center">
-							<div class="step">High‑level language <small>(intent)</small></div>
+							<div class="step">
+								High‑level language <small>(intent)</small>
+							</div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
 							<div class="step">Assembly <small>(meaning)</small></div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
@@ -329,12 +517,18 @@ END
 						</div>
 					</div>
 
-                    <p>
-                       I think this offers a helpful way to think about abstraction. The further we get away from the metal (and the bits), the easier it is to think naturally. Increasingly higher level programming languages like Assembly and FORTRAN did exactly this. They let the programmer think more conceptually and less “wait, which CPU register was it again?”.
-                    </p>
+					<p>
+						I think this offers a helpful way to think about abstraction. The
+						further we get away from the metal (and the bits), the easier it is
+						to think naturally. Increasingly higher level programming languages
+						like Assembly and FORTRAN did exactly this. They let the programmer
+						think more conceptually and less “wait, which CPU register was it
+						again?”.
+					</p>
 
-                    <p>
-                        WYSIWYGs do this, too…sort of. See, if we place a WYSIWYG on our visual aid, it might look like this:
+					<p>
+						WYSIWYGs do this, too…sort of. See, if we place a WYSIWYG on our
+						visual aid, it might look like this:
 					</p>
 
 					<div class="diagram-wrap">
@@ -346,7 +540,9 @@ END
 						<div class="diagram" aria-hidden="true" align="center">
 							<div class="step">WYSIWYG <small>(verified intent)</small></div>
 							<div class="arrow" aria-hidden="true">↓</div>
-							<div class="step">High‑level language <small>(intent)</small></div>
+							<div class="step">
+								High‑level language <small>(intent)</small>
+							</div>
 							<div class="arrow" aria-hidden="true">↓</div>
 							<div class="step">Assembly <small>(meaning)</small></div>
 							<div class="arrow" aria-hidden="true">↓</div>
@@ -359,33 +555,46 @@ END
 						</div>
 					</div>
 
-                    <p>
-But adding the WYSIWYG here is a bit like throwing an orange in with all the apples. A high-level language can act as an abstraction of Assembly, and Assembly is an abstraction of machine code. But a WYSIWYG–and any other application built in a high level language–is an abstraction of <em>intent</em>. That is, the WYSIWYG abstracts the user’s intent to edit something by providing a way to do it without having to engage directly with syntax.
-                    </p>
+					<p>
+						But adding the WYSIWYG here is a bit like throwing an orange in with
+						all the apples. A high-level language can act as an abstraction of
+						Assembly, and Assembly is an abstraction of machine code. But a
+						WYSIWYG–and any other application built in a high level language–is
+						an abstraction of <em>intent</em>. That is, the WYSIWYG abstracts
+						the user’s intent to edit something by providing a way to do it
+						without having to engage directly with syntax.
+					</p>
 
-                    <p>
-                        So let's go back to our TECO example. We have the text <code>printf("Hello world!\n");</code> from our C program. If we want to replace “Hello” with “Goodbye” we’d have to run the following commands:
-                    </p>
+					<p>
+						So let's go back to our TECO example. We have the text
+						<code>printf("Hello world!\n");</code> from our C program. If we
+						want to replace “Hello” with “Goodbye” we’d have to run the
+						following commands:
+					</p>
 
-<pre><code class="language-teco"><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>               
+					<pre><code class="language-teco"><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>               
 *EBhello.c$$
 *P$$
 *SHello$0TT$$
 *-5DIGoodbye$0TT$$
 *EX$$</code></pre>
 
-<p>
-    With Bravo (or any modern word processing software like Microsoft Word), the user can just…
-</p><ul>
-    <li>Move the mouse/cursor to the end of “Hello” in the text.</li>
-	<li>Press <code>Backspace</code> 5 times to delete “Hello”.</li>
-    <li>Type “Goodbye” to insert the new text.</li> 
-</ul>
-<p></p>
+					<p>
+						With Bravo (or any modern word processing software like Microsoft
+						Word), the user can just…
+					</p>
+					<ul>
+						<li>Move the mouse/cursor to the end of “Hello” in the text.</li>
+						<li>Press <code>Backspace</code> 5 times to delete “Hello”.</li>
+						<li>Type “Goodbye” to insert the new text.</li>
+					</ul>
+					<p></p>
 
 					<h2 id="how-it-works">How a WYSIWYG works</h2>
 					<p>
-						So let’s go back to Bravo, our first WYSIWYG. Bravo was originally written in BCPL (Basic Combined Programming Language), which compiled to O-code machine instructions. We could represent this as:
+						So let’s go back to Bravo, our first WYSIWYG. Bravo was originally
+						written in BCPL (Basic Combined Programming Language), which
+						compiled to O-code machine instructions. We could represent this as:
 					</p>
 
 					<div class="diagram-wrap">
@@ -410,60 +619,135 @@ But adding the WYSIWYG here is a bit like throwing an orange in with all the app
 						</div>
 					</div>
 
-<p>
-    Again, it’s not quite accurate to say that Bravo is an abstraction of BCPL. But Bravo is a user interface abstraction designed to make it easier to edit text.
-</p>
+					<p>
+						Again, it’s not quite accurate to say that Bravo is an abstraction
+						of BCPL. But Bravo is a user interface abstraction designed to make
+						it easier to edit text.
+					</p>
 
-<h2 id="lets-talk">Let's Talk</h2>
-<p>
-    That’s it for the WYSIWYG…or is it? In my next post, I’ll ask: what if it’s not about what you see anymore? What if it’s about what you <em>say</em>?
-</p>
-<h2 id="musical-coda">Musical Coda</h2>
-<p>
-    One last thing. <a href="https://substack.com/@paulkrugman">Paul Krugman</a>, one of my favorite Substack writers, has a habit of adding a “musical coda” to the end of his posts. I like this idea, so I’m stealing it.
-</p>
-<p>
-    I present Orbital’s “The Box” (starring Tilda Swinton):
-</p>
+					<h2 id="lets-talk">Let's Talk</h2>
+					<p>
+						That’s it for the WYSIWYG…or is it? In my next post, I’ll ask: what
+						if it’s not about what you see anymore? What if it’s about what you
+						<em>say</em>?
+					</p>
+					<h2 id="musical-coda">Musical Coda</h2>
+					<p>
+						One last thing.
+						<a href="https://substack.com/@paulkrugman">Paul Krugman</a>, one of
+						my favorite Substack writers, has a habit of adding a “musical coda”
+						to the end of his posts. I like this idea, so I’m stealing it.
+					</p>
+					<p>I present Orbital’s “The Box” (starring Tilda Swinton):</p>
 					<div class="video-wrap">
-                        <div class="embed embed-full">
-								<iframe src="https://www.youtube.com/embed/qddG0iUSax4" title="Orbital - The Box" width="560" height="315" frameborder="0" allow="
-										accelerometer;
-										autoplay;
-										clipboard-write;
-										encrypted-media;
-										gyroscope;
-										picture-in-picture;
-									" allowfullscreen=""></iframe>
-					</div>
+						<div class="embed embed-full">
+							<iframe
+								src="https://www.youtube.com/embed/qddG0iUSax4"
+								title="Orbital - The Box"
+								width="560"
+								height="315"
+								frameborder="0"
+								allow="
+									accelerometer;
+									autoplay;
+									clipboard-write;
+									encrypted-media;
+									gyroscope;
+									picture-in-picture;
+								"
+								allowfullscreen=""
+							></iframe>
+						</div>
 
-<p class="thanks">Thanks for reading.</p>
-					<h2 id="attributions">Attributions</h2>
-					<ul class="attributions">
-						<li>ChatGPT (fact-checking and machine code + binary examples)</li>
-						<li>GitHub Copilot (fact-checking)</li>
-						<li>Gemini (fact-checking)</li>
-						<li><a href="https://archive.nytimes.com/bits.blogs.nytimes.com/2007/10/18/the-real-history-of-wysiwyg/">History of WYSIWYG</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Bravo_(editor)">Bravo (editor)</a></li>
-						<li><a href="https://www.youtube.com/watch?v=390hhDkiJFM">Xerox Alto Bravo Demo</a></li>
-						<li><a href="https://stackoverflow.com/questions/466790/assembly-code-vs-machine-code-vs-object-code">Assembly Code vs Machine Code vs Object Code</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Syntax_(programming_languages)">Syntax (Programming Languages)</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Opcode">Opcode</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)">Abstraction</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Typewriter">Typewriter</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/IBM_MT/ST">IBM MT/ST</a></li>
-						<li><a href="https://www.youtube.com/watch?v=_IZw2CoYztk">MT/ST "Paperwork Explosion" ad</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/TECO_(text_editor)">TECO</a></li>
-						<li><a href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1">Worlds Greatest Pathological Language: TECO</a></li>
-						<li><a href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS">TECO EMACS (1976-1996)</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a></li>
-						<li><a href="https://codefacture.com/blog/what-is-syntax/">What is syntax</a></li>
-						<li><a href="https://en.wikipedia.org/wiki/BCPL">BCPL</a></li>
-						<li><a href="https://substack.com/@paulkrugman">Paul Krugman</a></li>
-					</ul>
-				</div></article>
+						<p class="thanks">Thanks for reading.</p>
+						<h2 id="attributions">Attributions</h2>
+						<ul class="attributions">
+							<li>
+								ChatGPT (fact-checking and machine code + binary examples)
+							</li>
+							<li>GitHub Copilot (fact-checking)</li>
+							<li>Gemini (fact-checking)</li>
+							<li>
+								<a
+									href="https://archive.nytimes.com/bits.blogs.nytimes.com/2007/10/18/the-real-history-of-wysiwyg/"
+									>History of WYSIWYG</a
+								>
+							</li>
+							<li>
+								<a href="https://en.wikipedia.org/wiki/Bravo_(editor)"
+									>Bravo (editor)</a
+								>
+							</li>
+							<li>
+								<a href="https://www.youtube.com/watch?v=390hhDkiJFM"
+									>Xerox Alto Bravo Demo</a
+								>
+							</li>
+							<li>
+								<a
+									href="https://stackoverflow.com/questions/466790/assembly-code-vs-machine-code-vs-object-code"
+									>Assembly Code vs Machine Code vs Object Code</a
+								>
+							</li>
+							<li>
+								<a
+									href="https://en.wikipedia.org/wiki/Syntax_(programming_languages)"
+									>Syntax (Programming Languages)</a
+								>
+							</li>
+							<li><a href="https://en.wikipedia.org/wiki/Opcode">Opcode</a></li>
+							<li>
+								<a
+									href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"
+									>Abstraction</a
+								>
+							</li>
+							<li>
+								<a href="https://en.wikipedia.org/wiki/Typewriter"
+									>Typewriter</a
+								>
+							</li>
+							<li>
+								<a href="https://en.wikipedia.org/wiki/IBM_MT/ST">IBM MT/ST</a>
+							</li>
+							<li>
+								<a href="https://www.youtube.com/watch?v=_IZw2CoYztk"
+									>MT/ST "Paperwork Explosion" ad</a
+								>
+							</li>
+							<li>
+								<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)"
+									>TECO</a
+								>
+							</li>
+							<li>
+								<a
+									href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"
+									>Worlds Greatest Pathological Language: TECO</a
+								>
+							</li>
+							<li>
+								<a
+									href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS"
+									>TECO EMACS (1976-1996)</a
+								>
+							</li>
+							<li>
+								<a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a>
+							</li>
+							<li>
+								<a href="https://codefacture.com/blog/what-is-syntax/"
+									>What is syntax</a
+								>
+							</li>
+							<li><a href="https://en.wikipedia.org/wiki/BCPL">BCPL</a></li>
+							<li>
+								<a href="https://substack.com/@paulkrugman">Paul Krugman</a>
+							</li>
+						</ul>
+					</div>
+				</article>
 			</main>
 		</div>
-	
-
-</body></html>
+	</body>
+</html>
