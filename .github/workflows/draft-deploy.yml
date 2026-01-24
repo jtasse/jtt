@@ -1,0 +1,60 @@
+name: Draft Deploy (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Target site id variable name to use (default: STAGING_SITE_ID secret)"
+        required: false
+        default: "staging"
+
+jobs:
+  build-and-draft-deploy:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      STAGING_SITE_ID: ${{ secrets.STAGING_SITE_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install netlify-cli
+        run: npm install -g netlify-cli
+
+      - name: Draft deploy to Netlify (no --prod)
+        id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          STAGING_SITE_ID: ${{ secrets.STAGING_SITE_ID }}
+        run: |
+          echo "Uploading prebuilt 'dist' to Netlify (draft deploy)..."
+          OUTPUT=$(netlify deploy --dir=dist --site=$STAGING_SITE_ID 2>&1 || true)
+          echo "---- NETLIFY OUTPUT START ----"
+          echo "$OUTPUT"
+          echo "---- NETLIFY OUTPUT END ----"
+          # extract the last https URL from the output
+          PREVIEW_URL=$(echo "$OUTPUT" | grep -Eo 'https?://[^ \'\" ]+' | tail -n1 || true)
+          if [ -n "$PREVIEW_URL" ]; then
+            echo "Preview URL: $PREVIEW_URL"
+            echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
+            # add to workflow summary for easy access
+            echo "### Netlify Draft Deploy" >> $GITHUB_STEP_SUMMARY || true
+            echo "Preview URL: $PREVIEW_URL" >> $GITHUB_STEP_SUMMARY || true
+          else
+            echo "No preview URL found in netlify output." >&2
+          fi
+
+      - name: Show preview URL
+        run: |
+          echo "Draft deploy preview URL: ${{ steps.deploy.outputs.preview_url }}"
