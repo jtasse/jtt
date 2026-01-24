@@ -426,6 +426,13 @@ h1 {
 	}
 }
 
+/* Ensure the quick-links min-width doesn't force overflow on small screens */
+@media (max-width: 768px) {
+	.quick-links {
+		min-width: 0;
+	}
+}
+
 /* Header Layout & Quick Links */
 .portfolio-header-layout {
 	display: flex;
@@ -440,11 +447,13 @@ h1 {
 
 .quick-links {
 	flex: 0 0 350px;
-	background: rgba(10, 25, 50, 0.95);
+	/* Use theme-aware item background so contrast follows the active theme */
+	background: var(--item-bg);
 	border: 0;
 	border-left: 2px solid var(--accent-color);
 	padding: 1.5rem;
-	box-shadow: 0 4px 20px rgba(0, 170, 255, 0.2);
+	/* Use theme-aware shadow color (lighter on light theme) */
+	box-shadow: 0 4px 20px var(--shadow-color);
 	min-width: 350px;
 	width: auto;
 	box-sizing: border-box;
@@ -505,6 +514,18 @@ h1 {
 
 .portfolio-item-link:hover {
 	text-decoration: underline;
+}
+
+/* Ensure high contrast in light theme for the quick-links panel */
+[data-theme="light"] .quick-links {
+	/* explicit fallback in case variables are not applied */
+	background: var(--item-bg, rgba(255, 255, 255, 0.95));
+	color: var(--text-color, #222222);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .quick-links a {
+	color: var(--text-color, #222222);
 }
 
 /* Viewer Overlay */
