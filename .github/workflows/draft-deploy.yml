@@ -94,3 +94,34 @@ jobs:
           path: |
             netlify-output.json
             netlify-stderr.log
+
+      - name: Find associated PR for this commit
+        id: find_pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const sha = process.env.GITHUB_SHA || github.context.sha
+            const owner = github.context.repo.owner
+            const repo = github.context.repo.repo
+            const res = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha })
+            if (res.data && res.data.length > 0) {
+              const pr = res.data[0]
+              core.setOutput('pr_number', String(pr.number))
+              console.log('Found PR #', pr.number)
+            } else {
+              console.log('No PR associated with this commit')
+              core.setOutput('pr_number', '')
+            }
+
+      - name: Post preview URL as PR comment
+        if: ${{ steps.find_pr.outputs.pr_number != '' && steps.deploy.outputs.preview_url != '' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ steps.find_pr.outputs.pr_number }}
+          body: |
+            ✅ Draft deploy is available
+
+            Preview URL: ${{ steps.deploy.outputs.preview_url }}
+
+            To publish to production, run the `Publish to Netlify (manual)` workflow or use the Netlify UI.
