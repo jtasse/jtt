@@ -14,6 +14,7 @@ jobs:
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       STAGING_SITE_ID: ${{ secrets.STAGING_SITE_ID }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,32 +30,67 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install netlify-cli
-        run: npm install -g netlify-cli
+      - name: Setup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          npm install -g netlify-cli
 
       - name: Draft deploy to Netlify (no --prod)
         id: deploy
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           STAGING_SITE_ID: ${{ secrets.STAGING_SITE_ID }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
+          set -euo pipefail
           echo "Uploading prebuilt 'dist' to Netlify (draft deploy)..."
-          OUTPUT=$(netlify deploy --dir=dist --site=$STAGING_SITE_ID 2>&1 || true)
-          echo "---- NETLIFY OUTPUT START ----"
-          echo "$OUTPUT"
-          echo "---- NETLIFY OUTPUT END ----"
-          # extract the last https URL from the output
-          PREVIEW_URL=$(echo "$OUTPUT" | grep -Eo 'https?://[^ \'\" ]+' | tail -n1 || true)
+          SITE_ID="${STAGING_SITE_ID:-${NETLIFY_SITE_ID:-}}"
+          if [ -z "$SITE_ID" ]; then
+            echo "ERROR: No site id available. Set STAGING_SITE_ID or NETLIFY_SITE_ID in repo secrets." >&2
+            exit 1
+          fi
+          # Run netlify deploy but don't let a non-zero exit code (warnings/prompts) abort
+          # Capture stdout (JSON) and stderr (diagnostics) for inspection
+          NETLIFY_CMD=(netlify deploy --dir=dist --site="$SITE_ID" --message="Draft deploy from $GITHUB_REF" --json)
+          echo "Running: ${NETLIFY_CMD[*]}"
+          # allow the deploy command to return non-zero without aborting the script
+          set +e
+          "${NETLIFY_CMD[@]}" > netlify-output.json 2> netlify-stderr.log
+          NETLIFY_EXIT=$?
+          set -e
+          echo "netlify exit code: $NETLIFY_EXIT"
+          echo "--- netlify stdout (netlify-output.json) ---"
+          sed -n '1,200p' netlify-output.json || true
+          echo "--- netlify stderr (netlify-stderr.log) ---"
+          sed -n '1,200p' netlify-stderr.log || true
+          # Try to extract a preview URL from JSON (if JSON present)
+          PREVIEW_URL=$(jq -r '.url // .deploy_url // .deploy_ssl_url // .site_url // empty' netlify-output.json 2>/dev/null || true)
           if [ -n "$PREVIEW_URL" ]; then
-            echo "Preview URL: $PREVIEW_URL"
             echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
-            # add to workflow summary for easy access
             echo "### Netlify Draft Deploy" >> $GITHUB_STEP_SUMMARY || true
             echo "Preview URL: $PREVIEW_URL" >> $GITHUB_STEP_SUMMARY || true
+            echo "Preview URL: $PREVIEW_URL"
+            # succeed even if netlify CLI returned a non-zero exit code, because we have a preview URL
+            exit 0
           else
             echo "No preview URL found in netlify output." >&2
+            # surface netlify's exit code if available
+            if [ -s netlify-stderr.log ]; then
+              cat netlify-stderr.log >&2 || true
+            fi
+            exit 1
           fi
 
       - name: Show preview URL
         run: |
           echo "Draft deploy preview URL: ${{ steps.deploy.outputs.preview_url }}"
+
+      - name: Upload Netlify logs (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-logs
+          path: |
+            netlify-output.json
+            netlify-stderr.log

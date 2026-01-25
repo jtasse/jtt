@@ -5,8 +5,8 @@
   command = "npm run build"
   publish = "dist"
   # Only build if commit message contains [publish] - saves credits during development
-  # Use double-quoted regex to avoid single-quote conflicts when Netlify wraps the command.
-  ignore = "git log -1 --pretty=%B | grep -iq \"\\[publish\\]\" && exit 1 || exit 0"
+  # Use a separate script to avoid quoting/escaping issues when Netlify wraps inline commands.
+  ignore = "sh ./netlify-ignore.sh"
 
 [build.environment]
   NODE_VERSION = "20"
