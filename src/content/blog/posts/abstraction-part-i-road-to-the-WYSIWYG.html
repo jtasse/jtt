@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head>
+<!doctype html>
+<html lang="en">
+	<head>
 		<script>
 			;(function () {
 				const orig = MutationObserver.prototype.observe
@@ -18,27 +20,57 @@
 				}
 			})()
 		</script>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<title>Abstraction—Part I: Road to the WYSIWYG</title>
-		<meta name="description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<link rel="canonical" href="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html">
-		<link rel="image_src" href="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
+		<meta
+			name="description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<link
+			rel="canonical"
+			href="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html"
+		/>
+		<link
+			rel="image_src"
+			href="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
 
 		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="article">
-		<meta property="og:title" content="Abstraction—Part I: Road to the WYSIWYG">
-		<meta property="og:description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<meta property="og:image" content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
-		<meta property="og:url" content="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html">
-		<meta property="og:site_name" content="James Tasse">
+		<meta property="og:type" content="article" />
+		<meta
+			property="og:title"
+			content="Abstraction—Part I: Road to the WYSIWYG"
+		/>
+		<meta
+			property="og:description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<meta
+			property="og:image"
+			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
+		<meta
+			property="og:url"
+			content="https://jamestasse.tech/blog/posts/abstraction-part-i-road-to-the-WYSIWYG.html"
+		/>
+		<meta property="og:site_name" content="James Tasse" />
 
 		<!-- Twitter -->
-		<meta name="twitter:card" content="summary_large_image">
-		<meta name="twitter:title" content="Abstraction—Part I: Road to the WYSIWYG">
-		<meta name="twitter:description" content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…">
-		<meta name="twitter:image" content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg">
-		<link rel="stylesheet" href="/src/content/blog/blog.css">
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta
+			name="twitter:title"
+			content="Abstraction—Part I: Road to the WYSIWYG"
+		/>
+		<meta
+			name="twitter:description"
+			content="*Karen Thacker was looking at a Xerox Alto personal computer, which her husband Chuck had designed. The machine was running Bravo, a program that Chuck’s Xerox PARC colleagues Charles Simonyi and But…"
+		/>
+		<meta
+			name="twitter:image"
+			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+		/>
+		<link rel="stylesheet" href="/src/content/blog/blog.css" />
 		<script src="/src/content/blog/blog.js" defer=""></script>
 	</head>
 
@@ -63,7 +95,9 @@
 								Simonyi and Butler Lampson had created in 1974 to help users
 								prepare documents electronically. Karen turned to her husband
 								and said, “You mean,
-								<a href="https://en.wikipedia.org/wiki/WYSIWYG">what I see is what I get?</a>
+								<a href="https://en.wikipedia.org/wiki/WYSIWYG"
+									>what I see is what I get?</a
+								>
 								”. Although the first person pronoun ‘I’ was later replaced with
 								‘Y’ (giving us What <strong>You</strong> See is What
 								<strong>You</strong> Get), Karen had described the application's
@@ -108,8 +142,12 @@
 					<p>
 						Well, there were *typewriters* of course, going all the way back to
 						1874. Then in 1964 IBM released the
-						<a href="https://www.historyofinformation.com/detail.php?id=819">Magnetic Tape/Selectric Typewriter (MT/ST)</a>, which was the
-						<a href="https://en.wikipedia.org/wiki/IBM_MT/ST">first system marketed as a Word Processor</a>. The MT/ST allowed the user to edit text without having to retype
+						<a href="https://www.historyofinformation.com/detail.php?id=819"
+							>Magnetic Tape/Selectric Typewriter (MT/ST)</a
+						>, which was the
+						<a href="https://en.wikipedia.org/wiki/IBM_MT/ST"
+							>first system marketed as a Word Processor</a
+						>. The MT/ST allowed the user to edit text without having to retype
 						a document, which was cool, but not quite as cool as this ad that
 						Jim Henson (yes, <em>that</em> Jim Henson) produced for the machine
 						in 1967:
@@ -119,22 +157,35 @@
 						<div style="flex: 1"></div>
 
 						<div class="embed embed-full">
-							<iframe width="560" height="315" src="https://www.youtube.com/embed/_IZw2CoYztk" title="MT/ST ad" frameborder="0" allow="
+							<iframe
+								width="560"
+								height="315"
+								src="https://www.youtube.com/embed/_IZw2CoYztk"
+								title="MT/ST ad"
+								frameborder="0"
+								allow="
 									accelerometer;
 									autoplay;
 									clipboard-write;
 									encrypted-media;
 									gyroscope;
 									picture-in-picture;
-								" allowfullscreen=""></iframe>
+								"
+								allowfullscreen=""
+							></iframe>
 						</div>
 					</div>
 
 					<p>
 						There were also mainframe editors like TECO, QED, and ED. The
-						<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)">Wikipedia article for TECO</a>
+						<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)"
+							>Wikipedia article for TECO</a
+						>
 						(a precursor to the
-						<a href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS">EMACS</a>
+						<a
+							href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS"
+							>EMACS</a
+						>
 						editor) uses the following example to illustrate what it would have
 						been like to edit a program written in C using the TECO editor:
 					</p>
@@ -155,7 +206,9 @@ int main(int argc, char **argv)
 						"Goodbye":
 					</p>
 
-					<pre class="teco"><code><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>
+					<pre
+						class="teco"
+					><code><span style="color: green;">! TECO session (change “Hello” → “Goodbye”) !</span>
 *EBhello.c$$
 *P$$
 *SHello$0TT$$
@@ -166,7 +219,10 @@ int main(int argc, char **argv)
 					<p>To quote a ScienceBlogs post from 2006:</p>
 					<blockquote>
 						“...it's got the most god-awful hideous syntax ever imagined”.
-						<br>—<a href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"><em>Worlds Greatest Pathological Language: TECO</em>, goodmath</a>
+						<br />—<a
+							href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"
+							><em>Worlds Greatest Pathological Language: TECO</em>, goodmath</a
+						>
 					</blockquote>
 
 					<p></p>
@@ -180,7 +236,9 @@ int main(int argc, char **argv)
 					<blockquote>
 						“Syntax refers to the structural rules of a language”.
 
-						<br>—<a href="https://codefacture.com/blog/what-is-syntax/"><em>What is Syntax</em>, Codefacture blog</a>
+						<br />—<a href="https://codefacture.com/blog/what-is-syntax/"
+							><em>What is Syntax</em>, Codefacture blog</a
+						>
 					</blockquote>
 					Human languages. Computer languages. Without syntax humans have only
 					words or fragmented thoughts. Machines have no instructions. Or at
@@ -237,8 +295,10 @@ int main(int argc, char **argv)
 
 					<p>
 						Can we just take a moment to appreciate
-						<em>how the heck interacting with a computer got from this to #@!$ing
-							TikTok</em>?
+						<em
+							>how the heck interacting with a computer got from this to #@!$ing
+							TikTok</em
+						>?
 					</p>
 
 					<h2 id="abstraction">Abstraction</h2>
@@ -249,7 +309,10 @@ int main(int argc, char **argv)
 					<blockquote>
 						“In software, an abstraction provides access while hiding details
 						that otherwise might make access more challenging.”
-						<br>—<a href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"><em>Abstraction_(computer_science)</em>, Wikipedia</a>
+						<br />—<a
+							href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"
+							><em>Abstraction_(computer_science)</em>, Wikipedia</a
+						>
 					</blockquote>
 					<p>
 						This is for real one of the most elegant statements I have ever read
@@ -262,19 +325,17 @@ int main(int argc, char **argv)
 					computers (or more likely, one giant computer) like this every day.
 					It’s no wonder they wanted a better way! And thus the first assemblers
 					(precursors to Assembly language) appeared in the late 1940s.
-					<p></p>
-					In Assembly language, instead of having to input 2 bytes like
-					<code>10111000 00000001</code>, you could now provide the much easier
-					to read instruction of *<code>mov eax, 1</code>.
-					<p></p>
+					<p>
+						In Assembly language, instead of having to input 2 bytes like
+						<code>10111000 00000001</code>, you could now provide the much
+						easier to read instruction of *<code>mov eax, 1</code>.
+					</p>
 					<blockquote>
 						*<strong>NOTE</strong> this and other related examples are a bit
 						anachronistic in that they show encodings for 80386 architecture
 						(common in the 80s). Earlier machines used different encodings and
 						register models.
 					</blockquote>
-
-					<p></p>
 					<p>
 						I know, it's still quite different from the English translation,
 						which again is:
@@ -296,9 +357,7 @@ int main(int argc, char **argv)
 						Add a 32-bit immediate constant to the value in register
 						<code>EAX</code>, and store the result back in <code>EAX</code>.
 					</blockquote>
-					<p></p>
-					In Assembly this becomes <code>add eax, 2</code>.
-					<p></p>
+					<p>In Assembly this becomes <code>add eax, 2</code>.</p>
 					<h2 id="next-layer">And the Next Layer</h2>
 					<p>
 						All right, so we’re no longer inputting binary, but we’re still
@@ -308,7 +367,9 @@ int main(int argc, char **argv)
 					</p>
 					<p>
 						Although there were earlier high-level languages (notably
-						<a href="https://en.wikipedia.org/wiki/Plankalk%C3%BCl">Plankalkül</a>),
+						<a href="https://en.wikipedia.org/wiki/Plankalk%C3%BCl"
+							>Plankalkül</a
+						>),
 						<a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a> entered
 						the scene around 1957 and was the first widely used *high-level
 						language.
@@ -353,13 +414,23 @@ END
 								High‑level language - FORTRAN <small>(intent)</small>
 							</div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
 							<div class="step">*Assembly <small>(meaning)</small></div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
@@ -413,13 +484,23 @@ END
 								High‑level language <small>(intent)</small>
 							</div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
 							<div class="step">Assembly <small>(meaning)</small></div>
 							<div class="arrow" aria-hidden="true">
-								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+								<svg
+									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									focusable="false"
+								>
 									<path d="M12 6l-6 6h4v6h4v-6h4z"></path>
 								</svg>
 							</div>
@@ -556,14 +637,22 @@ END
 					<p>I present Orbital’s “The Box” (starring Tilda Swinton):</p>
 					<div class="video-wrap">
 						<div class="embed embed-full">
-							<iframe src="https://www.youtube.com/embed/qddG0iUSax4" title="Orbital - The Box" width="560" height="315" frameborder="0" allow="
+							<iframe
+								src="https://www.youtube.com/embed/qddG0iUSax4"
+								title="Orbital - The Box"
+								width="560"
+								height="315"
+								frameborder="0"
+								allow="
 									accelerometer;
 									autoplay;
 									clipboard-write;
 									encrypted-media;
 									gyroscope;
 									picture-in-picture;
-								" allowfullscreen=""></iframe>
+								"
+								allowfullscreen=""
+							></iframe>
 						</div>
 
 						<p class="thanks">Thanks for reading.</p>
@@ -575,47 +664,77 @@ END
 							<li>GitHub Copilot (fact-checking)</li>
 							<li>Gemini (fact-checking)</li>
 							<li>
-								<a href="https://archive.nytimes.com/bits.blogs.nytimes.com/2007/10/18/the-real-history-of-wysiwyg/">History of WYSIWYG</a>
+								<a
+									href="https://archive.nytimes.com/bits.blogs.nytimes.com/2007/10/18/the-real-history-of-wysiwyg/"
+									>History of WYSIWYG</a
+								>
 							</li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/Bravo_(editor)">Bravo (editor)</a>
+								<a href="https://en.wikipedia.org/wiki/Bravo_(editor)"
+									>Bravo (editor)</a
+								>
 							</li>
 							<li>
-								<a href="https://www.youtube.com/watch?v=390hhDkiJFM">Xerox Alto Bravo Demo</a>
+								<a href="https://www.youtube.com/watch?v=390hhDkiJFM"
+									>Xerox Alto Bravo Demo</a
+								>
 							</li>
 							<li>
-								<a href="https://stackoverflow.com/questions/466790/assembly-code-vs-machine-code-vs-object-code">Assembly Code vs Machine Code vs Object Code</a>
+								<a
+									href="https://stackoverflow.com/questions/466790/assembly-code-vs-machine-code-vs-object-code"
+									>Assembly Code vs Machine Code vs Object Code</a
+								>
 							</li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/Syntax_(programming_languages)">Syntax (Programming Languages)</a>
+								<a
+									href="https://en.wikipedia.org/wiki/Syntax_(programming_languages)"
+									>Syntax (Programming Languages)</a
+								>
 							</li>
 							<li><a href="https://en.wikipedia.org/wiki/Opcode">Opcode</a></li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)">Abstraction</a>
+								<a
+									href="https://en.wikipedia.org/wiki/Abstraction_(computer_science)"
+									>Abstraction</a
+								>
 							</li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/Typewriter">Typewriter</a>
+								<a href="https://en.wikipedia.org/wiki/Typewriter"
+									>Typewriter</a
+								>
 							</li>
 							<li>
 								<a href="https://en.wikipedia.org/wiki/IBM_MT/ST">IBM MT/ST</a>
 							</li>
 							<li>
-								<a href="https://www.youtube.com/watch?v=_IZw2CoYztk">MT/ST "Paperwork Explosion" ad</a>
+								<a href="https://www.youtube.com/watch?v=_IZw2CoYztk"
+									>MT/ST "Paperwork Explosion" ad</a
+								>
 							</li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)">TECO</a>
+								<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)"
+									>TECO</a
+								>
 							</li>
 							<li>
-								<a href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1">Worlds Greatest Pathological Language: TECO</a>
+								<a
+									href="https://scienceblogs.com/goodmath/2006/09/22/worlds-greatest-pathological-l-1"
+									>Worlds Greatest Pathological Language: TECO</a
+								>
 							</li>
 							<li>
-								<a href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS">TECO EMACS (1976-1996)</a>
+								<a
+									href="https://softwarepreservation.computerhistory.org/emacs/?utm_source=chatgpt.com#EMACS"
+									>TECO EMACS (1976-1996)</a
+								>
 							</li>
 							<li>
 								<a href="https://en.wikipedia.org/wiki/Fortran">FORTRAN</a>
 							</li>
 							<li>
-								<a href="https://codefacture.com/blog/what-is-syntax/">What is syntax</a>
+								<a href="https://codefacture.com/blog/what-is-syntax/"
+									>What is syntax</a
+								>
 							</li>
 							<li><a href="https://en.wikipedia.org/wiki/BCPL">BCPL</a></li>
 							<li>
@@ -626,6 +745,5 @@ END
 				</article>
 			</main>
 		</div>
-	
-
-</body></html>
+	</body>
+</html>

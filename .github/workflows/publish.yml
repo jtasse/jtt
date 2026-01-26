@@ -1,0 +1,41 @@
+name: Publish to Netlify (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish (branch or commit)"
+        required: true
+        default: "main"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install netlify-cli
+        run: npm install -g netlify-cli
+
+      - name: Publish to Netlify (--prod)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          set -euo pipefail
+          echo "Publishing ${{ github.event.inputs.ref }} to Netlify (production)..."
+          netlify deploy --dir=dist --site="$NETLIFY_SITE_ID" --prod --message="Prod publish from ${{ github.event.inputs.ref }}"
