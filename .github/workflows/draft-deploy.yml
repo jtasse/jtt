@@ -100,17 +100,34 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const sha = process.env.GITHUB_SHA || github.context.sha
-            const owner = github.context.repo.owner
-            const repo = github.context.repo.repo
-            const res = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha })
-            if (res.data && res.data.length > 0) {
-              const pr = res.data[0]
-              core.setOutput('pr_number', String(pr.number))
-              console.log('Found PR #', pr.number)
+            // Determine commit SHA and repository owner/name robustly
+            const sha = process.env.GITHUB_SHA || (typeof context !== 'undefined' && context.sha) || ''
+            let owner, repo
+            const repoFull = process.env.GITHUB_REPOSITORY || (typeof context !== 'undefined' && context.repo && `${context.repo.owner}/${context.repo.repo}`)
+            if (repoFull) {
+              const parts = repoFull.split('/')
+              owner = parts[0]
+              repo = parts[1]
+            }
+
+            if (!owner || !repo) {
+              console.log('No repo context available; skipping PR lookup')
+              if (typeof core !== 'undefined' && core.setOutput) core.setOutput('pr_number', '')
             } else {
-              console.log('No PR associated with this commit')
-              core.setOutput('pr_number', '')
+              try {
+                const res = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha })
+                if (res && res.data && res.data.length > 0) {
+                  const pr = res.data[0]
+                  if (typeof core !== 'undefined' && core.setOutput) core.setOutput('pr_number', String(pr.number))
+                  console.log('Found PR #', pr.number)
+                } else {
+                  console.log('No PR associated with this commit')
+                  if (typeof core !== 'undefined' && core.setOutput) core.setOutput('pr_number', '')
+                }
+              } catch (err) {
+                console.log('Error while looking up PR:', err.message || err)
+                if (typeof core !== 'undefined' && core.setOutput) core.setOutput('pr_number', '')
+              }
             }
 
       - name: Post preview URL as PR comment
