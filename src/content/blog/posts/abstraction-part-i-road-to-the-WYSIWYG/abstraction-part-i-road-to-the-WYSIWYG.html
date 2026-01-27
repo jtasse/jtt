@@ -1,25 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<script>
-			;(function () {
-				const orig = MutationObserver.prototype.observe
-				MutationObserver.prototype.observe = function (target, options) {
-					try {
-						if (!(target && target.nodeType === 1)) {
-							console.warn(
-								"Ignored MutationObserver.observe with non-Node target",
-								target,
-							)
-							return
-						}
-					} catch (e) {
-						return
-					}
-					return orig.call(this, target, options)
-				}
-			})()
-		</script>
+		<script src="./abstraction-part-i.js"></script>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<title>Abstraction—Part I: Road to the WYSIWYG</title>
@@ -33,7 +15,7 @@
 		/>
 		<link
 			rel="image_src"
-			href="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+			href="/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
 		/>
 
 		<!-- Open Graph / Facebook -->
@@ -48,7 +30,7 @@
 		/>
 		<meta
 			property="og:image"
-			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+			content="/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
 		/>
 		<meta
 			property="og:url"
@@ -68,10 +50,10 @@
 		/>
 		<meta
 			name="twitter:image"
-			content="https://jamestasse.tech/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+			content="/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
 		/>
-		<link rel="stylesheet" href="/src/content/blog/blog.css" />
-		<script src="/src/content/blog/blog.js" defer=""></script>
+		<link rel="stylesheet" href="../../blog.css" />
+		<script src="../../blog.js" defer></script>
 	</head>
 
 	<body>
@@ -98,7 +80,7 @@
 								<a href="https://en.wikipedia.org/wiki/WYSIWYG"
 									>what I see is what I get?</a
 								>
-								”. Although the first person pronoun ‘I’ was later replaced with
+								". Although the first person pronoun ‘I’ was later replaced with
 								‘Y’ (giving us What <strong>You</strong> See is What
 								<strong>You</strong> Get), Karen had described the application's
 								interface so succinctly that we still use her phrasing to talk
@@ -171,7 +153,7 @@
 									gyroscope;
 									picture-in-picture;
 								"
-								allowfullscreen=""
+								allowfullscreen
 							></iframe>
 						</div>
 					</div>
@@ -213,8 +195,7 @@ int main(int argc, char **argv)
 *P$$
 *SHello$0TT$$
 *-5DIGoodbye$0TT$$
-*EX$$
-</code></pre>
+*EX$$</code></pre>
 
 					<p>To quote a ScienceBlogs post from 2006:</p>
 					<blockquote>
@@ -651,7 +632,7 @@ END
 									gyroscope;
 									picture-in-picture;
 								"
-								allowfullscreen=""
+								allowfullscreen
 							></iframe>
 						</div>
 
@@ -712,8 +693,8 @@ END
 								>
 							</li>
 							<li>
-								<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)"
-									>TECO</a
+								<a href="https://en.wikipedia.org/wiki/TECO_(text_editor)">
+									TECO</a
 								>
 							</li>
 							<li>

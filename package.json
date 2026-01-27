@@ -21,7 +21,10 @@
     "lint:content:errors": "vale --config src/vale/.vale.ini --minAlertLevel error src/content/about src/content/blog src/content/portfolio",
     "lint:sync": "vale sync --config src/vale/.vale.ini",
     "check:html": "node scripts/check-html.cjs",
-    "generate:og": "node scripts/generate-og-meta.js"
+    "generate:og": "node scripts/generate-og-meta.js",
+    "test:images": "node tests/check-image-links.test.cjs",
+    "test:links": "node tests/check-links.test.cjs",
+    "test:links-images": "npm run test:images && npm run test:links"
   },
   "keywords": [],
   "author": "",

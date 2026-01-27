@@ -473,6 +473,51 @@ router.onRouteChange((rawRoute) => {
 			} else {
 				centerAndOpenLabel(labelManager, "Blog")
 			}
+		} else if (
+			/^\/[a-z0-9-]+$/.test(route) &&
+			!["/about", "/bio", "/blog", "/portfolio", "/contact", "/"].includes(
+				route,
+			)
+		) {
+			// Single-segment route like `/em-dashing` — treat as blog post slug
+			const postRoute = `/blog/posts${route}`
+			if (controls) controls.enabled = false
+			// Reuse existing blog post flow by delegating to showBlogPost with the
+			// mapped `/blog/posts/<slug>` route.
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "blog")
+					resetPyramidToHome(labelManager)
+					animatePyramid(labelManager, true, "blog")
+					showBlogPost(postRoute)
+				}, 1300)
+			} else {
+				const isAtTop = pyramidGroup.position.y >= 1.5
+				if (!isAtTop) {
+					animatePyramid(labelManager, true, "blog", () => {
+						startLoading()
+						setTimeout(async () => {
+							await showBlogPost(postRoute)
+							stopLoading()
+						}, 500)
+					})
+				} else {
+					spinPyramidToSection(
+						"blog",
+						() => {
+							startLoading()
+							setTimeout(async () => {
+								await showBlogPost(postRoute)
+								stopLoading()
+							}, 600)
+						},
+						600,
+					)
+				}
+			}
+			window.centeredLabelName = "Blog"
 		} else if (route.includes("/blog/posts/")) {
 			if (controls) controls.enabled = false
 			// Handle individual blog posts - keep pyramid at top but don't reload content

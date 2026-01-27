@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<script src="./docs-as-tests-part-ii-the-how.js"></script>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Docs as Tests: Part II — The How - James.Tasse</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="../../blog.css" />
+		<script src="../../blog.js" defer></script>
+
+		<meta name="keywords" content="docs-as-tests" />
+		<meta
+			name="description"
+			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
+		/>
+		<link
+			rel="canonical"
+			href="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html"
+		/>
+		<link
+			rel="image_src"
+			href="/src/content/blog/nav-images/doc_engineer_wide.webp"
+		/>
+		<meta property="og:type" content="article" />
+		<meta
+			property="og:title"
+			content="Docs as Tests: Part II — The How - James.Tasse"
+		/>
+		<meta
+			property="og:description"
+			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
+		/>
+		<meta
+			property="og:image"
+			content="/src/content/blog/nav-images/doc_engineer_wide.webp"
+		/>
+		<meta
+			property="og:url"
+			content="https://jamestasse.tech/blog/posts/docs-as-tests-part-ii-the-how.html"
+		/>
+		<meta property="og:site_name" content="James Tasse" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta
+			name="twitter:title"
+			content="Docs as Tests: Part II — The How - James.Tasse"
+		/>
+		<meta
+			name="twitter:description"
+			content="This is part two in a series of posts describing the value and implementation of Docs as Tests."
+		/>
+		<meta
+			name="twitter:image"
+			content="/src/content/blog/nav-images/doc_engineer_wide.webp"
+		/>
+	</head>
+	<body>
+		<div id="content" class="container">
+			<main class="blog-content single-post">
+				<article>
+					<div class="post-image">
+						<img
+							src="/src/content/blog/nav-images/doc_engineer_wide.webp"
+							alt="Docs as Tests: Part II — The How"
+						/>
+					</div>
+
+					<h1>Docs as Tests: Part II—The How</h1>
+					<div class="post-meta">
+						<time datetime="2025-06-02">June 2, 2025</time> | James Tasse | 8
+						min read
+					</div>
+
+					<blockquote>
+						<p>
+							This is part two in a series of posts describing the value and
+							implementation of
+							<a href="https://www.docsastests.com/">Docs as Tests</a>.
+						</p>
+					</blockquote>
+
+					<!-- full article content pulled from live site -->
+					<nav class="toc">
+						<p class="toc-heading">Contents</p>
+						<ol>
+							<li>
+								<a href="#previously-on-docs-as-tests"
+									>Previously On Docs as Tests</a
+								>
+							</li>
+							<li><a href="#intended-audience">Intended Audience</a></li>
+							<li><a href="#technical-approach">Technical Approach</a></li>
+							<li><a href="#goals-for-this-post">Goals for this post</a></li>
+							<li><a href="#where-are-we">Where Are We?</a></li>
+							<li><a href="#prerequisites">Prerequisites</a></li>
+							<li>
+								<a href="#structure-of-the-docsastests-demo-project"
+									>Structure of the docsastests-demo project</a
+								>
+							</li>
+							<li><a href="#running-the-tests">Running the tests</a></li>
+							<li><a href="#what-now">What now?</a></li>
+						</ol>
+					</nav>
+
+					<p class="edit-note">
+						<strong>EDIT June 30, 2025</strong>: I have created a
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+							target="_blank"
+							rel="noreferrer noopener"
+							>companion video</a
+						>
+						that illustrates the points of this post (and more). Just want to
+						see how to set up and run Docs as Tests? Use
+						<a
+							href="https://www.youtube.com/watch?v=yu0_Xme9lEI&amp;t=717s"
+							target="_blank"
+							rel="noreferrer noopener"
+							>this link</a
+						>
+						to jump straight there.
+					</p>
+
+					<p>
+						My last post was very much focused on the business value of Docs as
+						Tests and [hopefully] building some excitement in the minds of
+						technical writers. But in this one my goal is to provide enough
+						technical detail to whet the appetite of more technical folks (think
+						developers, DocOps, etc.) while still bringing along those of you
+						tech writers (or documentarians, if you prefer) that dared to dream
+						after seeing the demo from last time.
+					</p>
+					<section>
+						<h2 id="intended-audience">Intended Audience</h2>
+						<p>
+							By the way, it's important I acknowledge that some documentarians
+							write code and some software engineers write docs—I will do my
+							best to meet you where you are!
+						</p>
+					</section>
+					<section>
+						<h2 id="technical-approach">Technical Approach</h2>
+						<p>
+							I fully admit that trying to create an instructional technical
+							post for such a diverse set of readers is a bit like threading a
+							needle, but I am going to try anyway. So I'll start with some
+							suggestions as you read this post:
+						</p>
+						<ul>
+							<li>
+								For folks with less technical experience: this might feel a bit
+								like onboarding at your last job (but hopefully more fun!), as I
+								am going to introduce you to the tools, commands, etc. that
+								you'll need to run the demo from the
+								<a href="/blog/posts/docs-as-tests-on-a-high-level"
+									>last post</a
+								>
+								(and more) yourself.
+							</li>
+							<li>
+								For folks with more technical experience: I'll try to structure
+								things so you can easily skip over sections you might already
+								know (for example - installing VS Code).
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h2 id="goals-for-this-post">Goals for this post</h2>
+						<ol>
+							<li>
+								Discuss where the testing we're doing fits with automated
+								software tests
+							</li>
+							<li>Install prerequisites</li>
+							<li>Run tests</li>
+						</ol>
+					</section>
+					<section>
+						<h2 id="where-are-we">Where Are We?</h2>
+						<p>
+							Before getting into the technical stuff I want to paint a picture
+							of where Docs as Tests lives in the software development and
+							documentation space. If you have any familiarity with Continuous
+							Integration / Continuous Delivery (or
+							<a href="https://about.gitlab.com/topics/ci-cd/">CI/CD</a>),
+							you've probably seen a diagram like the one below.
+						</p>
+						<p>
+							CI/CD Diagram (click to collapse/expand)
+							<img
+								src="/src/content/blog/posts/docs-as-tests-part-ii-the-how/images/dat2-cicd-diagram.png?w=1024"
+								alt="CI/CD Diagram"
+							/>
+						</p>
+					</section>
+					<section>
+						<h2 id="prerequisites">Prerequisites</h2>
+						<h3>Tools</h3>
+						<ul>
+							<li><a href="https://git-scm.com/downloads">Git</a></li>
+							<li>
+								<a href="https://code.visualstudio.com/download">VS Code</a>
+							</li>
+							<li><a href="https://nodejs.org/en/download">Node.js</a></li>
+						</ul>
+						<p>
+							I can vouch for Node.js major version 22 working fine with the
+							tools we will use in these tests.
+						</p>
+						<h3>Code</h3>
+						<p>Clone the companion repo:</p>
+						<pre><code>git clone https://github.com/jtasse/docsastests-demo.git</code></pre>
+					</section>
+					<section>
+						<h2 id="running-the-tests">Running the tests</h2>
+						<h3>UI Test (Doc Detective)</h3>
+						<p>
+							In this test we're going to use Doc Detective to run the test
+							described in the demo portion of the previous blog post. After
+							confirming that the test fails, we're going to make the required
+							change in our docs and run the tests again to verify the issue is
+							resolved.
+						</p>
+						<p>Start the product server:</p>
+						<pre><code>node server.js</code></pre>
+						<p>Then run the Doc Detective test:</p>
+						<pre><code>npx doc-detective --input readthedocs/docs/source/account-setup.md</code></pre>
+					</section>
+					<section>
+						<h2 id="making-and-verifying-the-fix">
+							Making &amp; Verifying the Fix
+						</h2>
+						<p>
+							If Doc Detective finds a mismatch (for example the button text
+							changed from "Create Account" to "Sign Up") then update the docs
+							and run the test again. The post walks through a sample fix and
+							confirms the tests pass thereafter.
+						</p>
+					</section>
+					<section>
+						<h2 id="api-test">API Test (markdown-doctest)</h2>
+						<p>
+							This section demonstrates using
+							<a href="https://github.com/Widdershin/markdown-doctest"
+								>markdown-doctest</a
+							>
+							to validate code snippets. The post includes an example where a
+							typo in a URL (`todoz` vs `todos`) produces a failing test, and
+							shows how fixing the snippet resolves the failure.
+						</p>
+					</section>
+					<section>
+						<h2 id="what-now">What now?</h2>
+						<p>
+							Since you've now tested a UI and API using different tools, you
+							can officially say you have Docs as Tests experience in those
+							areas. Follow me on
+							<a href="https://www.linkedin.com/in/jtasse/">LinkedIn</a> if
+							you'd like to be notified when I publish a video or another blog
+							post.
+						</p>
+						<p>
+							<strong>EDIT June 30, 2025:</strong> I have created a
+							<a href="https://www.youtube.com/watch?v=yu0_Xme9lEI"
+								>companion video</a
+							>
+							that illustrates the points of this post (and more).
+						</p>
+					</section>
+					<p class="additional-links">
+						-
+						<a
+							href="https://jamestasse.tech/blog/posts/docs-as-tests-on-a-high-level"
+							>Previously On Docs as Tests</a
+						>
+					</p>
+					<figure class="hero">
+						<img
+							src="/src/content/blog/nav-images/doc_engineer_wide.webp"
+							alt="Docs as Tests: Part II — The How"
+						/>
+					</figure>
+				</article>
+			</main>
+		</div>
+	</body>
+</html>
