@@ -1,51 +1,56 @@
-<!DOCTYPE html><html lang="en"><head>
-		<script>
-			;(function () {
-				const orig = MutationObserver.prototype.observe
-				MutationObserver.prototype.observe = function (target, options) {
-					try {
-						if (!(target && target.nodeType === 1)) {
-							console.warn(
-								"Ignored MutationObserver.observe with non-Node target",
-								target,
-							)
-							return
-						}
-					} catch (e) {
-						return
-					}
-					return orig.call(this, target, options)
-				}
-			})()
-		</script>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en">
+	<head>
+		<script src="./git-and-backups.js"></script>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Git and Backups - James Tasse</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-		<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="/src/content/blog/blog.css">
-		<script src="/src/content/blog/blog.js" defer=""></script>
-		<meta name="description" content="Contents">
-		<link rel="canonical" href="https://jamestasse.tech/blog/posts/git-and-backups.html">
-		<link rel="image_src" href="/src/content/blog/posts/post-images/git-and-backups/git-backups-featured.png">
-		<meta property="og:type" content="article">
-		<meta property="og:title" content="Git and Backups - James Tasse">
-		<meta property="og:description" content="Contents">
-		<meta property="og:image" content="/src/content/blog/posts/post-images/git-and-backups/git-backups-featured.png">
-		<meta property="og:url" content="https://jamestasse.tech/blog/posts/git-and-backups.html">
-		<meta property="og:site_name" content="James Tasse">
-		<meta name="twitter:card" content="summary_large_image">
-		<meta name="twitter:title" content="Git and Backups - James Tasse">
-		<meta name="twitter:description" content="Contents">
-		<meta name="twitter:image" content="/src/content/blog/posts/post-images/git-and-backups/git-backups-featured.png">
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;family=Helvetica:wght@400..900&amp;display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="../../blog.css" />
+		<script src="../../blog.js" defer></script>
+		<meta name="description" content="Contents" />
+		<link
+			rel="canonical"
+			href="https://jamestasse.tech/blog/posts/git-and-backups.html"
+		/>
+		<link
+			rel="image_src"
+			href="/src/content/blog/nav-images/git-and-backups.webp"
+		/>
+		<meta property="og:type" content="article" />
+		<meta property="og:title" content="Git and Backups - James Tasse" />
+		<meta property="og:description" content="Contents" />
+		<meta
+			property="og:image"
+			content="/src/content/blog/nav-images/git-and-backups.webp"
+		/>
+		<meta
+			property="og:url"
+			content="https://jamestasse.tech/blog/posts/git-and-backups.html"
+		/>
+		<meta property="og:site_name" content="James Tasse" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Git and Backups - James Tasse" />
+		<meta name="twitter:description" content="Contents" />
+		<meta
+			name="twitter:image"
+			content="/src/content/blog/nav-images/git-and-backups.webp"
+		/>
 	</head>
 	<body>
 		<div id="content" class="container">
 			<main class="blog-content single-post">
 				<article>
 					<div class="post-image">
-						<img src="/src/content/blog/posts/post-images/git-and-backups/git-backups-featured.png" alt="Git and Backups">
+						<img
+							src="/src/content/blog/nav-images/git-and-backups.webp"
+							alt="Git and Backups"
+						/>
 					</div>
 
 					<h1>Git and Backups</h1>
@@ -60,7 +65,9 @@
 							<li><a href="#background">Background</a></li>
 							<li><a href="#gitting-gud">Gitting Gud</a></li>
 							<li>
-								<a href="#existing-local-backup-solutions">Existing Local Backup Solutions</a>
+								<a href="#existing-local-backup-solutions"
+									>Existing Local Backup Solutions</a
+								>
 							</li>
 							<li><a href="#this-backup-solution">This Backup Solution</a></li>
 						</ol>
@@ -75,13 +82,14 @@
 						(let's call it <em>infighting</em>) between various code assistants
 						(*glares at Copilot*) and the recurrence of some workspace troubles
 						that I have encountered over the years. So I decided that a backup
-						solution more robust than the *copy appropriate code folders to
-						backup folder* approach I've been doing for years was needed.
+						solution more robust than the
+						<em>copy appropriate code folders to backup folder</em> approach
+						I've been doing for years was needed.
 					</p>
 
 					<p>
 						On a related note, since I pivoted to technical writing full time in
-						2024; I've encountered a lot of folks that have been writing for
+						2024, I've encountered a lot of folks that have been writing for
 						years but have either been forced into the Docs as Code approach, or
 						just want to get more comfortable with it. I get you, and I think I
 						can help.
@@ -94,9 +102,11 @@
 					<p>
 						Before I get into the specifics of the backup solution, I wanted to
 						address the elephant in the room:
-						<strong>yes, if you're comfortable with the redundancy that git provides
+						<strong
+							>yes, if you're comfortable with the redundancy that git provides
 							when backing up your [pushed] code, then you don't need an
-							additional backup solution!</strong>
+							additional backup solution!</strong
+						>
 					</p>
 
 					<p>
@@ -128,8 +138,10 @@ git push origin main</code></pre>
 					<blockquote>
 						<p>
 							"The short version:
-							<strong>Copilot operates <em>inside</em> the editor's text
-								model</strong>, while tools like Claude Code and Gemini tend to operate
+							<strong
+								>Copilot operates <em>inside</em> the editor's text
+								model</strong
+							>, while tools like Claude Code and Gemini tend to operate
 							<em>around</em> it. That difference makes Copilot uniquely capable
 							of introducing destructive conflicts when you accept or reject
 							suggestions."
@@ -178,9 +190,14 @@ git push origin main</code></pre>
 					<p>
 						OK, I think we're finally past the caveats. The particulars of my
 						backup solution (I call it "ReactiveBackup") can be found at
-						<a href="https://github.com/jtasse/ReactiveBackup">https://github.com/jtasse/ReactiveBackup</a>
+						<a href="https://github.com/jtasse/ReactiveBackup"
+							>https://github.com/jtasse/ReactiveBackup</a
+						>
 						and its
-						<a href="https://github.com/jtasse/ReactiveBackup/blob/main/README.md">README</a>
+						<a
+							href="https://github.com/jtasse/ReactiveBackup/blob/main/README.md"
+							>README</a
+						>
 						file.
 					</p>
 
@@ -197,16 +214,18 @@ git push origin main</code></pre>
 
 					<p>
 						I hope you like the solution and find it useful. If you find bugs (I
-						am sure there are bug<strong>s</strong>—after all this thing was the
-						product of a few vibe coding sessions) please report them at
-						<a href="https://github.com/jtasse/ReactiveBackup/issues" target="_blank" rel="noreferrer noopener">https://github.com/jtasse/ReactiveBackup/issues</a>. Otherwise, you're welcome to reach out to me with
+						am sure there are bugs—after all this thing was the product of a few
+						vibe coding sessions) please report them at
+						<a
+							href="https://github.com/jtasse/ReactiveBackup/issues"
+							target="_blank"
+							rel="noreferrer noopener"
+							>https://github.com/jtasse/ReactiveBackup/issues</a
+						>. Otherwise, you're welcome to reach out to me with
 						questions/comments.
 					</p>
-
-					<p>Thanks!</p>
 				</article>
 			</main>
 		</div>
-	
-
-</body></html>
+	</body>
+</html>
