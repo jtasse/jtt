@@ -2,6 +2,63 @@
 <!-- Build: 2026-01-20T23:15:00Z v3 -->
 <html lang="en">
 	<head>
+		<script>
+			;(function () {
+				try {
+					if (window.__MO_SAFE_PATCH) return
+					window.__MO_SAFE_PATCH = true
+					const orig = MutationObserver.prototype.observe
+					MutationObserver.prototype.observe = function (target, opts) {
+						try {
+							if (target && typeof target === "object") {
+								if (typeof target.nodeType === "number") {
+									return orig.call(this, target, opts)
+								}
+								try {
+									if (target.document && target.document.documentElement) {
+										return orig.call(
+											this,
+											target.document.documentElement,
+											opts,
+										)
+									}
+								} catch (e) {}
+							}
+							console.warn(
+								"MO shim: skipping observe for non-Node target",
+								target,
+							)
+							return
+						} catch (e) {
+							try {
+								return orig.call(this, target, opts)
+							} catch (_) {
+								return
+							}
+						}
+					}
+				} catch (e) {}
+			})()
+			window.addEventListener(
+				"error",
+				function (ev) {
+					try {
+						if (
+							ev &&
+							ev.message &&
+							ev.message.indexOf(
+								"Failed to execute 'observe' on 'MutationObserver'",
+							) !== -1
+						) {
+							ev.stopImmediatePropagation && ev.stopImmediatePropagation()
+							ev.preventDefault && ev.preventDefault()
+							console.warn("Suppressed cross-realm MutationObserver TypeError")
+						}
+					} catch (e) {}
+				},
+				true,
+			)
+		</script>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<title>jamestasse.tech</title>
@@ -20,7 +77,6 @@
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://jamestasse.tech/" />
 		<meta name="twitter:card" content="summary_large_image" />
-		<link rel="stylesheet" href="/src/content/home/home.css" />
 		<link
 			rel="apple-touch-icon"
 			sizes="180x180"
@@ -60,6 +116,8 @@
 				window.location.href = "/old/index.html"
 			}
 		</script>
+		<script type="module" crossorigin src="/assets/index-8p3J0HnG.js"></script>
+		<link rel="stylesheet" crossorigin href="/assets/index-oO4tiVER.css" />
 	</head>
 	<body>
 		<div id="content"></div>
@@ -68,7 +126,6 @@
 		<footer id="site-footer" class="site-footer">
 			&copy; <span id="copyright-year"></span> James Tasse. All rights reserved.
 		</footer>
-
 		<script>
 			window.__indexHtmlLoaded = true
 			console.debug("[index.html] Page loaded at", new Date().toISOString())
@@ -86,6 +143,5 @@
 				console.error("[Unhandled promise rejection]", e.reason)
 			})
 		</script>
-		<script type="module" src="./src/main.js"></script>
 	</body>
 </html>
