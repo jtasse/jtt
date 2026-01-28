@@ -128,6 +128,68 @@
 										}, 250)
 									} catch (e) {}
 								})
+
+								// If the top-level location has a fragment, attempt to scroll the
+								// corresponding element inside the iframe. Also listen for hash
+								// changes and TOC clicks so fragments work when posts are rendered
+								// inside an iframe.
+								function tryScrollHashIntoIframe() {
+									try {
+										const hash = (location && location.hash) || ""
+										if (!hash) return
+										const id = hash.replace(/^#/, "")
+										try {
+											const idoc =
+												iframe.contentDocument || iframe.contentWindow.document
+											if (!idoc) return
+											const target =
+												idoc.getElementById(id) ||
+												idoc.querySelector(`[name="${id}"]`)
+											if (target) {
+												iframe.scrollIntoView({
+													behavior: "smooth",
+													block: "start",
+												})
+												setTimeout(() => {
+													try {
+														target.scrollIntoView({
+															behavior: "smooth",
+															block: "start",
+														})
+													} catch (e) {}
+												}, 50)
+											}
+										} catch (e) {
+											// ignore cross-origin or not-ready
+										}
+									} catch (e) {
+										console.debug("tryScrollHashIntoIframe error", e)
+									}
+								}
+
+								// Try once on load
+								tryScrollHashIntoIframe()
+
+								// Respond to future hash changes
+								window.addEventListener("hashchange", tryScrollHashIntoIframe)
+
+								// Intercept clicks on table-of-contents anchors in the top document
+								document.addEventListener("click", function (ev) {
+									try {
+										const a =
+											ev.target && ev.target.closest && ev.target.closest("a")
+										if (!a) return
+										if (!a.getAttribute) return
+										const href = a.getAttribute("href") || ""
+										if (!href.startsWith("#")) return
+										if (!(a.closest && a.closest(".post-toc"))) return
+										ev.preventDefault()
+										location.hash = href
+										tryScrollHashIntoIframe()
+									} catch (e) {
+										console.debug("TOC click handler error", e)
+									}
+								})
 							} catch (e) {
 								// Fallback to direct injection on error
 								container.innerHTML = main.innerHTML

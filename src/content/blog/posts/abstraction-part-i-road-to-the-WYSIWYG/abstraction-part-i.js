@@ -71,10 +71,10 @@
 
 			for (const url of candidates) {
 				try {
-					console.log("Attempting fetch:", url)
+					console.debug("Attempting fetch:", url)
 					if (statusEl) statusEl.textContent = "Trying " + url
 					const r = await fetch(url, { cache: "no-store" })
-					console.log("Fetch", url, "->", r.status)
+					console.debug("Fetch", url, "->", r.status)
 					if (!r.ok) continue
 					const txt = await r.text()
 					try {
@@ -102,13 +102,13 @@
 						})
 						return
 					} catch (parseErr) {
-						console.log("Parse failed for", url, parseErr)
+						console.debug("Parse failed for", url, parseErr)
 						container.innerHTML = txt
 						if (statusEl) statusEl.textContent = ""
 						return
 					}
 				} catch (err) {
-					console.log("Fetch error for", url, err)
+					console.debug("Fetch error for", url, err)
 					continue
 				}
 			}
