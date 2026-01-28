@@ -4,17 +4,31 @@
 		const orig = MutationObserver.prototype.observe
 		MutationObserver.prototype.observe = function (target, options) {
 			try {
-				if (!(target && target.nodeType === 1)) {
-					console.warn(
-						"Ignored MutationObserver.observe with non-Node target",
-						target,
-					)
+				if (target && typeof target === "object") {
+					if ("nodeType" in target && target.nodeType === 1) {
+						return orig.call(this, target, options)
+					}
+					// If an iframe/window-like object is passed, try to observe its documentElement
+					try {
+						if (target.document && target.document.documentElement) {
+							return orig.call(this, target.document.documentElement, options)
+						}
+					} catch (inner) {
+						// fall through
+					}
+				}
+				console.warn(
+					"Skipping MutationObserver.observe for non-Node target",
+					target,
+				)
+				return
+			} catch (e) {
+				try {
+					return orig.call(this, target, options)
+				} catch (_) {
 					return
 				}
-			} catch (e) {
-				return
 			}
-			return orig.call(this, target, options)
 		}
 	} catch (e) {
 		// environment doesn't expose MutationObserver or it's already broken
