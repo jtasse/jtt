@@ -248,6 +248,44 @@ try {
 			e,
 		)
 	}
+
+	// Also post-process inline scripts inside HTML files to replace optional catch
+	try {
+		const htmlWalk = (dir) => {
+			const ents = fs.readdirSync(dir, { withFileTypes: true })
+			for (const en of ents) {
+				const p = join(dir, en.name)
+				if (en.isDirectory()) {
+					htmlWalk(p)
+				} else if (en.isFile() && p.endsWith(".html")) {
+					try {
+						let content = fs.readFileSync(p, "utf8")
+						// Replace only inside inline <script>...</script> blocks
+						const newContent = content.replace(
+							/<script\b[^>]*>([\s\S]*?)<\/script>/gi,
+							(m, code) => {
+								if (!code || !/\bcatch\s*\{/.test(code)) return m
+								const patched = code.replace(/\bcatch\s*\{/g, "catch (e) {")
+								return m.replace(code, patched)
+							},
+						)
+						if (newContent !== content) {
+							fs.writeFileSync(p, newContent, "utf8")
+							console.info(`Patched optional catch in inline scripts in ${p}`)
+						}
+					} catch (err) {
+						console.warn(`Failed to post-process HTML file ${p}:`, err)
+					}
+				}
+			}
+		}
+		htmlWalk(join(root, "dist"))
+	} catch (e) {
+		console.warn(
+			"Failed to post-process HTML inline scripts for optional catch replacement:",
+			e,
+		)
+	}
 } catch (e) {
 	console.warn("Error while injecting client bundle into posts:", e)
 }
