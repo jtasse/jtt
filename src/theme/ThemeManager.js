@@ -45,7 +45,7 @@ export class ThemeManager {
 			// Initial check
 			this.updateVisibility(router.getCurrentRoute())
 		} else {
-			console.warn(
+			console.debug(
 				"[ThemeManager] Router not found, visibility updates disabled",
 			)
 		}

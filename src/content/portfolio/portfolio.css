@@ -36,8 +36,13 @@
 }
 
 .portfolio-page p a:hover {
-	color: var(--link-hover-color);
+	color: #ffffff; /* use white on hover like production */
 	text-shadow: var(--heading-shadow);
+}
+
+/* Ensure icon inside portfolio links inherits hover color */
+.portfolio-page p a:hover .external-link-icon {
+	color: #ffffff;
 }
 
 /* ORC Explanation - Highlight Style */

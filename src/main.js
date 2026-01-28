@@ -118,6 +118,78 @@ function updateMetaTags(route) {
 	document.title = config.title || defaultConfig.title
 }
 
+/*
+ * Enhance links that open in a new tab:
+ * - Ensure links inside `#post-article` (the canonical post) open in a new tab
+ *   except for table-of-contents anchors (href starting with '#').
+ * - Append a small external-link SVG icon to links with target="_blank".
+ * - Observe DOM changes so dynamically injected content (SPA) is handled.
+ */
+function decorateNewTabLinks(root = document) {
+	try {
+		const anchors = (root || document).querySelectorAll("a")
+		for (const a of anchors) {
+			// Skip if inside the post TOC
+			if (a.closest && a.closest(".post-toc")) continue
+
+			const href = a.getAttribute("href") || ""
+			// Keep internal fragment links as-is (TOC/internal anchors)
+			if (href.startsWith("#")) continue
+
+			// If this link is inside the abstraction post article, force new tab
+			const postArticle = document.querySelector("#post-article")
+			if (postArticle && postArticle.contains(a)) {
+				a.setAttribute("target", "_blank")
+				// Use noopener/noreferrer for security
+				a.setAttribute("rel", "noopener noreferrer")
+			}
+
+			// Add icon for any link that opens in a new tab (only once)
+			if (a.target === "_blank") {
+				// If an existing icon (static SVG) already exists, don't add another
+				if (a.querySelector && a.querySelector(".external-link-icon")) continue
+				if (a.dataset.externalIconAdded) continue
+				const span = document.createElement("span")
+				span.className = "external-link-icon"
+				span.setAttribute("aria-hidden", "true")
+				span.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" class="external-link-icon" height="14px" viewBox="0 -960 960 960" width="14px" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>
+				`
+				a.appendChild(span)
+				a.dataset.externalIconAdded = "true"
+			}
+		}
+	} catch (e) {
+		// Silently ignore errors in decoration to avoid affecting UX
+		console.debug("decorateNewTabLinks error", e)
+	}
+}
+
+// Initial run and mutation observer for SPA content
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", () =>
+		decorateNewTabLinks(document),
+	)
+} else {
+	decorateNewTabLinks(document)
+}
+
+try {
+	const observer = new MutationObserver((mutations) => {
+		for (const m of mutations) {
+			if (m.addedNodes && m.addedNodes.length) {
+				// Run decorator against added nodes to catch injected posts
+				for (const n of m.addedNodes) {
+					if (n.nodeType === 1) decorateNewTabLinks(n)
+				}
+			}
+		}
+	})
+	observer.observe(document.body, { childList: true, subtree: true })
+} catch (e) {
+	console.debug("New-tab link observer init failed", e)
+}
+
 // Hide debug logs in production
 if (import.meta.env.PROD) {
 	console.debug = () => {}
@@ -473,6 +545,51 @@ router.onRouteChange((rawRoute) => {
 			} else {
 				centerAndOpenLabel(labelManager, "Blog")
 			}
+		} else if (
+			/^\/[a-z0-9-]+$/.test(route) &&
+			!["/about", "/bio", "/blog", "/portfolio", "/contact", "/"].includes(
+				route,
+			)
+		) {
+			// Single-segment route like `/em-dashing` — treat as blog post slug
+			const postRoute = `/blog/posts${route}`
+			if (controls) controls.enabled = false
+			// Reuse existing blog post flow by delegating to showBlogPost with the
+			// mapped `/blog/posts/<slug>` route.
+			if (isOrcSceneActive()) {
+				hideAllPlanes()
+				morphFromOrcScene()
+				setTimeout(() => {
+					triggerHandPageTransition("orc-demo", "blog")
+					resetPyramidToHome(labelManager)
+					animatePyramid(labelManager, true, "blog")
+					showBlogPost(postRoute)
+				}, 1300)
+			} else {
+				const isAtTop = pyramidGroup.position.y >= 1.5
+				if (!isAtTop) {
+					animatePyramid(labelManager, true, "blog", () => {
+						startLoading()
+						setTimeout(async () => {
+							await showBlogPost(postRoute)
+							stopLoading()
+						}, 500)
+					})
+				} else {
+					spinPyramidToSection(
+						"blog",
+						() => {
+							startLoading()
+							setTimeout(async () => {
+								await showBlogPost(postRoute)
+								stopLoading()
+							}, 600)
+						},
+						600,
+					)
+				}
+			}
+			window.centeredLabelName = "Blog"
 		} else if (route.includes("/blog/posts/")) {
 			if (controls) controls.enabled = false
 			// Handle individual blog posts - keep pyramid at top but don't reload content

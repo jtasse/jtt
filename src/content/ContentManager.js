@@ -54,6 +54,62 @@ export function hideAllPlanes() {
 	if (controls) controls.enableZoom = true
 }
 
+// Scroll handling: when the location.hash changes, attempt to find the
+// anchor inside the injected content or inside any iframe used to render
+// the post and scroll it into view.
+function tryScrollFragmentIntoContent() {
+	try {
+		const hash = (location && location.hash) || ""
+		if (!hash) return
+		const id = hash.replace(/^#/, "")
+
+		// 1) Try to find the element in the main document (injected content)
+		const contentRoot = document.getElementById("content")
+		if (contentRoot) {
+			const el =
+				contentRoot.querySelector(`#${CSS.escape(id)}`) ||
+				contentRoot.querySelector(`[name="${id}"]`)
+			if (el) {
+				el.scrollIntoView({ behavior: "smooth", block: "start" })
+				return
+			}
+		}
+
+		// 2) Try to find an iframe that contains the post and search inside it
+		const iframe = document.querySelector(
+			"#content iframe, #post-container iframe",
+		)
+		if (iframe) {
+			try {
+				const idoc = iframe.contentDocument || iframe.contentWindow.document
+				if (!idoc) return
+				const iel =
+					idoc.getElementById(id) || idoc.querySelector(`[name="${id}"]`)
+				if (iel) {
+					// Scroll the iframe into view first, then the element inside it
+					iframe.scrollIntoView({ behavior: "smooth", block: "start" })
+					// Slight timeout to allow browser to layout iframe content
+					setTimeout(() => {
+						try {
+							iel.scrollIntoView({ behavior: "smooth", block: "start" })
+						} catch (e) {}
+					}, 50)
+				}
+			} catch (e) {
+				// Cross-origin or not ready — ignore
+			}
+		}
+	} catch (e) {
+		console.debug("tryScrollFragmentIntoContent error", e)
+	}
+}
+
+// Listen for hash changes so externally-provided URLs with fragments
+// will scroll into the injected post content when possible.
+if (typeof window !== "undefined") {
+	window.addEventListener("hashchange", tryScrollFragmentIntoContent)
+}
+
 export function showAboutPlane() {
 	hideAllPlanes()
 	if (controls) controls.enableZoom = false
@@ -202,26 +258,124 @@ export function showBlogPost(route) {
 
 	const fetchUrl = `/src/content${route}.html`
 
-	fetch(fetchUrl)
+	// Helper to try the requested URL, then fall back to /index.html if the
+	// direct .html fetch returns 404. This preserves existing routes when posts
+	// are moved into per-post folders with an index.html.
+	async function fetchHtmlWithIndexFallback(url, opts) {
+		// Prefer the folder index variant first (works when posts are moved
+		// into per-post folders). If that fails, fall back to the legacy
+		// flat .html path so both layouts are supported.
+		if (/\.html$/i.test(url)) {
+			const indexUrl = url.replace(/\.html$/i, "/index.html")
+			try {
+				let res = await fetch(indexUrl, opts)
+				if (res && res.ok) {
+					// check whether the index.html is just a loader/redirect page
+					const txt = await res.text()
+					if (
+						txt.includes("Loading post") ||
+						txt.includes("post-container") ||
+						txt.includes("meta http-equiv") ||
+						txt.includes("Moved:")
+					) {
+						// attempt to fetch canonical slug file inside folder
+						const base = url.replace(/\.html$/i, "")
+						const slug = base.split("/").pop()
+						const candidate = base + "/" + slug + ".html"
+						try {
+							const r2 = await fetch(candidate, opts)
+							if (r2 && r2.ok) return r2
+						} catch (ee) {
+							// ignore and fall back to returning the index content
+						}
+						// return the original index response constructed from text
+						return new Response(txt, {
+							status: res.status,
+							statusText: res.statusText,
+							headers: res.headers,
+						})
+					}
+					// index.html contains full content — return original response
+					return new Response(txt, {
+						status: res.status,
+						statusText: res.statusText,
+						headers: res.headers,
+					})
+				}
+			} catch (e) {
+				// ignore network errors and try fallback
+			}
+		}
+
+		// final attempt: original url
+		return await fetch(url, opts)
+	}
+
+	console.debug("showBlogPost: fetching", fetchUrl)
+	fetchHtmlWithIndexFallback(fetchUrl)
 		.then((res) => {
-			if (!res.ok) throw new Error("Failed to load post")
+			console.debug("showBlogPost: fetch result", res && res.status)
+			if (!res || !res.ok) throw new Error("Failed to load post")
 			return res.text()
 		})
 		.then((html) => {
-			if (myToken !== getPyramidAnimToken()) return
+			console.debug(
+				"showBlogPost: myToken=",
+				myToken,
+				"current=",
+				getPyramidAnimToken(),
+			)
+			if (myToken !== getPyramidAnimToken()) {
+				console.debug("showBlogPost: token changed, aborting render")
+				return
+			}
 
 			const parser = new DOMParser()
+			console.debug("showBlogPost: fetched html length", html.length)
+			console.debug("showBlogPost: fetched html snippet", html.slice(0, 200))
 			const doc = parser.parseFromString(html, "text/html")
-			const content = doc.querySelector("main")?.innerHTML || doc.body.innerHTML
+			// Prefer main.blog-content or .blog-content to extract the article body
+			let contentElMatch = null
+			let content = null
+			const matchedMain = doc.querySelector("main.blog-content")
+			if (matchedMain) {
+				contentElMatch = "main.blog-content"
+				console.debug(
+					"showBlogPost: matched outerHTML snippet",
+					matchedMain.outerHTML.slice(0, 300),
+				)
+				content = matchedMain.innerHTML
+			} else if (doc.querySelector(".blog-content")) {
+				contentElMatch = ".blog-content"
+				content = doc.querySelector(".blog-content").innerHTML
+			} else if (doc.querySelector("#content")) {
+				contentElMatch = "#content"
+				content = doc.querySelector("#content").innerHTML
+			} else if (doc.querySelector("main")) {
+				contentElMatch = "main"
+				content = doc.querySelector("main").innerHTML
+			} else {
+				contentElMatch = "body"
+				content = doc.body.innerHTML
+			}
 
+			console.debug("showBlogPost: matched selector", contentElMatch)
+			console.debug(
+				"showBlogPost: injecting content (len)",
+				content && content.length,
+			)
 			contentEl.innerHTML = `
-				<div class="blog-content single-post">
-					${content}
-				</div>
-			`
+						<div class="blog-content single-post">
+							${content}
+						</div>
+					`
 			contentEl.style.display = ""
 			contentEl.classList.add("show")
 			contentEl.style.pointerEvents = "auto"
+			// If the URL contains a fragment (or later changes), attempt to
+			// scroll the corresponding element inside the injected content
+			// or inside any same-origin iframe that hosts the post.
+			tryScrollFragmentIntoContent()
 		})
 		.catch((err) => {
 			console.error(err)

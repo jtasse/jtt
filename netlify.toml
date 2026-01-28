@@ -28,6 +28,11 @@
   to = "/blog?tag=docs-as-tests"
   status = 301
 
+[[redirects]]
+  from = "/tag/abstraction/*"
+  to = "/blog?tag=abstraction"
+  status = 301
+
 # Preserve old WordPress site (static export)
 [[redirects]]
   from = "/old"
@@ -44,6 +49,10 @@
   from = "/blog/posts/*"
   to = "/src/content/blog/posts/:splat"
   status = 200
+
+[context.deploy-preview]
+# For draft/deploy-preview builds run link + image validation first; fail deploy on 404s
+  command = "npm run test:links-images && npm run build"
 
 # SPA fallback for main Vite app routes
 [[redirects]]
