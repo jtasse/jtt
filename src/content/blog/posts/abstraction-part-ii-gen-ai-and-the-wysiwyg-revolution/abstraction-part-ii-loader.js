@@ -127,6 +127,52 @@
 											if (ticks > 20) clearInterval(iv)
 										}, 250)
 									} catch (e) {}
+
+									// After the iframe's document is ready, wire up intra-iframe TOC
+									// click handlers so fragment links update the top-level URL and
+									// scroll the element into view inside the iframe.
+									try {
+										const idoc =
+											iframe.contentDocument || iframe.contentWindow.document
+										if (idoc) {
+											idoc.addEventListener("click", function (iev) {
+												try {
+													const a =
+														iev.target &&
+														iev.target.closest &&
+														iev.target.closest("a")
+													if (!a) return
+													const href = a.getAttribute && a.getAttribute("href")
+													if (!href || !href.startsWith("#")) return
+													if (!(a.closest && a.closest(".post-toc"))) return
+													iev.preventDefault()
+													// Mirror fragment to top-level so link can be shared
+													try {
+														location.hash = href
+													} catch (e) {}
+													// Also scroll the target inside the iframe
+													try {
+														const tid = href.replace(/^#/, "")
+														const target =
+															idoc.getElementById(tid) ||
+															idoc.querySelector(`[name="${tid}"]`)
+														if (target)
+															target.scrollIntoView({
+																behavior: "smooth",
+																block: "start",
+															})
+													} catch (e) {}
+												} catch (e) {
+													// ignore
+												}
+											})
+										}
+									} catch (e) {
+										console.debug("iframe TOC binding failed", e)
+									}
+
+									// Ensure any existing hash is honored now that iframe content is ready
+									tryScrollHashIntoIframe()
 								})
 
 								// If the top-level location has a fragment, attempt to scroll the
