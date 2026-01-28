@@ -213,7 +213,13 @@
 						Array.from(container.querySelectorAll("script")).forEach((s) => {
 							const ns = document.createElement("script")
 							if (s.src) {
-								ns.src = s.src
+								// Resolve relative script URLs against the fetched document URL
+								try {
+									const rel = s.getAttribute("src") || s.src
+									ns.src = new URL(rel, url).href
+								} catch (e) {
+									ns.src = s.src
+								}
 								ns.async = false
 							} else {
 								ns.textContent = s.textContent
