@@ -70,6 +70,21 @@ for (const f of extraFiles) {
 	}
 }
 
+// Backwards-compatible copy: some post shells reference /src/content/theme/theme.css
+// while the canonical file lives at /src/theme/theme.css. Ensure both paths exist
+// in dist by duplicating the theme file into the content tree if needed.
+try {
+	const srcTheme = join(root, "src", "theme", "theme.css")
+	const altTarget = join(root, "dist", "src", "content", "theme")
+	if (fs.existsSync(srcTheme)) {
+		fs.mkdirSync(altTarget, { recursive: true })
+		fs.cpSync(srcTheme, join(altTarget, "theme.css"))
+		console.info(`Also copied src/theme/theme.css -> dist/src/content/theme/theme.css`)
+	}
+} catch (e) {
+	console.warn("Failed to create fallback content/theme/theme.css:", e)
+}
+
 // Find the Vite-built client entry script (index-*.js) and CSS (index-*.css) in dist/assets
 try {
 	const assetsDir = join(root, "dist", "assets")
