@@ -160,6 +160,36 @@ try {
 	} else {
 		console.warn("Posts directory not found; skipping asset injection")
 	}
+
+		// Additionally, inject the MutationObserver safety shim into top-level HTML
+		// files in `dist` (excluding combined docs) so the shim runs as early as
+		// possible on preview pages. This helps suppress cross-realm errors from
+		// browser extensions or external content scripts.
+		function walkAndInject(rootDir) {
+			const stack = [rootDir]
+			while (stack.length) {
+				const cur = stack.pop()
+				const entries = fs.readdirSync(cur, { withFileTypes: true })
+				for (const e of entries) {
+					const p = join(cur, e.name)
+					if (e.isDirectory()) {
+						// Skip docs folder where we don't want to inject
+						if (p.includes(join('dist', 'portfolio', 'docs'))) continue
+						stack.push(p)
+					} else if (e.isFile() && p.endsWith('.html')) {
+						let h = fs.readFileSync(p, 'utf8')
+						if (!/window\.__MO_SAFE_PATCH/.test(h)) {
+							const shim = `\n    <script>\n      (function(){try{if(window.__MO_SAFE_PATCH)return;window.__MO_SAFE_PATCH=true;const orig=MutationObserver.prototype.observe;MutationObserver.prototype.observe=function(target,opts){try{if(target&&typeof target==='object'){if(typeof target.nodeType==='number'){return orig.call(this,target,opts);}try{if(target.document&&target.document.documentElement){return orig.call(this,target.document.documentElement,opts);}catch(e){} }console.warn('MO shim: skipping observe for non-Node target',target);return;}catch(e){try{return orig.call(this,target,opts)}catch(_){return}}};}catch(e){} })();\n      window.addEventListener('error', function(ev){try{if(ev && ev.message && ev.message.indexOf("Failed to execute 'observe' on 'MutationObserver'")!==-1){ev.stopImmediatePropagation && ev.stopImmediatePropagation();ev.preventDefault && ev.preventDefault();console.warn('Suppressed cross-realm MutationObserver TypeError');}}catch(e){}}, true);\n    </script>\n`
+						h = h.replace(/<head([^>]*)>/i, (m) => m + shim)
+						fs.writeFileSync(p, h, 'utf8')
+						console.info(`Injected MO shim into ${p}`)
+						}
+					}
+				}
+			}
+		}
+
+		walkAndInject(join(root, 'dist'))
 } catch (e) {
 	console.warn("Error while injecting client bundle into posts:", e)
 }
