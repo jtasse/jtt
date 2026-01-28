@@ -136,6 +136,14 @@ try {
 				console.info(`Injected client bundle ${mainScript} into ${ppath}`)
 			}
 
+			// Inject a small MutationObserver safety shim early in the <head>
+			// so third-party content scripts that call observe on non-Node targets
+			// don't throw and break page scripts. Idempotent via marker check.
+			if (!/window\.__MO_SAFE_PATCH/.test(html)) {
+				const moShim = `\n    <script>\n      // window.__MO_SAFE_PATCH prevents double-injection\n      (function(){try{if(window.__MO_SAFE_PATCH)return;window.__MO_SAFE_PATCH=true;const orig=MutationObserver.prototype.observe;MutationObserver.prototype.observe=function(target,opts){try{if(target&&typeof target==='object'){if(typeof target.nodeType==='number'){return orig.call(this,target,opts);}try{if(target.document&&target.document.documentElement){return orig.call(this,target.document.documentElement,opts);}catch(e){} }console.warn('MO shim: skipping observe for non-Node target',target);return;}catch(e){try{return orig.call(this,target,opts)}catch(_){return}}};}catch(e){} })();\n    </script>\n`
+				html = html.replace(/<head([^>]*)>/i, (m) => m + moShim)
+			}
+
 			// Remove duplicate mainCss tags if they were accidentally inserted more than once
 			if (mainCss) {
 				const escaped = mainCss.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
