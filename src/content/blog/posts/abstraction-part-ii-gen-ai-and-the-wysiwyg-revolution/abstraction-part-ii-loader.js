@@ -78,197 +78,59 @@
 							doc.querySelector("#content") ||
 							doc.querySelector("article")
 						if (main) {
-							container.innerHTML = main.innerHTML
-							// Ensure toggle/show image handlers work even when HTML is injected
+							// Render fetched post inside a same-origin iframe to isolate scripts
 							try {
-								container.addEventListener("click", function (ev) {
-									const tbtn =
-										ev.target.closest && ev.target.closest(".toggle-btn")
-									if (tbtn) {
-										const wrapper =
-											tbtn.closest(".toggle-image") ||
-											tbtn.closest(".image-wrapper")
-										if (!wrapper) return
-										const src = wrapper.getAttribute("data-src")
-										if (!src) return
-										if (wrapper.querySelector(".obscured-container")) return
+								const iframe = document.createElement("iframe")
+								iframe.setAttribute("title", "Post content")
+								iframe.style.width = "100%"
+								iframe.style.border = "0"
+								iframe.style.display = "block"
 
-										const containerEl = document.createElement("div")
-										containerEl.className = "obscured-container"
-										containerEl.style.position = "relative"
-										containerEl.style.display = "block"
-										containerEl.style.width = "100%"
+								// Collect stylesheet links from fetched document head and resolve them
+								const links = Array.from(
+									doc.querySelectorAll('link[rel="stylesheet"]'),
+								)
+									.map((l) => {
+										try {
+											const href = l.getAttribute("href") || l.href
+											return `<link rel="stylesheet" href="${new URL(href, url).href}">`
+										} catch (e) {
+											return ""
+										}
+									})
+									.join("\n")
 
-										const img = document.createElement("img")
-										img.src = src
-										img.alt = ""
-										img.loading = "lazy"
-										img.className = "obscured-img"
-										img.style.display = "block"
-										img.style.width = "100%"
-										img.style.height = "auto"
+								const srcdoc = `<!doctype html><html><head><meta charset="utf-8"><base href="${url}">` +
+									links +
+									`</head><body>` + main.outerHTML + `</body></html>`
 
-										const overlay = document.createElement("div")
-										overlay.className = "obscured-overlay"
-										overlay.textContent = "click"
-										overlay.title = "Click to show image"
-										overlay.setAttribute("role", "button")
-										overlay.style.position = "absolute"
-										overlay.style.top = "0"
-										overlay.style.left = "0"
-										overlay.style.right = "0"
-										overlay.style.bottom = "0"
-										overlay.style.background = "rgba(0,0,0,0.85)"
-										overlay.style.color = "#fff"
-										overlay.style.display = "flex"
-										overlay.style.alignItems = "center"
-										overlay.style.justifyContent = "center"
-										overlay.style.cursor = "pointer"
-										overlay.style.fontSize = "1rem"
+								container.innerHTML = ""
+								container.appendChild(iframe)
+								iframe.srcdoc = srcdoc
 
-										overlay.addEventListener("click", function () {
-											overlay.style.display = "none"
-											img.title = "Click to hide image"
-										})
-
-										img.addEventListener("click", function () {
-											overlay.style.display = "flex"
-											overlay.title = "Click to show image"
-										})
-
-										containerEl.appendChild(img)
-										containerEl.appendChild(overlay)
-										wrapper.innerHTML = ""
-										wrapper.appendChild(containerEl)
-										return
-									}
-
-									// Legacy .show-image handler
-									const sbtn =
-										ev.target.closest && ev.target.closest(".show-image")
-									if (sbtn) {
-										const wrapper = sbtn.closest(".image-wrapper")
-										if (!wrapper) return
-										const src =
-											sbtn.getAttribute("data-src") ||
-											wrapper.getAttribute("data-src")
-										if (!src) return
-										if (wrapper.querySelector(".obscured-container")) return
-
-										const containerEl = document.createElement("div")
-										containerEl.className = "obscured-container"
-										containerEl.style.position = "relative"
-										containerEl.style.display = "block"
-										containerEl.style.width = "100%"
-
-										const img = document.createElement("img")
-										img.src = src
-										img.alt = ""
-										img.className = "obscured-img"
-										img.style.display = "block"
-										img.style.width = "100%"
-										img.style.height = "auto"
-
-										const overlay = document.createElement("div")
-										overlay.className = "obscured-overlay"
-										overlay.textContent = "click"
-										overlay.title = "Click to show image"
-										overlay.setAttribute("role", "button")
-										overlay.style.position = "absolute"
-										overlay.style.top = "0"
-										overlay.style.left = "0"
-										overlay.style.right = "0"
-										overlay.style.bottom = "0"
-										overlay.style.background = "rgba(0,0,0,0.85)"
-										overlay.style.color = "#fff"
-										overlay.style.display = "flex"
-										overlay.style.alignItems = "center"
-										overlay.style.justifyContent = "center"
-										overlay.style.cursor = "pointer"
-										overlay.style.fontSize = "1rem"
-
-										overlay.addEventListener("click", function () {
-											overlay.style.display = "none"
-											img.title = "Click to hide image"
-										})
-
-										img.addEventListener("click", function () {
-											overlay.style.display = "flex"
-											overlay.title = "Click to show image"
-										})
-
-										containerEl.appendChild(img)
-										containerEl.appendChild(overlay)
-										wrapper.innerHTML = ""
-										wrapper.appendChild(containerEl)
-									}
+								// Resize iframe to content height for a short period after load
+								iframe.addEventListener("load", function () {
+									try {
+										const docEl = iframe.contentDocument.documentElement
+										iframe.style.height = docEl.scrollHeight + "px"
+										let ticks = 0
+										const iv = setInterval(() => {
+											try {
+												iframe.style.height = iframe.contentDocument.documentElement.scrollHeight + "px"
+											} catch (e) {}
+											ticks += 1
+											if (ticks > 20) clearInterval(iv)
+										}, 250)
+									} catch (e) {}
 								})
 							} catch (e) {
-								// ignore handler attach failures
+								// Fallback to direct injection on error
+								container.innerHTML = main.innerHTML
 							}
 						} else {
 							container.innerHTML = txt
 						}
 						if (statusEl) statusEl.textContent = ""
-						Array.from(container.querySelectorAll("script")).forEach(
-							async (s) => {
-								const ns = document.createElement("script")
-								if (s.src) {
-									// Resolve relative script URLs against the fetched document URL
-									let resolved = s.getAttribute("src") || s.src
-									try {
-										resolved = new URL(resolved, url).href
-									} catch (e) {}
-
-									// If the resolved URL clearly points to HTML, skip it.
-									if (/\.html?(?:$|[?#])/.test(resolved)) {
-										console.warn(
-											"Skipping script that resolves to HTML:",
-											resolved,
-										)
-										return
-									}
-
-									// Prefer adding the script only when it looks like JS (ends with .js),
-									// otherwise try a HEAD request to confirm content-type.
-									let add = /\.js(?:$|[?#])/.test(resolved)
-									if (!add) {
-										try {
-											const h = await fetch(resolved, {
-												method: "HEAD",
-												cache: "no-store",
-											})
-											const ct = h.headers.get("content-type") || ""
-											if (/javascript|ecmascript/.test(ct)) add = true
-										} catch (e) {
-											// If HEAD fails (CORS), fall back to skipping to avoid loading HTML as JS
-											add = false
-										}
-									}
-
-									if (!add) {
-										console.warn(
-											"Skipping non-JS script after checks:",
-											resolved,
-										)
-										return
-									}
-
-									ns.src = resolved
-									ns.async = false
-								} else {
-									// Prefix inline script with a semicolon to avoid ASI merging with previous script
-									ns.textContent = ";\n" + (s.textContent || "")
-								}
-								document.body.appendChild(ns)
-							},
-						)
-						return
-					} catch (parseErr) {
-						container.innerHTML = txt
-						if (statusEl) statusEl.textContent = ""
-						return
-					}
 				} catch (err) {
 					continue
 				}
