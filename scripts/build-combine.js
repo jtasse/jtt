@@ -215,6 +215,39 @@ try {
 	}
 
 	walkAndInject(join(root, "dist"))
+
+	// Post-process JS files in dist to replace optional catch binding ("catch {")
+	// with a compatible form ("catch (e) {") to avoid "Unexpected token 'catch'"
+	// in environments that don't support optional catch binding.
+	try {
+		const jsWalk = (dir) => {
+			const ents = fs.readdirSync(dir, { withFileTypes: true })
+			for (const en of ents) {
+				const p = join(dir, en.name)
+				if (en.isDirectory()) {
+					jsWalk(p)
+				} else if (en.isFile() && p.endsWith(".js")) {
+					try {
+						let content = fs.readFileSync(p, "utf8")
+						// Replace `catch {` (optional catch) with `catch (e) {` where appropriate
+						const replaced = content.replace(/\bcatch\s*\{/g, "catch (e) {")
+						if (replaced !== content) {
+							fs.writeFileSync(p, replaced, "utf8")
+							console.info(`Patched optional catch in ${p}`)
+						}
+					} catch (err) {
+						console.warn(`Failed to post-process JS file ${p}:`, err)
+					}
+				}
+			}
+		}
+		jsWalk(join(root, "dist"))
+	} catch (e) {
+		console.warn(
+			"Failed to post-process JS files for optional catch replacement:",
+			e,
+		)
+	}
 } catch (e) {
 	console.warn("Error while injecting client bundle into posts:", e)
 }
