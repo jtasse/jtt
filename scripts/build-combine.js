@@ -79,7 +79,9 @@ try {
 	if (fs.existsSync(srcTheme)) {
 		fs.mkdirSync(altTarget, { recursive: true })
 		fs.cpSync(srcTheme, join(altTarget, "theme.css"))
-		console.info(`Also copied src/theme/theme.css -> dist/src/content/theme/theme.css`)
+		console.info(
+			`Also copied src/theme/theme.css -> dist/src/content/theme/theme.css`,
+		)
 	}
 } catch (e) {
 	console.warn("Failed to create fallback content/theme/theme.css:", e)
