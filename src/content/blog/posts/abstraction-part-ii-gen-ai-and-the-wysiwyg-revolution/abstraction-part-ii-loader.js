@@ -100,9 +100,12 @@
 									})
 									.join("\n")
 
-								const srcdoc = `<!doctype html><html><head><meta charset="utf-8"><base href="${url}">` +
+								const srcdoc =
+									`<!doctype html><html><head><meta charset="utf-8"><base href="${url}">` +
 									links +
-									`</head><body>` + main.outerHTML + `</body></html>`
+									`</head><body>` +
+									main.outerHTML +
+									`</body></html>`
 
 								container.innerHTML = ""
 								container.appendChild(iframe)
@@ -116,7 +119,9 @@
 										let ticks = 0
 										const iv = setInterval(() => {
 											try {
-												iframe.style.height = iframe.contentDocument.documentElement.scrollHeight + "px"
+												iframe.style.height =
+													iframe.contentDocument.documentElement.scrollHeight +
+													"px"
 											} catch (e) {}
 											ticks += 1
 											if (ticks > 20) clearInterval(iv)
@@ -131,6 +136,12 @@
 							container.innerHTML = txt
 						}
 						if (statusEl) statusEl.textContent = ""
+						return
+					} catch (e) {
+						container.innerHTML = txt
+						if (statusEl) statusEl.textContent = ""
+						return
+					}
 				} catch (err) {
 					continue
 				}
