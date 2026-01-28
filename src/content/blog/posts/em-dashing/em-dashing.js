@@ -25,6 +25,18 @@
 			const container = document.getElementById("post-container")
 			if (!container) return
 			const candidates = []
+			try {
+				const slug = canonicalFilename.replace(/\.html$/, "")
+				candidates.push(
+					location.origin +
+						"/src/content/blog/posts/" +
+						slug +
+						"/" +
+						canonicalFilename,
+				)
+			} catch (e) {
+				// ignore
+			}
 			candidates.push("./" + canonicalFilename)
 			candidates.push(canonicalFilename)
 			candidates.push(
