@@ -108,12 +108,25 @@ try {
 	// If we found assets, inject them into built blog post HTML files so
 	// they load the bundled client app (labels/theme) and main stylesheet.
 	const postsDistDir = join(root, "dist", "src", "content", "blog", "posts")
+	// Walk posts directory recursively to find all .html files in nested post folders
+	function findHtmlFiles(dir) {
+		const out = []
+		if (!fs.existsSync(dir)) return out
+		const entries = fs.readdirSync(dir, { withFileTypes: true })
+		for (const e of entries) {
+			const p = join(dir, e.name)
+			if (e.isDirectory()) {
+				out.push(...findHtmlFiles(p))
+			} else if (e.isFile() && p.endsWith(".html")) {
+				out.push(p)
+			}
+		}
+		return out
+	}
+
 	if (fs.existsSync(postsDistDir)) {
-		const postFiles = fs
-			.readdirSync(postsDistDir)
-			.filter((f) => f.endsWith(".html"))
-		for (const pf of postFiles) {
-			const ppath = join(postsDistDir, pf)
+		const postFiles = findHtmlFiles(postsDistDir)
+		for (const ppath of postFiles) {
 			let html = fs.readFileSync(ppath, "utf8")
 
 			// Clean up any malformed stylesheet hrefs that may have been created
