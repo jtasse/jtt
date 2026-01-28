@@ -210,19 +210,45 @@
 							container.innerHTML = txt
 						}
 						if (statusEl) statusEl.textContent = ""
-						Array.from(container.querySelectorAll("script")).forEach((s) => {
+						Array.from(container.querySelectorAll("script")).forEach(async (s) => {
 							const ns = document.createElement("script")
 							if (s.src) {
 								// Resolve relative script URLs against the fetched document URL
+								let resolved = s.getAttribute("src") || s.src
 								try {
-									const rel = s.getAttribute("src") || s.src
-									ns.src = new URL(rel, url).href
-								} catch (e) {
-									ns.src = s.src
+									resolved = new URL(resolved, url).href
+								} catch (e) {}
+
+								// If the resolved URL clearly points to HTML, skip it.
+								if (/\.html?(?:$|[?#])/.test(resolved)) {
+									console.warn("Skipping script that resolves to HTML:", resolved)
+									return
 								}
+
+								// Prefer adding the script only when it looks like JS (ends with .js),
+								// otherwise try a HEAD request to confirm content-type.
+								let add = /\.js(?:$|[?#])/.test(resolved)
+								if (!add) {
+									try {
+										const h = await fetch(resolved, { method: "HEAD", cache: "no-store" })
+										const ct = h.headers.get("content-type") || ""
+										if (/javascript|ecmascript/.test(ct)) add = true
+									} catch (e) {
+										// If HEAD fails (CORS), fall back to skipping to avoid loading HTML as JS
+										add = false
+									}
+								}
+
+								if (!add) {
+									console.warn("Skipping non-JS script after checks:", resolved)
+									return
+								}
+
+								ns.src = resolved
 								ns.async = false
 							} else {
-								ns.textContent = s.textContent
+								// Prefix inline script with a semicolon to avoid ASI merging with previous script
+								ns.textContent = ";\n" + (s.textContent || "")
 							}
 							document.body.appendChild(ns)
 						})
