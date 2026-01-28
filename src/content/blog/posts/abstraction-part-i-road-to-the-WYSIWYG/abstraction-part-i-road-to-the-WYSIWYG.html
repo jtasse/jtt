@@ -59,10 +59,19 @@
 	<body>
 		<div id="content" class="container">
 			<main class="blog-content single-post">
-				<article>
+				<article id="post-article">
+					<div class="post-cover">
+						<img
+							src="/src/content/blog/nav-images/road-to-the-wysiwyg.jpg"
+							alt="Abstraction — Part I"
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
 					<h1>Abstraction—Part I: Road to the WYSIWYG</h1>
 					<div class="post-meta">
-						<time datetime="2026-01-23">Jan 23, 2026</time> | James Tasse
+						<time datetime="2026-01-23">Jan 23, 2026</time> | James Tasse | 7
+						min read
 					</div>
 					<div style="flex: 1">
 						<h2 id="the-first-wysiwyg">The First WYSIWYG</h2>
@@ -598,8 +607,8 @@ END
 
 					<p>
 						Again, it’s not quite accurate to say that Bravo is an abstraction
-						of BCPL. But Bravo is a user interface abstraction designed to make
-						it easier to edit text.
+						of BCPL. Bravo is <em>a user interface abstraction</em> designed to
+						make it easier to edit text.
 					</p>
 
 					<h2 id="lets-talk">Let's Talk</h2>
@@ -640,10 +649,16 @@ END
 						<h2 id="attributions">Attributions</h2>
 						<ul class="attributions">
 							<li>
-								ChatGPT (fact-checking and machine code + binary examples)
+								<a href="https://chat.openai.com">ChatGPT</a> (fact-checking and
+								machine code + binary examples)
 							</li>
-							<li>GitHub Copilot (fact-checking)</li>
-							<li>Gemini (fact-checking)</li>
+							<li>
+								<a href="https://github.com/features/copilot">GitHub Copilot</a>
+								(fact-checking)
+							</li>
+							<li>
+								<a href="https://gemini.google.com/">Gemini</a> (fact-checking)
+							</li>
 							<li>
 								<a
 									href="https://archive.nytimes.com/bits.blogs.nytimes.com/2007/10/18/the-real-history-of-wysiwyg/"
@@ -726,5 +741,6 @@ END
 				</article>
 			</main>
 		</div>
+		<!-- external-link enhancer moved to abstraction-part-i.js -->
 	</body>
 </html>

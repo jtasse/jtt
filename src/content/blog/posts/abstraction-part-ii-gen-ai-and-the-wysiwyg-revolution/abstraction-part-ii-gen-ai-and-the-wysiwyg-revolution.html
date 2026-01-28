@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Abstraction Part II — Gen AI and the WYSIWYG Revolution</title>
+		<link rel="stylesheet" href="../../blog.css" />
+		<link rel="stylesheet" href="./abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.css" />
+		<meta name="description" content="Abstraction Part II — Gen AI and the WYSIWYG Revolution" />
+		<link rel="canonical" href="https://jamestasse.tech/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.html" />
+		<script src="./abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.js" defer></script>
+	</head>
+	<body>
+		<div id="content" class="container">
+			<main class="blog-content single-post">
+				<article id="post-article">
+					<!-- Converted static HTML from original markdown. Content preserved verbatim. -->
+					<div class="post-cover">
+						<img src="/src/content/blog/nav-images/abstraction-part-ii-cover.jpg" alt="Abstraction — Part II" loading="lazy" decoding="async" />
+					</div>
+					<h1>Abstraction — Part II: Gen AI and the WYSIWYG Revolution</h1>
+					<div class="post-meta">
+						<time datetime="2026-01-27">January 27, 2026</time> | James Tasse | 6 min read
+					</div>
+					<div class="toc-intro-wrap">
+						<div class="toc-content">
+							<h1 id="previously-on">Previously On</h1>
+							<p>
+								In the last post, I traced the path of abstraction from the days
+								when machines were programmed with machine code (often
+								represented in binary) to the dawn of Assembly code and even
+								higher level languages like FORTRAN, which made possible
+								software like Bravo, the first WYSIWYG (what you see is what you
+								get) editor.
+							</p>
+
+							<h1 id="the-old-ways">The Old Ways</h1>
+							<p>
+								But abstraction can take more than one form. And so can the
+								WYSIWYG as an idea. Allow me to equivocate. Traditional WYSIWYGs
+								like Microsoft Word or Photoshop show the user what they’re
+								getting–with some margin of error–<em>before</em> they print the
+								document or share the image on social media.
+							</p>
+							<p>
+								This is undeniably useful, as it allows the user to produce a
+								document or an image without having to know how to program a
+								printer or the internals of assigning colors to pixels on a
+								screen.
+							</p>
+
+							<h1 id="the-cost">The Cost</h1>
+							<p>
+								However, there is still a cost to using WYSIWYG editors.
+								Microsoft Word requires the user to learn how to use its
+								controls in order to style text, create lists, tweak line
+								spacing, and specify how a document should be printed.
+								Similarly, Photoshop requires engagement of its layer system and
+								a dizzying array of tools that might take years to master.
+							</p>
+							<p>
+								So imagine if you could go back just 5 years and tell a user of
+								these or many other WYSIWYG editors that they could produce
+								documents, images, and other outputs not just by interacting
+								with an editor; but by <em>talking to a chatbot</em>.
+
+								</li>
+								<li>
+									<a href="#programming-in-english">Programming in English</a>
+									<ul>
+										<li><a href="#such-power">Such Power</a></li>
+										<li><a href="#precision">Precision</a></li>
+										<li><a href="#skill-issue">Skill Issue</a></li>
+										<li><a href="#tech-debt">Tech Debt</a></li>
+										<li><a href="#refactoring">Refactoring</a></li>
+										<li><a href="#the-iceberg">The Iceberg</a></li>
+										<li><a href="#tools">Tools</a></li>
+										<li><a href="#musical-coda">Musical Coda</a></li>
+									</ul>
+								</li>
+								<li><a href="#references">References</a></li>
+							</ol>
+						</aside>
+					</div>
+
+					<h1 id="drawing-in-english">Drawing in English</h1>
+					<p>I think it’s time for an example.</p>
+					<p>
+						Suppose I want to create a picture of a cat. Let’s start with a
+						traditional WYSIWYG editor. I don’t have access to Photoshop, but I
+						do have the
+						<a
+							href="https://www.gimp.org/docs/userfaq.html#i-dont-like-the-name-gimp-will-you-change-it"
+							>GNU Image Manipulation Program</a
+						>. A quick warning: I can draw diagrams, but
+						<em>not at all</em> beyond that.
+					</p>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/horrible-cat-drawing.png"
+							alt="horrible cat drawing"
+							loading="lazy"
+						/>
+					</div>
+
+					<p>
+						Let’s just pretend that abomination never happened. OK, now I’ll ask
+						Gemini to “Give me a drawing of a cat”.
+					</p>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/gemini-cat-drawing.png"
+							alt="Gemini cat drawing"
+							loading="lazy"
+						/>
+					</div>
+
+					<p>
+						So much better! But, of course, this is unfair to people who
+						<em>can</em> draw using tools like Photoshop. So here’s an image
+						that appeared in Google results from 2010 (before modern AI image
+						generation was widely available):
+					</p>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/good-human-cat-drawing.png"
+							alt="good human cat drawing"
+							loading="lazy"
+						/>
+					</div>
+
+					<p>
+						Maybe not as detailed as the Gemini image, but pretty good, right?
+					</p>
+
+					<h2 id="reactions">Reactions</h2>
+					<p>
+						I would say there are a number of valid reactions to the gen AI
+						example above:
+					</p>
+					<ul>
+						<li>
+							*Amazement* I barely gave you anything and you made a beautiful
+							cat drawing.
+						</li>
+						<li>
+							*Horror* I barely gave you anything and you made the most
+							beautiful cat drawing I’ve ever seen.
+						</li>
+						<li>
+							*Unimpressed* That’s about as pretty as the last 100 cat drawings
+							an LLM generated for me.
+						</li>
+					</ul>
+					<p>
+						Polarizing. I think that’s a good word to describe generative AI’s
+						image generation capabilities.
+					</p>
+
+					<h2 id="the-gen-ai-layers">The Gen AI Layer(s)</h2>
+					<p>
+						I think the drawing exercise is a fun illustration of how generative
+						AI (gen AI) can abstract the creation of an image to a simple chat
+						interface. Again: “Give me a drawing of a cat”.
+					</p>
+					<p>
+						But gen AI is not just an abstraction of the WYSIWYG editor
+						(although it can be–today Gemini offered to sort a spreadsheet for
+						me so I didn’t have to 😹). No, gen AI is an abstraction layer over
+						<em>everything</em>.
+					</p>
+					<p>
+						OK, that feels a bit strong. I can’t abstract the activity of
+						feeding my cats to ChatGPT...<a
+							href="https://www.youtube.com/watch?v=dFGdMnJU7kA"
+							>right</a
+						>?
+					</p>
+					<p>
+						So it would be more accurate to say that Gen AI is an abstraction
+						over <em>many types of computer-mediated tasks</em>. I talked a lot
+						about abstraction layers in the previous post, so let’s close the
+						loop on that with some diagrams.
+					</p>
+
+					<h3 id="abstraction-diagrams">Abstraction Diagrams</h3>
+					<p>
+						First we’ll start with a high-level diagram which shows what a user
+						interaction with a gen AI *chatbot looks like.
+					</p>
+					<p>
+						<blockquote><strong>NOTE</strong>: here I show AI as existing in the cloud.
+						Although this is true for most chatbot users, it's worth pointing
+						out that many people
+						<a
+							href="https://www.datacamp.com/tutorial/run-llms-locally-tutorial"
+							>run LLMs locally on their machines</a
+						>.</blockquote>
+					</p>
+					<p>
+						Notice how the <code>Cloud Chatbot</code> is mostly situated in the
+						‘Cloud’ area, with a small portion residing in the ‘User’s Machine’
+						area. Although I would shift this a little further to the left if I
+						were referring to an installed variant like Claude Desktop; here I
+						am referring to the chatbot experience you get in a browser by
+						visiting <a href="https://chatgpt.com/">https://chatgpt.com/</a> or
+						<a href="https://claude.ai/">https://claude.ai/</a>.
+					</p>
+
+					<h4 id="chatbot-diagram">Chatbot Diagram</h4>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/chatbot-diagram.png"
+							alt="chatbot diagram"
+							loading="lazy"
+						/>
+					</div>
+
+					<h4 id="generative-ai-detail">Generative AI detail</h4>
+					<p>
+						But what about that purple <code>Generative AI</code> box? Hah,
+						well, I asked ChatGPT for a rundown of all the different abstraction
+						layers within the generative AI stack, and it’s…out of the scope of
+						this blog post. I would almost go so far as to say its level of
+						complexity represents an
+						<a href="https://en.wikipedia.org/wiki/Information_hazard"
+							>information hazard</a
+						>
+						(a <em>slight</em> exaggeration) to our aim of trying to understand
+						higher levels of abstraction. So I’ll put the diagram below, and you
+						can feel free to take it in or ignore it.
+					</p>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/detailed-ai-abstraction-diagram.png"
+							alt="detailed AI abstraction diagram"
+							loading="lazy"
+						/>
+					</div>
+
+					<h4 id="coding-assistants">Coding Assistants</h4>
+					<p>
+						All right. Chatbots are one thing. But what about coding assistants
+						like Claude Code, GitHub Copilot, or Gemini Code Assist?
+					</p>
+					<p>
+						To be fair, I’m doing a bit of
+						<a href="https://en.wikipedia.org/wiki/Hand-waving">hand-waving</a
+						>/oversimplification in the diagram below. It accurately describes
+						<em>my</em> development environment–and I suspect many others–but
+						it’s worth pointing out that one can use command line interfaces
+						(CLIs) like git via a terminal like Bash or PowerShell outside of a
+						development environment (IDE). Furthermore: I’m also hiding the fact
+						that both I <em>and</em> coding assistants will often interact with
+						both local and cloud CLIs like Node Package Manager (npm) and
+						GitHub’s, respectively, often within the same coding session. Not to
+						mention the fact that I will sometimes bypass the coding assistant
+						and write some code myself!
+					</p>
+
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/coding-assistant-diagram.png"
+							alt="coding assistant diagram"
+							loading="lazy"
+						/>
+					</div>
+
+					<!-- Inline toggle script removed; images are now inline -->
+
+					<p>
+						Now that we’ve got a handle on what the abstraction layers look like
+						from the metal to the coding assistant, let’s talk about what this
+						means for the act of coding.
+					</p>
+
+					<h1 id="programming-in-english">Programming in English</h1>
+					<p>
+						By now you’ve probably heard the phrase “vibe coding”. Excuse me
+						while I vomit.
+					</p>
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/jim-carrey-vomit.gif"
+							alt="Jim Carrey Dumb & Dumber vomit"
+							loading="lazy"
+						/>
+					</div>
+					<p>
+						OK, I’m back. Sorry, I just hate this phrase, which manages to be
+						both seductive for the uninitiated and repulsive to those who see it
+						only as a path to production disaster. It can be both of these
+						things, but it can also be something else: a useful tool.
+					</p>
+					<p>
+						For the remainder of this post, then, I am going to stick with one
+						stilted but connotationless way of communicating the concept:
+						“programming in English”.
+					</p>
+					<p>
+						<blockquote>
+							<strong>NOTE</strong>: I’ll try to come up with something catchier,
+							but obviously I failed if you still see “programming in English”
+						</blockquote>
+					</p>
+					<h2 id="such-power">Such Power</h2>
+					<p></p>
+
+					<p>
+						But precision still matters! And oh my goodness, modern WYSIWYG
+						<em>editors</em> are MUCH more precise than gen AI chatbots. Really,
+						the more I think about it, the whole “what you *say* is what you
+						get" idea of chatbots giving you what you ask for is…quite a
+						stretch.
+					</p>
+					<p>
+						I think an analogy is helpful here. Say you have a dartboard. You
+						want to hit the bullseye, so you throw your dart. If you’re working
+						in a traditional WYSIWYG like MS Word, chances are the result will
+						come pretty close to that bullseye. Now suppose that you’re working
+						with gen AI. You’ve asked it for an image, a document, or some code
+						to accomplish a task. Not only is there a significant probability
+						that you won’t hit the bullseye–it’s very possible that the result
+						will hit the bullseye of some dartboard you didn’t know existed.
+					</p>
+					<h2 id="skill-issue">Skill Issue</h2>
+					<p>
+						That’s not fair, you say! “I am an LLM *maestro* when it comes to
+						prompting”. This is a valid point. Someone that knows how to use
+						headings and custom styles in MS Word is probably going to produce
+						documents that are closer to what they want than someone that
+						hammers the bold control and abuses the format painter.
+					</p>
+					<p>
+						Similarly, if I know how to write good
+						<a
+							href="https://www.atlassian.com/work-management/project-management/acceptance-criteria"
+							>acceptance criteria</a
+						>
+						that detail what I want an application to do in various scenarios;
+						I’m likely to get better output from a coding assistant than if I
+						just say “Code me an enterprise application that prints money”.
+					</p>
+					<h2 id="tech-debt">Tech Debt</h2>
+					<p>
+						Let's take a step back. Having worked as a software engineer for several years, I am aware
+						of something that haunts every project: technical debt (or “tech
+						debt”). Per Wikipedia,
+						<a href="https://en.wikipedia.org/wiki/Technical_debt">tech debt</a>
+						is: 
+						<blockquote>
+							"...a qualitative description of the cost to maintain a system that is attributable to choosing an expedient solution for its development."
+						</blockquote> 
+					</p>
+					<p>
+						Oof–accurate, but very sterile. To put this another way: in software development, you always have a choice. You can build a feature in a way that is optimal given the [ideal] architecture of the system, or you can build it fast. Occasionally the optimal path is the fast path, but they often call for different approaches. And if you’re trying to <em>sell</em> your software to someone else–and Google, Microsoft, & Anthropic are very much trying to sell <em>their</em> coding assistant software to us–the fast path often beats the optimal path.
+					</p>
+					<p>
+						Over time, if you implement a lot of features via the fast path, it starts to manifest in the product in undesirable ways. This could result in bugs, it could cause performance issues, or it could even lead to a confusing user experience. 
+					</p>
+					<p>
+						I’ll give you an example: see that pyramid at the top of the current page (and on just about every page of my website)? Well, after a while it started behaving erratically. It would stop between navigation labels or show the wrong face to the user. Sometimes it even liked to disappear. How does one address this?
+					</p>
+					<h2 id="refactoring">Refactoring</h2>
+					<p>
+						At this point, the <em>ideal</em> thing to do is to refactor the
+						code. Going back to Wikipedia:
+						<blockquote>
+							"Refactoring is the process of restructuring existing computer code—changing the factoring—without changing its external behavior."
+						</blockquote>
+					</p>
+					<p>
+						Refactoring does not fix bugs on its own, but it often makes
+						<em>finding</em> and <em>fixing</em> bugs (and adding new features) easier.
+					</p>
+					<p>
+						So you can refactor the code–and eliminate tech debt–or you can keep applying band-aids (patches) and hope that it doesn’t all come crashing down.
+					</p>
+					<h2 id="the-iceberg">The Iceberg</h2>
+					<p>
+						Another way to think of an application is as an iceberg. If we
+						consider the case of an application that has a user interface (UI);
+						users only see the UI, which is a visual abstraction of the
+						application’s code.
+					</p>
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/tech-debt-iceberg.png"
+							alt="tech debt iceberg"
+							loading="lazy"
+						/>
+					</div>
+					<p>
+						But under the hood, the code might look like a Rolls Royce engine, nicely tuned and well thought out. Or it could look like a <a href="https://en.wikipedia.org/wiki/Hyundai_Theta_engine#Theta_II">Hyundai Theta II engine</a>, of which many “<a href="https://www.jalopnik.com/these-are-the-worst-engines-of-all-time-1851345221/">were recalled for <em>catastrophic seizing failure</em></a>”. Yikes!
+					</p>
+					<p>
+						Here’s a fun example: what did the code for the pyramid on my website look like when things had started to go sideways? 
+					</p>
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/pyramid-code-screenshot.png"
+							alt="pyramid code screenshot"
+							loading="lazy"
+						/>
+					</div>
+					<p>
+						Yes, <code>pyramid.js</code>, which was responsible for the positioning and animation of the pyramid, had grown to almost 3,000 lines! So how did I fix it?
+					</p>
+					<p>
+						With the help of Claude Code, I developed a refactoring plan that *eventually* (it was a bumpy ride) got my code into a better state. More specifically, we split up behaviors defined in pyramid.js into 4 files:
+					</p>
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/pyramid-refactored-screenshot.png"
+							alt="refactored pyramid code screenshot"
+							loading="lazy"
+						/>
+					</div>
+					<h2 id="tools">Tools</h2>
+					<p>So I have to acknowledge, again, that tech debt–and for that matter the pitfalls of coding as an exercise in turning thought into (abstracted) bits–is <em>not</em> unique to coding assistants. Like so many other devs, I have produced a mountain of tech debt since I worked professionally as a developer (and probably a couple mountains before that just learning how to code) 😅</p>
+					<p>But being aware of what tech debt is–and how to deal with it–is non-trivial knowledge for anyone who wants to write code with or without a coding assistant.</p>
+					<p>I recently had a relevant conversation with <a href="https://www.linkedin.com/in/gaylinwalli/">Gaylin Walli</a>, a Senior Documentation Manager at Fastly. I was struggling to reconcile AI's ability to produce documentation with the <a href="https://news.harvard.edu/gazette/story/2025/11/is-ai-dulling-our-minds/">cognitive atrophy</a> that can result from having AI do the thing for you.</p>
+					<p>Gaylin had a calm response to this along the lines of: <blockquote>"AI is just a tool, right? Every tool has strengths and weaknesses."</blockquote></p>
+					<p>And this, I think, gets to the heart of the matter. AI, like any other tool, can be wielded poorly or effectively; and like any other tool, practice is likely to improve our results in using the tool.</p>
+					<p>To frame this within the context of software development, we can use the "crawl, walk, run" (and optionally fly) approach. Although you'd want to be careful about <a href="https://www.projectmanagement.com/articles/305877/flaws-in-the-crawl-walk-run-methodology#_">using this methodology when building enterprise software</a>, I think it can be very helpful to acknowledge that you're not going to start building software with AI at hypersonic speeds.</p>
+					<p>During the <em>crawl</em> phase, you'll likely find that your coding assistant often doesn't give you what you want. But as you get better at providing requirements and begin to <em>walk</em>, you'll start to get those "This <em>is</em> [almost] what I wanted!" moments. And if you keep at it, not only will you start to get exactly what you wanted in the <em>run</em> phase; you may find that in the <em>fly</em> phase your prompts even start to set up your coding assistant to <strong>improve</strong> upon your vision.</p>
+					<div class="image-wrapper">
+						<img
+							src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/images/crawl-walk-run-fly.png"
+							alt="crawl, walk, run, fly"
+							loading="lazy"
+						/>
+					</div>
+					<p>So I encourage you to go forth and prompt your favorite chatbot or coding assistant <em>poorly</em>. Eventually you will likely find you get more of the results you want.</p>
+					<h2 id="musical-coda">Musical Coda</h2>
+					<p>
+						<em>And you no longer seem to cope</em><br />
+						<em>With what you ask for</em>
+					</p>
+					<div style="margin: 1em 0">
+						<div
+							class="photosensitivity-warning"
+							role="note"
+							aria-label="Photosensitivity warning"
+							style="
+								background: #fff4e5;
+								border-left: 4px solid #ffae00;
+								padding: 12px;
+								margin: 0 0 1em;
+								color: #222;
+							"
+						>
+							<strong>Photosensitivity WARNING</strong>: the video below
+							features flashing lights that could adversely affect some folks.
+							If that’s you, check out
+							<a
+								href="https://youtu.be/jOjz16oaphM?si=bx6lZuF3H-yYNweq"
+								style="color:#0a66c2;font-weight:600;text-decoration:underline;"
+								>this version</a
+							>, which has no video but I actually like even more strictly in terms of the audio (it’s <em>peak</em> progressive house).
+						</div>
+					</div>
+
+					<div class="video-wrap">
+						<div class="embed embed-full">
+							<iframe
+								src="https://www.youtube.com/embed/9vRtx8cICvs?si=XKQvOTK4d8Sxvvlq"
+								title="And you no longer seem to cope — musical coda"
+								width="560"
+								height="315"
+								frameborder="0"
+								allow="
+									accelerometer;
+									autoplay;
+									clipboard-write;
+									encrypted-media;
+									gyroscope;
+									picture-in-picture;
+								"
+								allowfullscreen
+							></iframe>
+						</div>
+					</div>
+					<p>Thanks for reading.</p>
+					<h2 id="references">References</h2>
+					<ul>
+						<li><a href="https://chat.openai.com/">ChatGPT</a> (AI abstraction layers, fact-checking)</li>
+						<li><a href="http://claude.ai">Claude</a> (fact-checking)</li>
+						<li><a href="https://gemini.com/">Gemini</a> (fact-checking)</li>
+						<li>
+							<a
+								href="https://www.gimp.org/docs/userfaq.html#i-dont-like-the-name-gimp-will-you-change-it"
+								>GNU Image Manipulation Program</a
+							>
+						</li>
+						<li>
+							
+							<a href="https://graphicriver.net/item/cat-drawing-vector/124662"
+								>Cat drawing</a
+							>
+						</li>
+						<li>
+							<a href="https://en.wikipedia.org/wiki/Technical_debt"
+								>Tech debt</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://en.wikipedia.org/wiki/Hyundai_Theta_engine#Theta_II"
+								>Hyundai Theta II</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://www.jalopnik.com/these-are-the-worst-engines-of-all-time-1851345221/"
+								>Jalopnik article</a
+							>
+						</li>
+						<li><a href="https://arxiv.org/abs/2509.09677">arXiv</a></li>
+						<li>
+							<a
+								href="https://garymarcus.substack.com/p/confirmed-llms-have-indeed-reached"
+								>Gary Marcus</a
+							>
+						</li>
+						<li><a href="https://www.imdb.com/title/tt4185460/">IMDb</a></li>
+						<li>
+							<a href="https://www.oed.com/dictionary/gimp_n3?tl=true">OED</a>
+						</li>
+						<li>
+							<a
+								href="https://www.datacamp.com/tutorial/run-llms-locally-tutorial"
+								>Run LLMs locally</a
+							>
+						</li>
+						<li>
+							<a href="https://en.wikipedia.org/wiki/Hand-waving"
+								>Hand-waving</a
+							>
+						</li>
+						<li>
+							<a href="https://en.wikipedia.org/wiki/Information_hazard"
+								>Information hazard</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://www.atlassian.com/work-management/project-management/acceptance-criteria"
+								>Acceptance criteria</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://news.harvard.edu/gazette/story/2025/11/is-ai-dulling-our-minds/"
+								>Harvard Gazette</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://www.projectmanagement.com/articles/305877/flaws-in-the-crawl-walk-run-methodology#_"
+								>Flaws in the crawl-walk-run methodology</a
+							>
+						<li>
+							<a href="data:image/png;base64,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">AWS 'Crawl Walk Run Fly' image</a>
+						</li>
+							<li>
+							<a href="https://youtu.be/9vRtx8cICvs?si=XKQvOTK4d8Sxvvlq"
+								>YouTube (musical coda)</a
+							>
+						</li>
+					</ul>
+				</article>
+			</main>
+		</div>
+	<script>
+// Ensure external links in this canonical post open in a new tab and show the icon.
+document.addEventListener('DOMContentLoaded', function () {
+	try {
+		const post = document.querySelector('#post-article') || document.body
+		const anchors = post.querySelectorAll('a')
+		for (const a of anchors) {
+			const href = a.getAttribute('href') || ''
+			if (!href) continue
+			if (href.startsWith('#')) continue
+			// Only treat http/https/youtube/data/image links as external for this purpose
+			if (/^https?:\/\//i.test(href) || href.startsWith('mailto:') || href.startsWith('data:')) {
+				a.setAttribute('target', '_blank')
+				a.setAttribute('rel', 'noopener noreferrer')
+				if (!a.querySelector('.external-link-icon') && !a.dataset.externalIconAdded) {
+					const span = document.createElement('span')
+					span.className = 'external-link-icon'
+					span.setAttribute('aria-hidden', 'true')
+					span.innerHTML = '<svg class="external-link-icon" xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>'
+					a.appendChild(span)
+					a.dataset.externalIconAdded = 'true'
+				}
+			}
+		}
+	} catch (e) {
+		console.debug('post external link enhancer error', e)
+	}
+})
+</script>
+
+</body>
+</html>

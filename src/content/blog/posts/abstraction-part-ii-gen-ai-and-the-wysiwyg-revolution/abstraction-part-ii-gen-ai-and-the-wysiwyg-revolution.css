@@ -1,0 +1,55 @@
+:root {
+	--bg: #fff;
+	--text: #111;
+	--accent: #0366d6;
+}
+body {
+	font-family:
+		system-ui,
+		-apple-system,
+		Segoe UI,
+		Roboto,
+		"Helvetica Neue",
+		Arial;
+	line-height: 1.6;
+	color: var(--text);
+	background: var(--bg);
+	padding: 24px;
+}
+main {
+	max-width: 800px;
+	margin: 0 auto;
+}
+pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	background: #f8f9fb;
+	border: 1px solid #e6e9ee;
+	padding: 18px;
+	border-radius: 6px;
+}
+img {
+	max-width: 100%;
+	height: auto;
+}
+.image-wrapper {
+	margin: 16px 0;
+}
+.show-image {
+	background: #0366d6;
+	color: #fff;
+	border: none;
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+.show-image:hover {
+	opacity: 0.95;
+}
+.post-embedded-image {
+	display: block;
+	margin: 12px 0;
+}
+.video-embed {
+	margin: 18px 0;
+}

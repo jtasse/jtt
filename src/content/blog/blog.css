@@ -63,10 +63,28 @@ header {
 	border-radius: 12px;
 }
 
-.blog-content h1 {
-	color: var(--heading-color);
-	margin-top: 0;
+.blog-content {
+	margin-left: 48px;
+	margin-right: 20px;
 	margin-bottom: 1.5rem;
+}
+/* Blog post link + external-icon styles (kept here as blog-specific rules) */
+.blog-content a {
+	text-decoration-color: currentColor;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+.blog-content a:hover,
+.blog-content a:focus {
+	text-decoration-color: currentColor !important;
+	color: #ffffff !important;
+}
+.blog-content a:hover .external-link-icon,
+.blog-content a:focus .external-link-icon {
+	color: #ffffff !important;
+}
+.blog-content .external-link-icon {
+	margin-right: 0.5ch; /* match portfolio spacing after icon */
 }
 
 #posts-heading {
@@ -93,6 +111,22 @@ header {
 .blog-content article h3 a:hover,
 .blog-content .blog-post-item:hover h2 {
 	text-shadow: var(--heading-shadow);
+	color: #ffffff; /* use white on hover to match portfolio */
+}
+
+/* Ensure hover/focus color change transitions smoothly for links and their icons */
+.blog-content article h3 a,
+.blog-content .blog-post-item .post-image a,
+.blog-content article a {
+	transition:
+		color 160ms ease,
+		text-shadow 160ms ease;
+}
+
+/* Make external icons in blog content inherit the hover color (white) */
+.blog-content a:hover .external-link-icon,
+.blog-content a:focus .external-link-icon {
+	color: #ffffff;
 }
 
 .blog-content article hr {
@@ -119,7 +153,7 @@ header {
 .blog-content:not(.single-post) .post-image img,
 .blog-content .blog-post-item .post-image img {
 	width: 100%;
-	height: 250px;
+	height: 220px;
 	object-fit: cover;
 	border: 1px solid var(--border-color-strong);
 	border-radius: 4px;
@@ -256,7 +290,6 @@ header {
 .single-post code {
 	font-family: "Consolas", "Monaco", monospace;
 	background: var(--code-bg);
-	padding: 0.2rem 0.4rem;
 	border-radius: 3px;
 	font-size: 0.9em;
 	color: var(--text-color);

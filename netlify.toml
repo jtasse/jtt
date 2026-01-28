@@ -28,6 +28,11 @@
   to = "/blog?tag=docs-as-tests"
   status = 301
 
+[[redirects]]
+  from = "/tag/abstraction/*"
+  to = "/blog?tag=abstraction"
+  status = 301
+
 # Preserve old WordPress site (static export)
 [[redirects]]
   from = "/old"

@@ -86,14 +86,14 @@ async function initReadingTime() {
 							updatePostMeta(meta, range)
 						}
 					} catch (err) {
-						console.warn(`Error calculating time for ${link.href}`, err)
+						console.debug(`Error calculating time for ${link.href}`, err)
 						hideReadingTime(meta)
 					}
 				}
 			}
 		}
 	} catch (e) {
-		console.warn("Global error in reading time script", e)
+		console.debug("Global error in reading time script", e)
 	}
 }
 
