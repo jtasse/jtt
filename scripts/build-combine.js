@@ -43,6 +43,9 @@ const extraFiles = [
 	join(root, "src", "main.js"),
 	join(root, "src", "router.js"),
 	join(root, "src", "settings.json"),
+	// Ensure theme styles referenced by post shells are present in dist
+	join(root, "src", "theme", "theme.css"),
+	join(root, "src", "content", "portfolio", "theme.css"),
 ]
 
 for (const f of extraFiles) {
