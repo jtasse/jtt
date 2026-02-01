@@ -61,6 +61,41 @@ export default defineConfig({
 						});
 					`,
 				},
+				// Favicon links
+				{
+					tag: "link",
+					attrs: {
+						rel: "apple-touch-icon",
+						sizes: "180x180",
+						href: "/favicon/apple-touch-icon.png",
+					},
+				},
+				{
+					tag: "link",
+					attrs: {
+						rel: "icon",
+						type: "image/png",
+						sizes: "32x32",
+						href: "/favicon/favicon-32x32.png",
+					},
+				},
+				{
+					tag: "link",
+					attrs: {
+						rel: "icon",
+						type: "image/png",
+						sizes: "16x16",
+						href: "/favicon/favicon-16x16.png",
+					},
+				},
+				{
+					tag: "link",
+					attrs: { rel: "manifest", href: "/favicon/site.webmanifest" },
+				},
+				{
+					tag: "link",
+					attrs: { rel: "shortcut icon", href: "/favicon/favicon.ico" },
+				},
 			],
 			sidebar: [
 				{
