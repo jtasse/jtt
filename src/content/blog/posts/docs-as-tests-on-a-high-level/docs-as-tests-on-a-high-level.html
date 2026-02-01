@@ -5,6 +5,26 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<title>Docs as Tests: Part I—On a High (Level)</title>
+		<!-- Favicon links -->
+		<link
+			rel="apple-touch-icon"
+			sizes="180x180"
+			href="/favicon/apple-touch-icon.png"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="32x32"
+			href="/favicon/favicon-32x32.png"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="16x16"
+			href="/favicon/favicon-16x16.png"
+		/>
+		<link rel="manifest" href="/favicon/site.webmanifest" />
+		<link rel="shortcut icon" href="/favicon/favicon.ico" />
 		<link rel="stylesheet" href="/src/content/blog/blog.css" />
 		<script src="/src/content/blog/blog.js" defer></script>
 	</head>
@@ -32,7 +52,30 @@
 							Tests posts (and probably some videos as well).
 						</p>
 					</blockquote>
-
+					<nav class="toc">
+						<p class="toc-heading">Contents</p>
+						<ol>
+							<li><a href="#the-book">The Book</a></li>
+							<li><a href="#the-promise">The Promise</a></li>
+							<li><a href="#the-goods">The Goods</a></li>
+							<li>
+								<a href="#and-you-showed-me-the-tools-why"
+									>And You Showed Me the Tools Why?</a
+								>
+							</li>
+							<li>
+								<a href="#what-success-looks-like">What Success Looks Like</a>
+							</li>
+							<li><a href="#demo">Demo</a></li>
+							<li><a href="#so-what">So what?</a></li>
+							<li>
+								<a href="#and-from-the-devs-come-testing-riches"
+									>And from the devs come testing riches</a
+								>
+							</li>
+							<li><a href="#whats-next">What's Next</a></li>
+						</ol>
+					</nav>
 					<p class="edit-note">
 						<strong>EDIT 6/30/25</strong>: I have created a
 						<a
@@ -316,9 +359,10 @@
 
 					<blockquote>
 						<p>
-							DISCLAIMER: below is probably an oversimplification of how
-							software testing works (and how messy it can be), but hopefully it
-							communicates the power of what documentarians can now access
+							<strong>DISCLAIMER</strong>: below is probably an
+							oversimplification of how software testing works (and how messy it
+							can be), but hopefully it communicates the power of what
+							documentarians can now access
 						</p>
 					</blockquote>
 
@@ -332,7 +376,52 @@
 					<p>
 						If a test failed, it meant that a developer had made a change that
 						didn't play nice with some existing functionality. They broke
+						something.
 					</p>
+					<p>
+						I don’t recall documentarians/technical writers ever having access
+						to <em>anything</em> like that. Sure there are lots of tools to
+						check spelling, grammar, style; and those are still important.
+					</p>
+					<p>
+						But now technical writers armed with tests like the one I demoed
+						above can say:
+					</p>
+					<blockquote style="text-align: center">
+						<em>Hey, dev team: <strong>you broke our docs</strong>*</em>
+					</blockquote>
+					<p>
+						* you might want to say it a little nicer than that, as developers
+						are people just trying to get their stuff done, too (see: the
+						<a
+							href="https://retrospectivewiki.org/index.php?title=The_Prime_Directive"
+							>Agile Prime Directive</a
+						>)
+					</p>
+					<h2 id="whats-next">What's Next</h2>
+					<p>
+						If you’re feeling brave, you can
+						<a
+							href="https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository"
+							>clone</a
+						>
+						the
+						<a href="https://github.com/jtasse/docsastests-demo/tree/main"
+							>GitHub repository</a
+						>
+						that I used for the demo in this post.
+					</p>
+					<p>
+						But fear not if you stopped learning about cloning with
+						<a href="https://www.imdb.com/title/tt0117108/">Multiplicity</a>. I
+						intend to do a deeper dive into how Doc Detective (and maybe other
+						testing tools) work in my next post.
+					</p>
+					<p>
+						I also plan produce a related video or two, if that’s more your
+						speed.
+					</p>
+					<p>Until then, happy testing. 😎</p>
 				</article>
 			</main>
 		</div>
