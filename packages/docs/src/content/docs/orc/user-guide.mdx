@@ -1,8 +1,15 @@
 ---
 title: ORC User Guide
 description: Complete guide to the Orbital Refuse Collector interface and features
+slug: orc/user-guide
 head: []
 ---
+
+import { Image } from "astro:assets"
+import viewport from "../../../assets/tutorial/viewport.png"
+import satellite_info from "../../../assets/tutorial/satellite_info.png"
+import actions_default from "../../../assets/tutorial/actions_default.png"
+import reset_scene from "../../../assets/tutorial/reset_scene.png"
 
 ## Overview
 
@@ -18,17 +25,19 @@ This is a demonstration interface. No actual satellites will be harmed by your a
 
 The ORC system supports decommission of satellites with the following orbit types:
 
-| Orbit Type      | Shorthand | Color   | Altitude (km)                                 | Eccentricity |
-| :-------------- | :-------- | :------ | :-------------------------------------------- | ------------ |
-| Low Earth Orbit | LEO       | Green   | 160–2,000                                     | Low          |
-| Geostationary   | GEO       | Magenta | 35,786                                        | None         |
-| Molniyan        | MOL       | Orange  | - perigee: 500–600<br>- apogee: 39,000–40,000 | High         |
+| Orbit Type      | Shorthand | Color   | Altitude (km)                                  | Eccentricity |
+| :-------------- | :-------- | :------ | :--------------------------------------------- | ------------ |
+| Low Earth Orbit | LEO       | Green   | 160–2,000                                      | Low          |
+| Geostationary   | GEO       | Magenta | 35,786                                         | None         |
+| Molniyan        | MOL       | Orange  | - perigee: 500–600<br/>- apogee: 39,000–40,000 | High         |
 
 ### 3D Viewport
 
 The main viewport displays Earth with orbiting satellites and the robotic hand actuator.
 
-> NOTE: the application supports a wide range of screen sizes. If you are using a mobile device, you may optionally turn your screen horizontally for an improved experience.
+<Image src={viewport} alt="3D Viewport" format="webp" />
+
+> **NOTE**: the application supports a wide range of screen sizes. If you are using a mobile device, you may optionally turn your screen horizontally for an improved experience.
 
 ### Satellite List
 
@@ -38,6 +47,8 @@ The `Orbital Refuse Collector Demo` toolbar displays all trackable satellites. C
 - Display its telemetry in the `Satellite Info` panel
 
 ### Satellite Info Panel
+
+<Image src={satellite_info} alt="Satellite info" format="webp" />
 
 Shows details about the selected satellite:
 
@@ -59,6 +70,8 @@ Simulates the satellite decommissioning process:
 
    Click the `Decommission Satellite` button in the `Actions` panel.
 
+   <Image src={actions_default} alt="Actions default" format="webp" />
+
 3. **Watch the Sequence**
 
    The robotic hand will travel to the satellite and perform the decommission.
@@ -71,28 +84,14 @@ The camera automatically follows the hand during decommissioning. After completi
 
 Click `Reset Scene` to restore all satellites to their original operational state.
 
+<Image src={reset_scene} alt="Reset Scene" format="webp" />
+
 ## Camera Controls
 
 While in the ORC demo, camera controls are managed automatically to provide optimal viewing angles. The smart camera system:
 
 - Follows the hand during decommission sequences
 - Provides smooth transitions between views
-
-## API Integration
-
-The ORC demo connects to a RESTful API for satellite data. Full API documentation is available for developers who want to integrate with the system.
-
-```
-GET /api/satellites
-GET /api/satellites/{id}
-POST /api/satellites/{id}/decommission
-```
-
-See the [API Reference](/portfolio/docs/orc/api-reference/) for complete endpoint documentation.
-
-:::caution[Rate Limiting]
-API requests are limited to 100 requests per minute.
-:::
 
 ## Troubleshooting
 
