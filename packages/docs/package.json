@@ -12,6 +12,7 @@
     "lint:sync": "vale sync"
   },
   "dependencies": {
+    "@astrojs/mdx": "^4.3.13",
     "@astrojs/starlight": "^0.32.0",
     "astro": "^5.1.0",
     "sharp": "^0.33.5"

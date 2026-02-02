@@ -4,22 +4,34 @@ description: Learn how to safely remove a satellite from orbit, abort the proced
 head: []
 ---
 
+import { Image } from "astro:assets"
+import available_satellites from "../../../assets/tutorial/available_satellites.png"
+import actions_default from "../../../assets/tutorial/actions_default.png"
+import actions_cancel from "../../../assets/tutorial/actions_cancel.png"
+import pause_resume from "../../../assets/tutorial/pause_resume_button.png"
+import reset_scene from "../../../assets/tutorial/reset_scene.png"
+import satellite_info from "../../../assets/tutorial/satellite_info.png"
+
 :::note[Learning Goal]
-By the end of this tutorial, you will be able to select a satellite, initiate a decommission sequence, and pause/resume or reset the scene.
+By the end of this tutorial, you will be able to select a satellite, initiate a decommission sequence, and reset the operation.
 :::
 
 1. **Select a Target Satellite**
 
    Locate the `Available Satellites` list in the `Orbital Refuse Collector Demo` sidebar.
 
+   <Image src={available_satellites} alt="Available Satellites" format="webp" />
    Click on any satellite name (For example: `Leona` or `Moltar`).
 
    _Observe:_ A light blue box surrounds the selected satellite within the scene, and its details appear in the `Satellite Info` pane.
+
+   <Image src={satellite_info} alt="Satellite Info" format="webp" />
 
 2. **Initiate Decommission**
 
    With a satellite selected, look at the `Actions` pane below the satellite list.
 
+   <Image src={actions_default} alt="Actions Default" format="webp" />
    Click the `Decommission Satellite` button.
 
    _Observe:_ The robotic hand activates and moves toward the target satellite before decommissioning it.
@@ -29,6 +41,8 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
    If you realize you have selected the wrong target or wish to stop the decommission for any reason, you can abort the process immediately.
 
    Locate the `Cancel Decommission` button.
+
+   <Image src={actions_cancel} alt="Actions Cancel" format="webp" />
 
    > **NOTE**: the `Decommission` button becomes the `Cancel Decommission` button once decommission is initiated.
 
@@ -40,6 +54,8 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 
    Locate the `Pause/Resume Scene` button.
 
+   <Image src={pause_resume} alt="Pause Resume" format="webp" />
+
    At any time, you may click the `Pause/Resume Scene` button to freeze the scene.
 
    _Observe:_ The satellites and Hand of ORC stop moving. At this point you may rotate the camera freely and take screenshots.
@@ -49,6 +65,8 @@ By the end of this tutorial, you will be able to select a satellite, initiate a 
 5. **Reset the Scene**
 
    If you would like restore the scene to its initial state, locate the `Reset Scene` button.
+
+   <Image src={reset_scene} alt="Reset Scene" format="webp" />
 
    Click `Reset Scene`.
 
