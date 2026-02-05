@@ -42,7 +42,7 @@ The Hand calculates an intercept solution that minimizes power usage and approac
 
 ### Phase 3: Deorbit
 
-The deorbitnig methodology used is determined by the target satellite's orbit type.
+The deorbiting methodology used is determined by the target satellite's orbit type.
 
 #### Low Earth Orbit (LEO)
 

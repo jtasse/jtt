@@ -7,9 +7,11 @@ export default defineConfig({
 	devToolbar: {
 		enabled: false,
 	},
-	server: {
-		watch: {
-			usePolling: true,
+	vite: {
+		server: {
+			watch: {
+				usePolling: true,
+			},
 		},
 	},
 	integrations: [
@@ -113,6 +115,10 @@ export default defineConfig({
 						},
 						{ label: "User Guide", slug: "orc/user-guide" },
 						{ label: "API Reference", slug: "orc/api-reference" },
+						{
+							label: "UI Reference Guide",
+							slug: "orc/ui-reference-guide",
+						},
 						{ label: "Whitepaper", slug: "orc/whitepaper" },
 					],
 				},
