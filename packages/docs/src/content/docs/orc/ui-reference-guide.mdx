@@ -1,0 +1,80 @@
+---
+title: "ORC User Interface Reference"
+description: Reference the interface elements and controls in the ORC demo.
+head: []
+---
+
+import { Image } from "astro:assets"
+import navigation_menu from "../../../assets/ui-reference/jtt-nav-menu.png"
+import high_level_ui_reference from "../../../assets/ui-reference/orc-demo-interface-annotated-simplified.png"
+import toolbar_ui_reference from "../../../assets/ui-reference/orc-demo-toolbar-annotated.png"
+import scene_ui_reference from "../../../assets/ui-reference/orc-demo-scene-reference-annotated.png"
+
+:::note[UI Reference]
+This reference guide details the interface elements and controls available in the **Orbital Refuse Collector (ORC) demo**. If you'd like to learn how to decommission a satellite, see the [Getting Started Tutorial](/portfolio/docs/orc/getting-started-tutorial/).
+:::
+
+## ORC Demo Interface Overview
+
+The ORC demo user interface is divided into 3 parts:
+
+| Number | Element Name    | Purpose                                           |
+| :----- | :-------------- | :------------------------------------------------ |
+| 1      | Navigation Menu | Access other areas of the jamestasse.tech website |
+| 2      | Toolbar         | Control the ORC demo and view documentation       |
+| 3      | ORC Demo Scene  | Select a satellite or view deorbiting activities  |
+
+<Image
+	src={high_level_ui_reference}
+	alt="High Level User Interface Reference"
+	format="webp"
+/>
+
+## 1 Navigation Menu
+
+The navigation menu allows navigation to the home, about, blog, or portfolio sections of the jamestasse.tech website.
+
+> **NOTE**: the inverted pyramid indicates the currently displayed section of the website.
+
+<Image src={navigation_menu} alt="Navigation Menu" format="webp" />
+
+## 2 Toolbar Reference
+
+The toolbar provides controls for the ORC demo scene along with quick links to relevant documentation.
+
+| Number | Element Name              | Purpose                                                            |
+| :----- | :------------------------ | :----------------------------------------------------------------- |
+| 1      | Play/Pause button         | Play or pause the ORC demo animation                               |
+| 2      | Reset Scene button        | Reset the ORC demo scene to its original state                     |
+| 3      | Available Satellites List | Display available satellites and allow the user to select each one |
+| 4      | Actions                   | When a satellite is selected, available actions are displayed here |
+| 5      | Satellite Info            | Shows information about the currently selected satellite           |
+| 6      | ORC Documentation         | Links to view ORC documentation                                    |
+
+<Image
+	src={toolbar_ui_reference}
+	alt="Toolbar User Interface Reference"
+	format="webp"
+/>
+
+## 3 Scene Reference
+
+The ORC demo scene shows the Earth, orbiting satellites, and the Hand of ORC.
+
+| Number | Element Name               | Description                                                     |
+| :----- | :------------------------- | :-------------------------------------------------------------- |
+| 1      | Leona                      | satellite in its Low Earth Orbit (LEO) displayed in green       |
+| 2      | George                     | satellite in its Geostationary Orbit (GEO) displayed in blue    |
+| 3      | Moltar                     | satellite in its Molniyan Orbit (MOL) displayed in orange       |
+| 4      | Geostationary Hover Target | Indicator showing Charleston, SC as the hover target for George |
+| 5      | Hand of ORC                | The robotic hand actuator that performs deorbiting operations   |
+
+<Image
+	src={scene_ui_reference}
+	alt="Scene User Interface Reference"
+	format="webp"
+/>
+
+:::tip[Next Steps]
+For a deeper dive into how the Orbital Refuse Collector system works, check out the white paper.
+:::
