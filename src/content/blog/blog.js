@@ -97,31 +97,140 @@ async function initReadingTime() {
 	}
 }
 
-function filterPostsByTag() {
-	const params = new URLSearchParams(window.location.search)
-	const tag = params.get("tag")
-	if (!tag) return
+let isInitializing = false
 
-	const articles = document.querySelectorAll(
+function initFilterSystem() {
+	// 1. Parse URL State
+	const params = new URLSearchParams(window.location.search)
+	let tag = params.get("tag")
+	let orderBy = params.get("orderby")
+	let order = params.get("order")
+
+	// Handle legacy URL format: /tag/tagname/
+	const path = window.location.pathname
+	const tagMatch = path.match(/\/tag\/([^/]+)/)
+	if (!tag && tagMatch) {
+		tag = tagMatch[1]
+	}
+
+	// Default sorting if not specified or malformed
+	if (!orderBy) {
+		orderBy = "date"
+		order = "desc"
+	}
+
+	// 2. Get all articles and available tags
+	const articleList = document.querySelectorAll(
 		".blog-content article, .blog-content .blog-post-item",
 	)
-	articles.forEach((article) => {
-		const tags = article.dataset.tags ? article.dataset.tags.split(",") : []
-		if (tags.includes(tag)) {
-			article.style.display = ""
+	const articles = Array.from(articleList)
+	const allTags = new Set()
+
+	articles.forEach((art) => {
+		const t = art.dataset.tags ? art.dataset.tags.split(",") : []
+		t.forEach((x) => allTags.add(x.trim()))
+	})
+
+	const sortedTags = Array.from(allTags).sort()
+
+	// 3. Render Filter Box
+	const filterContainer = document.getElementById("filter-container")
+	if (filterContainer) {
+		let html = `
+			<div class="filter-header">Filter posts by tag</div>
+			<div class="tag-cloud">
+		`
+
+		sortedTags.forEach((t) => {
+			const isActive = t === tag
+			// If a tag is selected, others are inactive (grayed out)
+			const statusClass = tag ? (isActive ? "active" : "inactive") : ""
+			html += `<button class="tag-btn ${statusClass}" data-tag="${t}">#${t}</button>`
+		})
+
+		if (tag) {
+			html += `<button class="clear-filter-btn">Clear Filter</button>`
+		}
+
+		html += `</div>`
+		filterContainer.innerHTML = html
+
+		// Bind events
+		filterContainer.querySelectorAll(".tag-btn").forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.preventDefault()
+				const selectedTag = btn.dataset.tag
+				// Per requirements: clicking a tag loads URL with order=asc
+				const newUrl = new URL(window.location.href)
+				newUrl.searchParams.set("tag", selectedTag)
+				newUrl.searchParams.set("orderby", "date")
+				newUrl.searchParams.set("order", "asc")
+				// Ensure we don't duplicate path segments if we were on a legacy URL
+				if (newUrl.pathname.includes("/tag/")) {
+					// Reset to base blog path if we are navigating away from legacy path structure
+					// Assuming /blog is the base.
+					newUrl.pathname = "/blog"
+				}
+				window.history.pushState({}, "", newUrl)
+				init()
+			})
+		})
+
+		const clearBtn = filterContainer.querySelector(".clear-filter-btn")
+		if (clearBtn) {
+			clearBtn.addEventListener("click", (e) => {
+				e.preventDefault()
+				const newUrl = new URL(window.location.href)
+				newUrl.searchParams.delete("tag")
+				newUrl.searchParams.delete("orderby")
+				newUrl.searchParams.delete("order")
+				// Handle legacy path clearing
+				if (newUrl.pathname.includes("/tag/")) {
+					newUrl.pathname = "/blog"
+				}
+				window.history.pushState({}, "", newUrl)
+				init()
+			})
+		}
+	}
+
+	// 4. Sort Articles
+	articles.sort((a, b) => {
+		const timeA = a.querySelector("time")
+			? new Date(a.querySelector("time").getAttribute("datetime"))
+			: new Date(0)
+		const timeB = b.querySelector("time")
+			? new Date(b.querySelector("time").getAttribute("datetime"))
+			: new Date(0)
+
+		if (order === "asc") {
+			return timeA - timeB
 		} else {
-			article.style.display = "none"
+			return timeB - timeA
 		}
 	})
 
-	// Update heading to show filtered state
-	const heading = document.getElementById("posts-heading")
-	if (heading) {
-		// Avoid duplicate tags
-		const existingSpan = heading.querySelector("span")
-		if (!existingSpan) {
-			heading.innerHTML += ` <span style="font-size: 0.5em; vertical-align: middle; opacity: 0.7;">#${tag}</span>`
-		}
+	// Re-append sorted articles
+	const contentContainer = document.querySelector(".blog-content")
+	if (contentContainer) {
+		articles.forEach((art) => contentContainer.appendChild(art))
+	}
+
+	// 5. Filter Articles
+	if (tag) {
+		articles.forEach((article) => {
+			const tags = article.dataset.tags ? article.dataset.tags.split(",") : []
+			if (tags.includes(tag)) {
+				article.style.display = ""
+			} else {
+				article.style.display = "none"
+			}
+		})
+	} else {
+		// Show all
+		articles.forEach((article) => {
+			article.style.display = ""
+		})
 	}
 }
 
@@ -156,9 +265,16 @@ function addRssLink() {
 }
 
 function init() {
+	if (isInitializing) return
+	isInitializing = true
+
 	initReadingTime()
-	filterPostsByTag()
+	initFilterSystem()
 	addRssLink()
+
+	setTimeout(() => {
+		isInitializing = false
+	}, 100)
 }
 
 if (document.readyState === "loading") {
