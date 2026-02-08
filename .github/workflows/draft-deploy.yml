@@ -11,6 +11,9 @@ on:
 jobs:
   build-and-draft-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       STAGING_SITE_ID: ${{ secrets.STAGING_SITE_ID }}

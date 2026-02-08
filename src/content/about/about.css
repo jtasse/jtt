@@ -93,6 +93,7 @@
 
 .webring-action:hover {
 	color: var(--link-hover-color);
+	text-shadow: var(--heading-shadow);
 }
 
 .external-link-icon {
@@ -101,7 +102,11 @@
 	opacity: 0.8;
 }
 
-.external-link-icon:hover {
+.about-content p a:hover .external-link-icon,
+.about-content p a:focus .external-link-icon,
+.webring-action:hover .external-link-icon,
+.webring-action:focus .external-link-icon {
 	color: var(--link-hover-color);
 	text-shadow: var(--heading-shadow);
+	opacity: 1;
 }
