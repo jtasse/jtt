@@ -328,21 +328,43 @@ export function showBlogPost(route) {
 			console.debug("showBlogPost: fetched html snippet", html.slice(0, 200))
 			const doc = parser.parseFromString(html, "text/html")
 
+			// Extract the post folder name from the normalized route to resolve relative paths
+			// e.g., "/blog/posts/abstraction-part-i-road-to-the-WYSIWYG" -> "abstraction-part-i-road-to-the-WYSIWYG"
+			const postFolderName = normalizedRoute.split("/").filter(Boolean).pop()
+
+			// Helper to convert relative paths to absolute blog post paths
+			function resolvePostPath(src) {
+				if (!src) return null
+				// Already absolute
+				if (src.startsWith("/src/content/blog/")) return src
+				// Relative path like "./slug.js" or "./style.css" -> resolve to post folder
+				if (src.startsWith("./")) {
+					return `/src/content/blog/posts/${postFolderName}/${src.slice(2)}`
+				}
+				// Other relative paths
+				if (!src.startsWith("/") && !src.startsWith("http")) {
+					return `/src/content/blog/posts/${postFolderName}/${src}`
+				}
+				return src
+			}
+
 			// Copy stylesheet links from the fetched document into the current
 			// document head so per-post CSS is applied when we inject only the
 			// body content. Avoid adding duplicates by checking existing hrefs.
 			try {
 				doc.querySelectorAll('link[rel="stylesheet"]').forEach((lnk) => {
 					const href = lnk.getAttribute("href")
-					if (!href || !href.startsWith("/src/content/blog/")) return
+					const resolvedHref = resolvePostPath(href)
+					if (!resolvedHref || !resolvedHref.startsWith("/src/content/blog/"))
+						return
 					// Check if an equivalent href already exists in current head
 					const exists = Array.from(
 						document.head.querySelectorAll('link[rel="stylesheet"]'),
-					).some((h) => h.getAttribute("href") === href)
+					).some((h) => h.getAttribute("href") === resolvedHref)
 					if (!exists) {
 						const newLink = document.createElement("link")
 						newLink.setAttribute("rel", "stylesheet")
-						newLink.setAttribute("href", href)
+						newLink.setAttribute("href", resolvedHref)
 						document.head.appendChild(newLink)
 					}
 				})
@@ -350,13 +372,15 @@ export function showBlogPost(route) {
 				// Also copy over script tags with src so post-specific JS runs.
 				doc.querySelectorAll("script[src]").forEach((s) => {
 					const src = s.getAttribute("src")
-					if (!src || !src.startsWith("/src/content/blog/")) return
+					const resolvedSrc = resolvePostPath(src)
+					if (!resolvedSrc || !resolvedSrc.startsWith("/src/content/blog/"))
+						return
 					const exists = Array.from(
 						document.head.querySelectorAll("script"),
-					).some((h) => h.getAttribute("src") === src)
+					).some((h) => h.getAttribute("src") === resolvedSrc)
 					if (!exists) {
 						const scr = document.createElement("script")
-						scr.setAttribute("src", src)
+						scr.setAttribute("src", resolvedSrc)
 						if (s.hasAttribute("defer")) scr.setAttribute("defer", "")
 						document.head.appendChild(scr)
 					}

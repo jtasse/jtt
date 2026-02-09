@@ -1,9 +1,5 @@
-:root {
-	--bg: #fff;
-	--text: #111;
-	--accent: #0366d6;
-}
-body {
+/* Post-specific content styles (scoped to .blog-content to avoid affecting SPA) */
+.blog-content {
 	font-family:
 		system-ui,
 		-apple-system,
@@ -12,15 +8,13 @@ body {
 		"Helvetica Neue",
 		Arial;
 	line-height: 1.6;
-	color: var(--text);
-	background: var(--bg);
-	padding: 24px;
+	color: #111;
 }
-main {
+.blog-content main {
 	max-width: 800px;
 	margin: 0 auto;
 }
-pre {
+.blog-content pre {
 	white-space: pre-wrap;
 	word-wrap: break-word;
 	background: #f8f9fb;
@@ -28,14 +22,14 @@ pre {
 	padding: 18px;
 	border-radius: 6px;
 }
-img {
+.blog-content img {
 	max-width: 100%;
 	height: auto;
 }
-.image-wrapper {
+.blog-content .image-wrapper {
 	margin: 16px 0;
 }
-.show-image {
+.blog-content .show-image {
 	background: #0366d6;
 	color: #fff;
 	border: none;
@@ -43,29 +37,29 @@ img {
 	border-radius: 6px;
 	cursor: pointer;
 }
-.show-image:hover {
+.blog-content .show-image:hover {
 	opacity: 0.95;
 }
-.post-embedded-image {
+.blog-content .post-embedded-image {
 	display: block;
 	margin: 12px 0;
 }
-.video-embed {
+.blog-content .video-embed {
 	margin: 18px 0;
 }
 /* Override blog-wide link hover styles for the warning link */
 .blog-content a.warning-link {
-	color: #0366d6;
+	color: red;
 	font-weight: 700;
 	text-decoration: underline;
 	text-decoration-color: currentColor;
 }
 .blog-content a.warning-link:hover,
 .blog-content a.warning-link:focus {
-	color: #35c3e6 !important;
+	color: green !important;
 	text-decoration-color: currentColor !important;
 }
 .blog-content a.warning-link:hover .external-link-icon,
 .blog-content a.warning-link:focus .external-link-icon {
-	color: #35c3e6 !important;
+	color: green !important;
 }
