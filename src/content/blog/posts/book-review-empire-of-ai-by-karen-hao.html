@@ -1,25 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<script>
-			;(function () {
-				const orig = MutationObserver.prototype.observe
-				MutationObserver.prototype.observe = function (target, options) {
-					try {
-						if (!(target && target.nodeType === 1)) {
-							console.warn(
-								"Ignored MutationObserver.observe with non-Node target",
-								target,
-							)
-							return
-						}
-					} catch (e) {
-						return
-					}
-					return orig.call(this, target, options)
-				}
-			})()
-		</script>
+		<script src="/src/content/blog/posts/book-review-empire-of-ai-by-karen-hao/book-review-empire-of-ai-by-karen-hao.js"></script>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Book Review: Empire of AI by Karen Hao - James.Tasse</title>

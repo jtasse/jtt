@@ -373,6 +373,11 @@ export function showBlogPost(route) {
 				doc.querySelectorAll("script[src]").forEach((s) => {
 					const src = s.getAttribute("src")
 					const resolvedSrc = resolvePostPath(src)
+					console.debug("showBlogPost: script", {
+						original: src,
+						resolved: resolvedSrc,
+						postFolderName,
+					})
 					if (!resolvedSrc || !resolvedSrc.startsWith("/src/content/blog/"))
 						return
 					const exists = Array.from(
@@ -383,6 +388,7 @@ export function showBlogPost(route) {
 						scr.setAttribute("src", resolvedSrc)
 						if (s.hasAttribute("defer")) scr.setAttribute("defer", "")
 						document.head.appendChild(scr)
+						console.debug("showBlogPost: appended script", resolvedSrc)
 					}
 				})
 			} catch (e) {
@@ -436,6 +442,17 @@ export function showBlogPost(route) {
 					content && content.slice ? content.slice(0, 300) : String(content),
 				)
 			} catch (e) {}
+
+			// Remove script tags from injected content to prevent browser from loading them
+			// with relative paths. The actual post scripts are already added to document.head
+			// with resolved absolute paths above.
+			if (content) {
+				const tempDiv = document.createElement("div")
+				tempDiv.innerHTML = content
+				tempDiv.querySelectorAll("script").forEach((s) => s.remove())
+				content = tempDiv.innerHTML
+			}
+
 			console.debug(
 				"showBlogPost: injecting content (len)",
 				content && content.length,
