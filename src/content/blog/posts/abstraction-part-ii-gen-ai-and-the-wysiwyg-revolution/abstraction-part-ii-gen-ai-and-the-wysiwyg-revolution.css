@@ -53,3 +53,19 @@ img {
 .video-embed {
 	margin: 18px 0;
 }
+/* Override blog-wide link hover styles for the warning link */
+.blog-content a.warning-link {
+	color: #0366d6;
+	font-weight: 700;
+	text-decoration: underline;
+	text-decoration-color: currentColor;
+}
+.blog-content a.warning-link:hover,
+.blog-content a.warning-link:focus {
+	color: #35c3e6 !important;
+	text-decoration-color: currentColor !important;
+}
+.blog-content a.warning-link:hover .external-link-icon,
+.blog-content a.warning-link:focus .external-link-icon {
+	color: #35c3e6 !important;
+}
