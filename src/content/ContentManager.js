@@ -256,59 +256,48 @@ export function showBlogPost(route) {
 
 	const myToken = getPyramidAnimToken()
 
-	const fetchUrl = `/src/content${route}.html`
+	// Normalize route to support several incoming forms:
+	// - `/blog/posts/slug`
+	// - `/blog/posts/slug.html`
+	// - `/src/content/blog/posts/slug` (full path)
+	// - `/src/content/blog/posts/slug.html` (full path with extension)
+	let normalizedRoute = route || ""
+	if (normalizedRoute.startsWith("/src/content")) {
+		normalizedRoute = normalizedRoute.replace(/^\/src\/content/, "")
+	}
+	if (normalizedRoute.endsWith(".html")) {
+		normalizedRoute = normalizedRoute.replace(/\.html$/, "")
+	}
+	const fetchUrl = `/src/content${normalizedRoute}.html`
 
-	// Helper to try the requested URL, then fall back to /index.html if the
-	// direct .html fetch returns 404. This preserves existing routes when posts
-	// are moved into per-post folders with an index.html.
+	// Helper to try the requested URL, then fall back to /index.html only when
+	// the direct .html fetch returns 404. This avoids accepting the SPA shell.
 	async function fetchHtmlWithIndexFallback(url, opts) {
-		// Prefer the folder index variant first (works when posts are moved
-		// into per-post folders). If that fails, fall back to the legacy
-		// flat .html path so both layouts are supported.
+		const direct = await fetch(url, opts)
+		if (direct && direct.ok) return direct
+
+		if (direct && direct.status !== 404) return direct
+
 		if (/\.html$/i.test(url)) {
 			const indexUrl = url.replace(/\.html$/i, "/index.html")
 			try {
-				let res = await fetch(indexUrl, opts)
-				if (res && res.ok) {
-					// check whether the index.html is just a loader/redirect page
-					const txt = await res.text()
-					if (
-						txt.includes("Loading post") ||
-						txt.includes("post-container") ||
-						txt.includes("meta http-equiv") ||
-						txt.includes("Moved:")
-					) {
-						// attempt to fetch canonical slug file inside folder
-						const base = url.replace(/\.html$/i, "")
-						const slug = base.split("/").pop()
-						const candidate = base + "/" + slug + ".html"
-						try {
-							const r2 = await fetch(candidate, opts)
-							if (r2 && r2.ok) return r2
-						} catch (ee) {
-							// ignore and fall back to returning the index content
-						}
-						// return the original index response constructed from text
-						return new Response(txt, {
-							status: res.status,
-							statusText: res.statusText,
-							headers: res.headers,
-						})
-					}
-					// index.html contains full content — return original response
-					return new Response(txt, {
-						status: res.status,
-						statusText: res.statusText,
-						headers: res.headers,
-					})
-				}
+				return await fetch(indexUrl, opts)
 			} catch (e) {
-				// ignore network errors and try fallback
+				// ignore network errors and fall back to returning direct response
 			}
 		}
 
-		// final attempt: original url
-		return await fetch(url, opts)
+		return direct
+	}
+
+	function isSpaShellHtml(html) {
+		if (!html) return false
+		return (
+			html.includes("__indexHtmlLoaded") ||
+			html.includes("/src/main.js") ||
+			html.includes("#scene-container") ||
+			html.includes('id="site-footer"')
+		)
 	}
 
 	console.debug("showBlogPost: fetching", fetchUrl)
@@ -330,36 +319,99 @@ export function showBlogPost(route) {
 				return
 			}
 
+			if (isSpaShellHtml(html)) {
+				throw new Error("Post HTML resolved to SPA shell")
+			}
+
 			const parser = new DOMParser()
 			console.debug("showBlogPost: fetched html length", html.length)
 			console.debug("showBlogPost: fetched html snippet", html.slice(0, 200))
 			const doc = parser.parseFromString(html, "text/html")
+
+			// Copy stylesheet links from the fetched document into the current
+			// document head so per-post CSS is applied when we inject only the
+			// body content. Avoid adding duplicates by checking existing hrefs.
+			try {
+				doc.querySelectorAll('link[rel="stylesheet"]').forEach((lnk) => {
+					const href = lnk.getAttribute("href")
+					if (!href || !href.startsWith("/src/content/blog/")) return
+					// Check if an equivalent href already exists in current head
+					const exists = Array.from(
+						document.head.querySelectorAll('link[rel="stylesheet"]'),
+					).some((h) => h.getAttribute("href") === href)
+					if (!exists) {
+						const newLink = document.createElement("link")
+						newLink.setAttribute("rel", "stylesheet")
+						newLink.setAttribute("href", href)
+						document.head.appendChild(newLink)
+					}
+				})
+
+				// Also copy over script tags with src so post-specific JS runs.
+				doc.querySelectorAll("script[src]").forEach((s) => {
+					const src = s.getAttribute("src")
+					if (!src || !src.startsWith("/src/content/blog/")) return
+					const exists = Array.from(
+						document.head.querySelectorAll("script"),
+					).some((h) => h.getAttribute("src") === src)
+					if (!exists) {
+						const scr = document.createElement("script")
+						scr.setAttribute("src", src)
+						if (s.hasAttribute("defer")) scr.setAttribute("defer", "")
+						document.head.appendChild(scr)
+					}
+				})
+			} catch (e) {
+				console.debug("Failed to copy post assets:", e)
+			}
 			// Prefer main.blog-content or .blog-content to extract the article body
 			let contentElMatch = null
 			let content = null
-			const matchedMain = doc.querySelector("main.blog-content")
-			if (matchedMain) {
-				contentElMatch = "main.blog-content"
-				console.debug(
-					"showBlogPost: matched outerHTML snippet",
-					matchedMain.outerHTML.slice(0, 300),
-				)
-				content = matchedMain.innerHTML
-			} else if (doc.querySelector(".blog-content")) {
-				contentElMatch = ".blog-content"
-				content = doc.querySelector(".blog-content").innerHTML
-			} else if (doc.querySelector("#content")) {
-				contentElMatch = "#content"
-				content = doc.querySelector("#content").innerHTML
-			} else if (doc.querySelector("main")) {
-				contentElMatch = "main"
-				content = doc.querySelector("main").innerHTML
+			// Prefer explicit article element when available to avoid injecting
+			// full page wrappers (headers/footers) which cause duplication.
+			const postArticle = doc.querySelector("article#post-article")
+			if (postArticle) {
+				contentElMatch = "article#post-article"
+				content = postArticle.outerHTML
 			} else {
-				contentElMatch = "body"
-				content = doc.body.innerHTML
+				const matchedMain = doc.querySelector("main.blog-content")
+				if (matchedMain) {
+					contentElMatch = "main.blog-content"
+					console.debug(
+						"showBlogPost: matched outerHTML snippet",
+						matchedMain.outerHTML.slice(0, 300),
+					)
+					content = matchedMain.innerHTML
+				} else if (doc.querySelector(".blog-content")) {
+					contentElMatch = ".blog-content"
+					content = doc.querySelector(".blog-content").innerHTML
+				} else if (doc.querySelector("#content")) {
+					contentElMatch = "#content"
+					content = doc.querySelector("#content").innerHTML
+					// If the selected container exists but is empty (some templates
+					// render content client-side), fall back to the full body so we
+					// still inject something useful.
+					if (!content || !content.trim()) {
+						content = doc.body ? doc.body.innerHTML : content
+						contentElMatch = contentElMatch + " (fallback to body)"
+					}
+				} else if (doc.querySelector("main")) {
+					contentElMatch = "main"
+					content = doc.querySelector("main").innerHTML
+				} else {
+					contentElMatch = "body"
+					content = doc.body.innerHTML
+				}
 			}
 
 			console.debug("showBlogPost: matched selector", contentElMatch)
+			// Log a short snippet to help debug missing content issues
+			try {
+				console.debug(
+					"showBlogPost: content snippet",
+					content && content.slice ? content.slice(0, 300) : String(content),
+				)
+			} catch (e) {}
 			console.debug(
 				"showBlogPost: injecting content (len)",
 				content && content.length,
