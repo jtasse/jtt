@@ -3,8 +3,8 @@
 		const orig = MutationObserver.prototype.observe
 		MutationObserver.prototype.observe = function (target, options) {
 			try {
-				if (target && typeof target === 'object') {
-					if ('nodeType' in target && target.nodeType === 1) {
+				if (target && typeof target === "object") {
+					if ("nodeType" in target && target.nodeType === 1) {
 						return orig.call(this, target, options)
 					}
 					try {
@@ -13,7 +13,10 @@
 						}
 					} catch (inner) {}
 				}
-				console.warn('Skipping MutationObserver.observe for non-Node target', target)
+				console.warn(
+					"Skipping MutationObserver.observe for non-Node target",
+					target,
+				)
 				return
 			} catch (e) {
 				try {
@@ -24,8 +27,6 @@
 			}
 		}
 	} catch (e) {}
-		// ignore
-	}
 
 	function makeLoader(canonicalFilename) {
 		return async function load() {

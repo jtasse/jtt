@@ -27,10 +27,29 @@
 			rel="canonical"
 			href="https://jamestasse.tech/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.html"
 		/>
+		<link
+			rel="apple-touch-icon"
+			sizes="180x180"
+			href="/favicon/apple-touch-icon.png"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="32x32"
+			href="/favicon/favicon-32x32.png"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="16x16"
+			href="/favicon/favicon-16x16.png"
+		/>
+		<link rel="manifest" href="/favicon/site.webmanifest" />
+		<link rel="shortcut icon" href="/favicon/favicon.ico" />
 		<link rel="stylesheet" href="/src/content/blog/blog.css" />
 		<link
 			rel="stylesheet"
-			href="./abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.css"
+			href="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.css"
 		/>
 		<meta
 			name="description"
@@ -41,7 +60,7 @@
 			href="https://jamestasse.tech/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.html"
 		/>
 		<script
-			src="./abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.js"
+			src="/src/content/blog/posts/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution/abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution.js"
 			defer
 		></script>
 	</head>
@@ -603,12 +622,8 @@
 							features flashing lights that could adversely affect some folks.
 							If that's you, check out
 							<a
+								class="warning-link"
 								href="https://youtu.be/jOjz16oaphM?si=bx6lZuF3H-yYNweq"
-								style="
-									color: #0a66c2;
-									font-weight: 600;
-									text-decoration: underline;
-								"
 								>this version</a
 							>, which has no video but I actually like even more strictly in
 							terms of the audio (it's <em>peak</em> progressive house).
@@ -732,42 +747,5 @@
 				</article>
 			</main>
 		</div>
-		<script>
-			// Ensure external links in this canonical post open in a new tab and show the icon.
-			document.addEventListener("DOMContentLoaded", function () {
-				try {
-					const post = document.querySelector("#post-article") || document.body
-					const anchors = post.querySelectorAll("a")
-					for (const a of anchors) {
-						const href = a.getAttribute("href") || ""
-						if (!href) continue
-						if (href.startsWith("#")) continue
-						// Only treat http/https/youtube/data/image links as external for this purpose
-						if (
-							/^https?:\/\//i.test(href) ||
-							href.startsWith("mailto:") ||
-							href.startsWith("data:")
-						) {
-							a.setAttribute("target", "_blank")
-							a.setAttribute("rel", "noopener noreferrer")
-							if (
-								!a.querySelector(".external-link-icon") &&
-								!a.dataset.externalIconAdded
-							) {
-								const span = document.createElement("span")
-								span.className = "external-link-icon"
-								span.setAttribute("aria-hidden", "true")
-								span.innerHTML =
-									'<svg class="external-link-icon" xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>'
-								a.appendChild(span)
-								a.dataset.externalIconAdded = "true"
-							}
-						}
-					}
-				} catch (e) {
-					console.debug("post external link enhancer error", e)
-				}
-			})
-		</script>
 	</body>
 </html>

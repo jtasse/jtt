@@ -474,6 +474,23 @@ function routeToPage(route) {
 	return routeMap[route] || "home"
 }
 
+// Helper to resolve blog post URL (handles migration)
+function resolveBlogPostUrl(route) {
+	const slug = route.split("/").pop()
+	// Check for the migrated post (temporary hardcoding until all are migrated)
+	if (slug === "abstraction-part-ii-gen-ai-and-the-wysiwyg-revolution") {
+		// Return the normalized client-side route so ContentManager
+		// will construct the correct fetch URL (it prepends `/src/content`).
+		return `/blog/posts/${slug}`
+	}
+	// Default behavior for legacy posts (folder-based)
+	// If the input was a short route "/my-slug", convert to "/blog/posts/my-slug"
+	if (!route.includes("/blog/posts/")) {
+		return `/blog/posts/${slug}`
+	}
+	return route
+}
+
 router.onRouteChange((rawRoute) => {
 	try {
 		// Normalize trailing slash
@@ -552,7 +569,8 @@ router.onRouteChange((rawRoute) => {
 			)
 		) {
 			// Single-segment route like `/em-dashing` — treat as blog post slug
-			const postRoute = `/blog/posts${route}`
+			const postUrl = resolveBlogPostUrl(route)
+
 			if (controls) controls.enabled = false
 			// Reuse existing blog post flow by delegating to showBlogPost with the
 			// mapped `/blog/posts/<slug>` route.
@@ -563,7 +581,7 @@ router.onRouteChange((rawRoute) => {
 					triggerHandPageTransition("orc-demo", "blog")
 					resetPyramidToHome(labelManager)
 					animatePyramid(labelManager, true, "blog")
-					showBlogPost(postRoute)
+					showBlogPost(postUrl)
 				}, 1300)
 			} else {
 				const isAtTop = pyramidGroup.position.y >= 1.5
@@ -571,7 +589,7 @@ router.onRouteChange((rawRoute) => {
 					animatePyramid(labelManager, true, "blog", () => {
 						startLoading()
 						setTimeout(async () => {
-							await showBlogPost(postRoute)
+							await showBlogPost(postUrl)
 							stopLoading()
 						}, 500)
 					})
@@ -581,7 +599,7 @@ router.onRouteChange((rawRoute) => {
 						() => {
 							startLoading()
 							setTimeout(async () => {
-								await showBlogPost(postRoute)
+								await showBlogPost(postUrl)
 								stopLoading()
 							}, 600)
 						},
@@ -592,6 +610,9 @@ router.onRouteChange((rawRoute) => {
 			window.centeredLabelName = "Blog"
 		} else if (route.includes("/blog/posts/")) {
 			if (controls) controls.enabled = false
+
+			const postUrl = resolveBlogPostUrl(route)
+
 			// Handle individual blog posts - keep pyramid at top but don't reload content
 			if (isOrcSceneActive()) {
 				hideAllPlanes()
@@ -600,7 +621,7 @@ router.onRouteChange((rawRoute) => {
 					triggerHandPageTransition("orc-demo", "blog")
 					resetPyramidToHome(labelManager)
 					animatePyramid(labelManager, true, "blog")
-					showBlogPost(route)
+					showBlogPost(postUrl)
 				}, 1300)
 			} else {
 				const isAtTop = pyramidGroup.position.y >= 1.5
@@ -608,7 +629,7 @@ router.onRouteChange((rawRoute) => {
 					animatePyramid(labelManager, true, "blog", () => {
 						startLoading()
 						setTimeout(async () => {
-							await showBlogPost(route)
+							await showBlogPost(postUrl)
 							stopLoading()
 						}, 500)
 					})
@@ -618,7 +639,7 @@ router.onRouteChange((rawRoute) => {
 						() => {
 							startLoading()
 							setTimeout(async () => {
-								await showBlogPost(route)
+								await showBlogPost(postUrl)
 								stopLoading()
 							}, 600)
 						},

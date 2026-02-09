@@ -288,9 +288,12 @@ let initTimeout
 try {
 	const observer = new MutationObserver((mutations) => {
 		for (const mutation of mutations) {
-			if (mutation.addedNodes.length) {
-				// If blog content is added, re-initialize
-				if (document.querySelector(".blog-content")) {
+			for (const node of mutation.addedNodes) {
+				if (
+					node.nodeType === 1 &&
+					(node.classList?.contains("blog-content") ||
+						node.querySelector?.(".blog-content"))
+				) {
 					if (initTimeout) clearTimeout(initTimeout)
 					initTimeout = setTimeout(() => {
 						init()

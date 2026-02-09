@@ -16,7 +16,6 @@ export class ThemeManager {
 	}
 
 	init() {
-		console.debug("[ThemeManager] Initializing...")
 		this.applyTheme(this.theme)
 		this.createControl()
 
@@ -109,7 +108,6 @@ export class ThemeManager {
 	}
 
 	updateVisibility(route) {
-		console.debug(`[ThemeManager] Updating visibility for route: ${route}`)
 		if (!this.control) return
 
 		// Hide on home page, show on content pages
