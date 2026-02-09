@@ -49,17 +49,17 @@
 }
 /* Override blog-wide link hover styles for the warning link */
 .blog-content a.warning-link {
-	color: red;
+	color: #0366d6;
 	font-weight: 700;
 	text-decoration: underline;
 	text-decoration-color: currentColor;
 }
 .blog-content a.warning-link:hover,
 .blog-content a.warning-link:focus {
-	color: green !important;
+	color: #16b3f1 !important;
 	text-decoration-color: currentColor !important;
 }
 .blog-content a.warning-link:hover .external-link-icon,
 .blog-content a.warning-link:focus .external-link-icon {
-	color: green !important;
+	color: #16b3f1 !important;
 }
