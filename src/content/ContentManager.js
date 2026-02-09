@@ -300,22 +300,13 @@ export function showBlogPost(route) {
 		)
 	}
 
-	console.debug("showBlogPost: fetching", fetchUrl)
 	fetchHtmlWithIndexFallback(fetchUrl)
 		.then((res) => {
-			console.debug("showBlogPost: fetch result", res && res.status)
 			if (!res || !res.ok) throw new Error("Failed to load post")
 			return res.text()
 		})
 		.then((html) => {
-			console.debug(
-				"showBlogPost: myToken=",
-				myToken,
-				"current=",
-				getPyramidAnimToken(),
-			)
 			if (myToken !== getPyramidAnimToken()) {
-				console.debug("showBlogPost: token changed, aborting render")
 				return
 			}
 
@@ -324,8 +315,6 @@ export function showBlogPost(route) {
 			}
 
 			const parser = new DOMParser()
-			console.debug("showBlogPost: fetched html length", html.length)
-			console.debug("showBlogPost: fetched html snippet", html.slice(0, 200))
 			const doc = parser.parseFromString(html, "text/html")
 
 			// Extract the post folder name from the normalized route to resolve relative paths
@@ -373,11 +362,6 @@ export function showBlogPost(route) {
 				doc.querySelectorAll("script[src]").forEach((s) => {
 					const src = s.getAttribute("src")
 					const resolvedSrc = resolvePostPath(src)
-					console.debug("showBlogPost: script", {
-						original: src,
-						resolved: resolvedSrc,
-						postFolderName,
-					})
 					if (!resolvedSrc || !resolvedSrc.startsWith("/src/content/blog/"))
 						return
 					const exists = Array.from(
@@ -388,7 +372,6 @@ export function showBlogPost(route) {
 						scr.setAttribute("src", resolvedSrc)
 						if (s.hasAttribute("defer")) scr.setAttribute("defer", "")
 						document.head.appendChild(scr)
-						console.debug("showBlogPost: appended script", resolvedSrc)
 					}
 				})
 			} catch (e) {
@@ -407,10 +390,7 @@ export function showBlogPost(route) {
 				const matchedMain = doc.querySelector("main.blog-content")
 				if (matchedMain) {
 					contentElMatch = "main.blog-content"
-					console.debug(
-						"showBlogPost: matched outerHTML snippet",
-						matchedMain.outerHTML.slice(0, 300),
-					)
+
 					content = matchedMain.innerHTML
 				} else if (doc.querySelector(".blog-content")) {
 					contentElMatch = ".blog-content"
@@ -434,15 +414,6 @@ export function showBlogPost(route) {
 				}
 			}
 
-			console.debug("showBlogPost: matched selector", contentElMatch)
-			// Log a short snippet to help debug missing content issues
-			try {
-				console.debug(
-					"showBlogPost: content snippet",
-					content && content.slice ? content.slice(0, 300) : String(content),
-				)
-			} catch (e) {}
-
 			// Remove script tags from injected content to prevent browser from loading them
 			// with relative paths. The actual post scripts are already added to document.head
 			// with resolved absolute paths above.
@@ -453,10 +424,6 @@ export function showBlogPost(route) {
 				content = tempDiv.innerHTML
 			}
 
-			console.debug(
-				"showBlogPost: injecting content (len)",
-				content && content.length,
-			)
 			contentEl.innerHTML = `
 						<div class="blog-content single-post">
 							${content}
