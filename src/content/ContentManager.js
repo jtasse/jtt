@@ -591,9 +591,11 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
-						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
-							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-						</svg>
+							<span class="external-link-icon" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+									<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+								</svg>
+							</span>
 					</a>
 					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
@@ -638,9 +640,11 @@ function showImageViewer(contentEl, imageUrl, onCloseCallback) {
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${imageUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
-						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
-							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-						</svg>
+							<span class="external-link-icon" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+									<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+								</svg>
+							</span>
 					</a>
 					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
@@ -770,9 +774,11 @@ function showFullScreenEmbed(contentEl, url, _type) {
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${url}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
-						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
-							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-						</svg>
+						<span class="external-link-icon" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+								<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+							</svg>
+						</span>
 					</a>
 					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
@@ -831,9 +837,11 @@ function showFullScreenImage(contentEl, url, onCloseCallback) {
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
 					<a href="${url}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
-						<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
-							<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-						</svg>
+						<span class="external-link-icon" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
+								<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+							</svg>
+						</span>
 					</a>
 					<button class="embed-control-btn embed-close-btn" title="Close" style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">

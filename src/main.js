@@ -146,6 +146,8 @@ function decorateNewTabLinks(root = document) {
 
 			// Add icon for any link that opens in a new tab (only once)
 			if (a.target === "_blank") {
+				// Skip links marked to skip decoration
+				if (a.dataset.noExternalIcon) continue
 				// If an existing icon (static SVG) already exists, don't add another
 				if (a.querySelector && a.querySelector(".external-link-icon")) continue
 				if (a.dataset.externalIconAdded) continue
