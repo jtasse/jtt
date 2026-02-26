@@ -313,6 +313,9 @@
 	padding: 20px;
 	cursor: default;
 	transition: all 0.2s ease;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
 }
 
 h1 {
@@ -327,6 +330,32 @@ h1 {
 .portfolio-item .portfolio-thumb,
 .portfolio-item .portfolio-thumb-wrapper {
 	cursor: pointer;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	min-width: 0;
+}
+
+.portfolio-item h2 {
+	font-size: 1.25rem;
+	color: var(--link-color);
+	margin-bottom: 1rem;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	max-width: 100%;
+	width: 100%;
+}
+
+.portfolio-item h2 a {
+	display: inline;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	hyphens: auto;
+}
+
+.portfolio-item h2 a .external-link-icon {
+	display: inline-block;
+	margin-left: 0.25em;
+	vertical-align: middle;
 }
 
 .portfolio-item:hover {

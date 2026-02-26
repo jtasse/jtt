@@ -25,8 +25,22 @@
 
 /* Constrain content width within the full-width overlay */
 #content > * {
-	width: min(1300px, 90%);
+	width: min(1600px, calc(100% - 250px));
 	padding-bottom: 100px; /* Ensure content clears bottom elements */
+	box-sizing: border-box;
+}
+
+/* Responsive width adjustments */
+@media (max-width: 1200px) {
+	#content > * {
+		width: min(1400px, calc(100% - 200px));
+	}
+}
+
+@media (max-width: 900px) {
+	#content > * {
+		width: calc(100% - 40px);
+	}
 }
 
 /* Ensure images and other content scale to fit */
