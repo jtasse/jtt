@@ -125,6 +125,14 @@ function updateMetaTags(route) {
  * - Append a small external-link SVG icon to links with target="_blank".
  * - Observe DOM changes so dynamically injected content (SPA) is handled.
  */
+
+// Suppress benign ResizeObserver errors
+window.addEventListener("error", (e) => {
+	if (e.message.includes("ResizeObserver loop")) {
+		e.stopImmediatePropagation()
+	}
+})
+
 function decorateNewTabLinks(root = document) {
 	try {
 		const anchors = (root || document).querySelectorAll("a")
@@ -146,6 +154,8 @@ function decorateNewTabLinks(root = document) {
 
 			// Add icon for any link that opens in a new tab (only once)
 			if (a.target === "_blank") {
+				// Skip links marked to skip decoration (check existence, not value)
+				if ("noExternalIcon" in a.dataset) continue
 				// If an existing icon (static SVG) already exists, don't add another
 				if (a.querySelector && a.querySelector(".external-link-icon")) continue
 				if (a.dataset.externalIconAdded) continue

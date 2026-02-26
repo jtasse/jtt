@@ -9,7 +9,12 @@
 		overlay.className = "portfolio-viewer-overlay"
 		overlay.innerHTML = `
         <button class="viewer-close-btn" title="Close">&times;</button>
-        <a href="#" target="_blank" class="viewer-new-tab-btn" style="display:none;">Open in New Tab</a>
+        <button class="viewer-new-tab-btn">
+            Open in New Tab
+            <span class="external-link-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>
+            </span>
+        </button>
         <div id="viewer-container" class="viewer-content" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
     `
 		document.body.appendChild(overlay)
@@ -121,7 +126,7 @@
 		function openViewer(url) {
 			container.innerHTML = ""
 			newTabBtn.href = url
-			newTabBtn.style.display = "inline-block"
+			newTabBtn.setAttribute("data-url", url)
 			document.body.style.overflow = "hidden" // Prevent background scrolling
 
 			let displayUrl = url
