@@ -576,7 +576,9 @@ h1 {
 	position: fixed;
 	top: 0;
 	left: 0;
-	width: 100%;
+	/* Reserve space for fixed theme control on the right */
+	right: 56px;
+	width: auto;
 	height: 100%;
 	background: rgba(0, 0, 0, 0.9);
 	z-index: 1000;
