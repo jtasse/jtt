@@ -25,23 +25,27 @@
 }
 
 /* Link Styles in Paragraphs */
-.portfolio-page p a {
+.portfolio-page p a,
+.portfolio-page blockquote a {
 	color: var(--link-color);
 	text-decoration: underline;
 	transition: all 0.2s ease;
 }
 
-.portfolio-page p a:visited {
+.portfolio-page p a:visited,
+.portfolio-page blockquote a:visited {
 	color: var(--link-color);
 }
 
-.portfolio-page p a:hover {
+.portfolio-page p a:hover,
+.portfolio-page blockquote a:hover {
 	color: #ffffff; /* use white on hover like production */
 	text-shadow: var(--heading-shadow);
 }
 
 /* Ensure icon inside portfolio links inherits hover color */
-.portfolio-page p a:hover .external-link-icon {
+.portfolio-page p a:hover .external-link-icon,
+.portfolio-page blockquote a:hover .external-link-icon {
 	color: #ffffff;
 }
 
@@ -572,7 +576,9 @@ h1 {
 	position: fixed;
 	top: 0;
 	left: 0;
-	width: 100%;
+	/* Reserve space for fixed theme control on the right */
+	right: 56px;
+	width: auto;
 	height: 100%;
 	background: rgba(0, 0, 0, 0.9);
 	z-index: 1000;
@@ -697,4 +703,12 @@ header nav a:not(:hover) {
 .portfolio-page h2,
 .portfolio-page h3 {
 	scroll-margin-top: 100px;
+}
+
+blockquote {
+	border-left: 3px solid var(--accent-color);
+	margin: 1.5rem 0;
+	padding: 1rem 1.5rem;
+	background: var(--code-bg);
+	border-radius: 0 4px 4px 0;
 }

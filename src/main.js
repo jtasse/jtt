@@ -134,6 +134,46 @@ window.addEventListener("error", (e) => {
 })
 
 function decorateNewTabLinks(root = document) {
+	const isPortfolioLocalViewableLink = (a) => {
+		if (!a || !a.matches || !a.matches("a")) return false
+
+		// Explicit opt-in for local viewer behavior.
+		if (
+			a.classList.contains("view-locally") ||
+			a.hasAttribute("view-locally")
+		) {
+			return true
+		}
+
+		// Limit heuristic detection to portfolio links so other pages keep existing behavior.
+		const inPortfolio = a.closest(".portfolio-content, .portfolio-page")
+		if (!inPortfolio) return false
+
+		const href = a.getAttribute("href")
+		if (!href) return false
+
+		try {
+			const url = new URL(href, window.location.origin)
+			const host = url.hostname.toLowerCase()
+			const path = url.pathname.toLowerCase()
+
+			if (host.includes("youtube.com") || host === "youtu.be") return true
+			if (host.includes("docs.google.com") && path.includes("/document/d/")) {
+				return true
+			}
+			if (host.includes("drive.google.com")) {
+				if (path.includes("/file/d/")) return true
+				if (path.includes("/preview")) return true
+			}
+			if (path.endsWith(".pdf")) return true
+			if (/\.(png|jpe?g|gif|webp|svg)$/i.test(path)) return true
+		} catch {
+			return false
+		}
+
+		return false
+	}
+
 	try {
 		const anchors = (root || document).querySelectorAll("a")
 		for (const a of anchors) {
@@ -154,6 +194,14 @@ function decorateNewTabLinks(root = document) {
 
 			// Add icon for any link that opens in a new tab (only once)
 			if (a.target === "_blank") {
+				if (isPortfolioLocalViewableLink(a)) {
+					const existingIcon =
+						a.querySelector && a.querySelector(".external-link-icon")
+					if (existingIcon) existingIcon.remove()
+					delete a.dataset.externalIconAdded
+					continue
+				}
+
 				// Skip links marked to skip decoration (check existence, not value)
 				if ("noExternalIcon" in a.dataset) continue
 				// If an existing icon (static SVG) already exists, don't add another

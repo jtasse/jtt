@@ -497,6 +497,45 @@ function hideBlog() {
 // === Portfolio Helpers ===
 
 function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
+	const tryOpenPortfolioLinkLocally = (link, { forceLocal = false } = {}) => {
+		const ytId = extractYouTubeID(link)
+		if (ytId) {
+			const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+			showEmbedViewer(contentEl, embedUrl, onCloseCallback)
+			return true
+		}
+
+		const docId = extractGoogleDocsID(link)
+		if (docId) {
+			const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
+			showEmbedViewer(contentEl, embedUrl, onCloseCallback)
+			return true
+		}
+
+		const drivePreviewUrl = getGoogleDrivePreviewURL(link)
+		if (drivePreviewUrl) {
+			showEmbedViewer(contentEl, drivePreviewUrl, onCloseCallback)
+			return true
+		}
+
+		if (isPdfURL(link)) {
+			showEmbedViewer(contentEl, link, onCloseCallback)
+			return true
+		}
+
+		if (isImageURL(link)) {
+			showImageViewer(contentEl, link, onCloseCallback)
+			return true
+		}
+
+		if (forceLocal) {
+			showEmbedViewer(contentEl, link, onCloseCallback)
+			return true
+		}
+
+		return false
+	}
+
 	contentEl.querySelectorAll(".portfolio-item").forEach((item) => {
 		item.style.cursor = "pointer"
 		item.addEventListener("click", (ev) => {
@@ -505,32 +544,35 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			const link = item.dataset.link
 			if (!link) return
 
-			const ytId = extractYouTubeID(link)
-			if (ytId) {
-				const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-				return
+			if (!tryOpenPortfolioLinkLocally(link)) {
+				window.open(link, "_blank")
 			}
-
-			const docId = extractGoogleDocsID(link)
-			if (docId) {
-				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-				return
-			}
-
-			if (isImageURL(link)) {
-				showImageViewer(contentEl, link, onCloseCallback)
-				return
-			}
-
-			window.open(link, "_blank")
 		})
 	})
+
+	// Explicit opt-in links should use the local viewer (class or boolean attribute).
+	contentEl
+		.querySelectorAll("a.view-locally, a[view-locally]")
+		.forEach((link) => {
+			link.addEventListener("click", (ev) => {
+				ev.preventDefault()
+				ev.stopPropagation()
+				ev.stopImmediatePropagation()
+				const href = link.getAttribute("href")
+				if (!href) return
+				tryOpenPortfolioLinkLocally(href, { forceLocal: true })
+			})
+		})
 
 	// Handle external links (like Wikipedia links)
 	contentEl.querySelectorAll("a[href^='http']").forEach((link) => {
 		link.addEventListener("click", (ev) => {
+			if (
+				link.classList.contains("view-locally") ||
+				link.hasAttribute("view-locally")
+			) {
+				return
+			}
 			ev.preventDefault()
 			ev.stopPropagation()
 			window.open(link.getAttribute("href"), "_blank")
@@ -544,11 +586,7 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			ev.preventDefault()
 			ev.stopPropagation()
 			const link = resumeLink.getAttribute("href")
-			const docId = extractGoogleDocsID(link)
-			if (docId) {
-				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-			}
+			if (link) tryOpenPortfolioLinkLocally(link, { forceLocal: true })
 		})
 	}
 
@@ -589,7 +627,7 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
 			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: 100%; height: 100%; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
-					<a href="${embedUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
+					<a href="${embedUrl}" target="_blank" rel="noopener noreferrer" class="embed-control-btn embed-open-tab-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
 							<span class="external-link-icon" aria-hidden="true">
 								<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
@@ -630,6 +668,16 @@ function showEmbedViewer(contentEl, embedUrl, onCloseCallback) {
 	if (closeBtn) {
 		closeBtn.addEventListener("click", closeViewer)
 	}
+
+	const openTabBtn = contentEl.querySelector(".embed-open-tab-btn")
+	if (openTabBtn) {
+		openTabBtn.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			ev.stopImmediatePropagation()
+			window.open(embedUrl, "_blank", "noopener,noreferrer")
+		})
+	}
 }
 
 function showImageViewer(contentEl, imageUrl, onCloseCallback) {
@@ -638,7 +686,7 @@ function showImageViewer(contentEl, imageUrl, onCloseCallback) {
 		<div class="embed-wrapper" style="display: flex; align-items: center; justify-content: center;">
 			<div class="embed-inner-container" style="display: flex; flex-direction: column; width: auto; max-width: 90vw; height: auto; max-height: 90vh; background: rgba(10, 10, 26, 0.95); padding: 10px; border-radius: 8px; border: 1px solid #00ffff;">
 				<div class="embed-controls" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
-					<a href="${imageUrl}" target="_blank" class="embed-control-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
+					<a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="embed-control-btn embed-open-tab-btn" title="Open in new tab" style="display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; background: rgba(0, 255, 255, 0.1); padding: 8px 12px; border-radius: 4px; border: 1px solid #00ffff; transition: all 0.2s ease;">
 						<span style="font-size: 0.9rem; font-weight: bold;">Open in new tab</span>
 							<span class="external-link-icon" aria-hidden="true">
 								<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF">
@@ -678,6 +726,16 @@ function showImageViewer(contentEl, imageUrl, onCloseCallback) {
 	if (closeBtn) {
 		closeBtn.addEventListener("click", closeViewer)
 	}
+
+	const openTabBtn = contentEl.querySelector(".embed-open-tab-btn")
+	if (openTabBtn) {
+		openTabBtn.addEventListener("click", (ev) => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			ev.stopImmediatePropagation()
+			window.open(imageUrl, "_blank", "noopener,noreferrer")
+		})
+	}
 }
 
 function extractYouTubeID(url) {
@@ -702,6 +760,50 @@ function extractGoogleDocsID(url) {
 		return null
 	}
 	return null
+}
+
+function extractGoogleDriveFileID(url) {
+	try {
+		const u = new URL(url, window.location.origin)
+		if (!u.hostname.includes("drive.google.com")) return null
+
+		const pathMatch = u.pathname.match(/\/file\/d\/([^/]+)/)
+		if (pathMatch) return pathMatch[1]
+
+		const idParam = u.searchParams.get("id")
+		if (idParam) return idParam
+	} catch {
+		return null
+	}
+	return null
+}
+
+function getGoogleDrivePreviewURL(url) {
+	try {
+		const u = new URL(url, window.location.origin)
+		if (!u.hostname.includes("drive.google.com")) return null
+
+		if (u.pathname.includes("/preview")) {
+			return u.toString()
+		}
+
+		const fileId = extractGoogleDriveFileID(url)
+		if (fileId) {
+			return `https://drive.google.com/file/d/${fileId}/preview`
+		}
+	} catch {
+		return null
+	}
+	return null
+}
+
+function isPdfURL(url) {
+	try {
+		const u = new URL(url, window.location.origin)
+		return u.pathname.toLowerCase().endsWith(".pdf")
+	} catch {
+		return false
+	}
 }
 
 function isImageURL(url) {
