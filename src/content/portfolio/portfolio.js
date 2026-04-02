@@ -64,12 +64,20 @@
 				const href = link.href
 				let shouldIntercept = false
 
+				// Explicit opt-in: force local viewer behavior
+				if (
+					link.classList.contains("view-locally") ||
+					link.hasAttribute("view-locally")
+				) {
+					shouldIntercept = true
+				}
+
 				// Check for Resume class
-				if (link.classList.contains("resume-link")) {
+				if (!shouldIntercept && link.classList.contains("resume-link")) {
 					shouldIntercept = true
 				}
 				// Check for PDF extension (ignoring query params)
-				else {
+				else if (!shouldIntercept) {
 					try {
 						const urlObj = new URL(href)
 						if (urlObj.pathname.toLowerCase().endsWith(".pdf")) {

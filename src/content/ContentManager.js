@@ -497,6 +497,29 @@ function hideBlog() {
 // === Portfolio Helpers ===
 
 function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
+	const openPortfolioLinkLocally = (link) => {
+		const ytId = extractYouTubeID(link)
+		if (ytId) {
+			const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+			showEmbedViewer(contentEl, embedUrl, onCloseCallback)
+			return
+		}
+
+		const docId = extractGoogleDocsID(link)
+		if (docId) {
+			const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
+			showEmbedViewer(contentEl, embedUrl, onCloseCallback)
+			return
+		}
+
+		if (isImageURL(link)) {
+			showImageViewer(contentEl, link, onCloseCallback)
+			return
+		}
+
+		showEmbedViewer(contentEl, link, onCloseCallback)
+	}
+
 	contentEl.querySelectorAll(".portfolio-item").forEach((item) => {
 		item.style.cursor = "pointer"
 		item.addEventListener("click", (ev) => {
@@ -505,32 +528,33 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			const link = item.dataset.link
 			if (!link) return
 
-			const ytId = extractYouTubeID(link)
-			if (ytId) {
-				const embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-				return
-			}
-
-			const docId = extractGoogleDocsID(link)
-			if (docId) {
-				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-				return
-			}
-
-			if (isImageURL(link)) {
-				showImageViewer(contentEl, link, onCloseCallback)
-				return
-			}
-
-			window.open(link, "_blank")
+			openPortfolioLinkLocally(link)
 		})
 	})
+
+	// Explicit opt-in links should use the local viewer (class or boolean attribute).
+	contentEl
+		.querySelectorAll("a.view-locally, a[view-locally]")
+		.forEach((link) => {
+			link.addEventListener("click", (ev) => {
+				ev.preventDefault()
+				ev.stopPropagation()
+				ev.stopImmediatePropagation()
+				const href = link.getAttribute("href")
+				if (!href) return
+				openPortfolioLinkLocally(href)
+			})
+		})
 
 	// Handle external links (like Wikipedia links)
 	contentEl.querySelectorAll("a[href^='http']").forEach((link) => {
 		link.addEventListener("click", (ev) => {
+			if (
+				link.classList.contains("view-locally") ||
+				link.hasAttribute("view-locally")
+			) {
+				return
+			}
 			ev.preventDefault()
 			ev.stopPropagation()
 			window.open(link.getAttribute("href"), "_blank")
@@ -544,11 +568,7 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 			ev.preventDefault()
 			ev.stopPropagation()
 			const link = resumeLink.getAttribute("href")
-			const docId = extractGoogleDocsID(link)
-			if (docId) {
-				const embedUrl = `https://docs.google.com/document/d/${docId}/preview`
-				showEmbedViewer(contentEl, embedUrl, onCloseCallback)
-			}
+			if (link) openPortfolioLinkLocally(link)
 		})
 	}
 
