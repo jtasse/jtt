@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename)
 const SOURCE_DIR = path.resolve(__dirname, "../markdown")
 const OUTPUT_DIR = path.resolve(__dirname, "../posts")
 const NAV_IMAGES_DIR = path.resolve(__dirname, "../nav-images")
+const BASE_URL = "https://jamestasse.tech"
 const BLOG_LIST_PATH = path.resolve(__dirname, "../blog.html")
 
 const GENERATED_START = "<!-- GENERATED_POSTS_START -->"
@@ -143,20 +144,29 @@ function renderPostHtml({
 	stylesheetHrefs,
 	scriptSrcs,
 }) {
+	const absoluteCoverImage = coverImageUrl.startsWith("http")
+		? coverImageUrl
+		: `${BASE_URL}${coverImageUrl.replace("/src/content", "")}`
+
 	const coverMarkup = coverImageUrl
 		? `
 					<div class="post-image">
-						<img src="${coverImageUrl}" alt="${title}" />
+						<img src="${coverImageUrl.replace("/src/content", "")}" alt="${title}" />
 					</div>
 `
 		: ""
 
 	const extraStylesheets = stylesheetHrefs
-		.map((href) => `    <link rel="stylesheet" href="${href}">`)
+		.map(
+			(href) =>
+				`    <link rel="stylesheet" href="${href.replace("/src/content", "")}">`,
+		)
 		.join("\n")
 
 	const extraScripts = scriptSrcs
-		.map((src) => `    <script src="${src}"></script>`)
+		.map(
+			(src) => `    <script src="${src.replace("/src/content", "")}"></script>`,
+		)
 		.join("\n")
 
 	return `<!DOCTYPE html>
@@ -168,13 +178,13 @@ function renderPostHtml({
     <meta name="description" content="${description}">
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
-    <meta property="og:image" content="${coverImageUrl}">
+    <meta property="og:image" content="${absoluteCoverImage}">
     <meta property="og:url" content="${url}">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="/src/content/blog/blog.css">
+    <link rel="stylesheet" href="/blog/blog.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 ${extraStylesheets}
-    <script src="/src/content/blog/blog.js" defer></script>
+    <script src="/blog/blog.js" defer></script>
 </head>
 <body>
     <div id="content" class="container">
@@ -207,7 +217,7 @@ function renderGeneratedArticle(post) {
 							? `
 					<div class="post-image">
 						<a href="/blog/posts/${post.slug}">
-							<img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async" />
+							<img src="${post.image.replace("/src/content", "")}" alt="${post.title}" loading="lazy" decoding="async" />
 						</a>
 					</div>`
 							: ""
@@ -239,17 +249,18 @@ ${generatedMarkup}
 				`Could not find insertion point in ${BLOG_LIST_PATH}. Add generated post markers manually.`,
 			)
 		}
-		blogHtml = blogHtml.replace(
-			insertionPoint,
-			`$1\n${replacementBlock}\n`,
-		)
+		blogHtml = blogHtml.replace(insertionPoint, `$1\n${replacementBlock}\n`)
 	}
 
 	fs.writeFileSync(BLOG_LIST_PATH, blogHtml)
 }
 
 function getRelativeCoverPath(frontmatterImage) {
-	if (!frontmatterImage || isExternalUrl(frontmatterImage) || isLocalProjectPath(frontmatterImage)) {
+	if (
+		!frontmatterImage ||
+		isExternalUrl(frontmatterImage) ||
+		isLocalProjectPath(frontmatterImage)
+	) {
 		return null
 	}
 	return normalizeRelativeAssetPath(frontmatterImage)
@@ -404,9 +415,7 @@ function main() {
 				resolveMarkdownImageUrl(slug, href, coverRelativePath, coverImageUrl),
 			)
 			const safeAlt = escapeHtml(text)
-			const safeTitle = imageTitle
-				? ` title="${escapeHtml(imageTitle)}"`
-				: ""
+			const safeTitle = imageTitle ? ` title="${escapeHtml(imageTitle)}"` : ""
 			return `<img src="${src}" alt="${safeAlt}"${safeTitle}>`
 		}
 
