@@ -12,6 +12,7 @@ A 3D interactive personal website built with Three.js featuring a rotating pyram
 #build
 npm run build      # Build both main site and docs
 npm run build:main # Build main site only
+node src/content/blog/scripts/build-blog.js # Convert Markdown posts to HTML
 npm run build:docs # Build docs only
 
 #run
