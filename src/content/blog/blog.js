@@ -21,31 +21,77 @@ function updatePostMeta(metaElement, timeRange) {
 
 	// Use innerHTML to preserve the <time> tag
 	const html = metaElement.innerHTML
-	const parts = html.split("|")
+	const parts = html
+		.split("|")
+		.map((part) => part.trim())
+		.filter(Boolean)
 
 	// If we have 3 or more parts, assume the last one is the old reading time and replace it
 	// If not, append the new time
 	if (parts.length >= 3) {
-		parts[parts.length - 1] = ` ${timeRange} read`
+		parts[parts.length - 1] = `${timeRange} read`
 	} else {
-		parts.push(` ${timeRange} read`)
+		parts.push(`${timeRange} read`)
 	}
 
-	metaElement.innerHTML = parts.join("|")
+	metaElement.innerHTML = parts.join(" | ")
 }
 
 function hideReadingTime(metaElement) {
 	if (!metaElement) return
-	const parts = metaElement.innerHTML.split("|")
+	const parts = metaElement.innerHTML
+		.split("|")
+		.map((part) => part.trim())
+		.filter(Boolean)
 	if (parts.length >= 3) {
 		parts.pop()
-		metaElement.innerHTML = parts.join("|")
+		metaElement.innerHTML = parts.join(" | ")
 	}
+}
+
+function getBlogPostFetchUrl(href) {
+	if (!href) return null
+
+	try {
+		const url = new URL(href, window.location.origin)
+		let route = url.pathname
+
+		if (route.startsWith("/src/content/")) {
+			if (!route.endsWith(".html")) {
+				route = `${route}.html`
+			}
+			return route
+		}
+
+		if (route.startsWith("/blog/posts/")) {
+			route = route.replace(/^\/blog\/posts\//, "/src/content/blog/posts/")
+			if (!route.endsWith(".html")) {
+				route = `${route}.html`
+			}
+			return route
+		}
+	} catch (err) {
+		console.debug("Could not normalize blog post fetch URL", href, err)
+	}
+
+	return null
+}
+
+function isSpaShellHtml(html) {
+	if (!html) return false
+	return (
+		html.includes("__indexHtmlLoaded") ||
+		html.includes("/src/main.js") ||
+		html.includes("#scene-container") ||
+		html.includes('id="site-footer"')
+	)
 }
 
 async function initReadingTime() {
 	try {
-		const singlePostArticle = document.querySelector(".single-post article")
+		const singlePostArticle = document.querySelector(
+			".single-post #post-article, .single-post article",
+		)
 
 		if (singlePostArticle) {
 			// Check if already processed
@@ -73,12 +119,21 @@ async function initReadingTime() {
 
 				if (link && meta) {
 					try {
-						const response = await fetch(link.href)
+						const fetchUrl = getBlogPostFetchUrl(link.href)
+						if (!fetchUrl) throw new Error("Unsupported blog post URL")
+
+						const response = await fetch(fetchUrl)
 						if (!response.ok) throw new Error("Fetch failed")
 						const html = await response.text()
+						if (isSpaShellHtml(html)) {
+							throw new Error("Resolved to SPA shell instead of post HTML")
+						}
+
 						const parser = new DOMParser()
 						const doc = parser.parseFromString(html, "text/html")
-						const postContent = doc.querySelector(".single-post article")
+						const postContent = doc.querySelector(
+							".single-post #post-article, .single-post article, #post-article",
+						)
 
 						if (postContent) {
 							const text = postContent.textContent

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meowlin - James Tasse</title>
+    <meta name="description" content="Meowlin identifies cat breeds from user-uploaded audio recordings (or rather it *would* if its processing layer were not mocked)">
+    <meta property="og:title" content="Meowlin">
+    <meta property="og:description" content="Meowlin identifies cat breeds from user-uploaded audio recordings (or rather it *would* if its processing layer were not mocked)">
+    <meta property="og:image" content="/src/content/blog/nav-images/meowlin.png">
+    <meta property="og:url" content="https://jamestasse.tech/blog/posts/meowlin">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="stylesheet" href="/src/content/blog/blog.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+    <script src="/src/content/blog/blog.js" defer></script>
+</head>
+<body>
+    <div id="content" class="container">
+        <main class="blog-content single-post">
+            <article id="post-article">
+
+					<div class="post-image">
+						<img src="/src/content/blog/nav-images/meowlin.png" alt="Meowlin" />
+					</div>
+                <h1>Meowlin</h1>
+                <div class="post-meta"><time datetime="2026-05-13">May 13, 2026</time> | James Tasse</div>
+                <section class="post-body">
+                    <h1>That bird app</h1>
+<p>You may have heard of <a href="https://merlin.allaboutbirds.org/">Merlin</a>, a fantastic mobile app that can identify birds in real time.</p>
+<h1>This cat app</h1>
+<p>Well I had a very simple idea. What if I created a solution like Merlin but for <em>cats</em>? Thus <a href="https://github.com/jtasse/meowlin/tree/main">Meowlin</a> was born.</p>
+<h1>Caveats</h1>
+<p>All right, before we go any further, I need to clarify that one cannot simply walk into a cat cafe and use Meowlin to start identifying cat breeds based on recorded meows. This is first and foremost a <em>demo</em> of the knowledge I gained before <a href="https://drive.google.com/file/d/1H1U0T9gPwDbSFsZ8DSF9j-uFtdjSesaL">passing</a> the <a href="https://aws.amazon.com/certification/certified-developer-associate/">AWS Certified Developer - Associate</a> exam. As such, I would like to call out a few <a href="https://github.com/jtasse/meowlin/blob/main/README.md#caveats">caveats</a>, the main one being that I implemented mock processing for this demo <em>rather than gathering loads of high quality meow audio and using machine learning to train an audio processing model</em>. Phew!</p>
+<p>But who knows, mabye someday!</p>
+<h1>How it works</h1>
+<p>I won&#39;t get into the weeds here. There&#39;s a <a href="https://github.com/jtasse/meowlin/blob/main/README.md#high-level-data-flow">high level overview</a> of the process in the solution&#39;s <a href="https://github.com/jtasse/meowlin/blob/main/README.md">README</a> and a <a href="https://github.com/jtasse/meowlin/blob/main/ARCHITECTURE.md#current-sequence-diagram">detailed sequence diagram</a> in the solution&#39;s <a href="https://github.com/jtasse/meowlin/blob/main/ARCHITECTURE.md">Architecture doc</a> if you&#39;re curious.</p>
+<p>But at a very high level, here&#39;s how it works:</p>
+<ol>
+<li>User uploads a raw audio file using a pre-signed URL.</li>
+<li>Solution returns a [mocked] result that may or may not contain a cat breed ID.</li>
+</ol>
+<h1>What&#39;s next</h1>
+<p>I&#39;d like to get more experience with React, so I plan to create some kind of client (possibly one for Meowlin to replace its unwieldy Postman collection!).</p>
+<p>In any case, thanks for reading!</p>
+
+                </section>
+            </article>
+        </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+</body>
+</html>

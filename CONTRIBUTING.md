@@ -41,6 +41,9 @@ Content includes files that relate to the `About`, `Portfolio`, `Blog`, and `ORC
 
 Blog content must live under `src\content\blog`. More specifically:
 
+- The `src\content\blog\markdown` folder contains the source `.md` files for posts.
+- **DO NOT** edit files in `src\content\blog\posts` directly; they are generated from Markdown.
+- Run `node src/content/blog/scripts/build-blog.js` after modifying Markdown files.
 - The `src\content\blog` folder contains the files for the blog post navigation page.
 - The `src\content\blog\posts` folder contains the files for individual blog posts.
 

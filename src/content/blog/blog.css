@@ -228,6 +228,12 @@ header {
 	text-decoration: none;
 }
 
+/* Blog list view cover containers */
+.blog-content:not(.single-post) .post-image,
+.blog-content .blog-post-item .post-image {
+	max-width: 66%;
+}
+
 /* Blog list view images - constrained for consistent cover look */
 .blog-content:not(.single-post) .post-image img,
 .blog-content .blog-post-item .post-image img {
@@ -261,6 +267,13 @@ header {
 	margin: 0 auto;
 	border: 1px solid var(--border-color-strong);
 	border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+	.blog-content:not(.single-post) .post-image,
+	.blog-content .blog-post-item .post-image {
+		max-width: 100%;
+	}
 }
 
 .single-post h1 {
