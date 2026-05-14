@@ -1,5 +1,6 @@
 ---
 title: Meowlin
+og_title: Meowlin - [pretend to] identify cat breeds based on their meows
 date: 2026-05-13
 description: Meowlin identifies cat breeds from user-uploaded audio recordings (or rather it *would* if its processing layer were not mocked)
 image: ./meowlin_cover_photo.png

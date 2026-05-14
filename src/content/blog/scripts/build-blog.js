@@ -5,6 +5,7 @@ import matter from "gray-matter"
 import { marked } from "marked"
 
 const __filename = fileURLToPath(import.meta.url)
+const IS_DEV = process.env.NODE_ENV !== "production"
 const __dirname = path.dirname(__filename)
 
 const SOURCE_DIR = path.resolve(__dirname, "../markdown")
@@ -143,15 +144,23 @@ function renderPostHtml({
 	bodyHtml,
 	stylesheetHrefs,
 	scriptSrcs,
+	displayTitle,
 }) {
+	const localAssetRootPath = IS_DEV ? "/src/content" : "/blog"
+
 	const absoluteCoverImage = coverImageUrl.startsWith("http")
 		? coverImageUrl
 		: `${BASE_URL}${coverImageUrl.replace("/src/content", "")}`
 
+	const postBodyCoverImageSrc = coverImageUrl.replace(
+		"/src/content",
+		localAssetRootPath,
+	)
+
 	const coverMarkup = coverImageUrl
 		? `
 					<div class="post-image">
-						<img src="${coverImageUrl.replace("/src/content", "")}" alt="${title}" />
+						<img src="${postBodyCoverImageSrc}" alt="${displayTitle || title}" />
 					</div>
 `
 		: ""
@@ -159,13 +168,14 @@ function renderPostHtml({
 	const extraStylesheets = stylesheetHrefs
 		.map(
 			(href) =>
-				`    <link rel="stylesheet" href="${href.replace("/src/content", "")}">`,
+				`    <link rel="stylesheet" href="${href.replace("/src/content", localAssetRootPath)}">`,
 		)
 		.join("\n")
 
 	const extraScripts = scriptSrcs
 		.map(
-			(src) => `    <script src="${src.replace("/src/content", "")}"></script>`,
+			(src) =>
+				`    <script src="${src.replace("/src/content", localAssetRootPath)}"></script>`,
 		)
 		.join("\n")
 
@@ -174,7 +184,7 @@ function renderPostHtml({
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} - James Tasse</title>
+    <title>${title !== (displayTitle || title) ? title : `${displayTitle || title} - James Tasse`}</title>
     <meta name="description" content="${description}">
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
@@ -182,15 +192,16 @@ function renderPostHtml({
     <meta property="og:url" content="${url}">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="/blog/blog.css">
+    <link rel="stylesheet" href="${localAssetRootPath}/blog/blog.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 ${extraStylesheets}
-    <script src="/blog/blog.js" defer></script>
+    <script src="${localAssetRootPath}/blog/blog.js" defer></script>
 </head>
 <body>
     <div id="content" class="container">
         <main class="blog-content single-post">
             <article id="post-article">
-${coverMarkup}                <h1>${title}</h1>
+${coverMarkup}                <h1>${displayTitle || title}</h1>
                 <div class="post-meta"><time datetime="${date}">${formatDisplayDate(date)}</time> | ${author}</div>
                 <section class="post-body">
                     ${bodyHtml}
@@ -205,6 +216,8 @@ ${extraScripts}
 }
 
 function renderGeneratedArticle(post) {
+	const localAssetRootPath = IS_DEV ? "/src/content" : "/blog"
+	const indexImageSrc = post.image.replace("/src/content", localAssetRootPath)
 	return `				<article data-tags="${post.tags}" data-generated="true">
 					<h3>
 						<a href="/blog/posts/${post.slug}">${post.title}</a>
@@ -217,7 +230,7 @@ function renderGeneratedArticle(post) {
 							? `
 					<div class="post-image">
 						<a href="/blog/posts/${post.slug}">
-							<img src="${post.image.replace("/src/content", "")}" alt="${post.title}" loading="lazy" decoding="async" />
+							<img src="${indexImageSrc}" alt="${post.title}" loading="lazy" decoding="async" />
 						</a>
 					</div>`
 							: ""
@@ -435,78 +448,6 @@ function main() {
 		})
 
 		const outputFilePath = path.join(OUTPUT_DIR, `${slug}.html`)
-		function renderPostHtml({
-			title,
-			description,
-			date,
-			author,
-			coverImageUrl,
-			url,
-			bodyHtml,
-			stylesheetHrefs,
-			scriptSrcs,
-			displayTitle,
-		}) {
-			const absoluteCoverImage = coverImageUrl.startsWith("http")
-				? coverImageUrl
-				: `${BASE_URL}${coverImageUrl.replace("/src/content", "")}`
-
-			const coverMarkup = coverImageUrl
-				? `
-					<div class="post-image">
-						<img src="${coverImageUrl.replace("/src/content", "")}" alt="${displayTitle || title}" />
-					</div>
-`
-				: ""
-
-			const extraStylesheets = stylesheetHrefs
-				.map(
-					(href) =>
-						`    <link rel="stylesheet" href="${href.replace("/src/content", "")}">`,
-				)
-				.join("\n")
-
-			const extraScripts = scriptSrcs
-				.map(
-					(src) =>
-						`    <script src="${src.replace("/src/content", "")}"></script>`,
-				)
-				.join("\n")
-
-			return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${displayTitle || title} - James Tasse</title>
-    <meta name="description" content="${description}">
-    <meta property="og:title" content="${title}">
-    <meta property="og:description" content="${description}">
-    <meta property="og:image" content="${absoluteCoverImage}">
-    <meta property="og:url" content="${url}">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="/blog/blog.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-${extraStylesheets}
-    <script src="/blog/blog.js" defer></script>
-</head>
-<body>
-    <div id="content" class="container">
-        <main class="blog-content single-post">
-            <article id="post-article">
-${coverMarkup}                <h1>${displayTitle || title}</h1>
-                <div class="post-meta"><time datetime="${date}">${formatDisplayDate(date)}</time> | ${author}</div>
-                <section class="post-body">
-                    ${bodyHtml}
-                </section>
-            </article>
-        </main>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-${extraScripts}
-</body>
-</html>`
-		}
 		ensureDir(path.dirname(outputFilePath))
 		fs.writeFileSync(outputFilePath, postHtml)
 
