@@ -355,6 +355,20 @@ export default defineConfig(({ mode }) => {
 		],
 		server: {
 			port: 5173,
+			middlewares: [
+				{
+					name: "blog-posts-redirect",
+					configureServer(server) {
+						server.middlewares.use((req, res, next) => {
+							if (req.url?.startsWith("/blog/posts/")) {
+								const slug = req.url.replace("/blog/posts/", "")
+								req.url = `/src/content/blog/posts/${slug}`
+							}
+							next()
+						})
+					},
+				},
+			],
 			proxy: {
 				"/portfolio/docs": {
 					target: "http://127.0.0.1:4321",

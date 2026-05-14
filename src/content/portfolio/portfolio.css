@@ -541,13 +541,43 @@ h1 {
 
 .external-link-icon {
 	vertical-align: middle;
+	margin-left: 0;
+	width: 0;
+	overflow: hidden;
+	display: inline-block;
+	transition: all 0.2s ease;
+}
+
+/* Show icon on hover for links */
+a:hover .external-link-icon {
 	margin-left: 4px;
+	width: auto;
+	opacity: 0.8;
+}
+
+/* Show icon on hover for portfolio item containers */
+.portfolio-item:hover .portfolio-item-link .external-link-icon {
+	margin-left: 4px;
+	width: auto;
 	opacity: 0.8;
 }
 
 /* Prevent small external-link-icon from appearing inside orc-overlay-action.right */
 .orc-overlay-action.right .external-link-icon {
 	display: none !important;
+}
+
+/* But ensure inline SVG icons in orc-overlay-action are always visible */
+.orc-overlay-action svg {
+	opacity: 1 !important;
+	width: auto !important;
+}
+
+/* Ensure icons in embed-open-tab-btn are always visible */
+.embed-open-tab-btn .external-link-icon {
+	width: auto !important;
+	margin-left: 4px !important;
+	opacity: 1 !important;
 }
 
 .portfolio-item-link {
@@ -656,6 +686,7 @@ h1 {
 	margin-left: 4px;
 	width: auto;
 	height: auto;
+	opacity: 1 !important;
 }
 
 /* Hide any duplicate external-link-icons */
