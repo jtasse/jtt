@@ -74,25 +74,31 @@
 		</nav>
 	</div>
 
-	<div class="orc-explanation">
-		<h2 id="orc-explanation">Introducing the Orbital Refuse Collector</h2>
+	<h2 class="portfolio-section-header" id="portfolio-projects">
+			Featured Projects
+	</h2>
+	<div class="project-explanation">
+		<h3 id="meowlin-explanation">Meowlin (AWS demo)</h3>
 		<p>
-			The Orbital Refuse Collector (ORC) is a fictional system designed to
-			deorbit (or decommission) Earth's satellites that are at risk of having
-			their orbits decay undesirably.
+			Meowlin allows the user to upload recorded cat meow audio and identify the breed of any cats contained therein. 
+			Or at least it <i>would</i> if I weren't mocking the cata ID data :) But that's where the simulation ends: 
+			I implemented the rest of it using AWS SAM, API Gateway, Lambda, S3, SQS, and DynamoDB.
 		</p>
 	</div>
-
-	<!-- ORC Hero Section: Showcase + Description side by side -->
-	<div class="orc-hero-section">
-		<div class="orc-hero-column-left">
-			<div class="orc-card" id="orc-demo-card">
-				<div class="orc-card-header">Try ORC Demo</div>
-				<div id="orc-showcase-container" class="orc-card-content"></div>
-				<div class="orc-overlay">
+	<div class="featured-hero-section">
+		<div class="featured-hero-column-left">
+			<div class="featured-card" id="meowlin-demo-card">
+				<div class="featured-card-header">Try Meowlin</div>
+				<div id="meowlin-showcase-container" class="featured-card-content">
+					<img
+						src="/src/content/portfolio/images/thumbnails/meowlin.webp"
+						alt="Meowlin demo preview"
+					/>
+				</div>
+				<div class="featured-overlay">
 					<a
-						href="/portfolio/orc-demo"
-						class="orc-overlay-action left orc-launch-btn"
+						href="https://github.com/jtasse/meowlin/blob/main/README.md#quick-start"
+						class="featured-overlay-action left featured-launch-btn"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -108,9 +114,9 @@
 						<span>Go directly</span>
 					</a>
 					<a
-						href="/portfolio/orc-demo"
+						href="https://github.com/jtasse/meowlin/blob/main/README.md#quick-start"
 						target="_blank"
-						class="orc-overlay-action right"
+						class="featured-overlay-action right"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -128,19 +134,122 @@
 				</div>
 			</div>
 		</div>
-		<div class="orc-hero-column-right">
-			<div class="orc-card" id="orc-docs-card">
-				<div class="orc-card-header">Read ORC Docs</div>
-				<div class="orc-card-content">
+		<div class="featured-hero-column-right">
+			<div class="featured-card" id="meowlin-docs-card">
+				<div class="featured-card-header">View Meowlin README</div>
+				<div class="featured-card-content">
+					<img
+						src="/src/content/portfolio/images/thumbnails/meowlin-readme-screenshot.png"
+						alt="Meowlin README preview"
+					/>
+				</div>
+				<div class="featured-overlay">
+					<a
+						href="https://github.com/jtasse/meowlin/blob/main/README.md"
+						class="featured-overlay-action left featured-launch-btn"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="48px"
+							viewBox="0 0 24 24"
+							width="48px"
+							fill="currentColor"
+						>
+							<path
+								d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"
+							/>
+						</svg>
+						<span>Go directly</span>
+					</a>
+					<a
+						href="https://github.com/jtasse/meowlin/blob/main/README.md"
+						target="_blank"
+						class="featured-overlay-action right"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="48px"
+							viewBox="0 0 24 24"
+							width="48px"
+							fill="currentColor"
+						>
+							<path
+								d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
+							/>
+						</svg>
+						<span>Open in new tab</span>
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="project-explanation">
+		<h3 id="orc-explanation">Orbital Refuse Collector (Three.js demo)</h3>
+		<p>
+			The Orbital Refuse Collector (ORC) is a fictional system designed to
+			deorbit (or decommission) Earth's satellites that are at risk of having
+			their orbits decay undesirably.
+		</p>
+	</div>
+
+	<!-- ORC Hero Section: Showcase + Description side by side -->
+	<div class="featured-hero-section">
+		<div class="featured-hero-column-left">
+			<div class="featured-card" id="orc-demo-card">
+				<div class="featured-card-header">Try ORC Demo</div>
+				<div id="orc-showcase-container" class="featured-card-content"></div>
+				<div class="featured-overlay">
+					<a
+						href="/portfolio/orc-demo"
+						class="featured-overlay-action left featured-launch-btn"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="48px"
+							viewBox="0 0 24 24"
+							width="48px"
+							fill="currentColor"
+						>
+							<path
+								d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"
+							/>
+						</svg>
+						<span>Go directly</span>
+					</a>
+					<a
+						href="/portfolio/orc-demo"
+						target="_blank"
+						class="featured-overlay-action right"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="48px"
+							viewBox="0 0 24 24"
+							width="48px"
+							fill="currentColor"
+						>
+							<path
+								d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
+							/>
+						</svg>
+						<span>Open in new tab</span>
+					</a>
+				</div>
+			</div>
+		</div>
+		<div class="featured-hero-column-right">
+			<div class="featured-card" id="orc-docs-card">
+				<div class="featured-card-header">Read ORC Docs</div>
+				<div class="featured-card-content">
 					<img
 						src="/src/content/portfolio/images/thumbnails/astro_overview_screenshot.png"
 						alt="ORC Documentation Overview"
 					/>
 				</div>
-				<div class="orc-overlay">
+				<div class="featured-overlay">
 					<a
 						href="/portfolio/docs/orc"
-						class="orc-overlay-action left orc-launch-btn"
+						class="featured-overlay-action left featured-launch-btn"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +267,7 @@
 					<a
 						href="/portfolio/docs/orc"
 						target="_blank"
-						class="orc-overlay-action right"
+						class="featured-overlay-action right"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -289,7 +398,7 @@
 				</h2>
 				<img
 					class="portfolio-thumb"
-					src="/src/content/portfolio/images/thumbnails/cptc-foundation-cert-thumb.webp"
+					src="/src/content/portfolio/images/thumbnails/Certified_Professional_Technical_Communicator_-_CPTC_-_Foundation.png"
 					alt="CPTC Foundation certificate thumbnail"
 					loading="lazy"
 					decoding="async"
