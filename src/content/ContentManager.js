@@ -568,6 +568,8 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 	contentEl.querySelectorAll("a[href^='http']").forEach((link) => {
 		link.addEventListener("click", (ev) => {
 			if (
+				link.classList.contains("featured-launch-btn") ||
+				link.classList.contains("featured-overlay-action") ||
 				link.classList.contains("view-locally") ||
 				link.hasAttribute("view-locally")
 			) {
@@ -603,16 +605,17 @@ function setupPortfolioClickHandlers(contentEl, onCloseCallback) {
 	})
 
 	// Handle launch button clicks
-	contentEl.querySelectorAll(".orc-launch-btn").forEach((btn) => {
+	contentEl.querySelectorAll(".featured-launch-btn").forEach((btn) => {
 		btn.addEventListener("click", (ev) => {
 			ev.preventDefault()
 			ev.stopPropagation()
+			ev.stopImmediatePropagation()
 			const href = btn.getAttribute("href")
 			if (href) {
 				if (href.startsWith("/portfolio/orc-demo")) {
 					router.navigate(href)
 				} else {
-					window.location.href = href
+					window.location.assign(href)
 				}
 			}
 		})

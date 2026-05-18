@@ -49,6 +49,18 @@
 
 			// 1. Handle Links (Global) - Intercept PDFs, Drive, Docs, Resume
 			if (link) {
+				// Handle featured-launch-btn and orc-launch-btn - navigate directly without new tab
+				if (
+					link.classList.contains("featured-launch-btn") ||
+					link.classList.contains("orc-launch-btn")
+				) {
+					e.preventDefault()
+					e.stopPropagation()
+					e.stopImmediatePropagation()
+					window.location.href = link.href
+					return
+				}
+
 				// Handle anchor links (Jump to...)
 				const hrefAttr = link.getAttribute("href")
 				if (hrefAttr && hrefAttr.startsWith("#")) {
