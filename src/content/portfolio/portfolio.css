@@ -519,6 +519,10 @@ h1 {
 	margin-top: 0.25rem;
 }
 
+.quick-links ul ul a {
+	color: var(--subheading-color);
+}
+
 .quick-links li {
 	margin-bottom: 0.5rem;
 }
