@@ -749,3 +749,11 @@ blockquote {
 	background: var(--code-bg);
 	border-radius: 0 4px 4px 0;
 }
+
+.blockquote-alt {
+	border-left: 3px solid var(--subheading-color);
+	margin: 1.5rem 0;
+	padding: 1rem 1.5rem;
+	background: var(--item-bg);
+	border-radius: 0 4px 4px 0;
+}
