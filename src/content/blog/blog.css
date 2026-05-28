@@ -672,6 +672,80 @@ header {
 	margin-bottom: 15px;
 }
 
+/* Click-to-zoom diagrams (opt-in via .diagram-zoom) */
+.diagram-zoom {
+	margin: 0 0 15px;
+}
+
+.diagram-zoom__trigger {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	padding: 0;
+	border: none;
+	background: none;
+	cursor: zoom-in;
+	text-align: left;
+}
+
+.diagram-zoom__trigger img {
+	display: block;
+	width: 100%;
+	height: auto;
+	margin-bottom: 0;
+}
+
+.diagram-zoom__trigger:hover img,
+.diagram-zoom__trigger:focus-visible img {
+	border-color: var(--link-color);
+}
+
+.diagram-zoom__dialog {
+	position: relative;
+	max-width: min(96vw, 1400px);
+	max-height: 96vh;
+	padding: 2.5rem 1rem 1rem;
+	border: 1px solid var(--border-color-strong);
+	border-radius: 6px;
+	background: var(--bg-color-solid, #111);
+	color: var(--text-color);
+}
+
+.diagram-zoom__dialog::backdrop {
+	background: rgba(0, 0, 0, 0.85);
+}
+
+.diagram-zoom__close {
+	position: absolute;
+	top: 0.75rem;
+	right: 0.75rem;
+	z-index: 1;
+	padding: 0.35rem 0.75rem;
+	font: inherit;
+	color: var(--text-color);
+	background: var(--code-bg);
+	border: 1px solid var(--border-color-strong);
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.diagram-zoom__close:hover,
+.diagram-zoom__close:focus-visible {
+	border-color: var(--link-color);
+	color: var(--link-color);
+}
+
+.diagram-zoom__dialog-image {
+	display: block;
+	max-width: 96vw;
+	max-height: 90vh;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+	margin: 0 auto;
+	border: none;
+}
+
 /* Edit notes */
 .single-post .edit-note {
 	background: rgba(255, 200, 0, 0.1);
