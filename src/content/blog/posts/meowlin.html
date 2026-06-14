@@ -55,17 +55,18 @@
 						<p>
 							Well I had a very simple idea. What if I created a solution like
 							Merlin but for <em>cats</em>? Thus
-							<a href="https://github.com/jtasse/meowlin/tree/main">Meowlin</a>
+							<a href="https://github.com/jtasse/meowlin">Meowlin</a>
 							was born.
 						</p>
-						<h1>Caveats</h1>
+						<blockquote><strong>NOTE</strong>: you can check out the demo at <a href="https://jtasse.github.io/meowlin/">https://jtasse.github.io/meowlin/</a> </blockquote>
+						<h1>AWS + React Demo</h1>
 						<p>
 							All right, before we go any further, I need to clarify that one
 							cannot simply walk into a cat cafe and use Meowlin to start
 							identifying cat breeds based on recorded meows. This is first and
 							foremost a <em>demo</em> of the knowledge I gained before
 							<a
-								href="https://drive.google.com/file/d/1H1U0T9gPwDbSFsZ8DSF9j-uFtdjSesaL"
+								href="https://www.credly.com/badges/169aaf94-2569-4725-bb35-5974210ae432"
 								>passing</a
 							>
 							the
@@ -73,30 +74,26 @@
 								href="https://aws.amazon.com/certification/certified-developer-associate/"
 								>AWS Certified Developer - Associate</a
 							>
-							exam. As such, I would like to call out a few
+							exam; along with an extension of my React experience. 
+						</p>
+						<h1>Caveats</h1>
+						As such, I list a few solution
 							<a
 								href="https://github.com/jtasse/meowlin/blob/main/README.md#caveats"
 								>caveats</a
-							>, the main one being that I implemented mock processing for this
-							demo
+							> in the solution's <a href="https://github.com/jtasse/meowlin/blob/main/README.md">README</a>.
+						<p>
+							But the big one is worth pointing out right now: I implemented <i>mock processing</i> for this
+							demo rather than
 							<em
-								>rather than gathering loads of high quality meow audio and
+								> gathering loads of high quality meow audio and
 								using machine learning to train an audio processing model</em
 							>. Phew!
 						</p>
-						<p>But who knows, mabye someday!</p>
+						<p>But who knows, maybe someday!</p>
 						<h1>How it works</h1>
 						<p>
-							I won&#39;t get into the weeds here. There&#39;s a
-							<a
-								href="https://github.com/jtasse/meowlin/blob/main/README.md#high-level-data-flow"
-								>high level overview</a
-							>
-							of the process in the solution&#39;s
-							<a href="https://github.com/jtasse/meowlin/blob/main/README.md"
-								>README</a
-							>
-							and a
+							I won&#39;t get into the weeds here. You can find an overview in the <a href="https://github.com/jtasse/meowlin/blob/main/README.md">README file</a>; and there&#39;s a
 							<a
 								href="https://github.com/jtasse/meowlin/blob/main/ARCHITECTURE.md#current-sequence-diagram"
 								>detailed sequence diagram</a
@@ -108,22 +105,45 @@
 							>
 							if you&#39;re curious.
 						</p>
-						<p>But at a very high level, here&#39;s how it works:</p>
-						<ol>
-							<li>User uploads a raw audio file using a pre-signed URL.</li>
-							<li>
-								Solution returns a [mocked] result that may or may not contain a
-								cat breed ID.
-							</li>
-						</ol>
-						<h1>What&#39;s next</h1>
-						<p>
-							I&#39;d like to get more experience with React, so I plan to
-							create some kind of client (possibly one for Meowlin to replace
-							its unwieldy Postman collection!).
-						</p>
+						<h2>High level process</h2>
+						<p>But at a very high level, here&#39;s the process:</p>
+						<figure class="diagram-zoom">
+							<button
+								type="button"
+								class="diagram-zoom__trigger"
+								data-zoom-src="/src/content/blog/posts/meowlin/images/meowlin_high_level_process.png"
+								aria-haspopup="dialog"
+								aria-label="Zoom in on Meowlin process diagram"
+							>
+								<img
+									src="/src/content/blog/posts/meowlin/images/meowlin_high_level_process.png"
+									alt="Meowlin high-level process diagram"
+									loading="lazy"
+									decoding="async"
+								/>
+							</button>
+						</figure>
 						<p>In any case, thanks for reading!</p>
 					</section>
+					<dialog
+						class="diagram-zoom__dialog"
+						aria-label="Meowlin process diagram (enlarged)"
+					>
+						<form method="dialog">
+							<button
+								type="submit"
+								class="diagram-zoom__close"
+								aria-label="Close enlarged diagram"
+							>
+								Close
+							</button>
+						</form>
+						<img
+							class="diagram-zoom__dialog-image"
+							src=""
+							alt="Meowlin high-level process diagram"
+						/>
+					</dialog>
 				</article>
 			</main>
 		</div>

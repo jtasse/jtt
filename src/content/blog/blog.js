@@ -289,6 +289,36 @@ function initFilterSystem() {
 	}
 }
 
+let diagramZoomBound = false
+
+function initDiagramZoom() {
+	if (diagramZoomBound) return
+	diagramZoomBound = true
+
+	document.addEventListener("click", (e) => {
+		const trigger = e.target.closest(".diagram-zoom__trigger")
+		if (!trigger) return
+
+		const article = trigger.closest("article#post-article, .single-post article")
+		const dialog = article?.querySelector(".diagram-zoom__dialog")
+		const dialogImg = dialog?.querySelector(".diagram-zoom__dialog-image")
+		const thumb = trigger.querySelector("img")
+		const src = trigger.dataset.zoomSrc || thumb?.getAttribute("src")
+		if (!dialog || !dialogImg || !src) return
+
+		dialogImg.src = src
+		dialogImg.alt = thumb?.alt || "Enlarged diagram"
+		if (!dialog.open) dialog.showModal()
+	})
+
+	document.addEventListener("click", (e) => {
+		const dialog = e.target.closest(".diagram-zoom__dialog")
+		if (dialog && e.target === dialog && dialog.open) {
+			dialog.close()
+		}
+	})
+}
+
 function addRssLink() {
 	const heading = document.getElementById("posts-heading")
 	if (heading && !heading.querySelector('a[href="/rss.xml"]')) {
@@ -325,6 +355,7 @@ function init() {
 
 	initReadingTime()
 	initFilterSystem()
+	initDiagramZoom()
 	addRssLink()
 
 	setTimeout(() => {
