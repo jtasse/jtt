@@ -134,6 +134,43 @@ function removeDirIfExists(dirPath) {
 	}
 }
 
+function extractYouTubeVideoId(url) {
+	try {
+		const parsed = new URL(url.trim())
+		if (parsed.hostname === "youtu.be") {
+			return parsed.pathname.slice(1).split("/")[0].split("?")[0]
+		}
+		if (parsed.hostname.includes("youtube.com")) {
+			return parsed.searchParams.get("v")
+		}
+	} catch {
+		return null
+	}
+	return null
+}
+
+function renderYouTubeEmbed(url, title = "YouTube video") {
+	const videoId = extractYouTubeVideoId(url)
+	if (!videoId) return null
+
+	const embedUrl = `https://www.youtube.com/embed/${videoId}`
+	const safeTitle = escapeHtml(title)
+	return `<div class="video-wrap"><div class="embed embed-full"><iframe src="${embedUrl}" title="${safeTitle}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div></div>`
+}
+
+function embedStandaloneYouTubeLinks(html) {
+	return html.replace(
+		/(?:<p><em>([^<]+)<\/em><\/p>\s*)?<p>(?:<a[^>]*href="([^"]+)"[^>]*>)?(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=[\w-]+(?:[^"]*?)|youtu\.be\/[\w-]+(?:[^"]*?)))(?:<\/a>)?<\/p>/gi,
+		(match, italicTitle, hrefUrl, textUrl) => {
+			const embed = renderYouTubeEmbed(
+				hrefUrl || textUrl,
+				italicTitle || "YouTube video",
+			)
+			return embed || match
+		},
+	)
+}
+
 function renderPostHtml({
 	title,
 	description,
@@ -433,7 +470,8 @@ function main() {
 			return `<img src="${src}" alt="${safeAlt}"${safeTitle}>`
 		}
 
-		const bodyHtml = marked.parse(content, { renderer })
+		let bodyHtml = marked.parse(content, { renderer })
+		bodyHtml = embedStandaloneYouTubeLinks(bodyHtml)
 		const postHtml = renderPostHtml({
 			title: ogTitle,
 			description,

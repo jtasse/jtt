@@ -349,10 +349,51 @@ function addRssLink() {
 	}
 }
 
+function initPostImageLoading() {
+	const listRoot = document.querySelector(".blog-content:not(.single-post)")
+	if (!listRoot) return
+
+	const images = listRoot.querySelectorAll(".post-image img")
+	images.forEach((img, index) => {
+		if (img.dataset.loadManaged) return
+		img.dataset.loadManaged = "true"
+
+		if (index < 2 && img.loading !== "eager") {
+			img.loading = "eager"
+		}
+		if (!img.hasAttribute("decoding")) {
+			img.decoding = "async"
+		}
+
+		const container = img.closest(".post-image")
+		if (!container) return
+
+		const markLoaded = () => {
+			img.classList.remove("is-loading")
+			container.classList.remove("is-loading")
+		}
+
+		const markLoading = () => {
+			img.classList.add("is-loading")
+			container.classList.add("is-loading")
+		}
+
+		if (img.complete && img.naturalWidth > 0) {
+			markLoaded()
+			return
+		}
+
+		markLoading()
+		img.addEventListener("load", markLoaded, { once: true })
+		img.addEventListener("error", markLoaded, { once: true })
+	})
+}
+
 function init() {
 	if (isInitializing) return
 	isInitializing = true
 
+	initPostImageLoading()
 	initReadingTime()
 	initFilterSystem()
 	initDiagramZoom()
