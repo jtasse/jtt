@@ -232,6 +232,48 @@ header {
 .blog-content:not(.single-post) .post-image,
 .blog-content .blog-post-item .post-image {
 	max-width: 66%;
+	position: relative;
+	min-height: 220px;
+}
+
+.blog-content:not(.single-post) .post-image.is-loading::after,
+.blog-content .blog-post-item .post-image.is-loading::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border: 1px solid var(--border-color-strong);
+	border-radius: 4px;
+	background: var(--code-bg);
+}
+
+.blog-content:not(.single-post) .post-image.is-loading::before,
+.blog-content .blog-post-item .post-image.is-loading::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 28px;
+	height: 28px;
+	margin: -14px 0 0 -14px;
+	border: 2px solid var(--border-color-strong);
+	border-top-color: var(--link-color);
+	border-radius: 50%;
+	animation: post-image-spin 0.8s linear infinite;
+	z-index: 1;
+}
+
+@keyframes post-image-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.blog-content:not(.single-post) .post-image.is-loading::before,
+	.blog-content .blog-post-item .post-image.is-loading::before {
+		animation: none;
+		border-top-color: var(--border-color-strong);
+	}
 }
 
 /* Blog list view images - constrained for consistent cover look */
@@ -243,7 +285,18 @@ header {
 	border: 1px solid var(--border-color-strong);
 	border-radius: 4px;
 	margin-bottom: 15px;
-	transition: all 0.2s ease;
+	transition:
+		border-color 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease,
+		opacity 0.25s ease;
+	position: relative;
+	z-index: 2;
+}
+
+.blog-content:not(.single-post) .post-image img.is-loading,
+.blog-content .blog-post-item .post-image img.is-loading {
+	opacity: 0;
 }
 
 .blog-content:not(.single-post) .post-image a:hover img,
