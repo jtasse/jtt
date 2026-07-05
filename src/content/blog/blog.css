@@ -755,6 +755,33 @@ header {
 	font-size: 0.95rem;
 }
 
+/* Prominent callout warnings (spoilers, photosensitivity, etc.) */
+.single-post .post-callout {
+	margin: 1em 0;
+}
+
+.single-post .photosensitivity-warning,
+.blog-content .photosensitivity-warning {
+	background: #fff4e5;
+	border-left: 4px solid #ffae00;
+	padding: 12px;
+	margin: 0 0 1em;
+	color: #222;
+}
+
+.blog-content a.warning-link {
+	color: #0366d6;
+	font-weight: 700;
+	text-decoration: underline;
+	text-decoration-color: currentColor;
+}
+
+.blog-content a.warning-link:hover,
+.blog-content a.warning-link:focus {
+	color: #16b3f1 !important;
+	text-decoration-color: currentColor !important;
+}
+
 /* Highlighted text */
 .single-post .highlight {
 	background: var(--shadow-color);
