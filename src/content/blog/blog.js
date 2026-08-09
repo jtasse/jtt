@@ -210,11 +210,28 @@ function initFilterSystem() {
 		html += `</div>`
 		filterContainer.innerHTML = html
 
+		const clearTagFilter = () => {
+			const newUrl = new URL(window.location.href)
+			newUrl.searchParams.delete("tag")
+			newUrl.searchParams.delete("orderby")
+			newUrl.searchParams.delete("order")
+			if (newUrl.pathname.includes("/tag/")) {
+				newUrl.pathname = "/blog"
+			}
+			window.history.pushState({}, "", newUrl)
+			init()
+		}
+
 		// Bind events
 		filterContainer.querySelectorAll(".tag-btn").forEach((btn) => {
 			btn.addEventListener("click", (e) => {
 				e.preventDefault()
 				const selectedTag = btn.dataset.tag
+				// Clicking the active tag clears the filter
+				if (selectedTag === tag) {
+					clearTagFilter()
+					return
+				}
 				// Per requirements: clicking a tag loads URL with order=asc
 				const newUrl = new URL(window.location.href)
 				newUrl.searchParams.set("tag", selectedTag)
@@ -235,16 +252,7 @@ function initFilterSystem() {
 		if (clearBtn) {
 			clearBtn.addEventListener("click", (e) => {
 				e.preventDefault()
-				const newUrl = new URL(window.location.href)
-				newUrl.searchParams.delete("tag")
-				newUrl.searchParams.delete("orderby")
-				newUrl.searchParams.delete("order")
-				// Handle legacy path clearing
-				if (newUrl.pathname.includes("/tag/")) {
-					newUrl.pathname = "/blog"
-				}
-				window.history.pushState({}, "", newUrl)
-				init()
+				clearTagFilter()
 			})
 		}
 	}
